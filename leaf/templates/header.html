@@ -1,0 +1,46 @@
+<!-- Fixed navbar -->
+<header>
+    <nav class="lf_navbar navbar navbar-expand-md navbar-light fixed-top bg-light shadow">
+        <div class="container-fluid mx-4">
+            <a id="navbrand_link" class="navbar-brand" href="/">
+                <img height="32" alt="Little Forest Logo"
+                     src="{{ url_for('static', filename='images/littleforest_logo.png') }}"/>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
+                    aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            {% if username %}
+                <div class="collapse navbar-collapse" id="navbarCollapse">
+                    <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                        <li class="nav-item"><a class="nav-link" id="nav-link-sites" href="/sites">Sites</a></li>
+                        <li class="nav-item"><a class="nav-link" id="nav-link-workflow" href="/workflow">Workflows</a></li>
+                        <li class="nav-item"><a class="nav-link" id="nav-link-request" href="/task_requests">Requests</a></li>
+                        {% if is_admin %}
+                            <li class="nav-item"><a class="nav-link" id="nav-link-deployments" href="/deployments">Deployments</a>
+                            </li>
+                        {% endif %}
+
+                        <li class="nav-item"><a class="nav-link" id="nav-link-lists" href="/lists">Lists</a></li>
+                        <li class="nav-item"><a class="nav-link" id="nav-link-menus" href="/menus">Menus</a></li>
+                        {% if is_admin %}
+                            <li class="nav-item"><a class="nav-link" id="nav-link-list_lfi_users" href="/list_lfi_users">Users</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+                <div class="pull-right">
+                    {% if is_admin %}PowerUser{% else %}Editor{% endif %}
+                    <span>
+{#                        <label class="image-user" style="background-image:url('{{ user_image }}');"></label>#}
+                        <label class="image-user"
+                               style="background-image:url('{{ url_for('static', filename='images/lf_logo_circle.png') }}');"></label>
+                        <label>{{ username }}</label>
+                    </span>
+                    <span class="logout_btn"><a href="/logout" onclick="logout()"><i class="fal fa-sign-out"></i> Log out</a></span>
+                </div>
+            {% endif %}
+        </div>
+    </nav>
+</header>

@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+
+{% block title %}Deployments{% endblock %}
+
+{% block content %}
+    <script>
+        $("#nav-link-deployments").addClass("active");
+    </script>
+
+    <!-- ADD DEPLOYMENT MODAL -->
+    <div class="modal fade" id="addDeploymentModal" tabindex="-1" aria-labelledby="addDeploymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addDeploymentLabel">Add Deployment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="deployment-source-server" class="col-form-label">Source Server:</label>
+                            <input type="text" class="form-control" id="deployment-source-server">
+                        </div>
+                        <div class="mb-3">
+                            <label for="deployment-source-path" class="col-form-label">Source Path:</label>
+                            <input type="text" class="form-control" id="deployment-source-path">
+                        </div>
+                        <div class="mb-3">
+                            <label for="deployment-target-server" class="col-form-label">Target Server:</label>
+                            <input type="text" class="form-control" id="deployment-target-server">
+                        </div>
+                        <div class="mb-3">
+                            <label for="deployment-target-path" class="col-form-label">Target Path:</label>
+                            <input type="text" class="form-control" id="deployment-target-path">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" onclick="addDeployment()">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT DEPLOYMENT MODAL -->
+    <div class="modal fade" id="editDeploymentModal" tabindex="-1" aria-labelledby="editDeploymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editDeploymentLabel">Edit Deployment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="e-deployment-source-server" class="col-form-label">Source Server:</label>
+                            <input type="text" class="form-control" id="e-deployment-source-server">
+                        </div>
+                        <div class="mb-3">
+                            <label for="e-deployment-source-path" class="col-form-label">Source Path:</label>
+                            <input type="text" class="form-control" id="e-deployment-source-path">
+                        </div>
+                        <div class="mb-3">
+                            <label for="e-deployment-target-server" class="col-form-label">Target Server:</label>
+                            <input type="text" class="form-control" id="e-deployment-target-server">
+                        </div>
+                        <div class="mb-3">
+                            <label for="e-deployment-target-path" class="col-form-label">Target Path:</label>
+                            <input type="text" class="form-control" id="e-deployment-target-path">
+                        </div>
+
+                        <input type="hidden" id="h-e-deployment-source-server">
+                        <input type="hidden" id="h-e-deployment-source-path">
+                        <input type="hidden" id="h-e-deployment-target-server">
+                        <input type="hidden" id="h-e-deployment-target-path">
+                        <input type="hidden" id="h-e-deployment-number">
+
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" onclick="updateDeployment();">Update</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ERROR MODAL -->
+    <div class="modal fade" id="errorModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Error adding new deployment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>There was an error adding your deployment<br>Please try again.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <!-- Add Success -->
+        <div id="addDeploymentSuccessNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Deployment added successfully
+            </div>
+        </div>
+
+        <!-- Delete Success -->
+        <div id="deleteDeploymentSuccessNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Deployment/s deleted successfully
+            </div>
+        </div>
+
+        <!-- Edit Success -->
+        <div id="editDeploymentSuccessNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Deployment updated successfully
+            </div>
+        </div>
+
+        <!-- pause Success -->
+        <div id="pauseDeploymentSuccessNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Deployment/s paused successfully
+            </div>
+        </div>
+
+    </div>
+
+    <!-- VIEW LOG MODAL -->
+    <div class="modal fade" id="deploymentLogModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title w-100 text-center">Deployment Log</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div id="deployment-log-text" class="modal-body"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END VIEW LOG MODAL -->
+
+    <!-- Table -->
+    <div id="TableDiv" class="card mb-4">
+        <div class="card-body">
+            <div class="header-1">
+                <h3 style="float: left">Deployments</h3>
+                <div style="float:right; margin-left: 10px;" class="header-btns">
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addDeploymentModal">Add Deployment</button>
+                    <button type="button" class="btn btn-blue editButton" data-bs-toggle="modal" data-bs-target="#editDeploymentModal" onclick="console.log('populateEditDeploymentModal'); populateEditDeploymentModal();" disabled>Edit Deployment</button>
+                    <button type="button" class="btn btn-red deleteButton" data-bs-toggle="modal" data-bs-target="#deleteDeploymentModal" onclick="deleteDeployments()" disabled>Delete Deployment</button>
+                    {#                    <button type="button" class="btn btn-orange" data-bs-toggle="modal" data-bs-target="#PauseDeploymentModal" onclick="pauseDeployments()">Pause Deployment</button>#}
+                </div>
+            </div>
+            <table class="table" id="table">
+                <thead>
+                <tr>
+                    <th></th>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>Submitted</th>
+                    <th>Source Files</th>
+                    <th>Destination location</th>
+                    <th>Status</th>
+                    <th>Log</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot>
+                <tr>
+                    <th></th>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>Submitted</th>
+                    <th>Source Files</th>
+                    <th>Destination location</th>
+                    <th>Status</th>
+                    <th>Log</th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <!-- End Table -->
+
+{% endblock %}
+
+{% block script %}
+    <script type="text/javascript">var accountId = {{ accountId }}</script>
+    <script src="{{ url_for('static', filename='js/deployments.js') }}"></script>
+{% endblock %}

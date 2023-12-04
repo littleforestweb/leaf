@@ -1,0 +1,16 @@
+.cke_contents.cke_reset {
+    height: 32em !important;
+    overflow: scroll;
+}
+
+.cke_button__savebtn_label {
+    display: inline !important;
+}
+
+.cke_button__publishbtn_label {
+    display: inline !important;
+}
+
+.cke_button__preview_label {
+    display: inline !important;
+}

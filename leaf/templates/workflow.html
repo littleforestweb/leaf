@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Workflows{% endblock %}
+
+{% block content %}
+    <script>
+        $("#nav-link-tasks").addClass("active");
+        $("#nav-link-workflow").addClass("active");
+    </script>
+
+    <div id="slider_main_container"></div>
+
+    <!-- NOTIFICATIONS -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <!-- Add Success -->
+        <div id="workflowSuccessNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Workflow approved successfully
+            </div>
+        </div>
+
+        <!-- Reject Success -->
+        <div id="workflowRejectNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Workflow rejected successfully
+            </div>
+        </div>
+
+        <!-- Error -->
+        <div id="workflowErrorNotification" class="toast bg-danger text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Failed to approve workflow
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE MODAL -->
+    <div class="modal fade" id="deleteWorkflow" tabindex="-1" aria-labelledby="deleteWorkflowLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteWorkflowLabel">Delete {{referenceNoUnderscores}}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="doRefreshPage()"></button>
+                </div>
+                <div class="modal-body">
+                    <h4>Are you sure you want to delete this workflow entry(s)?</h4>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteWorkflowEntries('{{accountId}}', 'deployment', this)">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div id="TableDiv" class="card mb-4">
+        <div class="card-body">
+            <div class="header-1">
+                <h3 style="float: left" class="text-center">Workflow</h3>
+                <div style="float:right; margin-left: 10px;" class="header-btns">
+                    <button type="button" class="btn btn-red deleteButton" data-bs-toggle="modal" data-bs-target="#deleteWorkflow" disabled>Delete</button>
+                </div>
+            </div>
+            <table class="table" id="table">
+                <thead>
+                <tr>
+                    <th></th>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Created by</th>
+                    <th class="hidden">Assigned to</th>
+                    <th class="hidden">Comments</th>
+                    <th>Created</th>
+                    <th class="hidden">Due date</th>
+                    <th class="hidden">Attachments</th>
+                    <th class="hidden">Tags</th>
+                    <th class="hidden">Type</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot>
+                <tr>
+                    <th></th>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Created by</th>
+                    <th class="hidden">Assigned to</th>
+                    <th class="hidden">Comments</th>
+                    <th>Created</th>
+                    <th class="hidden">Due date</th>
+                    <th class="hidden">Attachments</th>
+                    <th class="hidden">Tags</th>
+                    <th class="hidden">Type</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <!-- End Table -->
+
+{% endblock %}
+
+{% block script %}
+    <script type="text/javascript">var accountId = {{ accountId }}</script>
+    <script src="{{ url_for('static', filename='js/workflow.js') }}"></script>
+{% endblock %}

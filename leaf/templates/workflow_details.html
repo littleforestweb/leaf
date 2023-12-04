@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+
+{% block title %}Workflow Details{% endblock %}
+
+{% block content %}
+    <script>
+        let workflow_id = '{{ data.id }}';
+        let is_manager = '{{ data.is_manager }}';
+    </script>
+
+    <!-- NOTIFICATIONS -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <!-- Add Success -->
+        <div id="workflowNotification" class="toast text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="workflowNotificationMsg"></div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            {# HEADER #}
+            <div class="header-1">
+                <h3 style="float: left">{% if data.type == 2 %}Request {% else %}Workflow {% endif %}Details</h3>
+            </div>
+
+            {# TOP CARDS #}
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="row">
+                        <div class="mb-2 col-sm-2">
+                            <div class="card">
+                                <h5 class="card-header">ID</h5>
+                                <div class="card-body">{{ data.id }}</div>
+                            </div>
+                        </div>
+                        <div class="mb-2 col-sm-10">
+                            <div class="card">
+                                <h5 class="card-header">Title</h5>
+                                <div class="card-body">{{ data.title }}</div>
+                            </div>
+                        </div>
+                        {% if data.listName and data.listName != "None" %}
+                            <div class="mb-2 col-sm-12">
+                                <div class="card">
+                                    <h5 class="card-header">List Name</h5>
+                                    <div class="card-body">{{ data.listName }}</div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% if data.siteTitles %}
+                        <div class="mb-2 col-sm-12">
+                            <div class="card">
+                                <h5 class="card-header">Page</h5>
+                                <div class="card-body">
+                                    <div class="row">
+                                        {% if data.listName and data.listName != "None" %}
+                                            <div class="col-12">Preview: <span><a class="decoration_none" target="_blank" href="{{ data.siteUrl }}">{{ data.siteTitles }} <i class="fal fa-external-link small"></i></a></span></div>
+                                            <div class="col-12">Edit: <span><a class="decoration_none" target="_blank" href="/list/{{ data.listName }}?id={{ data.siteIds }}">{{ data.siteTitles }} <i class="fal fa-external-link small"></i></a></span></div>
+                                        {% else %}
+                                            <div class="col-4"><img src="/get_screenshot?id={{ data.siteIds }}" width="100%" height="auto" alt="Page Screenshot Image"></div>
+                                            <div class="col-8"><span><a target="_blank" href="{{ data.siteUrl }}">{{ data.siteTitles }}</a></span></div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <div class="mb-2 col-sm-12">
+                        <div class="card" id="comments-sections">
+                            <h5 class="card-header">Comments
+                                <button type="button" id="addNewCommentBtn" class="btn btn-blue float-right" onclick="addNewComment('{{ data.id }}', '{{ data.startUserEmail }}')">Add Comment</button>
+                            </h5>
+                            {% if data.comments != "" and data.comments != "None" %}
+                                {% for singleComment in data.comments %}
+                                    <div class="card-body comment-card">
+                                        {% set theComment = singleComment.split('|__TheUserCommentStarts__|') %}
+                                        <div class="card-content">{{ theComment[0]|safe }}</div>
+                                        {% if theComment[1] %}
+                                            <div class="card-user">by:
+                                                <small>{{ theComment[1]|safe }}</small>
+                                                {% if theComment[2] %}
+                                                    <small>{{ theComment[2]|safe }}</small>
+                                                {% else %}
+                                                    <small>{{ data.dueDate|safe }}</small>
+                                                {% endif %}
+                                            </div>
+                                        {% else %}
+                                            <div class="card-user">by:
+                                                <small>{{ data.startUser|safe }}</small>
+                                                {% if theComment[2] %}
+                                                    <small>{{ theComment[2]|safe }}</small>
+                                                {% else %}
+                                                    <small>{{ data.submittedDate|safe }}</small>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="card-body"><i>No comments</i></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <!-- <div class="mb-2 col-sm-12">
+                        <div class="card">
+                            <h5 class="card-header">Tags</h5>
+                            {% if data.tags != "" and data.tags != "None" %}
+                                <div class="card-body">{{ data.tags }}</div>
+                            {% else %}
+                                <div class="card-body"><i>No tags</i></div>
+                            {% endif %}
+                        </div>
+                    </div> -->
+                    <div class="row">
+                        <div class="mb-2 col-sm-4">
+                            <div class="card">
+                                <h5 class="card-header">Created</h5>
+                                <div class="card-body">{{ data.submittedDate }}</div>
+                            </div>
+                        </div>
+                        <div class="mb-2 col-sm-4">
+                            <div class="card">
+                                <h5 class="card-header">Due Date</h5>
+                                {% if session.is_manager != 0 %}
+                                    <div class="card-body" style="padding: 9px;">
+                                        <input type="text" class="form-control" name="due-date-selector" id="due-date-selector" value="{{ data.dueDate.strftime('%Y-%m-%d') }}" onchange="dueDateChange('{{ data.id }}', '{{ session.accountId }}')"/>
+                                    </div>
+                                {% else %}
+                                    <div class="card-body">{{ data.dueDate }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mb-2 col-sm-4">
+                            <div class="card">
+                                <h5 class="card-header">Last Edited</h5>
+                                <div class="card-body">{{ data.lastEdited }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% if data.attachments %}
+                        <div class="row">
+                            <div class="mb-2 col-sm-8">
+                                <div class="card">
+                                    <h5 class="card-header">Attachments</h5>
+                                    <div class="card-body">
+                                        {% for attachment in data.attachments.split(";") %}
+                                            <a target="_blank" href="{{ attachment }}">{{ attachment.split("/")[-1] }}</a><br>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-lg-4">
+                    {% if data.type != 2 %}
+                        <div class="mb-2 col-sm-12">
+                            <div class="card">
+                                <h5 class="card-header">Action{% if data.status == "6" or data.status == "Approved" or data.status == "Rejected" %} - <span id="action_message" class="{% if data.status == 'Rejected' %}isRed{% else %}isGreen{% endif %}">{% if data.status == "6" %}Complete{% else %}{{ data.status }}{% endif %}</span>{% endif %}</h5>
+                                <div class="card-body" id="actionContainer">
+                                    {% if (data.status != "6" and data.status != "Approved") and data.status != "Rejected" %}
+                                        <a class='btn btn-success green-link' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}")'>Approve</a>
+                                        -
+                                        <a class='btn btn-red green-link' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}")'>Reject</a>
+                                    {% elif data.status == "Rejected" %}
+                                        <a class='btn btn-success green-link' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}")'>Approve</a>
+                                        -
+                                        <a class='btn btn-red green-link' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}")'>Reject</a>
+                                    {% else %}
+                                        <span>No Action needed</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <div class="mb-2 col-sm-12">
+                        <div class="card">
+                            <h5 class="card-header">Priority</h5>
+                            <div class="card-body" id="statusContainer">
+                                {% if session.is_manager != 0 %}
+                                    <select id="priority-selection" class="form-control form-select" onchange="priorityChange('{{ data.id }}', '{{ session.accountId }}')">
+                                        <option value="1">Standard</option>
+                                        <option value="2">Urgent</option>
+                                    </select>
+                                {% else %}
+                                    {% if data.priority == 1 %}
+                                        Standard
+                                    {% else %}
+                                        <strong>Urgent</strong>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-2 col-sm-12">
+                        <div class="card">
+                            <h5 class="card-header">Status - <span id="status_message" class="{% if data.status != '6' and (data.statusMessage == 'Overdue' or data.statusMessage == 'Rejected') %}isRed{% elif data.status != '6' and data.statusMessage == 'At risk' %}isOrange{% else %}isGreen{% endif %}">{% if data.status != '6' %}{{ data.statusMessage }}{% else %}Complete{% endif %}</span></h5>
+                            <div class="card-body" id="statusContainer">
+                                <select id="status-selection" class="form-control form-select" {% if is_manager == 0 %}disabled{% endif %} onchange="statusChange('{{ data.id }}', '{{ session.accountId }}', '{{ data.startUserEmail }}')">
+                                    {% if data.status == "Rejected" %}
+                                        <option value="1" hidden selected>Rejected</option>
+                                    {% endif %}
+                                    <option value="1">New request</option>
+                                    <option value="2">In progress</option>
+                                    <option value="3">Sent back for clarification</option>
+                                    <option value="4">Send back for review</option>
+                                    <option value="5">Approved and awaiting deployment</option>
+                                    {% if data.status == "Approved" %}
+                                        <option value="6" selected>Complete</option>
+                                    {% else %}
+                                        <option value="6">Complete</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-2 col-sm-12">
+                        <div class="card">
+                            <h5 class="card-header">User</h5>
+                            <div class="card-body">{{ data.startUser|safe }}</div>
+                        </div>
+                    </div>
+                    <div class="mb-2 col-sm-12">
+                        <div class="card">
+                            <h5 class="card-header">Editor</h5>
+                            <div class="card-body">{{ data.assignEditor|safe }}</div>
+                        </div>
+                    </div>
+                    <div class="mb-2 col-sm-12">
+                        <div class="card">
+                            <h5 class="card-header">Type</h5>
+                            {% if data.type == 1 %}
+                                <div class="card-body">Deployment</div>
+                            {% elif data.type == 2 %}
+                                <div class="card-body">Request</div>
+                            {% elif data.type == 5 %}
+                                <div class="card-body">Deletion</div>
+                            {% else %}
+                                <div class="card-body">List Deployment</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block script %}
+    <script type="text/javascript">var accountId = {{ accountId }}, currentStatus = "{{ data.status }}", currentPriority = "{{ data.priority }}"</script>
+    <script src="{{ url_for('static', filename='js/workflow_details.js') }}"></script>
+{% endblock %}

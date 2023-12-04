@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+    
+    <div class="login container border text-center col-4 px-4 py-5 rounded-5">
+        <h1>Welcome to Leaf</h1>
+        <h2>Please login</h2>
+        <form action="{{ url_for('main.login') }}" method="post">
+            <div class="form-outline mb-4">
+                <input type="text" name="email" placeholder="email@example.com" id="email" class="form-control active" required />
+                <label class="form-label" for="email" style="margin-left: 0px;"><i class="fal fa-envelope"></i> Email</label>
+                <div class="form-notch"><div class="form-notch-leading" style="width: 9px;"></div><div class="form-notch-middle" style="width: 88.8px;"></div><div class="form-notch-trailing"></div></div>
+            </div>
+            <div class="form-outline mb-4">
+                <input type="password" name="password" placeholder="*****" id="password" class="form-control active" required/>
+                <label class="form-label" for="password" style="margin-left: 0px;"><i class="fal fa-key"></i> Password</label>
+                <div class="form-notch"><div class="form-notch-leading" style="width: 9px;"></div><div class="form-notch-middle" style="width: 88.8px;"></div><div class="form-notch-trailing"></div></div>
+            </div>
+            <div class="msg {{ msgClass }}">{{ msg }}</div>
+            <div class="container col-8">
+                <input type="submit" class="btn btn-success btn-block mb-4" value="Login"/>
+            </div>
+        </form>
+    </div>
+
+{% endblock %}
+
+{% block script %}
+    <script>
+        window.addEventListener('DOMContentLoaded', async function main() {
+            $(".loadingBg").removeClass("show");
+        })
+    </script>
+    {#<script src="{{ url_for('static', filename='js/deployments.js') }}"></script>#}
+{% endblock %}

@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+
+{% block title %}Site{% endblock %}
+
+{% block content %}
+    <script>
+        let site_id = '{{ id }}';
+        let preview_webserver = '{{ preview_webserver }}';
+        let accountId = {{ accountId }};
+        let userId = {{ user_id }};
+        let is_admin = {{ is_admin }};
+
+        $("#nav-link-sites").addClass("active");
+    </script>
+
+    <!-- PUBLISH MODAL -->
+    <div class="modal fade" id="publishModal" tabindex="-1" aria-labelledby="Publish Modal" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Send to a reviewer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3 list-users">
+                            <div class="row form-row">
+                                <div class="form-group col-md-8">
+                                    <label for="e-list-users" class="col-form-label">List of users:</label>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <input type="search" name="users-with-access-search" id="users-with-access-search" class="form-control" placeholder="Search..." aria-label="Search for..." autocomplete="off" spellcheck="false">
+                                </div>
+                            </div>
+                            <div class="users-with-access-container">
+                            </div>
+                        </div>
+                    </form>
+                    <div class="mt-2">
+                        <label class="form-label" for="publishComments">Comments</label><textarea class="form-control" id="publishComments" placeholder="Comments" rows="3"></textarea>
+                    </div>
+                    <div hidden class="container mt-2">
+                        <label for="selectedIds" class="form-label">Selected ID's</label><textarea disabled class="form-control" id="selectedIds" rows="1"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="addWorkflow()" class="btn btn-success">Send</button>
+                    <div hidden class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="basic-addon1">@</span>
+                        </div>
+                        <input type="text" id="selectedUsers" class="form-control" placeholder="Username"
+                               aria-label="Username"
+                               aria-describedby="basic-addon1">
+                        <button type="button" onclick="addWorkflow()" class="btn btn-success">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END PUBLISH MODAL -->
+
+    <!-- DUPLICATE MODAL -->
+    <div class="modal fade" id="renameModal" tabindex="-1" aria-labelledby="Publish Modal" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Rename Duplicated Page</h5>
+                </div>
+                <div class="modal-body">
+                    <div hidden class="container mb-3">
+                        <label class="form-label" for="originalPageId">Original PageId</label>
+                        <input class="form-control" id="originalPageId" disabled/>
+                    </div>
+                    <div class="container mb-3">
+                        <label class="form-label" for="originalTitle">Original Title</label>
+                        <input class="form-control" id="originalTitle" disabled/>
+                    </div>
+                    <div class="container mb-3">
+                        <label class="form-label" for="originalUrl">Original URL</label>
+                        <input class="form-control" id="originalUrl" disabled/>
+                    </div>
+                    <div class="container mb-3">
+                        <label class="form-label" for="newTitle">New Title</label>
+                        <input class="form-control" id="newTitle"/>
+                    </div>
+                    <div class="container mb-3">
+                        <label class="form-label" for="newUrl">New URL</label>
+                        <input class="form-control" id="newUrl"/>
+                    </div>
+                    <div hidden id="alertMessage" class="container mb-3">
+                        <div class="alert alert-danger" role="alert">This is a danger alert—check it out!</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="container mb-3">
+                        <div class="pull-right">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" onclick="addNewDuplicatedPage()" class="btn btn-success">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END RENAME MODAL -->
+
+    <!-- DELETE MODAL -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="Delete Modal" aria-hidden="true">
+        <div class="modal-dialog small-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Page</h5>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete the page?</p>
+                </div>
+                <div class="modal-footer">
+                    <div class="pull-right">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" onclick="deletePage()" class="btn btn-danger">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END DELETE MODAL -->
+
+    <!-- NOTIFICATIONS -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <!-- VIEW WORKFLOW NOTIFICATION -->
+        <div id="viewWorkflowNotification" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Changes successively sent to review.</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                <a id="viewWorkflow" class="btn btn-success" type="button">View</a>
+            </div>
+        </div>
+    </div>
+    <!-- END NOTIFICATIONS -->
+
+    <div id="TableDiv" class="card mb-4">
+        <div class="card-body">
+            <div class="header-1">
+                <h3 class="pull-left">Site<span id="TableName"></span></h3>
+                <div class="pull-right header-btns">
+                    <button type="button" disabled class="btn btn-success duplicateBtn" onclick="duplicatePage()">Duplicate Page</button>
+                    <button type="button" disabled class="btn btn-blue publishBtn" onclick="publishSite()">Publish</button>
+                    <button type="button" disabled class="btn btn-red deleteBtn" data-bs-toggle="modal" data-bs-target="#deleteModal">Delete Page</button>
+                </div>
+            </div>
+            <table class="table" id="table">
+                <thead>
+                <tr>
+                    <th></th>
+                    <th>Screenshot</th>
+                    <th>Title</th>
+                    <th>URL</th>
+                    <th>Modified Date</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot>
+                <tr>
+                    <th></th>
+                    <th>Screenshot</th>
+                    <th>Title</th>
+                    <th>URL</th>
+                    <th>Modified Date</th>
+                    <th>Action</th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script src="{{ url_for('static', filename='js/get_site.js') }}"></script>
+{% endblock %}

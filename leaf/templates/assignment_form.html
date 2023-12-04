@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Assignment Form{% endblock %}
+
+{% block content %}
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="header-1">
+                <h3 class="pull-left">Add Job</h3>
+                <div style="float:right; margin-left: 10px;" class="header-btns">
+                    <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
+                </div>
+            </div>
+            <h4 class="info-disclaimer">Please provide all the necessary information in order for the support team to fulfil your request. Include any page URLs, attachments, contact details etc. as failure to do so may result in a delay in completing the request.</h4>
+            <form id="newJob">
+                <div class="mb-3">
+                    <label for="job-title" class="col-form-label">Title:</label>
+                    <input type="text" class="form-control mandatoryField" id="job-title" name="job-title" />
+                    <input type="hidden" class="form-control mandatoryField" id="job-type" name="job-type" value="2" />
+                </div>
+                <div class="mb-3">
+                    <label for="job-comments" class="col-form-label">Request details:</label>
+                    <textarea class="form-control" id="job-comments" name="job-comments"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="job-attachments" class="col-form-label">Attachments:</label>
+                    <input type="file" class="form-control" id="job-attachments" name="job-attachments" accept=".png, .jpg, .jpeg, .gif, .pdf, .doc, .docx" multiple />
+                </div>
+                {% if session.is_manager != 0 %}
+                <!-- <div class="mb-3">
+                    <div class="mb-3 list-users">
+                        <div class="row form-row">
+                            <div class="form-group col-md-8">
+                                <label for="job-assignEditor" class="col-form-label">Editor:</label>
+                            </div>
+                            {% if is_admin %}
+                                <div class="form-group col-md-4">
+                                    <input type="search" name="job-assignEditor-search" id="job-assignEditor-search" class="form-control" placeholder="Search..." aria-label="Search for..." autocomplete="off" spellcheck="false">
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div id="job-assignEditor" class="checkbox-container users-with-access-container mandatoryField"></div>
+                    </div>
+                </div> -->
+                {% endif %}
+                {% if session.is_manager != 0 %}
+                <!-- <div class="mb-3">
+                    <label for="job-dueDate" class="col-form-label">Due Date:</label>
+                    <input type="text" class="form-control mandatoryField" id="job-dueDate" name="job-dueDate" />
+                </div> -->
+                {% endif %}
+                <div class="mb-3" style="display:none!important">
+                    <label for="job-tags" class="col-form-label">Tags:</label>
+                    <input type="text" class="form-control" id="job-tags" name="job-tags" />
+
+                    {% if session.is_manager != 1 %}
+                        <input type="hidden" class="form-control" id="job-priority" name="job-priority" value="1" />
+                    {% endif %}
+                </div>
+                {% if session.is_manager != 0 %}
+                    <div class="mb-3">
+                        <label for="job-priority" class="col-form-label">Priority: </label>
+                        <i id="due_date_info" title="The Due Date is set by the criticality of the request,  Standard - (up to 5 days SLA) & Critical (1 Day SLA). If your request is urgent, please email the Digital Team at digitalteam@eversheds-sutherland.com quoting the ID Number of the request including justification for the priority change." class="fal fa-info-circle tooltip-icon" data-toggle="tooltip" data-placement="right" aria-hidden="true"></i>
+                        <select type="text" class="form-select" id="job-priority" name="job-priority">
+                            <option value="1" selected>Standard</option>
+                            <option value="2">Urgent</option>
+                        </select>
+                    </div>
+                {% endif %}
+            </form>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
+                <button type="button" class="btn btn-success" id="add_job_btn" onclick="addJob()">Submit</button>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block script %}
+    <script type="text/javascript">var accountId = {{ accountId }}, thisUserRole = {{ is_admin }}, thisUserId = {{ userId }}</script>
+    <script src="{{ url_for('static', filename='js/assignment_form.js') }}"></script>
+{% endblock %}

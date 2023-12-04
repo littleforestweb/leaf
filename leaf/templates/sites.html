@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+
+{% block title %}Sites{% endblock %}
+
+{% block content %}
+    <script>
+        $("#nav-link-sites").addClass("active");
+    </script>
+
+    <!-- ADD SITE MODAL -->
+    <div class="modal fade" id="addSiteModal" tabindex="-1" aria-labelledby="addSiteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addSiteLabel">Add Site</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="site_url" class="form-label">Seed URL</label>
+                        <input type="text" class="form-control" id="site_url" placeholder="" aria-label="Site URL" aria-describedby="Site URL">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="site_label" class="form-label">Label</label>
+                        <input type="text" class="form-control" id="site_label" placeholder="" aria-label="Label">
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="site_ignore_robots" class="form-label">Robots Txt Configuration</label>
+                            <select class="form-select" aria-label="Robots Txt Configuration" id="site_ignore_robots">
+                                <option selected value="ignore">Ignore</option>
+                                <option value="obey">Obey</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label for="site_max_urls" class="form-label">Crawl Limit</label>
+                            <select class="form-select" aria-label="Crawl Limit" id="site_max_urls">
+                                <option value="0">Complete (Use with caution)</option>
+                                <option value="10">10</option>
+                                <option value="100">100</option>
+                                <option value="250">250</option>
+                                <option value="500">500</option>
+                                <option value="750">750</option>
+                                <option value="1000">1000</option>
+                                <option value="1500">1500</option>
+                                <option value="2000">2000</option>
+                                <option value="2500">2500</option>
+                                <option value="5000">5000</option>
+                                <option value="7500">7500</option>
+                                <option value="10000">10000</option>
+                                <option value="12500">12500</option>
+                                <option value="15000">15000</option>
+                                <option value="20000">20000</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label for="site_gen_screenshots" class="form-label">Generate Screenshots</label>
+                            <select class="form-select" aria-label="Crawl Limit" id="site_gen_screenshots">
+                                <option value="1">Yes (May take some time)</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="site_allowed_domains" class="form-label">Allowed Domains (one per line)</label>
+                        <textarea class="form-control" id="site_allowed_domains" placeholder="https://example.com/" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="site_reject_paths" class="form-label">Paths to Reject (one per line)</label>
+                        <textarea class="form-control" id="site_reject_paths" placeholder="https://example.com/login/" rows="3"></textarea>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" onclick="addSite()">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT SITE MODAL -->
+    <div class="modal fade" id="editSiteModal" tabindex="-1" aria-labelledby="editSiteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editSiteLabel">Edit Site</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="e-site-id" class="col-form-label">Site ID:</label>
+                            <input type="text" class="form-control" id="e-site-id">
+                        </div>
+                        <div class="mb-3">
+                            <label for="e-site-url" class="col-form-label">URL:</label>
+                            <input type="text" class="form-control" id="e-site-url">
+                        </div>
+                        <div class="mb-3">
+                            <label for="e-site-folder" class="col-form-label">Folder:</label>
+                            <input type="text" class="form-control" id="e-site-folder">
+                        </div>
+
+                        <input type="hidden" class="form-control" id="h-e-site-id">
+                        <input type="hidden" class="form-control" id="h-e-site-url">
+                        <input type="hidden" class="form-control" id="h-e-site-folder">
+
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" onclick="updateSite()">Update</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW LOG MODAL -->
+    <div class="modal fade" id="siteLogModal" tabindex="-1">
+        <div class="modal-dialog large-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title w-100 text-center">Site Log</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div id="site-log-text" class="modal-body"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <!-- Add Success -->
+        <div id="addSiteSuccessNotification" class="toast bg-success text-white" role="alert" aria-live="assertive"
+             aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Site added successfully!
+            </div>
+        </div>
+
+        <!-- Delete Success -->
+        <div id="deleteSiteSuccessNotification" class="toast bg-success text-white" role="alert" aria-live="assertive"
+             aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Site deleted successfully!
+            </div>
+        </div>
+
+        <!-- Add Error -->
+        <div id="addSiteErrorNotification" class="toast bg-danger text-white" role="alert" aria-live="assertive"
+             aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                There was an error adding your site<br>Please try again.
+            </div>
+        </div>
+
+        <!-- Error Delete-->
+        <div id="deleteSiteErrorNotification" class="toast bg-danger text-white" role="alert" aria-live="assertive"
+             aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                There was an error deleting your site<br>Please try again.
+            </div>
+        </div>
+
+        <!-- Duplicate Error -->
+        <div id="addSiteDuplicateNotification" class="toast bg-warning text-white" role="alert" aria-live="assertive"
+             aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Duplicated Seed URL or Label
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div id="TableDiv" class="card mb-4">
+        <div class="card-body">
+            <div class="header-1">
+                <h3 class="pull-left">Sites</h3>
+                <div class="header-btns pull-right">
+                    {% if is_admin %}
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal"
+                                data-bs-target="#addSiteModal">Add Site
+                        </button>
+                        <button type="button" class="btn btn-blue editButton" data-bs-toggle="modal"
+                                data-bs-target="#editSiteModal" onclick="populateEditSiteDialog();" disabled>Edit Site
+                        </button>
+                        <button type="button" class="btn btn-red deleteButton" onclick="deleteSites();" disabled>Delete
+                            Site
+                        </button>
+                        {#<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#publishSiteModal">Publish Site</button>#}
+                    {% endif %}
+                </div>
+            </div>
+            <table class="table" id="table">
+                <thead>
+                <tr>
+                    <th></th>
+                    <th>ID</th>
+                    <th>URL</th>
+                    <th>Folder</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot>
+                <tr>
+                    <th></th>
+                    <th>ID</th>
+                    <th>URL</th>
+                    <th>Folder</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <!-- End Table -->
+{% endblock %}
+
+
+{% block script %}
+    <script src="{{ url_for('static', filename='js/sites.js') }}"></script>
+{% endblock %}

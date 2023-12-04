@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Editor{% endblock %}
+
+{% block content %}
+    <!-- NOTIFICATIONS -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <!-- SAVED NOTIFICATION -->
+        <div id="savedNotification" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Page saved successfully</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                <a id="previewPage" class="btn btn-success" type="button">Preview</a>
+            </div>
+        </div>
+    </div>
+    <!-- END NOTIFICATIONS -->
+
+    <link href="/static/css/editor.css" rel="stylesheet">
+
+    <!-- CODE IFRAME -->
+    <div id="mainCodeDiv" class="iframe-container">
+        <textarea id="htmlCode"></textarea>
+    </div>
+
+{% endblock %}
+
+{% block script %}
+    <!-- SCRIPTS -->
+    <script src="{{ url_for("static", filename="js/editor.js") }}"></script>
+    <script>
+        let page_id = '{{ page_id }}';
+    </script>
+{% endblock %}

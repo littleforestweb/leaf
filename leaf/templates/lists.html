@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+
+{% block title %}Lists{% endblock %}
+
+{% block content %}
+    <script>
+        $("#nav-link-lists").addClass("active");
+    </script>
+
+    <!-- EDIT LIST MODAL -->
+    <div class="modal fade" id="editListModal" tabindex="-1" aria-labelledby="editListModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editListLabel">Edit List</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3"> 
+                            <label for="e-list-name" class="col-form-label">Name:</label>
+                            <input type="text" class="form-control" id="e-list-name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="e-list-created" class="col-form-label">Created:</label>
+                            <input type="text" class="form-control" id="e-list-created" disabled>
+
+                            <input type="hidden" id="h-e-list-name">
+                            <input type="hidden" id="h-e-list-created">
+                            <input type="hidden" id="h-e-list-reference">
+                        </div>
+                        <div class="mb-3 list-users">
+                            <div class="row form-row">
+                                <div class="form-group col-md-8">
+                                    <label for="e-list-users" class="col-form-label">List of users with access:</label>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <input type="search" name="users-with-access-search" id="users-with-access-search" class="form-control" placeholder="Search..." aria-label="Search for..." autocomplete="off" spellcheck="false">
+                                </div>
+                            </div>
+                            <div class="users-with-access-container">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" id="update_list_btn" onclick="updateList()">Update</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD LIST MODAL -->
+    <div class="modal fade" id="addListModal" tabindex="-1" aria-labelledby="addListModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addListLabel">Add List</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="list-name" class="col-form-label">Name:</label>
+                            <input type="text" class="form-control" id="list-name" onkeyup="sanitizeInput(event)">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" id="add_list_btn" onclick="addList()">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE LIST MODAL -->
+    <div class="modal fade" id="deleteListModal" tabindex="-1" aria-labelledby="addListModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addListLabel">Deleting List</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <h4>Are you sure you want to delete the selected lists?</h4>
+                            <h5>You cannot reverse this action!</h5>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                    <button type="button" class="btn btn-red" id="delete_list_btn" onclick="deleteLists()">Yes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ERROR MODAL -->
+    <div class="modal fade" id="errorModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Error adding new list</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>There was an error adding your list<br>Please try again.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteErrorModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Error deleting list/s</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>There was an error deleting your list/s<br>Please try again.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- NOTIFICATIONS -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <!-- Add Success -->
+        <div id="addListSuccessNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                List added successfully!
+            </div>
+        </div>
+
+        <div id="deleteListSuccessNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Lists deleted successfully!
+            </div>
+        </div>
+
+        <div id="editListSuccessNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                List edited successfully!
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div id="TableDiv" class="card mb-4">
+        <div class="card-body">
+            <div class="header-1">
+                <h3 class="pull-left">Lists</h3>
+                <div class="pull-right header-btns">
+
+                    {% if is_admin %}
+                        <!-- Add List Btn -->
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addListModal">Add List</button>
+                        <button type="button" class="btn btn-blue editButton" data-bs-toggle="modal" data-bs-target="#editListModal" onclick="populateEditListModal({{accountId}});" disabled>Edit List</button>
+                        {% if is_admin == 1 %}
+                            <button type="button" class="btn btn-red deleteButton" data-bs-toggle="modal" data-bs-target="#deleteListModal" disabled>Delete Lists</button>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            <table class="table" id="table">
+                <thead>
+                <tr>
+                    <th></th>
+                    <th>Name</th>
+                    <th>Created</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot>
+                <tr>
+                    <th></th>
+                    <th>Name</th>
+                    <th>Created</th>
+                    <th>Action</th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <!-- End Table -->
+{% endblock %}
+
+
+{% block script %}
+    <script type="text/javascript">var accountId = {{ accountId }}; var userId = {{ userId }}; var isAdmin = {{ is_admin }}</script>
+    <script src="{{ url_for('static', filename='js/lists.js') }}"></script>
+{% endblock %}
