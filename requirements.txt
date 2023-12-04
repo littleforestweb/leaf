@@ -9,11 +9,9 @@ BeautifulSoup4
 html5lib
 lxml
 xmltodict
-jwt
+pyjwt
 scp
 paramiko
 flask_limiter
 warcat
-jwt
-PyJWT
 werkzeug
