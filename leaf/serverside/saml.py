@@ -1,125 +1,256 @@
-import mysql.connector
-from flask import Blueprint, render_template, session
-from flask import request
+from flask import Blueprint, render_template, session, request
 import base64
 import requests
-import xmltodict
-
+from lxml import etree
+from signxml import methods, XMLVerifier
 from leaf import Config
+from leaf.decorators import login_required, limiter, db_connection, generate_jwt
+import werkzeug.utils
 
 saml_route = Blueprint("saml_route", __name__)
 
 
 @saml_route.route("/saml", methods=["GET", "POST"])
 def idp_initiated():
+    """
+    Handle Identity Provider (IdP) initiated SAML authentication.
+
+    This route processes SAML responses for user authentication. 
+    If accessed via GET method, it denies access. When accessed via POST, it processes the SAML response.
+    The function performs several key actions:
+    - Parses IdP metadata to find the X509Certificate and SingleLogoutService details.
+    - Validates the SAML response signature using the X509Certificate.
+    - Extracts user attributes (like email, username) from the SAML response.
+    - Checks the user's existence in the database, creates a new user if not existing, and updates user data.
+    - Sets session data for the authenticated user.
+    - Redirects the user to the appropriate page based on the authentication result.
+
+    Returns:
+    - Response: A rendered template or a redirect, depending on the authentication outcome and method of request.
+    """
     if request.method == "GET":
         return "Access Denied"
 
     if request.method == "POST":
-        saml_response = request.form["SAMLResponse"]
-        if saml_response.startswith("http"):
-            # Retrieve the SAML response from the URL
-            response = requests.get(saml_response)
-            response.raise_for_status()
-            saml_response = response.text
 
-        data_dict = xmltodict.parse(base64.b64decode(saml_response))
+        # Load the IdP's metadata
+        idp_metadata = etree.parse(Config.IDP_METADATA)
 
-        if data_dict["samlp:Response"][Config.SAML_PREFIX + "Issuer"]["#text"].lower().strip() != Config.IDP_ENTITY_ID.lower().strip():
-            return "Access Denied"
+        # Find the X509Certificate element (assuming there's only one)
+        # Note: '{http://www.w3.org/2000/09/xmldsig#}X509Certificate' is the full tag name with namespace
+        cert_elem = idp_metadata.find(".//ds:X509Certificate", namespaces=namespaces)
 
-        resp = data_dict["samlp:Response"][Config.SAML_PREFIX + "Assertion"][Config.SAML_PREFIX + "AttributeStatement"][Config.SAML_PREFIX + "Attribute"]
+        # Find the SingleLogoutService element
+        slo_elements = idp_metadata.findall(".//md:SingleLogoutService", namespaces=namespaces)
 
-        email = None
-        firstName = None
-        lastName = None
-        isAdmin = 0
+        for slo in slo_elements:
+            # Extract attributes like Binding and Location from the SingleLogoutService element
+            binding = slo.get('Binding')
+            location = slo.get('Location')
+            logout_redirect = False
+            if binding == 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect':
+                logout_redirect = location
 
-        for item in resp:
-            if item["@Name"] == ATTRIBUTE_PREFIX + "email":
-                email = item.get(Config.SAML_PREFIX + "AttributeValue")
-            elif item["@Name"] == ATTRIBUTE_PREFIX + "firstName":
-                firstName = item.get(Config.SAML_PREFIX + "AttributeValue")
-            elif item["@Name"] == ATTRIBUTE_PREFIX + "lastName":
-                lastName = item.get(Config.SAML_PREFIX + "AttributeValue")
-            elif item["@Name"] == ATTRIBUTE_PREFIX + "group":
-                groups = [entry.lower() for entry in item.get(Config.SAML_PREFIX + "AttributeValue")]
-                isAdmin = 1 if any("poweruser" in g for g in groups) else 0
+        if cert_elem is not None:
+            # Get the text of the X509Certificate element, which is base64 encoded
+            idp_metadata_cert = cert_elem.text
 
-        if email:
-            if Config.IS_LOCAL == 'True':
-                mydb = mysql.connector.connect(host=Config.DB_HOST, port=Config.DB_PORT, user=Config.DB_USER, password=Config.DB_PASS, database=Config.DB_NAME)
+            saml_response = request.form["SAMLResponse"]
+
+            # Decode byte string to a regular string
+            response_str = base64.b64decode(saml_response).decode('utf-8')
+            saml_response_xml = etree.fromstring(response_str.encode('utf-8'))
+
+            # Extract the X509 certificate
+            # Assuming that there's only one X509Certificate element in the SAML response
+            response_cert_element = saml_response_xml.xpath("//*[local-name()='X509Certificate']")
+            if response_cert_element:
+                cert_pem = f"-----BEGIN CERTIFICATE-----\n{idp_metadata_cert.strip()}\n-----END CERTIFICATE-----"
+                reponse_cert_pem = f"-----BEGIN CERTIFICATE-----\n{response_cert_element[0].text.strip()}\n-----END CERTIFICATE-----"
+
+                # Verify the signature using the certificate from the IdP metadata
+                try:
+                    verified_data = XMLVerifier().verify(saml_response_xml, x509_cert=cert_pem).signed_xml
+                    print("Signature is valid.")
+                except Exception as e:
+                    print(f"Error verifying signature: {e}")
+                    return "Access Denied. Error verifying signature!"
             else:
-                mydb = mysql.connector.connect(host=Config.LFI_DB_HOST, port=Config.LFI_DB_PORT, user=Config.LFI_DB_USER, password=Config.LFI_DB_PASS, database=Config.LFI_DB_NAME)
+                print("Certificate not found in the SAML response. This connection might not be secure!")
+                return "Access Denied. Error verifying signature! Certificate not found in the SAML response."
+        else:
+            print("X509Certificate element not found in the IdP metadata!")
+            return "Access Denied. Error verifying signature! Certificate not found in the IdP metadata!"
 
-            query = (
-                "SELECT user.id, "
-                "CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) "
-                "WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, "
-                "CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username "
-                "ELSE CONCAT(first_name, ' ', last_name) END AS username, "
-                "user.email, user.account_id, name, user.is_admin, user.is_manager "
-                "FROM user "
-                "LEFT JOIN user_image ON user_id = user.id "
-                "LEFT JOIN account ON user.account_id = account.id "
-                "WHERE email = %s"
-            )
+        # issuer_text = saml_response_xml.xpath('//saml:Issuer', namespaces=namespaces)
+        issuer_elements = saml_response_xml.xpath("//*[local-name() = 'Issuer']")
+        if issuer_elements:
+            issuer_text = issuer_elements[0].text
 
-            mycursor = mydb.cursor(dictionary=True)
-            mycursor.execute(query, (email,))
-            lfi_user = mycursor.fetchone()
-            cursor.close()
+            if issuer_text and issuer_text.lower().strip() != Config.IDP_ENTITY_ID.lower().strip():
+                return "Access Denied"
 
-            if not lfi_user:
-                query = "INSERT INTO user(account_id, email, username, is_admin) VALUES(?, ?, ?, ?)"
-                values = (3, email, email, isAdmin)
-                mycursor.execute(query, values)
-                mydb.commit()
+            # XPath query to get to the Attribute elements
+            attributes = saml_response_xml.xpath("//saml:Assertion/saml:AttributeStatement/saml:Attribute", namespaces=namespaces)
 
-                user_id = mycursor.lastrowid
+            email = None
+            username = None
+            firstName = None
+            lastName = None
+            isAdmin = 0
+            for item in attributes:
+                # XPath query to find the Attribute element with Name="username"
+                username_attribute = saml_response_xml.xpath("//saml:Attribute[@Name='username']/saml:AttributeValue", namespaces=namespaces)
+                if username_attribute:
+                    username = username_attribute[0].text
+                # XPath query to find the Attribute element with Name="email"
+                email_attribute = saml_response_xml.xpath("//saml:Attribute[@Name='email']/saml:AttributeValue", namespaces=namespaces)
+                if email_attribute:
+                    email = username_attribute[0].text
+                # XPath query to find the Attribute element with Name="firstName"
+                firstName_attribute = saml_response_xml.xpath("//saml:Attribute[@Name='firstName']/saml:AttributeValue", namespaces=namespaces)
+                if firstName_attribute:
+                    firstName = firstName_attribute[0].text
+                # XPath query to find the Attribute element with Name="lastName"
+                lastName_attribute = saml_response_xml.xpath("//saml:Attribute[@Name='lastName']/saml:AttributeValue", namespaces=namespaces)
+                if lastName_attribute:
+                    lastName = lastName_attribute[0].text
+                # XPath query to find the Attribute element with Name="group"
+                group_values = saml_response_xml.xpath("//saml:Attribute[@Name='group']/saml:AttributeValue", namespaces=namespaces)
+                groups = [value.text.lower() for value in group_values if value.text]
+                isAdmin = 1 if any("poweruser" in group for group in groups) else 0
 
-                query = "INSERT INTO user_image(user_id, first_name, last_name) VALUES(?, ?, ?)"
-                values = (user_id, firstName, lastName)
-                mycursor.execute(query, values)
-                mydb.commit()
+            if email:
 
-                mycursor.execute(query, (email,))
-                lfi_user = mycursor.fetchone()
+                mydb, mycursor = db_connection()
 
-            if lfi_user:
-                if lfi_user[6] != isAdmin:
-                    query = "UPDATE user SET is_admin = ? WHERE id = ?"
-                    values = (isAdmin, lfi_user_id)
-                    mycursor.execute(query, values)
-                    mydb.commit()
+                query = (
+                    "SELECT user.id, "
+                    "CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) "
+                    "WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, "
+                    "CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username "
+                    "ELSE CONCAT(first_name, ' ', last_name) END AS username, "
+                    "user.email, user.account_id, name, user.is_admin, user.is_manager "
+                    "FROM user "
+                    "LEFT JOIN user_image ON user_id = user.id "
+                    "LEFT JOIN account ON user.account_id = account.id "
+                    "WHERE email = %s"
+                )
 
-            # If account exists in accounts table in out database
-            if lfi_user:
-                # Create session data, we can access this data in other routes
-                session['loggedin'] = True
-                session['id'] = lfi_user[0]
-                session['user_image'] = lfi_user[1]
-                session['username'] = lfi_user[2]
-                session['email'] = lfi_user[3]
-                session['accountId'] = lfi_user[4]
-                session['accountName'] = lfi_user[5]
-                session['is_admin'] = lfi_user[6]
-                session['is_manager'] = lfi_user[7]
+                try:
 
-                msg = 'Logged in successfully!'
-                msgClass = 'alert alert-success'
+                    mycursor.execute(query, (email,))
+                    lfi_user = mycursor.fetchone()
 
-                if session['accountId'] == 1:
-                    return render_template('list_lfi_accounts.html', userId=session['id'], username=session['username'], user_image=session['user_image'], accountId=session['accountId'], accountName=session['accountName'], is_admin=session['is_admin'], is_manager=session['is_manager'], msg=msg, msgClass=msgClass)
-                else:
-                    return render_template('sites.html', userId=session['id'], username=session['username'], user_image=session['user_image'], accountId=session['accountId'], accountName=session['accountName'], is_admin=session['is_admin'], is_manager=session['is_manager'], msg=msg, msgClass=msgClass)
+                    if not lfi_user:
+                        query = "INSERT INTO user(account_id, email, username, is_admin) VALUES(?, ?, ?, ?)"
+                        values = (3, email, email, isAdmin)
+                        mycursor.execute(query, values)
+                        mydb.commit()
+
+                        user_id = mycursor.lastrowid
+
+                        query = "INSERT INTO user_image(user_id, first_name, last_name) VALUES(?, ?, ?)"
+                        values = (user_id, firstName, lastName)
+                        mycursor.execute(query, values)
+                        mydb.commit()
+
+                        mycursor.execute(query, (email,))
+                        lfi_user = mycursor.fetchone()
+
+                    if lfi_user:
+                        if lfi_user[6] != isAdmin:
+                            query = "UPDATE user SET is_admin = %s WHERE id = %s"
+                            values = (isAdmin, lfi_user[0])
+                            mycursor.execute(query, values)
+                            mydb.commit()
+
+                    # If account exists in accounts table in out database
+                    if lfi_user:
+                        # Create session data, we can access this data in other routes
+                        session['loggedin'] = True
+                        session['id'] = lfi_user[0]
+                        session['user_image'] = lfi_user[1]
+                        session['username'] = lfi_user[2]
+                        session['email'] = lfi_user[3]
+                        session['accountId'] = lfi_user[4]
+                        session['accountName'] = '' if lfi_user[5] is None else lfi_user[5]
+                        session['is_admin'] = lfi_user[6]
+                        session['is_manager'] = lfi_user[7]
+                        session['logout_redirect'] = logout_redirect
+
+                        # Generate and store JWT token in the session
+                        jwt_token = generate_jwt()
+                        session['jwt_token'] = jwt_token
+
+                        msg = 'Logged in successfully!'
+                        msgClass = 'alert alert-success'
+
+                        msg = 'Logged in successfully!'
+                        msgClass = 'alert alert-success'
+                        return render_template('sites.html', userId=session['id'], username=session['username'],
+                                               user_image=session['user_image'], accountId=session['accountId'],
+                                               accountName=session['accountName'], is_admin=session['is_admin'],
+                                               is_manager=session['is_manager'], msg=msg, msgClass=msgClass,
+                                               jwt_token=jwt_token)
+                    else:
+                        # Account doesnt exist or username/password incorrect
+                        msg = 'Incorrect username/password!'
+                        msgClass = 'alert alert-danger'
+                        return render_template('login.html', msg=msg, msgClass=msgClass)
+
+                except Exception as e:
+                    # Log the error or provide more details
+                    print(f"Error during login: {e}")
+                    msg = 'An error occurred during login.'
+                    msgClass = 'alert alert-danger'
+                    return render_template('login.html', msg=msg, msgClass=msgClass)
+                finally:
+                    mydb.close()
+
             else:
-                # Account doesnt exist or username/password incorrect
-                msg = 'Incorrect username/password!'
+                msg = 'Missing email!'
                 msgClass = 'alert alert-danger'
                 return render_template('login.html', msg=msg, msgClass=msgClass)
-
         else:
-            msg = 'Missing email!'
-            msgClass = 'alert alert-danger'
-            return render_template('login.html', msg=msg, msgClass=msgClass)
+            print("Issuer element not found.")
+            return "Access Denied. Issuer not found!"
+
+namespaces = {
+    'md': 'urn:oasis:names:tc:SAML:2.0:metadata',
+    'spml': 'urn:oasis:names:tc:SPML:2:0',
+
+    # Common SAML namespaces with different prefixes
+    'saml': 'urn:oasis:names:tc:SAML:2.0:assertion',
+    'saml2': 'urn:oasis:names:tc:SAML:2.0:assertion',
+    'samlp': 'urn:oasis:names:tc:SAML:2.0:protocol',
+
+    # XML Signature and Encryption namespaces
+    'ds': 'http://www.w3.org/2000/09/xmldsig#',
+    'xenc': 'http://www.w3.org/2001/04/xmlenc#',
+
+    # XML Schema namespaces
+    'xs': 'http://www.w3.org/2001/XMLSchema',
+    'xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+
+    # SOAP namespace
+    'soap': 'http://schemas.xmlsoap.org/soap/envelope/',
+
+    # WS-Security and related namespaces
+    'wsu': 'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd',
+    'wsse': 'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd',
+    'wsp': 'http://schemas.xmlsoap.org/ws/2004/09/policy',
+    'wsa': 'http://www.w3.org/2005/08/addressing',
+
+    # Other namespaces
+    'wsdl': 'http://schemas.xmlsoap.org/wsdl/',
+    'xlink': 'http://www.w3.org/1999/xlink',
+
+    # Generic namespaces (can be adjusted as needed)
+    'ns0': 'urn:oasis:names:tc:SAML:2.0:protocol',
+    'ns1': 'urn:oasis:names:tc:SAML:2.0:assertion',
+    'ns2': 'http://www.w3.org/2001/04/xmlenc#',
+    'ns3': 'http://www.w3.org/2000/09/xmldsig#',
+    'ns4': 'http://schemas.xmlsoap.org/soap/envelope/',
+    # ... and so on for other generic namespaces
+}

@@ -1,11 +1,12 @@
 import re
 import paramiko
-from flask import render_template, Blueprint, jsonify, request, session, send_from_directory
+from flask import render_template, Blueprint, jsonify, request, session, send_from_directory, redirect
 from leaf.config import Config
 import hashlib
 import os
 from leaf.decorators import login_required, limiter, db_connection, generate_jwt
 import werkzeug.utils
+from urllib.parse import urlparse
 
 main = Blueprint('main', __name__)
 
@@ -107,6 +108,7 @@ def login():
                 session['accountName'] = '' if lfi_user[5] is None else lfi_user[5]
                 session['is_admin'] = lfi_user[6]
                 session['is_manager'] = lfi_user[7]
+                session['logout_redirect'] = False
 
                 # Generate and store JWT token in the session
                 jwt_token = generate_jwt()
@@ -143,14 +145,19 @@ def login():
 @main.route('/logout')
 def logout():
     """
-    Handle user logout.
+    Handle the user logout process by clearing session data and performing redirection.
 
-    This route removes session data, effectively logging the user out,
-    and then redirects to the login page.
+    This route first checks if a 'logout_redirect' URL is set in the session. If so,
+    it redirects to the specified URL. Otherwise, it clears the session data to log the user out 
+    and then redirects them to the login page.
+
+    The function clears various session keys related to user authentication and preferences.
 
     Returns:
-    - str: HTML content to be rendered, displaying the login page.
+    - Response: A redirect response to either the 'logout_redirect' URL or the login page.
     """
+    logout_redirect = session.get('logout_redirect', False)
+
     # Remove session data, this will log the user out
     session.pop('loggedin', None)
     session.pop('id', None)
@@ -162,10 +169,33 @@ def logout():
     session.pop('is_admin', None)
     session.pop('is_manager', None)
     session.pop('jwt_token', None)
+    session.pop('logout_redirect', None)
+
+    if logout_redirect is not False and is_valid_url(logout_redirect):
+        return redirect(logout_redirect)
 
     # Redirect to login page
     return render_template('login.html', msg="", msgClass="")
 
+# ------------------------------------------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------------------------------------------ #
+
+def is_valid_url(url):
+    """
+    Validate the given URL.
+
+    This function uses urllib.parse.urlparse to parse the URL and checks if it has both a scheme
+    (like 'http', 'https') and a netloc (like 'www.example.com'). It's a basic validation to ensure
+    the URL's structure is correct and can be particularly useful for validating redirect URLs.
+
+    Parameters:
+    - url (str): The URL string to be validated.
+
+    Returns:
+    - bool: True if the URL has both a scheme and a netloc, False otherwise.
+    """
+    parsed = urlparse(url)
+    return bool(parsed.scheme) and bool(parsed.netloc)
 
 # ------------------------------------------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------------------------------------------ #
