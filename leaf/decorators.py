@@ -91,6 +91,7 @@ def login_required(f):
     Returns:
     - function: Decorated route function.
     """
+
     @wraps(f)
     def wrapper(*args, **kwargs):
 
@@ -132,22 +133,13 @@ def db_connection():
 
     If an error occurs during the connection, an error message is returned as a string.
     """
-    if Config.IS_LOCAL == 'True':
-        db_config = {
-            'host': Config.DB_HOST,
-            'port': Config.DB_PORT,
-            'user': Config.DB_USER,
-            'password': Config.DB_PASS,
-            'database': Config.DB_NAME
-        }
-    else:
-        db_config = {
-            'host': Config.LFI_DB_HOST,
-            'port': Config.LFI_DB_PORT,
-            'user': Config.LFI_DB_USER,
-            'password': Config.LFI_DB_PASS,
-            'database': Config.LFI_DB_NAME
-        }
+    db_config = {
+        'host': Config.DB_HOST,
+        'port': Config.DB_PORT,
+        'user': Config.DB_USER,
+        'password': Config.DB_PASS,
+        'database': Config.DB_NAME
+    }
 
     try:
         connection = mysql.connector.connect(**db_config)
