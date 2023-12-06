@@ -82,9 +82,8 @@ def get_list_data(request, accountId: str, reference: str):
         sortingColumn = request.args.get("iSortCol_0")
 
         tableName = f"account_{accountId}_list_{reference}"
-
-        showColumnsQuery = f"SHOW COLUMNS FROM {tableName}"
-        mycursor.execute(showColumnsQuery)
+        showColumnsQuery = "SHOW COLUMNS FROM %s"
+        mycursor.execute(showColumnsQuery, (tableName,))
         listColumns = mycursor.fetchall()
 
         searchColumnsFields = []
@@ -101,9 +100,9 @@ def get_list_data(request, accountId: str, reference: str):
 
         where_clause = " AND ".join(field_list)
         if field_list:
-            query_params = tuple(f"%{searchColumnsField['value']}%" for searchColumnsField in searchColumnsFields)
+            query_params = list(f"%{searchColumnsField['value']}%" for searchColumnsField in searchColumnsFields)
             query = f"SELECT * FROM {tableName} WHERE {where_clause} ORDER BY {listColumns[int(sortingColumn) - 1][0]} {direction} LIMIT %s, %s"
-            mycursor.execute(query, query_params + (skip, limit))
+            mycursor.execute(query, query_params + [skip, limit])
         else:
             order_by = listColumns[int(sortingColumn) - 1][0]
             query = f"SELECT * FROM {tableName} ORDER BY {order_by} {direction} LIMIT %s, %s"
@@ -111,7 +110,7 @@ def get_list_data(request, accountId: str, reference: str):
 
         lists = mycursor.fetchall()
 
-        mycursor.execute(f"SELECT COUNT(*) FROM {tableName}")
+        mycursor.execute("SELECT COUNT(*) FROM %s", (tableName,))
         listCount = mycursor.fetchone()[0]
 
         # Create json
@@ -147,13 +146,13 @@ def get_list_columns(accountId: str, reference: str):
         tableName = f"account_{accountId}_list_{reference}"
 
         # Create table if not exists
-        create_table_query = f"CREATE TABLE IF NOT EXISTS {tableName} (id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE, name VARCHAR(255))"
-        mycursor.execute(create_table_query)
+        create_table_query = "CREATE TABLE IF NOT EXISTS %s (id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE, name VARCHAR(255))"
+        mycursor.execute(create_table_query, (tableName,))
         mydb.commit()
 
         # Retrieve column information
-        show_columns_query = f"SHOW COLUMNS FROM {tableName}"
-        mycursor.execute(show_columns_query)
+        show_columns_query = "SHOW COLUMNS FROM %s"
+        mycursor.execute(show_columns_query, (tableName,))
         columns_info = mycursor.fetchall()
 
         # Convert bytes to string for column names
@@ -195,13 +194,13 @@ def get_list_columns_with_returned_id(accountId: str, reference: str, fieldToRet
         tableName = f"account_{accountId}_list_{reference}"
 
         # Create table if not exists
-        create_table_query = f"CREATE TABLE IF NOT EXISTS {tableName} (id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE, name VARCHAR(255))"
-        mycursor.execute(create_table_query)
+        create_table_query = "CREATE TABLE IF NOT EXISTS %s (id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE, name VARCHAR(255))"
+        mycursor.execute(create_table_query, (tableName,))
         mydb.commit()
 
         # Retrieve column information
-        show_columns_query = f"SHOW COLUMNS FROM {tableName}"
-        mycursor.execute(show_columns_query)
+        show_columns_query = "SHOW COLUMNS FROM %s"
+        mycursor.execute(show_columns_query, (tableName,))
         columns_info = mycursor.fetchall()
 
         # Convert bytes to string for column names
@@ -239,8 +238,8 @@ def get_list_columns_with_properties(accountId: str, reference: str):
         tableName = f"account_{accountId}_list_settings"
 
         # Retrieve column properties
-        get_properties_query = "SELECT * FROM `{}` WHERE main_table = %s".format(tableName)
-        mycursor.execute(get_properties_query, (reference,))
+        get_properties_query = f"SELECT * FROM %s WHERE main_table = %s"
+        mycursor.execute(get_properties_query, (tableName, reference,))
         columns_properties = mycursor.fetchall()
 
         jsonR['columns'] = columns_properties
@@ -284,13 +283,13 @@ def get_list_configuration(accountId: str, reference: str):
     tableName = f"account_{accountId}_list_configuration"
 
     # Create table if not exists
-    create_table_query = f"CREATE TABLE IF NOT EXISTS {tableName} {field_query_for_config}"
-    mycursor.execute(create_table_query)
+    create_table_query = "CREATE TABLE IF NOT EXISTS %s %s"
+    mycursor.execute(create_table_query, (tableName, field_query_for_config))
     mydb.commit()
 
     # Retrieve configuration information
-    get_config_query = f"SELECT * FROM `{tableName}` WHERE main_table = %s"
-    mycursor.execute(get_config_query, (reference,))
+    get_config_query = "SELECT * FROM `%s` WHERE main_table = %s"
+    mycursor.execute(get_config_query, (tableName, reference))
     config_info = mycursor.fetchall()
 
     jsonR['columns'] = config_info
@@ -385,8 +384,8 @@ def get_value_columns_with_index(accountId: str, reference: str, fieldToGet: str
         tableName = f"account_{accountId}_list_{reference}"
 
         # Retrieve columns with values and specified indices
-        get_columns_query = f"SELECT {fieldToGet}, {fieldToLabel} FROM {tableName}"
-        mycursor.execute(get_columns_query)
+        get_columns_query = f"SELECT %s, %s FROM {tableName}"
+        mycursor.execute(get_columns_query, (fieldToGet, fieldToLabel))
         columns_data = mycursor.fetchall()
 
         jsonR = {"columns": columns_data, "indexToKeep": indexToKeep, "indexToKeepForAccountSettings": indexToKeepForAccountSettings}
@@ -461,7 +460,7 @@ def parse_csv(accountId: str, reference: str, filePath: str):
         tableName = f"account_{accountId}_list_{reference}"
 
         # Drop existing table if it exists
-        mycursor.execute(f"DROP TABLE IF EXISTS {tableName}")
+        mycursor.execute(f"DROP TABLE IF EXISTS %s", (tableName,))
         mydb.commit()
 
         # Read CSV file using Pandas
@@ -479,7 +478,8 @@ def parse_csv(accountId: str, reference: str, filePath: str):
         field_query = " (" + ", ".join(field_list) + ")"
 
         # Create table if not exists
-        mycursor.execute(f"CREATE TABLE IF NOT EXISTS {tableName}{field_query}")
+        create_table_query = f"CREATE TABLE IF NOT EXISTS %s%s"
+        mycursor.execute(create_table_query, (tableName, field_query,))
         mydb.commit()
 
         # Use Pandas to parse the CSV file
@@ -491,8 +491,8 @@ def parse_csv(accountId: str, reference: str, filePath: str):
         for i, row in csv_data.iterrows():
             if i != 0:
                 values = map((lambda x: f'"' + html.escape(str((x if isinstance(x, float) else x.encode('utf-8'))).replace("\\", "__BACKSLASH__TO_REPLACE__")[2:-1]) + '"'), row)
-                full_insert_query = f"{insert_query}({', '.join(values)});"
-                mycursor.execute(full_insert_query)
+                full_insert_query = f"%s(%s);"
+                mycursor.execute(full_insert_query, ({insert_query}, ', '.join(values),))
                 mydb.commit()
 
                 if i + 1 == len(csv_data):
@@ -538,10 +538,10 @@ def create_middle_tables(request, accountId: str, reference: str):
         settings_table_name = f"account_{accountId}_list_settings"
 
         # Create or update the settings table
-        mycursor.execute(f"CREATE TABLE IF NOT EXISTS {settings_table_name}{field_query_for_settings}")
+        mycursor.execute(f"CREATE TABLE IF NOT EXISTS %s%s", (settings_table_name, field_query_for_settings,))
         mydb.commit()
 
-        mycursor.execute(f"DELETE FROM {settings_table_name} WHERE main_table = '{reference}'")
+        mycursor.execute(f"DELETE FROM %s WHERE main_table = %s", (settings_table_name, reference,))
         mydb.commit()
 
         # Iterate through form items
@@ -558,7 +558,7 @@ def create_middle_tables(request, accountId: str, reference: str):
 
                 # Drop existing mapping table
                 if val != "null":
-                    mycursor.execute(f"DROP TABLE IF EXISTS {mapping_table_name}")
+                    mycursor.execute(f"DROP TABLE IF EXISTS %s", (mapping_table_name,))
                     mydb.commit()
 
                     # Define fields for the mapping table
@@ -568,7 +568,7 @@ def create_middle_tables(request, accountId: str, reference: str):
                     mapping_field_query = " (" + ", ".join(mapping_field_list) + ")"
 
                     # Create the mapping table
-                    mycursor.execute(f"CREATE TABLE IF NOT EXISTS {mapping_table_name}{mapping_field_query}")
+                    mycursor.execute(f"CREATE TABLE IF NOT EXISTS %s%s", (mapping_table_name, mapping_field_query,))
                     mydb.commit()
 
                 # Insert or update settings table
@@ -636,12 +636,12 @@ def get_settings(accountId: str):
         tableName = f"account_{accountId}_list_settings"
 
         # Create or update the settings table
-        mycursor.execute(f"CREATE TABLE IF NOT EXISTS {tableName} ({field_query_for_settings})")
+        mycursor.execute(f"CREATE TABLE IF NOT EXISTS %s (%s)", (tableName, field_query_for_settings,))
         mydb.commit()
 
         # Retrieve settings from the table (avoid using '*' for security)
-        select_query = f"SELECT id, main_table, foreign_key, reference_table, assigned_field, assigned_field_label, field_type, start_visibility FROM {tableName}"
-        mycursor.execute(select_query)
+        select_query = f"SELECT id, main_table, foreign_key, reference_table, assigned_field, assigned_field_label, field_type, start_visibility FROM %s"
+        mycursor.execute(select_query, (tableName,))
         settings_data = mycursor.fetchall()
 
         # Create JSON response
@@ -694,6 +694,7 @@ def get_all_lists(accountId: str):
         mydb.close()
         return jsonify(json_response)
 
+
 def publish_dynamic_lists(request, account_list: str, accountId: str, reference: str, env: str):
     """
     Publish dynamic list data to JSON files and optionally by country.
@@ -717,7 +718,7 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
 
     try:
         # Query to retrieve all data from the specified database table (using parameterized query)
-        mycursor.execute("SELECT * FROM {}".format(account_list))
+        mycursor.execute("SELECT * FROM %s", (account_list,))
 
         # Fetch column headers
         row_headers = [x[0] for x in mycursor.description]
@@ -743,8 +744,8 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
             single_country_to_update = country_to_update.split(';')
             for single_country_to_update in single_country_to_update:
                 # Query to retrieve data filtered by country (using parameterized query)
-                mycursor.execute("SELECT * FROM {} WHERE LOWER(`country`) LIKE %s".format(account_list),
-                                 ('%' + single_country_to_update.strip().lower() + '%',))
+                mycursor.execute("SELECT * FROM %s WHERE LOWER(`country`) LIKE %s",
+                                 (account_list, '%' + single_country_to_update.strip().lower() + '%',))
                 row_headers = [x[0] for x in mycursor.description]
                 full_list_by_country = mycursor.fetchall()
 
@@ -834,7 +835,7 @@ def update_dynamic_lists_database(accountId, account_list, item_id, this_request
                 # Update the database with the new value (use parameterized query to prevent SQL injection)
                 if final_key != 'id':
                     final_val = val.replace('"', "'")
-                    mycursor.execute(f"UPDATE {account_list} SET {final_key} = %s WHERE id = %s", (final_val, item_id))
+                    mycursor.execute(f"UPDATE %s SET %s = %s WHERE id = %s", (account_list, final_key, final_val, item_id))
                     mydb.commit()
 
                 index += 1
@@ -948,7 +949,7 @@ def execute_database_query_when_adding_list(mydb, mycursor, accountId, account_l
     columns_for_query = " (" + ", ".join(columns) + ")"
     column_values_for_query = " ('" + "', '".join(column_values) + "')"
 
-    mycursor.execute(f"INSERT INTO {account_list}{columns_for_query} VALUES{column_values_for_query}")
+    mycursor.execute(f"INSERT INTO %s%s VALUES%s", (account_list, columns_for_query, column_values_for_query,))
     mydb.commit()
 
     return str(mycursor.lastrowid)
@@ -982,7 +983,7 @@ def update_dynamically_linked_fields_when_adding_list(mydb, mycursor, accountId,
                 final_val_to_update_dynamically = val + last_row_id
 
     if final_key_to_update_dynamically:
-        mycursor.execute(f"UPDATE {account_list} SET {final_key_to_update_dynamically} = %s WHERE id = %s", (final_val_to_update_dynamically, last_row_id))
+        mycursor.execute(f"UPDATE %s SET %s = %s WHERE id = %s", (account_list, final_key_to_update_dynamically, final_val_to_update_dynamically, last_row_id))
         mydb.commit()
 
 
@@ -1014,11 +1015,11 @@ def delete_dynamic_lists(request, accountId: str, account_list: str):
         validate_entries_to_delete(entries_to_delete, accountId)
 
         # Delete selected entries from the database
-        mycursor.execute(f"DELETE FROM {account_list} WHERE id IN ({entries_to_delete})")
+        mycursor.execute(f"DELETE FROM %s WHERE id IN (%s)", (account_list, entries_to_delete,))
         mydb.commit()
 
         # Retrieve the updated list of tables after deletion
-        mycursor.execute(f"SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='{Config.DB_NAME}' AND TABLE_NAME REGEXP '{account_list}'")
+        mycursor.execute(f"SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=%s AND TABLE_NAME REGEXP %s", (Config.DB_NAME, account_list,))
         lists = mycursor.fetchall()
 
         json_response = {"lists": lists}
@@ -1226,7 +1227,7 @@ def delete_multiple_lists(request):
                 validate_input_data_to_delete(list_name, accountId)
 
                 table_name = f"account_{accountId}_list_{list_name}"
-                mycursor.execute(f"DROP TABLE IF EXISTS {table_name}")
+                mycursor.execute(f"DROP TABLE IF EXISTS %s", (table_name,))
                 mydb.commit()
 
             json_response = {"lists_to_delete": lists_to_delete, "action": "deleted"}

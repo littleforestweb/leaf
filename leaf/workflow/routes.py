@@ -267,7 +267,7 @@ def add_new_comment_workflow():
     else:
         comments = comments if comments else ""
 
-    mycursor.execute("UPDATE workflow SET comments = %s WHERE id = %s", (comments, workflow_id))
+    mycursor.execute("UPDATE workflow SET comments = %s WHERE id = %s", (comments, workflow_id,))
     mydb.commit()
 
     last_workflow_id = mycursor.lastrowid
@@ -319,7 +319,7 @@ def delete_workflow():
     # Get a database connection
     mydb, mycursor = decorators.db_connection()
 
-    mycursor.execute("DELETE FROM workflow WHERE id =" + workflow_id)
+    mycursor.execute("DELETE FROM workflow WHERE id = %s", (workflow_id,))
     mydb.commit()
     workflow_id = mycursor.lastrowid
 
@@ -358,7 +358,7 @@ def action_workflow():
         action = "Approved"
     elif action == "Reject":
         action = "Rejected"
-        mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", (action, workflow_id))
+        mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", (action, workflow_id,))
         mydb.commit()
         jsonR = {"message": "success", "action": action}
         return jsonify(jsonR)
@@ -468,9 +468,9 @@ def action_workflow():
                 fieldsToSaveBy = fieldsToSaveBy.split(';')
                 for singleFieldToSaveBy in fieldsToSaveBy:
                     if isMenu:
-                        mycursor.execute("SELECT DISTINCT " + str(singleFieldToSaveBy) + " FROM account_" + str(accountId) + "_menu_" + listName)
+                        mycursor.execute("SELECT DISTINCT %s FROM account_%s_menu_%s", (str(singleFieldToSaveBy), str(accountId), listName,))
                     else:
-                        mycursor.execute("SELECT DISTINCT " + str(singleFieldToSaveBy) + " FROM account_" + str(accountId) + "_list_" + listName)
+                        mycursor.execute("SELECT DISTINCT %s FROM account_%s_list_%s", (str(singleFieldToSaveBy), str(accountId), listName,))
 
                     listCleanArray = set()
                     for fullSingleEntry in mycursor.fetchall():
@@ -482,9 +482,9 @@ def action_workflow():
 
                     for singleListItem in final_list:
                         if isMenu:
-                            mycursor.execute("SELECT * FROM " + "account_" + str(accountId) + "_menu_" + listName + " WHERE LOWER(`" + singleFieldToSaveBy + "`) LIKE '%" + singleListItem + "%' ")
+                            mycursor.execute("SELECT * FROM account_%s_menu_%s WHERE LOWER(%s) LIKE '%%s%' ", (str(accountId), listName, singleFieldToSaveBy, singleListItem,))
                         else:
-                            mycursor.execute("SELECT * FROM " + "account_" + str(accountId) + "_list_" + listName + " WHERE LOWER(`" + singleFieldToSaveBy + "`) LIKE '%" + singleListItem + "%' ")
+                            mycursor.execute("SELECT * FROM account_%s_list_%s WHERE LOWER(%s) LIKE '%%s%' ", (str(accountId), listName, singleFieldToSaveBy, singleListItem,))
 
                         row_headers = [x[0] for x in mycursor.description]
                         fullListByCountry = mycursor.fetchall()

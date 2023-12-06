@@ -180,7 +180,7 @@ def process_type_3(workflow_data, mycursor):
         workflow_data["siteTitles"] = ""
 
         table_name = f"account_{session['accountId']}_list_configuration"
-        mycursor.execute(f"SELECT * FROM {table_name} WHERE main_table = %s", (workflow_data["listName"],))
+        mycursor.execute(f"SELECT * FROM %s WHERE main_table = %s", (table_name, workflow_data["listName"],))
         result_list = mycursor.fetchone()
 
         if result_list and len(result_list) > 0:
@@ -189,8 +189,8 @@ def process_type_3(workflow_data, mycursor):
             this_parameters = lists_config[3]
             this_parameters_to_grab = lists_config[4]
 
-            query = f"SELECT {this_parameters_to_grab} FROM account_{session['accountId']}_list_{workflow_data['listName']} WHERE id=%s"
-            params = (site_id,)
+            query = f"SELECT %s FROM account_%s_list_%s WHERE id=%s"
+            params = (this_parameters_to_grab, session['accountId'], workflow_data['listName'], site_id,)
             mycursor.execute(query, params)
             fields_to_link = mycursor.fetchone()[0]
 
