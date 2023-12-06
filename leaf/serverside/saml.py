@@ -1,10 +1,9 @@
 from flask import Blueprint, render_template, session, request
 import base64
-import requests
 from lxml import etree
 from signxml import methods, XMLVerifier
 from leaf import Config
-from leaf.decorators import login_required, limiter, db_connection, generate_jwt
+from leaf.decorators import db_connection, generate_jwt
 import werkzeug.utils
 
 saml_route = Blueprint("saml_route", __name__)
@@ -55,6 +54,7 @@ def idp_initiated():
             # Get the text of the X509Certificate element, which is base64 encoded
             idp_metadata_cert = cert_elem.text
 
+            # saml_response = werkzeug.utils.escape(request.form["SAMLResponse"])
             saml_response = request.form["SAMLResponse"]
 
             # Decode byte string to a regular string
@@ -144,7 +144,7 @@ def idp_initiated():
 
                     if not lfi_user:
                         query = "INSERT INTO user(account_id, email, username, is_admin) VALUES(?, ?, ?, ?)"
-                        values = (3, email, email, isAdmin)
+                        values = (3, email, username, isAdmin)
                         mycursor.execute(query, values)
                         mydb.commit()
 
@@ -215,6 +215,7 @@ def idp_initiated():
         else:
             print("Issuer element not found.")
             return "Access Denied. Issuer not found!"
+
 
 namespaces = {
     'md': 'urn:oasis:names:tc:SAML:2.0:metadata',
