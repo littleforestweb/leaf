@@ -30,22 +30,12 @@ class Config:
     # JWT Expiration time
     JWT_EXPIRATION_TIME = config["JWT_EXPIRATION_TIME"]
 
-    # Local setup
-    IS_LOCAL = config["IS_LOCAL"]
-
     # Database
     DB_HOST = config["DB_HOST"]
     DB_PORT = config["DB_PORT"]
     DB_USER = config["DB_USER"]
     DB_PASS = config["DB_PASS"]
     DB_NAME = config["DB_NAME"]
-
-    # LFi Live Database
-    LFI_DB_HOST = config["LFI_DB_HOST"]
-    LFI_DB_PORT = config["LFI_DB_PORT"]
-    LFI_DB_USER = config["LFI_DB_USER"]
-    LFI_DB_PASS = config["LFI_DB_PASS"]
-    LFI_DB_NAME = config["LFI_DB_NAME"]
 
     # Server
     PORT = config["PORT"]
@@ -110,5 +100,3 @@ class Config:
     IDP_SINGLE_SIGN_ON_SERVICE_URL = config["IDP_SINGLE_SIGN_ON_SERVICE_URL"]
     IDP_SINGLE_LOGOUT_SERVICE_URL = config["IDP_SINGLE_LOGOUT_SERVICE_URL"]
     IDP_X509CERT = config["IDP_X509CERT"]
-    SAML_PREFIX = config["SAML_PREFIX"]
-    ATTRIBUTE_PREFIX = config["ATTRIBUTE_PREFIX"]
