@@ -5,9 +5,100 @@ from signxml import methods, XMLVerifier
 from leaf import Config
 from leaf.decorators import db_connection, generate_jwt
 import werkzeug.utils
+from defusedxml.lxml import fromstring
+from werkzeug.exceptions import Forbidden
 
 saml_route = Blueprint("saml_route", __name__)
 
+def perform_additional_xml_checks(xml_data):
+    # Check for unexpected tags or attributes
+    allowed_tags = {
+        'Assertion', 'Issuer', 'Subject', 'NameID', 'AttributeStatement', 
+        'Attribute', 'AttributeValue', 'Conditions', 'AuthnStatement', 
+        'Response', 'Status', 'StatusCode', 'Signature'
+    }
+
+    allowed_attributes = {
+        'Name', 'Format', 'InResponseTo', 'Version', 'IssueInstant', 'Method'
+    }
+
+    for element in xml_data.iter():
+        # Check if the tag is in the allowed list
+        if element.tag not in allowed_tags:
+            return f'Invalid XML. {element.tag} tag found but not allowed!'
+
+        # Check each attribute of the element
+        for attribute in element.attrib:
+            if attribute not in allowed_attributes:
+                return f'Invalid XML. {attribute} attribute found but not allowed!'
+
+    # Check for suspicious patterns (like script tags or SQL commands)
+    if re.search(r'<script|SELECT\s+.*\s+FROM|INSERT\s+INTO', xml_data, re.IGNORECASE):
+        return 'Invalid XML. Found Suspicious patterns!'
+
+    # Validate namespaces
+    for element in etree.fromstring(xml_data).iter():
+        if element.tag.namespace not in namespaces:
+            return f'Invalid XML. {element.tag.namespace} namespace found but not allowed!'
+
+    # Remove or check comments
+    comments = xml_data.xpath('//comment()')
+    if comments:
+        return 'Invalid XML. Comments found but not allowed!'
+
+    return True
+
+def is_valid_saml_response(saml_response):
+    """
+    Validates the SAML response for correct XML structure and checks for injection attacks.
+    
+    Args:
+        saml_response (str): The Base64 encoded SAML response.
+
+    Returns:
+        bool: True if the SAML response is valid, False otherwise.
+    """
+    try:
+        # Decode the SAML response
+        response_str = base64.b64decode(saml_response).decode('utf-8')
+
+        # Parse the XML
+        # Using defusedxml is a better option for handling externally provided XML data that might be untrusted or potentially malicious
+        saml_response_xml = fromstring(response_str.encode('utf-8'))
+
+        # Optional: Schema validation can be performed here if an XSD is available
+
+        # Check for any other malicious content or patterns
+        additional_checks_validation = perform_additional_xml_checks(saml_response_xml)
+        if additional_checks_validation is None or additional_checks_validation is False:
+            # If validation fails, return a permission denied response
+            return "Permission Denied. Saml response not valid!", 403
+
+        return saml_response_xml
+    except etree.XMLSyntaxError:
+        # Handle malformed XML
+        return False
+    # Add more exceptions as necessary for different types of checks
+
+def process_saml_response(saml_response_from_request):
+    """
+    Process the SAML response from a request.
+
+    Args:
+        request (Request): The HTTP request object.
+
+    Returns:
+        Response: The appropriate HTTP response.
+    """
+    # Read SAMLRequest and escape special characters in the string it receives to prevent injection attacks
+    saml_response = werkzeug.utils.escape(saml_response_from_request)
+
+    validate_saml_response = is_valid_saml_response(saml_response)
+    if validate_saml_response is None or validate_saml_response is False:
+        # If validation fails, return a permission denied response
+        return "Permission Denied. Saml response not valid!", 403
+
+    return validate_saml_response
 
 @saml_route.route("/saml", methods=["GET", "POST"])
 def idp_initiated():
@@ -54,30 +145,26 @@ def idp_initiated():
             # Get the text of the X509Certificate element, which is base64 encoded
             idp_metadata_cert = cert_elem.text
 
-            # saml_response = werkzeug.utils.escape(request.form["SAMLResponse"])
-            saml_response = request.form["SAMLResponse"]
+            saml_response_xml = process_saml_response(request.form["SAMLResponse"])
+            if saml_response_xml is not False:
+                print('Saml Response is valid and secure!')
+                # Extract the X509 certificate
+                # Assuming that there's only one X509Certificate element in the SAML response
+                response_cert_element = saml_response_xml.xpath("//*[local-name()='X509Certificate']")
+                if response_cert_element:
+                    cert_pem = f"-----BEGIN CERTIFICATE-----\n{idp_metadata_cert.strip()}\n-----END CERTIFICATE-----"
+                    reponse_cert_pem = f"-----BEGIN CERTIFICATE-----\n{response_cert_element[0].text.strip()}\n-----END CERTIFICATE-----"
 
-            # Decode byte string to a regular string
-            response_str = base64.b64decode(saml_response).decode('utf-8')
-            saml_response_xml = etree.fromstring(response_str.encode('utf-8'))
-
-            # Extract the X509 certificate
-            # Assuming that there's only one X509Certificate element in the SAML response
-            response_cert_element = saml_response_xml.xpath("//*[local-name()='X509Certificate']")
-            if response_cert_element:
-                cert_pem = f"-----BEGIN CERTIFICATE-----\n{idp_metadata_cert.strip()}\n-----END CERTIFICATE-----"
-                reponse_cert_pem = f"-----BEGIN CERTIFICATE-----\n{response_cert_element[0].text.strip()}\n-----END CERTIFICATE-----"
-
-                # Verify the signature using the certificate from the IdP metadata
-                try:
-                    verified_data = XMLVerifier().verify(saml_response_xml, x509_cert=cert_pem).signed_xml
-                    print("Signature is valid.")
-                except Exception as e:
-                    print(f"Error verifying signature: {e}")
-                    return "Access Denied. Error verifying signature!"
-            else:
-                print("Certificate not found in the SAML response. This connection might not be secure!")
-                return "Access Denied. Error verifying signature! Certificate not found in the SAML response."
+                    # Verify the signature using the certificate from the IdP metadata
+                    try:
+                        verified_data = XMLVerifier().verify(saml_response_xml, x509_cert=cert_pem).signed_xml
+                        print("Signature is valid.")
+                    except Exception as e:
+                        print(f"Error verifying signature: {e}")
+                        return "Access Denied. Error verifying signature!"
+                else:
+                    print("Certificate not found in the SAML response. This connection might not be secure!")
+                    return "Access Denied. Error verifying signature! Certificate not found in the SAML response."
         else:
             print("X509Certificate element not found in the IdP metadata!")
             return "Access Denied. Error verifying signature! Certificate not found in the IdP metadata!"
