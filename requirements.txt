@@ -15,3 +15,5 @@ paramiko
 flask_limiter
 warcat
 werkzeug
+signxml
+defusedxml
