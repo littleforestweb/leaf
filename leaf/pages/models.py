@@ -76,7 +76,7 @@ def get_screenshot(pageId):
         screenshotPath = mycursor.fetchone()[0]
 
         # Check if screenshotPath is NULL, use a default image if so
-        screenshotPath = os.path.join(Config.LEAFCMS_FOLDER, "leaf", "static", "images", "unavailable-image.jpg") if screenshotPath == "NULL" else os.path.join(Config.WEBSERVER_FOLDER, screenshotPath)
+        screenshotPath = os.path.join(Config.LEAFCMS_FOLDER, "leaf", "static", "images", "unavailable-image.jpg") if screenshotPath == "NULL" else os.path.join(Config.SCREENSHOTS_FOLDER, screenshotPath)
 
         folderPath = os.path.dirname(screenshotPath)
         filePath = os.path.basename(screenshotPath)
