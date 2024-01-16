@@ -1,5 +1,6 @@
-import json
 import os
+import json
+import secrets
 
 
 def loadConfig():
@@ -18,11 +19,7 @@ class Config:
     # LeafCMS Folder
     LEAFCMS_FOLDER = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    SECRET_KEY = config["SECRET_KEY"]
-
-    # Environment
-    ENV = config["ENV"]
-    ENV_PATH = config["ENV_PATH"]
+    SECRET_KEY = secrets.token_hex(32 // 2)
 
     # Client Account ID
     ACCOUNT_ID = config["ACCOUNT_ID"]
@@ -37,18 +34,15 @@ class Config:
     DB_PASS = config["DB_PASS"]
     DB_NAME = config["DB_NAME"]
 
-    # Server
-    PORT = config["PORT"]
-    DEBUG = config["DEBUG"]
-
     # Deployments Servers
     DEPLOYMENTS_SERVERS = config["DEPLOYMENTS_SERVERS"]
 
-    # Main Webserver URL
-    MAIN_SERVER = config["MAIN_SERVER"]
-    # Preview Webserver URL
-    PREVIEW_SERVER = config["PREVIEW_SERVER"]
-    PREVIEW_SERVER_PATH = config["WEBSERVER_FOLDER"]
+    # Webserver Folder
+    WEBSERVER_FOLDER = config["WEBSERVER_FOLDER"] + "/" if config["WEBSERVER_FOLDER"][-1] != "/" else config["WEBSERVER_FOLDER"]
+
+    # Temporary uploads folder
+    TEMP_UPLOAD_FOLDER = config["TEMP_UPLOAD_FOLDER"] + "/" if config["TEMP_UPLOAD_FOLDER"][-1] != "/" else config["TEMP_UPLOAD_FOLDER"]
+    os.makedirs(TEMP_UPLOAD_FOLDER, exist_ok=True)
 
     # User email assigned
     ASSIGNED_USER_EMAIL = config["ASSIGNED_USER_EMAIL"]
@@ -59,35 +53,24 @@ class Config:
     SMTP_USER = config["SMTP_USER"]
     SMTP_PASSWORD = config["SMTP_PASSWORD"]
 
-    # Dynamic Root Path
-    DYNAMIC_PATH = config["DYNAMIC_PATH"] + "/" if config["DYNAMIC_PATH"][-1] != "/" else config["DYNAMIC_PATH"]
+    # Preview Webserver URL
+    PREVIEW_SERVER = config["PREVIEW_SERVER"]
+    PREVIEW_SERVER_PATH = config["WEBSERVER_FOLDER"]
 
-    # Folders
-    LOG_FOLDER = config["LOG_FOLDER"] + "/" if config["LOG_FOLDER"][-1] != "/" else config["LOG_FOLDER"]
-    if not os.path.exists(LOG_FOLDER):
-        os.mkdir(LOG_FOLDER)
-    WEBSERVER_FOLDER = config["WEBSERVER_FOLDER"] + "/" if config["WEBSERVER_FOLDER"][-1] != "/" else config["WEBSERVER_FOLDER"]
-    TEMP_UPLOAD_FOLDER = config["TEMP_UPLOAD_FOLDER"] + "/" if config["TEMP_UPLOAD_FOLDER"][-1] != "/" else config["TEMP_UPLOAD_FOLDER"]
-    if not os.path.exists(TEMP_UPLOAD_FOLDER):
-        os.mkdir(TEMP_UPLOAD_FOLDER)
-    SCREENSHOTS_FOLDER = config["SCREENSHOTS_FOLDER"] + "/" if config["SCREENSHOTS_FOLDER"][-1] != "/" else config["SCREENSHOTS_FOLDER"]
-    if not os.path.exists(SCREENSHOTS_FOLDER):
-        os.mkdir(SCREENSHOTS_FOLDER)
-    FILES_UPLOAD_FOLDER = config["FILES_UPLOAD_FOLDER"]
-    if not os.path.exists(FILES_UPLOAD_FOLDER):
-        os.mkdir(FILES_UPLOAD_FOLDER)
-    IMAGES_WEBPATH = config["IMAGES_WEBPATH"]
-    ORIGINAL_IMAGES_WEBPATH = PREVIEW_SERVER + config["ORIGINAL_IMAGES_WEBPATH"]
-    WORKFLOW_FILES_UPLOAD_FOLDER = config["WORKFLOW_FILES_UPLOAD_FOLDER"]
-    if not os.path.exists(WORKFLOW_FILES_UPLOAD_FOLDER):
-        os.mkdir(WORKFLOW_FILES_UPLOAD_FOLDER)
-    WORKFLOW_IMAGES_WEBPATH = config["WORKFLOW_IMAGES_WEBPATH"]
+    # Main Webserver URL
+    MAIN_SERVER = config["MAIN_SERVER"]
+
+    # Original Images webfolder
+    ORIGINAL_IMAGES_WEBPATH = os.path.join(PREVIEW_SERVER, config["ORIGINAL_IMAGES_WEBPATH"])
 
     # Heritrix
     HERITRIX_FOLDER = config["HERITRIX_FOLDER"]
     HERITRIX_PORT = config["HERITRIX_PORT"]
     HERITRIX_USER = config["HERITRIX_USER"]
     HERITRIX_PASS = config["HERITRIX_PASS"]
+
+    # Environment
+    ENV_PATH = config["ENV_PATH"]
 
     # SSO
     SP_ENTITY_ID = config["SP_ENTITY_ID"]
@@ -100,3 +83,13 @@ class Config:
     IDP_SINGLE_SIGN_ON_SERVICE_URL = config["IDP_SINGLE_SIGN_ON_SERVICE_URL"]
     IDP_SINGLE_LOGOUT_SERVICE_URL = config["IDP_SINGLE_LOGOUT_SERVICE_URL"]
     IDP_X509CERT = config["IDP_X509CERT"]
+
+    # Auto Generated
+    DYNAMIC_PATH = os.path.join(WEBSERVER_FOLDER, "leaf_content", "lists")
+    FILES_UPLOAD_FOLDER = os.path.join(LEAFCMS_FOLDER, "leaf", "static", "uploads")
+    os.makedirs(FILES_UPLOAD_FOLDER, exist_ok=True)
+    IMAGES_WEBPATH = FILES_UPLOAD_FOLDER.replace(LEAFCMS_FOLDER, "")
+    WORKFLOW_FILES_UPLOAD_FOLDER = os.path.join(LEAFCMS_FOLDER, "leaf", "static", "workflow_attachments")
+    os.makedirs(WORKFLOW_FILES_UPLOAD_FOLDER, exist_ok=True)
+    WORKFLOW_IMAGES_WEBPATH = WORKFLOW_FILES_UPLOAD_FOLDER.replace(LEAFCMS_FOLDER, "")
+    SCREENSHOTS_FOLDER = os.path.join(WEBSERVER_FOLDER, "leaf_content", "screenshots")
