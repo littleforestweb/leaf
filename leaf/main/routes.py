@@ -63,7 +63,7 @@ def login():
     - str: HTML content to be rendered, redirecting to the appropriate page based on login success or failure.
     """
 
-    email = werkzeug.utils.escape(request.form['email'])
+    email = request.form['email']
     password = werkzeug.utils.escape(request.form['password'])
 
     # Check if "email" and "password" POST requests exist (user submitted form)
@@ -177,6 +177,7 @@ def logout():
     # Redirect to login page
     return render_template('login.html', msg="", msgClass="")
 
+
 # ------------------------------------------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------------------------------------------ #
 
@@ -196,6 +197,7 @@ def is_valid_url(url):
     """
     parsed = urlparse(url)
     return bool(parsed.scheme) and bool(parsed.netloc)
+
 
 # ------------------------------------------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------------------------------------------ #
