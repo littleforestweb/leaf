@@ -14,7 +14,7 @@ bind = 'unix:leaf.sock'
 umask = 0o007
 
 # Enable automatic code reloading when files are changed
-reload = False
+reload = True
 
 # Set the file paths for logging access and error messages
 accesslog = 'log_gunicorn_access.txt'
