@@ -154,3 +154,4 @@ addHeritrixJob.py
 .DS_Store
 warc2html.py
 leaf/config.json
+leaf/secret.key

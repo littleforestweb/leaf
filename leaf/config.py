@@ -19,7 +19,13 @@ class Config:
     # LeafCMS Folder
     LEAFCMS_FOLDER = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    SECRET_KEY = secrets.token_hex(32 // 2)
+    # Generate SECRET_KEY
+    secret_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "secret.key")
+    if not os.path.exists(secret_file):
+        with open(secret_file, "w") as out_file:
+            out_file.write(secrets.token_hex(32 // 2))
+    with open(secret_file) as in_file:
+        SECRET_KEY = in_file.read()
 
     # Client Account ID
     ACCOUNT_ID = config["ACCOUNT_ID"]
