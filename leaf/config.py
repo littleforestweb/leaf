@@ -89,5 +89,5 @@ class Config:
     os.makedirs(WORKFLOW_FILES_UPLOAD_FOLDER, exist_ok=True)
     WORKFLOW_IMAGES_WEBPATH = WORKFLOW_FILES_UPLOAD_FOLDER.replace(LEAFCMS_FOLDER, "")
     SCREENSHOTS_FOLDER = os.path.join(WEBSERVER_FOLDER, "leaf_content", "screenshots")
-    TEMP_UPLOAD_FOLDER = os.path.join(LEAFCMS_FOLDER, "leaf", "temp_upload")
+    TEMP_UPLOAD_FOLDER = os.path.join(LEAFCMS_FOLDER, "temp_upload")
     os.makedirs(TEMP_UPLOAD_FOLDER, exist_ok=True)
