@@ -40,10 +40,6 @@ class Config:
     # Webserver Folder
     WEBSERVER_FOLDER = config["WEBSERVER_FOLDER"] + "/" if config["WEBSERVER_FOLDER"][-1] != "/" else config["WEBSERVER_FOLDER"]
 
-    # Temporary uploads folder
-    TEMP_UPLOAD_FOLDER = config["TEMP_UPLOAD_FOLDER"] + "/" if config["TEMP_UPLOAD_FOLDER"][-1] != "/" else config["TEMP_UPLOAD_FOLDER"]
-    os.makedirs(TEMP_UPLOAD_FOLDER, exist_ok=True)
-
     # User email assigned
     ASSIGNED_USER_EMAIL = config["ASSIGNED_USER_EMAIL"]
 
@@ -93,3 +89,5 @@ class Config:
     os.makedirs(WORKFLOW_FILES_UPLOAD_FOLDER, exist_ok=True)
     WORKFLOW_IMAGES_WEBPATH = WORKFLOW_FILES_UPLOAD_FOLDER.replace(LEAFCMS_FOLDER, "")
     SCREENSHOTS_FOLDER = os.path.join(WEBSERVER_FOLDER, "leaf_content", "screenshots")
+    TEMP_UPLOAD_FOLDER = os.path.join(LEAFCMS_FOLDER, "leaf", "temp_upload")
+    os.makedirs(TEMP_UPLOAD_FOLDER, exist_ok=True)
