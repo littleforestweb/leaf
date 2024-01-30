@@ -8,7 +8,7 @@ Configures Gunicorn server settings with default values and returns them as a di
 workers = multiprocessing.cpu_count() * 2 + 1
 
 # Set the socket to bind the server to
-bind = 'unix:leaf.sock'
+bind = "unix:leaf.sock"
 
 # Set the umask to use when creating new files, to ensure proper permissions
 umask = 0o007
@@ -17,5 +17,5 @@ umask = 0o007
 reload = True
 
 # Set the file paths for logging access and error messages
-accesslog = 'log_gunicorn_access.txt'
-errorlog = 'log_gunicorn_error.txt'
+accesslog = "log_gunicorn_access.txt"
+errorlog = "log_gunicorn_error.txt"
