@@ -764,7 +764,7 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
 
         # Write JSON data to a file with the specified reference identifier (sanitize reference)
         sanitized_reference = ''.join(e for e in reference if e.isalnum())
-        with open(os.path.join(Config.ENV_PATH, sanitized_reference + 'List.json'), 'w') as out_file:
+        with open(os.path.join(Config.DYNAMIC_PATH, sanitized_reference + 'List.json'), 'w') as out_file:
             out_file.write(json_data_to_write)
 
         # Additional logic to save data by country (sanitize user input)
@@ -787,7 +787,7 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
 
                 # Write JSON data to a file with the country-specific reference identifier (sanitize reference)
                 sanitized_reference_by_country = ''.join(e for e in sanitized_reference + '_' + single_country_to_update.strip().lower() if e.isalnum())
-                with open(os.path.join(Config.ENV_PATH, 'json_by_country', sanitized_reference_by_country + '_List.json'), 'w') as out_file_by_country:
+                with open(os.path.join(Config.DYNAMIC_PATH, 'json_by_country', sanitized_reference_by_country + '_List.json'), 'w') as out_file_by_country:
                     out_file_by_country.write(json_data_to_write_by_country)
 
     except Exception as e:
