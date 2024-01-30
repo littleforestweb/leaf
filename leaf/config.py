@@ -3,10 +3,120 @@ import json
 import secrets
 
 
+def checkConfig(loaded_json):
+    """
+    Validates and updates the provided JSON configuration with the expected structure.
+
+    Parameters:
+    - loaded_json (dict): The loaded JSON configuration to be checked and updated.
+
+    Returns:
+    dict: The validated and updated JSON configuration, conforming to the expected structure.
+
+    The function compares the provided JSON configuration with the expected structure and:
+    1. Adds missing keys with their default values.
+    2. Recursively updates nested dictionaries.
+    3. Removes keys that are not part of the expected structure.
+
+    The expected structure includes configuration keys for various settings such as database,
+    deployment servers, web server, email, and more.
+
+    Note: The input loaded_json is modified in place, and the modified dictionary is returned.
+    """
+
+    # Set expected config.json
+    expected_structure = {
+        "DEBUG": False,
+        "ACCOUNT_ID": 0,
+        "JWT_EXPIRATION_TIME": 24,
+        "DB_HOST": "",
+        "DB_PORT": 3306,
+        "DB_USER": "",
+        "DB_PASS": "",
+        "DB_NAME": "",
+        "DEPLOYMENTS_SERVERS": [
+            {
+                "name": "",
+                "ip": "",
+                "port": 22,
+                "user": "",
+                "pw": "",
+                "pkey": "",
+                "remote_path": ""
+            }
+        ],
+        "WEBSERVER_FOLDER": "",
+        "ASSIGNED_USER_EMAIL": "",
+        "SMTP_HOST": "",
+        "SMTP_PORT": "",
+        "SMTP_USER": "",
+        "SMTP_PASSWORD": "",
+        "PREVIEW_SERVER": "",
+        "PREVIEW_SERVER_PATH": "",
+        "MAIN_SERVER": "",
+        "ORIGINAL_IMAGES_WEBPATH": "",
+        "HERITRIX_FOLDER": "",
+        "HERITRIX_PORT": "",
+        "HERITRIX_USER": "",
+        "HERITRIX_PASS": "",
+        "ENV_PATH": "",
+        "SP_ENTITY_ID": "",
+        "SP_ASSERTION_CONSUMER_SERVICE_URL": "",
+        "SP_SINGLE_LOGOUT_SERVICE_URL": "",
+        "SP_X509CERT": "",
+        "SP_X509KEY": "",
+        "IDP_ENTITY_ID": "",
+        "IDP_METADATA": "",
+        "IDP_SINGLE_SIGN_ON_SERVICE_URL": "",
+        "IDP_SINGLE_LOGOUT_SERVICE_URL": "",
+        "IDP_X509CERT": ""
+    }
+
+    # Update the loaded JSON with the expected structure
+    def recursive_update(existing, expected):
+        for key, value in expected.items():
+            if key not in existing:
+                existing[key] = value
+            elif isinstance(value, dict) and isinstance(existing[key], dict):
+                # Recursively update nested dictionaries
+                recursive_update(existing[key], value)
+
+    recursive_update(loaded_json, expected_structure)
+
+    # Remove keys that are not in the expected structure
+    loaded_json = {key: loaded_json[key] for key in expected_structure.keys() if key in loaded_json}
+
+    return loaded_json
+
+
 def loadConfig():
+    """
+    Loads and validates the configuration from the 'config.json' file.
+
+    Returns:
+    Tuple[dict, str]: A tuple containing the validated configuration dictionary and the path to the configuration file.
+
+    This function reads the 'config.json' file, loads its contents into a dictionary,
+    and then validates the configuration using the checkConfig function.
+    The validated configuration is then saved back to the 'config.json' file with proper formatting.
+
+    Returns the validated configuration dictionary and the path to the configuration file.
+    """
+    # Get the path to the 'config.json' file
     configFile = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
-    with open(configFile) as inFile:
+
+    # Read the configuration from the file
+    with open(configFile, "r") as inFile:
         config = json.load(inFile)
+
+    # Validate and update the configuration using the checkConfig function
+    config = checkConfig(config)
+
+    # Save the validated configuration back to the 'config.json' file
+    with open(configFile, "w") as outFile:
+        json.dump(config, outFile, indent=2)
+
+    # Return the validated configuration and the path to the configuration file
     return config, configFile
 
 
