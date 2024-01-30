@@ -214,7 +214,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
     $('#table').DataTable().destroy();
 
     // Get pagesJSON
-    let json = await $.get("/api/get_menus/" + accountId +"/" + userId +"/" + isAdmin, function (result) {
+    let json = await $.get("/api_menu/get_menus/" + accountId +"/" + userId +"/" + isAdmin, function (result) {
         return result;
     });
 

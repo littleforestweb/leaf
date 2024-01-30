@@ -63,7 +63,7 @@ async function populateEditDynamicMenuDialog(accountId, reference, type, itemToS
 
         var mfields = [];
         if (values[0][5]) {
-            mfields = values[0][5].split(';');
+            mfields = values[0][5].split(',');
         }
     }
 
@@ -402,7 +402,7 @@ async function populateEditDynamicMenuDialog(accountId, reference, type, itemToS
                                             //     }
                                             // },
                                             toolbar: [
-                                                {name: "clipboard", items: ["Cut", "Copy", "Paste", "PasteText", "-", "Undo", "Redo"]}
+                                                {name: "clipboard", items: ["Cut", "Copy", "Paste", "PasteText", "-", "Undo", "Redo"]},
                                                 {name: "basicstyles", items: ["Bold", "Italic", "Underline", "Strike", "-", "RemoveFormat"]},
                                                 {name: "paragraph", items: ["NumberedList", "BulletedList", "-", "Outdent", "Indent", "-", "Blockquote", "CreateDiv", "-", "JustifyLeft", "JustifyCenter", "JustifyRight", "JustifyBlock"]},
                                                 {name: "links", items: ["Link", "Unlink", "anchorPluginButton"]},
@@ -783,7 +783,19 @@ async function updateDynamicMenu(accountId, reference, env, preview_server, dyna
             $('#' + form_data[0]['mandatoryElementsNotCompletedToReturn'][singleItem]).parent().find('.ck-editor').addClass('warning-not-completed');
         }
         alert("You have to complete all mandatory fields (" + form_data[0]['mandatoryElementsNotCompletedToReturn'].join(", ").replace(/e-/g, '') + ")!");
-        thisButton.classList.remove('disabled');
+        
+        const buttons_to_edit_container = document.getElementById('buttons_to_edit');
+        const allActionButtons = buttons_to_edit_container.getElementsByTagName('button');
+        for (let i = 0; i < allActionButtons.length; i++) {
+          allActionButtons[i].disabled = false;
+          allActionButtons[i].classList.remove('disabled');
+        }
+        const modal_footer_links = document.getElementById('modal-footer-edit');
+        const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
+        for (let i = 0; i < allActionButtonsFooter.length; i++) {
+          allActionButtonsFooter[i].disabled = false;
+          allActionButtonsFooter[i].classList.remove('disabled');
+        }
     }
 }
 
@@ -1055,7 +1067,19 @@ async function addDynamicMenu(accountId, reference, env, preview_server, dynamic
             $('#' + form_data[0]['mandatoryElementsNotCompletedToReturn'][singleItem]).parent().find('.ck-editor').addClass('warning-not-completed');
         }
         alert("You have to complete all mandatory fields (" + form_data[0]['mandatoryElementsNotCompletedToReturn'].join(", ").replace(/a-/g, '') + ")!");
-        thisButton.classList.remove('disabled');
+        
+        const buttons_to_add_container = document.getElementById('buttons_to_add');
+        const allActionButtons = buttons_to_add_container.getElementsByTagName('button');
+        for (let i = 0; i < allActionButtons.length; i++) {
+          allActionButtons[i].disabled = false;
+          allActionButtons[i].classList.remove('disabled');
+        }
+        const modal_footer_links = document.getElementById('modal-footer-add');
+        const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
+        for (let i = 0; i < allActionButtonsFooter.length; i++) {
+          allActionButtonsFooter[i].disabled = false;
+          allActionButtonsFooter[i].classList.remove('disabled');
+        }
     }
 }
 
@@ -1078,7 +1102,7 @@ async function deleteDynamicMenuEntries(accountId, reference, env, preview_serve
     checked_entries_str = checked_entries_str.slice(0, -1);
 
     // Get list configuration
-    let jsonConfig = await $.get("/api/get_list_configuration/" + accountId + "/" + reference, function (result) {
+    let jsonConfig = await $.get("/api_menus/get_menu_configuration/" + accountId + "/" + reference, function (result) {
         return result;
     });
     var values = jsonConfig.columns;
@@ -1317,7 +1341,7 @@ async function uploadSetFieldsDynamicMenu(accountId, reference, action) {
 
         $.ajax({
             type: "POST",
-            url: "/upload_menu/create_middle_tables/" + accountId + "/" + reference,
+            url: "/upload/create_middle_tables/" + accountId + "/" + reference,
             data: form_data,
             contentType: false,
             cache: false,
@@ -1358,7 +1382,7 @@ async function uploadDynamicMenu(accountId, reference) {
 
         $.ajax({
             type: "POST",
-            url: "/upload_menu/dynamic_menu",
+            url: "/upload/dynamic_menu",
             data: form_data,
             contentType: false,
             cache: false,
@@ -1431,7 +1455,7 @@ async function openConfiguration(accountId, reference) {
         }
 
         if (values[0][5]) {
-            var mfields = values[0][5].split(';');
+            var mfields = values[0][5].split(',');
             for (var mfield in mfields) {
                 $('#s-mandatory-fields option[value="' + escapeHtml(mfields[mfield]) + '"]').attr("selected", "selected");
             }

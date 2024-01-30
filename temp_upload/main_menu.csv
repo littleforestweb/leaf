@@ -1,0 +1,49 @@
+menu_item,link,tree_position,parent,Active
+Courses,/courses.page,1,,1
+Student Life,/uni-life.page,1,,1
+Research,/research.page,1,,1
+Business,/business.page,1,,1
+Global,/global-connections.page,1,,1
+Undergraduate,/study/undergraduate.page,2,Courses,1
+Postgraduate taugth,/courses/postgraduate-taught.page,2,Courses,1
+Postgraduate research,/courses/research-postgraduate.page,2,Courses,1
+Foundation Years,/courses/foundation-years.page,2,Courses,1
+Pre-sessional English courses,/courses/pre-sessional-courses.page,2,Courses,1
+Exchanges,/courses/exchanges.page,2,Courses,1
+Customise your degree,/courses/customise-your-degree.page,2,Courses,1
+Tuition fees,/courses/fees.page,2,Courses,1
+Funding your studies,/courses/funding.page,2,Courses,1
+How to apply,/courses/how-to-apply.page,2,Courses,1
+Clearing,/clearing,2,Courses,1
+Free online learning,/courses/free-online-learning.page,2,Courses,1
+Continuing professional development,/courses/continuing-professional-development.page,2,Courses,1
+Accommodation,/student-life/accommodation,2,Student Life,1
+Our campuses,/student-life/campuses,2,Student Life,1
+Our cities,/student-life/cities,2,Student Life,1
+Student community,/student-life/community,2,Student Life,1
+Sports and gyms,/student-life/sport-gyms,2,Student Life,1
+Support and money,/student-life/support-money,2,Student Life,1
+Our impact,/research/impact.page,2,Research,1
+Facilities,/research/facilities.page,2,Research,1
+Centres and institutes,/research/centres.page,2,Research,1
+REF,/research/research-excellence-framework.page,2,Research,1
+Funding,/research/research-funding.page,2,Research,1
+Research & Innovation Services,/research/ris.page,2,Research,1
+Partnerships,/research/partners.page,2,Research,1
+Commercialising research,/research/commercialising.page,2,Research,1
+Researcher support,/research/researcher-support.page,2,Research,1
+Research integrity,/research/integrity.page,2,Research,1
+Why work with us?,/business/work-with-us.page,2,Business,1
+Collaboration,/business/collaboration.page,2,Business,1
+Consultancy,/business/consultancy.page,2,Business,1
+Commercialisation,/business/commercialisation.page,2,Business,1
+Use our facilities,/business/business-facilities.page,2,Business,1
+Connect with our students,/business/connect-with-students.page,2,Business,1
+How we operate,/business/how-we-operate.page,2,Business,1
+Suppliers,/business/suppliers.page,2,Business,1
+Make a business enquiry,/business/get-in-touch.page,2,Business,1
+International students,/uni-life/international.page,2,Global,1
+International Office,/global-connections/international-office-team.page,2,Global,1
+Partnerships and initiatives,/global-connections/global-partnerships-map.page,2,Global,1
+Visiting delegations,/global-connections/visiting-delegation.page,2,Global,1
+Visiting fellowships,/global-connections/visiting-fellowships.page,2,Global,1

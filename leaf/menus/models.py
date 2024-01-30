@@ -81,41 +81,44 @@ def get_menu_data(request, accountId: str, reference: str):
         direction = request.args.get("sSortDir_0").upper()
         sortingColumn = request.args.get("iSortCol_0")
 
-        tableName = f"account_{accountId}_menu_{reference}"
+        if isinstance(int(accountId), int):
+            tableName = f"account_{accountId}_menu_{reference}"
+            showColumnsQuery = f"SHOW COLUMNS FROM {tableName}"
+            mycursor.execute(showColumnsQuery,)
+            menuColumns = mycursor.fetchall()
 
-        showColumnsQuery = f"SHOW COLUMNS FROM %s"
-        mycursor.execute(showColumnsQuery, (tableName,))
-        menuColumns = mycursor.fetchall()
+            searchColumnsFields = []
+            field_menu = []
 
-        searchColumnsFields = []
-        field_menu = []
+            for columnIndex in range(len(menuColumns) - 1):
+                search_value = request.args.get(f"sSearch_{columnIndex + 1}")
+                if search_value:
+                    searchColumnsFields.append({"field": menuColumns[columnIndex][0], "value": search_value.replace("((((", "").replace("))))", "")})
 
-        for columnIndex in range(len(menuColumns) - 1):
-            search_value = request.args.get(f"sSearch_{columnIndex + 1}")
-            if search_value:
-                searchColumnsFields.append({"field": menuColumns[columnIndex][0], "value": search_value.replace("((((", "").replace("))))", "")})
+            for searchColumnsField in searchColumnsFields:
+                searchColumnsFieldValue = searchColumnsField['value'].replace('"', "'")
+                field_menu.append(f"{searchColumnsField['field']} LIKE %s")
 
-        for searchColumnsField in searchColumnsFields:
-            searchColumnsFieldValue = searchColumnsField['value'].replace('"', "'")
-            field_menu.append(f"{searchColumnsField['field']} LIKE %s")
+            where_clause = " AND ".join(field_menu)
+            if field_menu:
+                query_params = list(f"%{searchColumnsField['value']}%" for searchColumnsField in searchColumnsFields)
+                query = f"SELECT * FROM {tableName} WHERE {where_clause} ORDER BY {menuColumns[int(sortingColumn) - 1][0]} {direction} LIMIT %s, %s"
+                mycursor.execute(query, query_params + [skip, limit])
+            else:
+                order_by = menuColumns[int(sortingColumn) - 1][0]
+                query = f"SELECT * FROM {tableName} ORDER BY {order_by} {direction} LIMIT %s, %s"
+                mycursor.execute(query, (skip, limit))
 
-        where_clause = " AND ".join(field_menu)
-        if field_menu:
-            query_params = list(f"%{searchColumnsField['value']}%" for searchColumnsField in searchColumnsFields)
-            query = f"SELECT * FROM {tableName} WHERE {where_clause} ORDER BY {menuColumns[int(sortingColumn) - 1][0]} {direction} LIMIT %s, %s"
-            mycursor.execute(query, query_params + [skip, limit])
+            menus = mycursor.fetchall()
+
+            mycursor.execute(f"SELECT COUNT(*) FROM {tableName}")
+            menuCount = mycursor.fetchone()[0]
+
+            # Create json
+            jsonR = {"data": menus, "recordsTotal": menuCount, "recordsFiltered": menuCount}
+
         else:
-            order_by = menuColumns[int(sortingColumn) - 1][0]
-            query = f"SELECT * FROM {tableName} ORDER BY {order_by} {direction} LIMIT %s, %s"
-            mycursor.execute(query, (skip, limit))
-
-        menus = mycursor.fetchall()
-
-        mycursor.execute(f"SELECT COUNT(*) FROM %s", (tableName,))
-        menuCount = mycursor.fetchone()[0]
-
-        # Create json
-        jsonR = {"data": menus, "recordsTotal": menuCount, "recordsFiltered": menuCount}
+            print("Invalid accountId")
 
     except Exception as e:
         print("get_menu_data model")
@@ -144,22 +147,25 @@ def get_menu_columns(accountId: str, reference: str):
     mydb, mycursor = db_connection()
 
     try:
-        tableName = f"account_{accountId}_menu_{reference}"
+        if isinstance(int(accountId), int):
+            tableName = f"account_{accountId}_menu_{reference}"
 
-        # Create table if not exists
-        create_table_query = f"CREATE TABLE IF NOT EXISTS %s (id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE, name VARCHAR(255))"
-        mycursor.execute(create_table_query, (tableName,))
-        mydb.commit()
+            # Create table if not exists
+            create_table_query = f"CREATE TABLE IF NOT EXISTS {tableName} (id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE, name VARCHAR(255))"
+            mycursor.execute(create_table_query,)
+            mydb.commit()
 
-        # Retrieve column information
-        show_columns_query = f"SHOW COLUMNS FROM %s"
-        mycursor.execute(show_columns_query, (tableName,))
-        columns_info = mycursor.fetchall()
+            # Retrieve column information
+            show_columns_query = f"SHOW COLUMNS FROM {tableName}"
+            mycursor.execute(show_columns_query,)
+            columns_info = mycursor.fetchall()
 
-        # Convert bytes to string for column names
-        columns_info = [(item[0], item[1], item[2], item[3], item[4], item[5]) for item in columns_info]
+            # Convert bytes to string for column names
+            columns_info = [(item[0], item[1], item[2], item[3], item[4], item[5]) for item in columns_info]
 
-        jsonR = {"columns": columns_info}
+            jsonR = {"columns": columns_info}
+        else:
+            print("Invalid accountId")
 
     except Exception as e:
         print("get_menu_columns model")
@@ -195,12 +201,12 @@ def get_menu_columns_with_returned_id(accountId: str, reference: str, fieldToRet
         tableName = f"account_{accountId}_menu_{reference}"
 
         # Create table if not exists
-        create_table_query = f"CREATE TABLE IF NOT EXISTS %s (id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE, name VARCHAR(255))"
+        create_table_query = "CREATE TABLE IF NOT EXISTS %s (id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE, name VARCHAR(255))"
         mycursor.execute(create_table_query, (tableName,))
         mydb.commit()
 
         # Retrieve column information
-        show_columns_query = f"SHOW COLUMNS FROM %s"
+        show_columns_query = "SHOW COLUMNS FROM %s"
         mycursor.execute(show_columns_query, (tableName,))
         columns_info = mycursor.fetchall()
 
@@ -238,12 +244,15 @@ def get_menu_columns_with_properties(accountId: str, reference: str):
     try:
         tableName = f"account_{accountId}_menu_settings"
 
-        # Retrieve column properties
-        get_properties_query = "SELECT * FROM %s WHERE main_table = %s"
-        mycursor.execute(get_properties_query, (tableName, reference,))
-        columns_properties = mycursor.fetchall()
+        if isinstance(int(accountId), int):
+            # Retrieve column properties
+            get_properties_query = f"SELECT * FROM {tableName} WHERE main_table = %s"
+            mycursor.execute(get_properties_query, (reference,))
+            columns_properties = mycursor.fetchall()
 
-        jsonR['columns'] = columns_properties
+            jsonR['columns'] = columns_properties
+        else:
+            print("Invalid accountId")
 
     except Exception as e:
         print("get_menu_columns_with_properties model")
@@ -271,29 +280,33 @@ def get_menu_configuration(accountId: str, reference: str):
 
     mydb, mycursor = db_connection()
 
-    field_menu_for_config = ['id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE',
-                             'main_table VARCHAR(255) DEFAULT NULL',
-                             'template VARCHAR(255) DEFAULT NULL',
-                             'parameters VARCHAR(255) DEFAULT NULL',
-                             'fields VARCHAR(255) DEFAULT NULL',
-                             'mandatory_fields VARCHAR(255) DEFAULT NULL',
-                             'save_by_field VARCHAR(11) DEFAULT 0',
-                             'field_to_save_by VARCHAR(255) DEFAULT NULL']
-    field_query_for_config = " (" + ", ".join(field_menu_for_config) + ")"
+    if isinstance(int(accountId), int):
 
-    tableName = f"account_{accountId}_menu_configuration"
+        field_menu_for_config = ['id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE',
+                                 'main_table VARCHAR(255) DEFAULT NULL',
+                                 'template VARCHAR(255) DEFAULT NULL',
+                                 'parameters VARCHAR(255) DEFAULT NULL',
+                                 'fields VARCHAR(255) DEFAULT NULL',
+                                 'mandatory_fields VARCHAR(255) DEFAULT NULL',
+                                 'save_by_field VARCHAR(11) DEFAULT 0',
+                                 'field_to_save_by VARCHAR(255) DEFAULT NULL']
+        field_query_for_config = " (" + ", ".join(field_menu_for_config) + ")"
 
-    # Create table if not exists
-    create_table_query = f"CREATE TABLE IF NOT EXISTS %s %s"
-    mycursor.execute(create_table_query, (tableName, field_query_for_config,))
-    mydb.commit()
+        tableName = f"account_{accountId}_menu_configuration"
 
-    # Retrieve configuration information
-    get_config_query = f"SELECT * FROM %s WHERE main_table = %s"
-    mycursor.execute(get_config_query, (tableName, reference,))
-    config_info = mycursor.fetchall()
+        # Create table if not exists
+        create_table_query = f"CREATE TABLE IF NOT EXISTS {tableName} {field_query_for_config}"
+        mycursor.execute(create_table_query,)
+        mydb.commit()
 
-    jsonR['columns'] = config_info
+        # Retrieve configuration information
+        get_config_query = f"SELECT * FROM {tableName} WHERE main_table = %s"
+        mycursor.execute(get_config_query, (reference,))
+        config_info = mycursor.fetchall()
+
+        jsonR['columns'] = config_info
+    else:
+        print("Invalid accountId")
 
     return jsonify(jsonR)
 
@@ -320,36 +333,40 @@ def set_menu_configuration(request, accountId: str, reference: str):
     try:
         tableName = f"account_{accountId}_menu_configuration"
 
-        # Delete existing configuration for the specified menu
-        delete_config_query = "DELETE FROM %s WHERE main_table = %s"
-        mycursor.execute(delete_config_query, (tableName, reference,))
-        mydb.commit()
+        if isinstance(int(accountId), int):
 
-        thisRequest = request.get_json()
+            # Delete existing configuration for the specified menu
+            delete_config_query = f"DELETE FROM {tableName} WHERE main_table = %s"
+            mycursor.execute(delete_config_query, (reference,))
+            mydb.commit()
 
-        template = werkzeug.utils.escape(str(thisRequest.get("s-template")))
-        parameters = werkzeug.utils.escape(str(thisRequest.get("s-parameters")))
-        fields = werkzeug.utils.escape(thisRequest.get("s-fields"))
-        mfields = werkzeug.utils.escape(thisRequest.get("s-mandatory-fields"))
-        save_by_field = werkzeug.utils.escape(thisRequest.get("s-save-by-field"))
-        field_to_save_by = werkzeug.utils.escape(thisRequest.get("s-field-to-save-by"))
+            thisRequest = request.get_json()
 
-        # Convert menus to strings for storage
-        if isinstance(fields, list):
-            fields = ';'.join(fields)
+            template = werkzeug.utils.escape(str(thisRequest.get("s-template")))
+            parameters = werkzeug.utils.escape(str(thisRequest.get("s-parameters")))
+            fields = werkzeug.utils.escape(thisRequest.get("s-fields"))
+            mfields = werkzeug.utils.escape(thisRequest.get("s-mandatory-fields"))
+            save_by_field = werkzeug.utils.escape(thisRequest.get("s-save-by-field"))
+            field_to_save_by = werkzeug.utils.escape(thisRequest.get("s-field-to-save-by"))
 
-        if isinstance(mfields, list):
-            mfields = ';'.join(mfields)
+            # Convert menus to strings for storage
+            if isinstance(fields, list):
+                fields = ';'.join(fields)
 
-        if isinstance(field_to_save_by, list):
-            field_to_save_by = ';'.join(field_to_save_by)
+            if isinstance(mfields, list):
+                mfields = ';'.join(mfields)
 
-        col_to_return = [template, parameters, fields, mfields, save_by_field, field_to_save_by]
+            if isinstance(field_to_save_by, list):
+                field_to_save_by = ';'.join(field_to_save_by)
 
-        # Insert new configuration for the specified menu
-        insert_config_query = "INSERT INTO %s (main_table, template, parameters, fields, mandatory_fields, save_by_field, field_to_save_by) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-        mycursor.execute(insert_config_query, (tableName, reference, template, parameters, fields, mfields, save_by_field, field_to_save_by))
-        mydb.commit()
+            col_to_return = [template, parameters, fields, mfields, save_by_field, field_to_save_by]
+
+            # Insert new configuration for the specified menu
+            insert_config_query = f"INSERT INTO {tableName} (main_table, template, parameters, fields, mandatory_fields, save_by_field, field_to_save_by) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+            mycursor.execute(insert_config_query, (reference, template, parameters, fields, mfields, save_by_field, field_to_save_by))
+            mydb.commit()
+        else:
+            print("Invalid accountId")
 
     except Exception as e:
         print("set_menu_configuration model")
@@ -384,12 +401,15 @@ def get_value_columns_with_index(accountId: str, reference: str, fieldToGet: str
     try:
         tableName = f"account_{accountId}_menu_{reference}"
 
-        # Retrieve columns with values and specified indices
-        get_columns_query = f"SELECT %s, %s FROM %s"
-        mycursor.execute(get_columns_query, (fieldToGet, fieldToLabel, tableName,))
-        columns_data = mycursor.fetchall()
+        if isinstance(int(accountId), int):
+            # Retrieve columns with values and specified indices
+            get_columns_query = f"SELECT %s, %s FROM {tableName}"
+            mycursor.execute(get_columns_query, (fieldToGet, fieldToLabel))
+            columns_data = mycursor.fetchall()
 
-        jsonR = {"columns": columns_data, "indexToKeep": indexToKeep, "indexToKeepForAccountSettings": indexToKeepForAccountSettings}
+            jsonR = {"columns": columns_data, "indexToKeep": indexToKeep, "indexToKeepForAccountSettings": indexToKeepForAccountSettings}
+        else:
+            print("Invalid accountId")
 
     except Exception as e:
         print("get_value_columns_with_index model")
@@ -423,7 +443,7 @@ def upload_dynamic_menus(request):
         if uploaded_file.filename != '':
             file_path = os.path.join(Config.TEMP_UPLOAD_FOLDER, uploaded_file.filename)
             uploaded_file.save(file_path)
-            toReturn = parse_csv(accountId, reference, file_path)
+            toReturn = parse_menu_csv(accountId, reference, file_path)
 
     except Exception as e:
         print("upload_dynamic_menus model")
@@ -432,7 +452,7 @@ def upload_dynamic_menus(request):
         return jsonify(toReturn)
 
 
-def parse_csv(accountId: str, reference: str, filePath: str):
+def parse_menu_csv(accountId: str, reference: str, filePath: str):
     """
     Parse a CSV file and create/update a corresponding table in the database.
 
@@ -458,52 +478,56 @@ def parse_csv(accountId: str, reference: str, filePath: str):
         if not os.path.isfile(filePath):
             raise FileNotFoundError(f"File not found: {filePath}")
 
-        tableName = f"account_{accountId}_menu_{reference}"
+        if isinstance(int(accountId), int):
+            tableName = f"account_{accountId}_menu_{reference}"
 
-        # Drop existing table if it exists
-        mycursor.execute(f"DROP TABLE IF EXISTS %s", (tableName,))
-        mydb.commit()
+            # Drop existing table if it exists
+            mycursor.execute(f"DROP TABLE IF EXISTS {tableName}")
+            mydb.commit()
 
-        # Read CSV file using Pandas
-        file = pd.read_csv(filePath, sep=",", encoding="utf-8", encoding_errors='ignore', engine="python", quoting=csv.QUOTE_ALL)
+            # Read CSV file using Pandas
+            file = pd.read_csv(filePath, sep=",", encoding="utf-8", encoding_errors='ignore', engine="python", quoting=csv.QUOTE_ALL)
 
-        # Get CSV column names
-        col_names = file.columns.tolist()
-        col_names_to_generate_fields = [field for field in col_names if field.strip().lower() != 'id']
+            # Get CSV column names
+            col_names = file.columns.tolist()
+            col_names_to_generate_fields = [field for field in col_names if field.strip().lower() != 'id']
 
-        field_menu = ['id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE']
+            field_menu = ['id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE']
 
-        for field in col_names_to_generate_fields:
-            field_menu.append(f'{field} LONGTEXT DEFAULT NULL')
+            for field in col_names_to_generate_fields:
+                field_menu.append(f'{field} LONGTEXT DEFAULT NULL')
 
-        field_query = " (" + ", ".join(field_menu) + ")"
+            field_query = " (" + ", ".join(field_menu) + ")"
 
-        # Create table if not exists
-        mycursor.execute(f"CREATE TABLE IF NOT EXISTS %s%s", (tableName, field_query,))
-        mydb.commit()
+            # Create table if not exists
+            create_table_query = f"CREATE TABLE IF NOT EXISTS {tableName}{field_query}"
+            mycursor.execute(create_table_query,)
+            mydb.commit()
 
-        # Use Pandas to parse the CSV file
-        csv_data = pd.read_csv(filePath, sep=",", encoding="utf-8", encoding_errors='ignore', engine="python", names=col_names, header=None)
+            # Use Pandas to parse the CSV file
+            csv_data = pd.read_csv(filePath, sep=",", encoding="utf-8", encoding_errors='ignore', engine="python", names=col_names, header=None)
 
-        insert_query = f"INSERT INTO {tableName} ({', '.join(col_names)}) VALUES "
+            insert_query = f"INSERT INTO {tableName} ({', '.join(col_names)}) VALUES "
 
-        # Loop through the rows
-        for i, row in csv_data.iterrows():
-            if i != 0:
-                values = map((lambda x: f'"' + html.escape(str((x if isinstance(x, float) else x.encode('utf-8'))).replace("\\", "__BACKSLASH__TO_REPLACE__")[2:-1]) + '"'), row)
-                full_insert_query = f"%s(%s);"
-                mycursor.execute(full_insert_query, (insert_query, ', '.join(values),))
-                mydb.commit()
+            # Loop through the rows
+            for i, row in csv_data.iterrows():
+                if i != 0:
+                    values = map((lambda x: f'"' + html.escape(str((x if isinstance(x, float) else x.encode('utf-8'))).replace("\\", "__BACKSLASH__TO_REPLACE__")[2:-1]) + '"'), row)
+                    joint_value = ', '.join(values)
+                    mycursor.execute(f"{insert_query}({joint_value})")
+                    mydb.commit()
 
-                if i + 1 == len(csv_data):
-                    mydb.close()
-                    return col_names
+                    if i + 1 == len(csv_data):
+                        mydb.close()
+                        return col_names
+        else:
+            print("Invalid accountId")
 
     except FileNotFoundError as e:
-        print("parse_csv model - 1")
+        print("parse_menu_csv model - 1")
         raise FileNotFoundError(f"File not found: {filePath}")
     except Exception as e:
-        print("parse_csv model - 2")
+        print("parse_menu_csv model - 2")
         raise RuntimeError(f"Error during CSV parsing and database update: {str(e)}")
 
 
@@ -523,73 +547,77 @@ def create_middle_tables(request, accountId: str, reference: str):
     mydb, mycursor = db_connection()
 
     try:
-        # Define fields for the settings table
-        field_menu_for_settings = ['id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE']
-        field_menu_for_settings.append("main_table VARCHAR(255) DEFAULT NULL")
-        field_menu_for_settings.append("foreign_key VARCHAR(255) DEFAULT NULL")
-        field_menu_for_settings.append("reference_table VARCHAR(255) DEFAULT NULL")
-        field_menu_for_settings.append("assigned_field VARCHAR(255) DEFAULT NULL")
-        field_menu_for_settings.append("assigned_field_label VARCHAR(255) DEFAULT NULL")
-        field_menu_for_settings.append("field_type VARCHAR(255) DEFAULT NULL")
-        field_menu_for_settings.append("start_visibility INT(11) DEFAULT NULL")
-        field_query_for_settings = " (" + ", ".join(field_menu_for_settings) + ")"
 
-        # Define the settings table name
-        settings_table_name = f"account_{accountId}_menu_settings"
+        if isinstance(int(accountId), int):
+            # Define fields for the settings table
+            field_menu_for_settings = ['id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE']
+            field_menu_for_settings.append("main_table VARCHAR(255) DEFAULT NULL")
+            field_menu_for_settings.append("foreign_key VARCHAR(255) DEFAULT NULL")
+            field_menu_for_settings.append("reference_table VARCHAR(255) DEFAULT NULL")
+            field_menu_for_settings.append("assigned_field VARCHAR(255) DEFAULT NULL")
+            field_menu_for_settings.append("assigned_field_label VARCHAR(255) DEFAULT NULL")
+            field_menu_for_settings.append("field_type VARCHAR(255) DEFAULT NULL")
+            field_menu_for_settings.append("start_visibility INT(11) DEFAULT NULL")
+            field_query_for_settings = " (" + ", ".join(field_menu_for_settings) + ")"
 
-        # Create or update the settings table
-        mycursor.execute(f"CREATE TABLE IF NOT EXISTS %s%s", (settings_table_name, field_query_for_settings,))
-        mydb.commit()
+            # Define the settings table name
+            settings_table_name = f"account_{accountId}_menu_settings"
 
-        mycursor.execute(f"DELETE FROM %s WHERE main_table = %s", (settings_table_name, reference,))
-        mydb.commit()
+            # Create or update the settings table
+            mycursor.execute(f"CREATE TABLE IF NOT EXISTS {settings_table_name}{field_query_for_settings}")
+            mydb.commit()
 
-        # Iterate through form items
-        for key, val in request.form.items():
-            if key.startswith("selectItem"):
-                finalKey = str(key.replace("selectItem_", ""))
-                fieldToAssign = str(werkzeug.utils.escape(request.form.get(f"s-{finalKey}-assignedField")))
-                fieldToAssignLabel = str(werkzeug.utils.escape(request.form.get(f"s-{finalKey}-assignedFieldLabel")))
-                fieldToAssignType = str(werkzeug.utils.escape(request.form.get(f"typeSelectItem_{finalKey}")))
-                startVisibility = str(werkzeug.utils.escape(request.form.get(f"displaySettingsItem_{finalKey}")))
+            mycursor.execute(f"DELETE FROM {settings_table_name} WHERE main_table = '{reference}'")
+            mydb.commit()
 
-                # Define the mapping table name
-                mapping_table_name = f"account_{accountId}_mappings_menu_{reference}_{val}"
+            # Iterate through form items
+            for key, val in request.form.items():
+                if key.startswith("selectItem"):
+                    finalKey = str(key.replace("selectItem_", ""))
+                    fieldToAssign = str(werkzeug.utils.escape(request.form.get(f"s-{finalKey}-assignedField")))
+                    fieldToAssignLabel = str(werkzeug.utils.escape(request.form.get(f"s-{finalKey}-assignedFieldLabel")))
+                    fieldToAssignType = str(werkzeug.utils.escape(request.form.get(f"typeSelectItem_{finalKey}")))
+                    startVisibility = str(werkzeug.utils.escape(request.form.get(f"displaySettingsItem_{finalKey}")))
 
-                # Drop existing mapping table
-                if val != "null":
-                    mycursor.execute(f"DROP TABLE IF EXISTS %s", (mapping_table_name,))
+                    # Define the mapping table name
+                    mapping_table_name = f"account_{accountId}_mappings_menu_{reference}_{val}"
+
+                    # Drop existing mapping table
+                    if val != "null":
+                        mycursor.execute(f"DROP TABLE IF EXISTS {mapping_table_name}")
+                        mydb.commit()
+
+                        # Define fields for the mapping table
+                        mapping_field_menu = ['id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE']
+                        mapping_field_menu.append(f"{reference}_id INT(11) DEFAULT NULL")
+                        mapping_field_menu.append(f"{val}_id INT(11) DEFAULT NULL")
+                        mapping_field_query = " (" + ", ".join(mapping_field_menu) + ")"
+
+                        # Create the mapping table
+                        mycursor.execute(f"CREATE TABLE IF NOT EXISTS {mapping_table_name}{mapping_field_query}")
+                        mydb.commit()
+
+                    # Insert or update settings table
+                    if val != "null":
+                        settings_query = (
+                                "INSERT INTO "
+                                + settings_table_name
+                                + " (main_table, foreign_key, reference_table, assigned_field, assigned_field_label, field_type, start_visibility) "
+                                + "VALUES (%s, %s, %s, %s, %s, %s, %s)"
+                        )
+                        mycursor.execute(settings_query, (reference, finalKey, val, fieldToAssign, fieldToAssignLabel, fieldToAssignType, startVisibility))
+                    else:
+                        settings_query = (
+                                "INSERT INTO "
+                                + settings_table_name
+                                + " (main_table, foreign_key, reference_table, assigned_field, assigned_field_label, field_type, start_visibility) "
+                                + "VALUES (%s, %s, %s, %s, %s, %s, %s)"
+                        )
+                        mycursor.execute(settings_query, (reference, finalKey, 'None', 'None', 'None', fieldToAssignType, startVisibility))
+
                     mydb.commit()
-
-                    # Define fields for the mapping table
-                    mapping_field_menu = ['id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE']
-                    mapping_field_menu.append(f"{reference}_id INT(11) DEFAULT NULL")
-                    mapping_field_menu.append(f"{val}_id INT(11) DEFAULT NULL")
-                    mapping_field_query = " (" + ", ".join(mapping_field_menu) + ")"
-
-                    # Create the mapping table
-                    mycursor.execute(f"CREATE TABLE IF NOT EXISTS %s%s", (mapping_table_name, mapping_field_query,))
-                    mydb.commit()
-
-                # Insert or update settings table
-                if val != "null":
-                    settings_query = (
-                            "INSERT INTO "
-                            + settings_table_name
-                            + " (main_table, foreign_key, reference_table, assigned_field, assigned_field_label, field_type, start_visibility) "
-                            + "VALUES (%s, %s, %s, %s, %s, %s, %s)"
-                    )
-                    mycursor.execute(settings_query, (reference, finalKey, val, fieldToAssign, fieldToAssignLabel, fieldToAssignType, startVisibility))
-                else:
-                    settings_query = (
-                            "INSERT INTO "
-                            + settings_table_name
-                            + " (main_table, foreign_key, reference_table, assigned_field, assigned_field_label, field_type, start_visibility) "
-                            + "VALUES (%s, %s, %s, %s, %s, %s, %s)"
-                    )
-                    mycursor.execute(settings_query, (reference, finalKey, 'None', 'None', 'None', fieldToAssignType, startVisibility))
-
-                mydb.commit()
+        else:
+            print("Invalid accountId")
 
     except Exception as e:
         print("create_middle_tables model")
@@ -617,39 +645,44 @@ def get_settings(accountId: str):
     mydb, mycursor = db_connection()
 
     try:
-        # Define fields for the settings table using a menu
-        field_menu_for_settings = [
-            'id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE',
-            'main_table VARCHAR(255) DEFAULT NULL',
-            'foreign_key VARCHAR(255) DEFAULT NULL',
-            'reference_table VARCHAR(255) DEFAULT NULL',
-            'assigned_field VARCHAR(255) DEFAULT NULL',
-            'assigned_field_label VARCHAR(255) DEFAULT NULL',
-            'field_type VARCHAR(255) DEFAULT NULL',
-            'start_visibility INT(11) DEFAULT NULL'
-        ]
+        if isinstance(int(accountId), int):
+            field_menu_for_settings = [
+                'id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE',
+                'main_table VARCHAR(255) DEFAULT NULL',
+                'foreign_key VARCHAR(255) DEFAULT NULL',
+                'reference_table VARCHAR(255) DEFAULT NULL',
+                'assigned_field VARCHAR(255) DEFAULT NULL',
+                'assigned_field_label VARCHAR(255) DEFAULT NULL',
+                'field_type VARCHAR(255) DEFAULT NULL',
+                'start_visibility INT(11) DEFAULT NULL'
+            ]
 
-        # Use a comma-separated string for field definitions
-        field_query_for_settings = ", ".join(field_menu_for_settings)
+            # Use a comma-separated string for field definitions
+            field_query_for_settings = ", ".join(field_menu_for_settings)
 
-        # Define the settings table name
-        tableName = f"account_{accountId}_menu_settings"
+            # Define the settings table name
+            tableName = f"account_{accountId}_menu_settings"
 
-        # Create or update the settings table
-        mycursor.execute(f"CREATE TABLE IF NOT EXISTS %s (%s)", (tableName, field_query_for_settings,))
-        mydb.commit()
+            # Create or update the settings table
+            # Since table names cannot be parameterized, use string formatting
+            # Ensure you have sanitized `accountId` before this step
+            create_table_query = f"CREATE TABLE IF NOT EXISTS {tableName} ({field_query_for_settings})"
+            mycursor.execute(create_table_query)
+            mydb.commit()
 
-        # Retrieve settings from the table (avoid using '*' for security)
-        select_query = f"SELECT id, main_table, foreign_key, reference_table, assigned_field, assigned_field_label, field_type, start_visibility FROM %s"
-        mycursor.execute(select_query, (tableName,))
-        settings_data = mycursor.fetchall()
+            # Retrieve settings from the table (avoid using '*' for security)
+            select_query = f"SELECT id, main_table, foreign_key, reference_table, assigned_field, assigned_field_label, field_type, start_visibility FROM {tableName}"
+            mycursor.execute(select_query,)
+            settings_data = mycursor.fetchall()
 
-        # Create JSON response
-        json_response = {
-            "settings": settings_data,
-            "images_webpath": Config.IMAGES_WEBPATH,
-            "original_images_webpath": Config.ORIGINAL_IMAGES_WEBPATH
-        }
+            # Create JSON response
+            json_response = {
+                "settings": settings_data,
+                "images_webpath": Config.IMAGES_WEBPATH,
+                "original_images_webpath": Config.ORIGINAL_IMAGES_WEBPATH
+            }
+        else:
+            print("Invalid accountId")
 
     except Exception as e:
         print("get_settings model")
@@ -718,7 +751,7 @@ def publish_dynamic_menus(request, account_menu: str, accountId: str, reference:
 
     try:
         # Query to retrieve all data from the specified database table (using parameterized query)
-        mycursor.execute("SELECT * FROM %s", (account_menu,))
+        mycursor.execute(f"SELECT * FROM {account_menu}")
 
         # Fetch column headers
         row_headers = [x[0] for x in mycursor.description]
@@ -744,8 +777,8 @@ def publish_dynamic_menus(request, account_menu: str, accountId: str, reference:
             single_country_to_update = country_to_update.split(';')
             for single_country_to_update in single_country_to_update:
                 # Query to retrieve data filtered by country (using parameterized query)
-                mycursor.execute("SELECT * FROM %s WHERE LOWER(`country`) LIKE %s",
-                                 (account_menu, '%' + single_country_to_update.strip().lower() + '%',))
+                mycursor.execute(f"SELECT * FROM {account_menu} WHERE LOWER(`country`) LIKE %s",
+                                 ('%' + single_country_to_update.strip().lower() + '%',))
                 row_headers = [x[0] for x in mycursor.description]
                 full_menu_by_country = mycursor.fetchall()
 
@@ -824,25 +857,30 @@ def update_dynamic_menus_database(accountId, account_menu, item_id, this_request
     mydb, mycursor = db_connection()
 
     try:
-        for key, val in this_request.items():
-            if key.startswith("e-"):
-                final_key = key.replace("e-", "")
-                columns_to_return.append(final_key)
 
-                if isinstance(val, list):
-                    val = ';'.join(val)
+        if isinstance(int(accountId), int) and isinstance(int(item_id), int):
+            for key, val in this_request.items():
+                if key.startswith("e-"):
+                    final_key = key.replace("e-", "")
+                    columns_to_return.append(final_key)
 
-                # Update the database with the new value (use parameterized query to prevent SQL injection)
-                if final_key != 'id':
-                    final_val = val.replace('"', "'")
-                    mycursor.execute(f"UPDATE %s SET %s = %s WHERE id = %s", (account_menu, final_key, final_val, item_id))
-                    mydb.commit()
+                    if isinstance(val, list):
+                        val = ';'.join(val)
 
-                index += 1
+                    # Update the database with the new value (use parameterized query to prevent SQL injection)
+                    if final_key != 'id':
+                        final_val = val.replace('"', "'")
+                        mycursor.execute(f"UPDATE {account_list} SET {final_key} = %s WHERE id = %s", (final_val, item_id))
+                        mydb.commit()
 
-                # Check if all columns are processed, then return the updated menu data
-                if (index == len(this_request)):
-                    return columns_to_return
+                    index += 1
+
+                    # Check if all columns are processed, then return the updated menu data
+                    if (index == len(this_request)):
+                        return columns_to_return
+        else:
+            print("Invalid accountId")
+
     except Exception as e:
         print("update_dynamic_menus_database model")
         print(f"Error updating dynamic menu: {str(e)}")
@@ -949,7 +987,7 @@ def execute_database_query_when_adding_menu(mydb, mycursor, accountId, account_m
     columns_for_query = " (" + ", ".join(columns) + ")"
     column_values_for_query = " ('" + "', '".join(column_values) + "')"
 
-    mycursor.execute(f"INSERT INTO %s%s VALUES%s", (account_menu, columns_for_query, column_values_for_query))
+    mycursor.execute(f"INSERT INTO {account_menu}{columns_for_query} VALUES{column_values_for_query}")
     mydb.commit()
 
     return str(mycursor.lastrowid)
@@ -983,7 +1021,7 @@ def update_dynamically_linked_fields_when_adding_menu(mydb, mycursor, accountId,
                 final_val_to_update_dynamically = val + last_row_id
 
     if final_key_to_update_dynamically:
-        mycursor.execute(f"UPDATE %s SET %s = %s WHERE id = %s", (account_menu, final_key_to_update_dynamically, final_val_to_update_dynamically, last_row_id))
+        mycursor.execute(f"UPDATE {account_menu} SET {final_key_to_update_dynamically} = {final_val_to_update_dynamically} WHERE id = '{last_row_id}'")
         mydb.commit()
 
 
@@ -1015,7 +1053,7 @@ def delete_dynamic_menus(request, accountId: str, account_menu: str):
         validate_entries_to_delete(entries_to_delete, accountId)
 
         # Delete selected entries from the database
-        mycursor.execute(f"DELETE FROM %s WHERE id IN (%s)", (account_menu, entries_to_delete,))
+        mycursor.execute(f"DELETE FROM {account_menu} WHERE id IN ({entries_to_delete})")
         mydb.commit()
 
         # Retrieve the updated menu of tables after deletion

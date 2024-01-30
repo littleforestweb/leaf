@@ -63,7 +63,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
 
         var mfields = [];
         if (values[0][5]) {
-            mfields = values[0][5].split(';');
+            mfields = values[0][5].split(',');
         }
     }
 
@@ -494,11 +494,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                                     if (site_dynamic_list.toLowerCase().includes('http')) {
                                                         var srcVal = site_dynamic_list;
                                                     } else {
-                                                        if (site_dynamic_list.toLowerCase().includes('images')) {
-                                                            var srcVal = original_images_webpath + site_dynamic_list;
-                                                        } else {
-                                                            var srcVal = original_images_webpath + 'images/' + site_dynamic_list;
-                                                        }
+                                                        var srcVal = original_images_webpath + site_dynamic_list;
                                                     }
                                                 }
                                             }
@@ -874,7 +870,19 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
             $('#' + form_data[0]['mandatoryElementsNotCompletedToReturn'][singleItem]).parent().find('.ck-editor').addClass('warning-not-completed');
         }
         alert("You have to complete all mandatory fields (" + form_data[0]['mandatoryElementsNotCompletedToReturn'].join(", ").replace(/e-/g, '') + ")!");
-        thisButton.classList.remove('disabled');
+        
+        const buttons_to_edit_container = document.getElementById('buttons_to_edit');
+        const allActionButtons = buttons_to_edit_container.getElementsByTagName('button');
+        for (let i = 0; i < allActionButtons.length; i++) {
+          allActionButtons[i].disabled = false;
+          allActionButtons[i].classList.remove('disabled');
+        }
+        const modal_footer_links = document.getElementById('modal-footer-edit');
+        const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
+        for (let i = 0; i < allActionButtonsFooter.length; i++) {
+          allActionButtonsFooter[i].disabled = false;
+          allActionButtonsFooter[i].classList.remove('disabled');
+        }
     }
 }
 
@@ -1182,7 +1190,19 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
             $('#' + form_data[0]['mandatoryElementsNotCompletedToReturn'][singleItem]).parent().find('.ck-editor').addClass('warning-not-completed');
         }
         alert("You have to complete all mandatory fields (" + form_data[0]['mandatoryElementsNotCompletedToReturn'].join(", ").replace(/a-/g, '') + ")!");
-        thisButton.classList.remove('disabled');
+        
+        const buttons_to_add_container = document.getElementById('buttons_to_add');
+        const allActionButtons = buttons_to_add_container.getElementsByTagName('button');
+        for (let i = 0; i < allActionButtons.length; i++) {
+          allActionButtons[i].disabled = false;
+          allActionButtons[i].classList.remove('disabled');
+        }
+        const modal_footer_links = document.getElementById('modal-footer-add');
+        const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
+        for (let i = 0; i < allActionButtonsFooter.length; i++) {
+          allActionButtonsFooter[i].disabled = false;
+          allActionButtonsFooter[i].classList.remove('disabled');
+        }
     }
 }
 
@@ -1564,7 +1584,7 @@ async function openConfiguration(accountId, reference) {
         }
 
         if (values[0][5]) {
-            var mfields = values[0][5].split(';');
+            var mfields = values[0][5].split(',');
             for (var mfield in mfields) {
                 $('#s-mandatory-fields option[value="' + escapeHtml(mfields[mfield]) + '"]').attr("selected", "selected");
             }
@@ -1762,9 +1782,9 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
                                         var fullVal = getAccountSettings.original_images_webpath + fullVal;
                                     } else if (!fullVal.toLowerCase().includes('images') && !fullVal.toLowerCase().includes('http')) {
                                         if (getAccountSettings.original_images_webpath.at(-1) === '/') {
-                                            var fullVal = getAccountSettings.original_images_webpath + 'images/' + fullVal;
+                                            var fullVal = getAccountSettings.original_images_webpath + fullVal;
                                         } else {
-                                            var fullVal = getAccountSettings.original_images_webpath + '/images/' + fullVal;
+                                            var fullVal = getAccountSettings.original_images_webpath + '/' + fullVal;
                                         }
                                     }
                                 }

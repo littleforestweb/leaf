@@ -67,7 +67,7 @@ def is_valid_saml_response(saml_response):
         saml_response_xml = fromstring(response_str.encode('utf-8'))
 
         # Optional: Schema validation can be performed here if an XSD is available
-
+        print(response_str)
         # Check for any other malicious content or patterns
         additional_checks_validation = perform_additional_xml_checks(saml_response_xml)
         if additional_checks_validation is None or additional_checks_validation is False:

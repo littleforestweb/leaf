@@ -561,13 +561,16 @@ def api_upload():
     Returns:
     - Response: JSON response containing the details of the uploaded file.
     """
-    uploaded_file = werkzeug.utils.secure_filename(request.files.get('upload'))
+    uploaded_file = request.files.get('upload')
     lastIndexOfFileNamePath = werkzeug.utils.escape(request.form.get('lastIndexOfFileNamePath'))
 
     if uploaded_file is None:
         uploaded_file = request.files.getlist('files[]')[0]
+        # request.files['files[]']
 
-    extension = uploaded_file.filename.split('.')[-1].lower()
+    uploaded_file_name = werkzeug.utils.secure_filename(uploaded_file.filename)
+
+    extension = uploaded_file_name.split('.')[-1].lower()
     if extension.lower() not in ['jpg', 'gif', 'png', 'jpeg', 'pdf']:
         return jsonify(message='Image or PDF only!')
 
@@ -575,14 +578,14 @@ def api_upload():
     if lastIndexOfFileNamePath and imagePathToCheck not in lastIndexOfFileNamePath:
         pathToSave = Config.WEBSERVER_FOLDER
         webPathToSave = lastIndexOfFileNamePath.replace(Config.MAIN_SERVER, '').replace(Config.PREVIEW_SERVER, '')
-        file_path = (pathToSave + webPathToSave + uploaded_file.filename).replace('//', '/')
+        file_path = (pathToSave + webPathToSave + uploaded_file_name).replace('//', '/')
         fileToReturn = file_path.replace(pathToSave, Config.PREVIEW_SERVER + "/")
     else:
         pathToSave = Config.FILES_UPLOAD_FOLDER
         pathToSave = pathToSave.replace('//', '/')
         webPathToSave = Config.MAIN_SERVER + Config.IMAGES_WEBPATH
-        file_path = os.path.join(pathToSave, uploaded_file.filename.lower().replace(' ', '-'))
-        fileToReturn = webPathToSave + '/' + uploaded_file.filename.lower().replace(' ', '-')
+        file_path = os.path.join(pathToSave, uploaded_file_name.lower().replace(' ', '-'))
+        fileToReturn = webPathToSave + '/' + uploaded_file_name.lower().replace(' ', '-')
 
     # set the file path
     uploaded_file.save(file_path)

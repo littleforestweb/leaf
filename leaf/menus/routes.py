@@ -25,7 +25,7 @@ def view_menus():
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
-@menus.route('/api/get_menus/<accountId>/<userId>/<isAdmin>')
+@menus.route('/api_menu/get_menus/<accountId>/<userId>/<isAdmin>')
 @login_required
 def api_get_menus(accountId: str, userId: str, isAdmin: str):
     """
@@ -65,7 +65,7 @@ def view_dynamic_menu(reference: str):
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
-@menus.route('/api/get_menu/<accountId>/<reference>')
+@menus.route('/api_menu/get_menu/<accountId>/<reference>')
 @login_required
 def api_get_menu(accountId: str, reference: str):
     """
@@ -84,7 +84,7 @@ def api_get_menu(accountId: str, reference: str):
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
-@menus.route('/api/get_menu_columns/<accountId>/<reference>', methods=['GET', 'POST'])
+@menus.route('/api_menu/get_menu_columns/<accountId>/<reference>', methods=['GET', 'POST'])
 @login_required
 def api_get_menu_columns(accountId: str, reference: str):
     """
@@ -102,7 +102,7 @@ def api_get_menu_columns(accountId: str, reference: str):
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
-@menus.route('/api/get_menu_columns_with_returned_id/<accountId>/<reference>/<fieldToReturn>/<linkedFieldToReturn>/<linkedFieldLabelToReturn>', methods=['GET', 'POST'])
+@menus.route('/api_menu/get_menu_columns_with_returned_id/<accountId>/<reference>/<fieldToReturn>/<linkedFieldToReturn>/<linkedFieldLabelToReturn>', methods=['GET', 'POST'])
 @login_required
 def api_get_menu_columns_with_returned_id(accountId: str, reference: str, fieldToReturn: str, linkedFieldToReturn: str, linkedFieldLabelToReturn: str):
     """
@@ -123,7 +123,7 @@ def api_get_menu_columns_with_returned_id(accountId: str, reference: str, fieldT
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
-@menus.route('/api/get_menu_columns_with_properties/<accountId>/<reference>', methods=['GET', 'POST'])
+@menus.route('/api_menu/get_menu_columns_with_properties/<accountId>/<reference>', methods=['GET', 'POST'])
 @login_required
 def api_get_menu_columns_with_properties(accountId: str, reference: str):
     """
@@ -141,7 +141,7 @@ def api_get_menu_columns_with_properties(accountId: str, reference: str):
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
-@menus.route('/api/get_menu_configuration/<accountId>/<reference>', methods=['GET', 'POST'])
+@menus.route('/api_menu/get_menu_configuration/<accountId>/<reference>', methods=['GET', 'POST'])
 @login_required
 def api_get_menu_configuration(accountId: str, reference: str):
     """
@@ -178,7 +178,7 @@ def set_configuration(accountId: str, reference: str):
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
-@menus.route('/api/get_value_columns_with_index/<accountId>/<reference>/<fieldToGet>/<fieldToLabel>/<indexToKeep>/<indexToKeepForAccountSettings>', methods=['GET', 'POST'])
+@menus.route('/api_menu/get_value_columns_with_index/<accountId>/<reference>/<fieldToGet>/<fieldToLabel>/<indexToKeep>/<indexToKeepForAccountSettings>', methods=['GET', 'POST'])
 @login_required
 def api_get_value_columns_with_index(accountId: str, reference: str, fieldToGet: str, fieldToLabel: str, indexToKeep: str, indexToKeepForAccountSettings: str):
     """
@@ -234,7 +234,7 @@ def upload_create_middle_tables(accountId: str, reference: str):
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
-@menus.route('/api/settings/<accountId>')
+@menus.route('/api_menu/settings/<accountId>')
 @login_required
 def api_settings(accountId: str):
     """
@@ -251,7 +251,7 @@ def api_settings(accountId: str):
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
-@menus.route('/api/get_all_menus/<accountId>')
+@menus.route('/api_menu/get_all_menus/<accountId>')
 @login_required
 def api_get_all_menus(accountId: str):
     """
