@@ -27,6 +27,9 @@ class Config:
     with open(secret_file) as in_file:
         SECRET_KEY = in_file.read()
 
+    # DEBUG MODE
+    DEBUG = config["DEBUG"]
+
     # Client Account ID
     ACCOUNT_ID = config["ACCOUNT_ID"]
 
@@ -44,7 +47,7 @@ class Config:
     DEPLOYMENTS_SERVERS = config["DEPLOYMENTS_SERVERS"]
 
     # Webserver Folder
-    WEBSERVER_FOLDER = config["WEBSERVER_FOLDER"] + "/" if config["WEBSERVER_FOLDER"][-1] != "/" else config["WEBSERVER_FOLDER"]
+    WEBSERVER_FOLDER = config["WEBSERVER_FOLDER"]
 
     # User email assigned
     ASSIGNED_USER_EMAIL = config["ASSIGNED_USER_EMAIL"]
