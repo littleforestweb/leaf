@@ -52,7 +52,7 @@ def checkConfig(loaded_json):
         "SMTP_USER": "",
         "SMTP_PASSWORD": "",
         "PREVIEW_SERVER": "",
-        "MAIN_SERVER": "",
+        "LEAFCMS_SERVER": "",
         "ORIGINAL_IMAGES_WEBPATH": "",
         "HERITRIX_FOLDER": "",
         "HERITRIX_PORT": "",
@@ -171,7 +171,7 @@ class Config:
     PREVIEW_SERVER = config["PREVIEW_SERVER"]
 
     # Main Webserver URL
-    MAIN_SERVER = config["MAIN_SERVER"]
+    LEAFCMS_SERVER = config["LEAFCMS_SERVER"]
 
     # Original Images webfolder
     ORIGINAL_IMAGES_WEBPATH = os.path.join(PREVIEW_SERVER, config["ORIGINAL_IMAGES_WEBPATH"])

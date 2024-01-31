@@ -378,7 +378,7 @@ def action_workflow():
             with open(local_path) as inFile:
                 data = inFile.read()
                 original_content = data
-            data = data.replace(Config.MAIN_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH)
+            data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH)
             with open(local_path, "w") as outFile:
                 outFile.write(data)
 

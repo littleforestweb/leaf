@@ -577,13 +577,13 @@ def api_upload():
     imagePathToCheck = Config.IMAGES_WEBPATH.replace(Config.PREVIEW_SERVER, '')
     if lastIndexOfFileNamePath and imagePathToCheck not in lastIndexOfFileNamePath:
         pathToSave = Config.WEBSERVER_FOLDER
-        webPathToSave = lastIndexOfFileNamePath.replace(Config.MAIN_SERVER, '').replace(Config.PREVIEW_SERVER, '')
+        webPathToSave = lastIndexOfFileNamePath.replace(Config.LEAFCMS_SERVER, '').replace(Config.PREVIEW_SERVER, '')
         file_path = (pathToSave + webPathToSave + uploaded_file_name).replace('//', '/')
         fileToReturn = file_path.replace(pathToSave, Config.PREVIEW_SERVER + "/")
     else:
         pathToSave = Config.FILES_UPLOAD_FOLDER
         pathToSave = pathToSave.replace('//', '/')
-        webPathToSave = Config.MAIN_SERVER + Config.IMAGES_WEBPATH
+        webPathToSave = Config.LEAFCMS_SERVER + Config.IMAGES_WEBPATH
         file_path = os.path.join(pathToSave, uploaded_file_name.lower().replace(' ', '-'))
         fileToReturn = webPathToSave + '/' + uploaded_file_name.lower().replace(' ', '-')
 
