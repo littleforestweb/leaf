@@ -52,7 +52,6 @@ def checkConfig(loaded_json):
         "SMTP_USER": "",
         "SMTP_PASSWORD": "",
         "PREVIEW_SERVER": "",
-        "PREVIEW_SERVER_PATH": "",
         "MAIN_SERVER": "",
         "ORIGINAL_IMAGES_WEBPATH": "",
         "HERITRIX_FOLDER": "",
@@ -170,7 +169,6 @@ class Config:
 
     # Preview Webserver URL
     PREVIEW_SERVER = config["PREVIEW_SERVER"]
-    PREVIEW_SERVER_PATH = config["WEBSERVER_FOLDER"]
 
     # Main Webserver URL
     MAIN_SERVER = config["MAIN_SERVER"]
