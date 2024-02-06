@@ -702,3 +702,10 @@ def temp_api_upload():
             scp.put(local_path, remote_path)
 
     return "File uploaded successfully.<br>" + local_path + "<br>" + "<br>".join(remote_paths) + "<br>" + "<br>".join(live_urls) + "<br>" + preview_url
+
+
+# Route to serve static files only if the user is logged in
+@main.route('/leaf_static/<path:filename>')
+@login_required
+def protected_static(filename):
+    return send_from_directory(Config.LEAF_STATIC_FOLDER, filename)

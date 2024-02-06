@@ -199,10 +199,13 @@ class Config:
 
     # Auto Generated
     DYNAMIC_PATH = os.path.join(WEBSERVER_FOLDER, "leaf_content", "lists")
-    FILES_UPLOAD_FOLDER = os.path.join(LEAFCMS_FOLDER, "leaf", "static", "uploads")
+    STATIC_FOLDER = os.path.join(LEAFCMS_FOLDER, "leaf", "static")
+    LEAF_STATIC_FOLDER = os.path.join(LEAFCMS_FOLDER, "leaf", "leaf_static")
+    os.makedirs(LEAF_STATIC_FOLDER, exist_ok=True)
+    FILES_UPLOAD_FOLDER = os.path.join(STATIC_FOLDER, "uploads")
     os.makedirs(FILES_UPLOAD_FOLDER, exist_ok=True)
     IMAGES_WEBPATH = FILES_UPLOAD_FOLDER.replace(LEAFCMS_FOLDER, "")
-    WORKFLOW_FILES_UPLOAD_FOLDER = os.path.join(LEAFCMS_FOLDER, "leaf", "static", "workflow_attachments")
+    WORKFLOW_FILES_UPLOAD_FOLDER = os.path.join(LEAF_STATIC_FOLDER, "workflow_attachments")
     os.makedirs(WORKFLOW_FILES_UPLOAD_FOLDER, exist_ok=True)
     WORKFLOW_IMAGES_WEBPATH = WORKFLOW_FILES_UPLOAD_FOLDER.replace(LEAFCMS_FOLDER, "")
     SCREENSHOTS_FOLDER = os.path.join(WEBSERVER_FOLDER, "leaf_content", "screenshots")
