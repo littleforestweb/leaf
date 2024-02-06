@@ -1,4 +1,5 @@
 # models.py
+import re
 
 from flask import jsonify, session
 from leaf.decorators import db_connection
@@ -84,7 +85,7 @@ def get_list_data(request, accountId: str, reference: str):
         if isinstance(int(accountId), int):
             tableName = f"account_{accountId}_list_{reference}"
             showColumnsQuery = f"SHOW COLUMNS FROM {tableName}"
-            mycursor.execute(showColumnsQuery,)
+            mycursor.execute(showColumnsQuery, )
             listColumns = mycursor.fetchall()
 
             searchColumnsFields = []
@@ -152,12 +153,12 @@ def get_list_columns(accountId: str, reference: str):
 
             # Create table if not exists
             create_table_query = f"CREATE TABLE IF NOT EXISTS {tableName} (id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE, name VARCHAR(255))"
-            mycursor.execute(create_table_query,)
+            mycursor.execute(create_table_query, )
             mydb.commit()
 
             # Retrieve column information
             show_columns_query = f"SHOW COLUMNS FROM {tableName}"
-            mycursor.execute(show_columns_query,)
+            mycursor.execute(show_columns_query, )
             columns_info = mycursor.fetchall()
 
             # Convert bytes to string for column names
@@ -296,7 +297,7 @@ def get_list_configuration(accountId: str, reference: str):
 
         # Create table if not exists
         create_table_query = f"CREATE TABLE IF NOT EXISTS {tableName} {field_query_for_config}"
-        mycursor.execute(create_table_query,)
+        mycursor.execute(create_table_query, )
         mydb.commit()
 
         # Retrieve configuration information
@@ -500,7 +501,7 @@ def parse_csv(accountId: str, reference: str, filePath: str):
 
             # Create table if not exists
             create_table_query = f"CREATE TABLE IF NOT EXISTS {tableName}{field_query}"
-            mycursor.execute(create_table_query,)
+            mycursor.execute(create_table_query, )
             mydb.commit()
 
             # Use Pandas to parse the CSV file
@@ -671,7 +672,7 @@ def get_settings(accountId: str):
 
             # Retrieve settings from the table (avoid using '*' for security)
             select_query = f"SELECT id, main_table, foreign_key, reference_table, assigned_field, assigned_field_label, field_type, start_visibility FROM {tableName}"
-            mycursor.execute(select_query,)
+            mycursor.execute(select_query, )
             settings_data = mycursor.fetchall()
 
             # Create JSON response
@@ -1110,8 +1111,8 @@ def add_single_list(request):
 
     try:
         # Extract data from the HTTP request
-        name = werkzeug.utils.escape(request.form.get("name"))
-        reference = werkzeug.utils.escape(request.form.get("reference"))
+        name = werkzeug.utils.escape(re.sub(r'[^a-zA-Z0-9]', '', request.form.get("name")))
+        reference = werkzeug.utils.escape(re.sub(r'[^a-zA-Z0-9]', '', request.form.get("reference")))
 
         # Validate input data
         validate_input_data_to_add(name, reference, accountId)
