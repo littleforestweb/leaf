@@ -98,6 +98,19 @@ def login():
             lfi_user = mycursor.fetchone()
 
             if lfi_user:
+                # Remove session data, this will log the user out
+                session.pop('loggedin', None)
+                session.pop('id', None)
+                session.pop('username', None)
+                session.pop('user_image', None)
+                session.pop('email', None)
+                session.pop('accountId', None)
+                session.pop('accountName', None)
+                session.pop('is_admin', None)
+                session.pop('is_manager', None)
+                session.pop('jwt_token', None)
+                session.pop('logout_redirect', None)
+
                 # Create session data
                 session['loggedin'] = True
                 session['id'] = lfi_user[0]
