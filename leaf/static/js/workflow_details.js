@@ -105,8 +105,7 @@ async function addNewComment(id, user_to_notify) {
             {name: "links", items: ["Link", "Unlink", "anchorPluginButton"]},
             {name: "insert", items: ["FileUpload", "Image", "Embed", "Table", "HorizontalRule", "SpecialChar", "inserthtml4x"]},
             {name: "tools", items: ["ShowBlocks"]},
-            {name: "styles", items: ["Styles", "Format"]},
-            {name: "document", items: ["Source"]}
+            {name: "styles", items: ["Styles", "Format"]}
         ],
         extraPlugins: "anchor, inserthtml4x, embed, fileupload, pastefromword",
         filebrowserUploadUrl: "/api/upload?name=fileupload",
