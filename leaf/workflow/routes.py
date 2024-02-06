@@ -13,6 +13,7 @@ from bs4 import BeautifulSoup
 from email.message import EmailMessage
 from .models import uniquify, workflow_changed_email, upload_file_with_retry, add_workflow, is_workflow_owner, get_workflow_details, get_workflows, get_task_requests, change_status_workflow
 import werkzeug.utils
+from leaf.decorators import limiter
 
 workflow = Blueprint("workflow", __name__)
 
@@ -247,6 +248,7 @@ def change_priority_workflow():
 
 
 @workflow.route("/workflow/add_new_comment", methods=["POST"])
+@limiter.limit("5/minute")
 @login_required
 def add_new_comment_workflow():
     emailToSend = ''
