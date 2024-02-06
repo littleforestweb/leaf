@@ -73,7 +73,7 @@ async function populateEditListModal(accountId) {
     list_users_with_access = list_users_with_access.split(',').map(Number);
 
     $('.users-with-access-container').html('');
-    for (var x=0; x<listOfUsers.users.length; x++) {
+    for (var x = 0; x < listOfUsers.users.length; x++) {
         var thisUser = listOfUsers.users[x];
         var userImage = '<span class="logo_image_container"><img class="logo_image" src="' + thisUser["user_image"] + '" onerror="this.style.display=\'none\'" /></span>';
         if (thisUser["user_image"].startsWith('#')) {
@@ -84,12 +84,12 @@ async function populateEditListModal(accountId) {
         $(".users-with-access-container").prepend('<label for="thisUserId_' + thisUser["id"] + '" class="form-control users-with-access users-with-access_' + thisUser["id"] + '">' + userImage + '<span class="userName">' + thisUser["username"] + '</span><input type="checkbox" class="form-check-input pull-right this-user-id" name="thisUserId_' + thisUser["id"] + '" id="thisUserId_' + thisUser["id"] + '" ' + (list_users_with_access.includes(thisUser["id"]) ? "checked" : "") + '/></span>');
     }
 
-    $('#users-with-access-search').on('keyup',function(e){
+    $('#users-with-access-search').on('keyup', function (e) {
         var tagElems = $('.users-with-access');
         $(tagElems).hide();
-        for(var i = 0; i < tagElems.length; i++){
+        for (var i = 0; i < tagElems.length; i++) {
             var tag = $(tagElems).eq(i);
-            if(($(tag).children('span.userName').text().toLowerCase()).indexOf($(this).val().toLowerCase()) !== -1){
+            if (($(tag).children('span.userName').text().toLowerCase()).indexOf($(this).val().toLowerCase()) !== -1) {
                 $(tag).show();
             }
         }
@@ -109,14 +109,16 @@ async function updateList() {
         h_e_list_reference = e_list_name.replace(/\s+/g, '_').toLowerCase();
     }
 
+    // @J to fix
     var allSelectedUsers = [];
-    $('.this-user-id:checked').each(function(){
+    $('.this-user-id:checked').each(function () {
         var thisId = $(this).attr('id');
         thisId = thisId.replace('thisUserId_', '');
         allSelectedUsers.push(thisId);
     })
 
     allSelectedUsers = allSelectedUsers.join(',')
+    console.log(allSelectedUsers);
 
     // Post
     $.ajax({
@@ -214,7 +216,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
     $('#table').DataTable().destroy();
 
     // Get pagesJSON
-    let json = await $.get("/api/get_lists/" + accountId +"/" + userId +"/" + isAdmin, function (result) {
+    let json = await $.get("/api/get_lists/" + accountId + "/" + userId + "/" + isAdmin, function (result) {
         return result;
     });
 
@@ -334,7 +336,7 @@ function stopPropagation(evt) {
 }
 
 function doMainButtons() {
-    $('input[type="checkbox"]').on('click', function() {
+    $('input[type="checkbox"]').on('click', function () {
         $(".deleteButton").prop('disabled', true);
         if ($('input[type="checkbox"]:checked').length === 1) {
             $(".deleteButton").prop('disabled', false);

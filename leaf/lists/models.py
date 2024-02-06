@@ -1,7 +1,7 @@
 # models.py
 import re
 
-from flask import jsonify, session
+from flask import jsonify, session, current_app
 from leaf.decorators import db_connection
 from leaf.config import Config
 import pandas as pd
@@ -1174,24 +1174,24 @@ def update_single_list(request):
     if not int(accountId) == int(session["accountId"]):
         return jsonify({"error": "Forbidden"}), 403
 
+    mydb, mycursor = db_connection()
+
     try:
-        reference = werkzeug.utils.escape(request.form.get("reference"))
-        original_list_name = werkzeug.utils.escape(request.form.get("original_list_name"))
-        new_list_name = werkzeug.utils.escape(request.form.get("new_list_name"))
-        user_with_access = werkzeug.utils.escape(request.form.get("user_with_access"))
+        reference = werkzeug.utils.escape(re.sub(r'[^a-zA-Z0-9_]', '', request.form.get("reference")))
+        original_list_name = werkzeug.utils.escape(re.sub(r'[^a-zA-Z0-9_]', '', request.form.get("original_list_name")))
+        new_list_name = werkzeug.utils.escape(re.sub(r'[^a-zA-Z0-9_]', '', request.form.get("new_list_name")))
+        user_with_access = werkzeug.utils.escape(re.sub(r'[^a-zA-Z0-9_]', '', request.form.get("user_with_access")))
 
         # Validate input data
         validate_input_data_to_update(reference, accountId, original_list_name, new_list_name, user_with_access)
 
-        # Connect to the database
-        with db_connection() as (mydb, mycursor):
-            # Update the list in the 'lists' table
-            update_query = "UPDATE lists SET name=%s, reference=%s, user_with_access=%s WHERE name=%s AND accountId=%s"
-            values = (new_list_name, reference, user_with_access, original_list_name, accountId)
-            mycursor.execute(update_query, values)
-            mydb.commit()
+        # Update the list in the 'lists' table
+        update_query = "UPDATE lists SET name=%s, reference=%s, user_with_access=%s WHERE name=%s AND accountId=%s"
+        values = (new_list_name, reference, user_with_access, original_list_name, accountId)
+        mycursor.execute(update_query, values)
+        mydb.commit()
 
-            json_response = {"name": new_list_name, "reference": reference}
+        json_response = {"name": new_list_name, "reference": reference}
 
     except Exception as e:
         print("update_single_list model")
