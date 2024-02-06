@@ -1111,8 +1111,8 @@ def add_single_list(request):
 
     try:
         # Extract data from the HTTP request
-        name = werkzeug.utils.escape(re.sub(r'[^a-zA-Z0-9]', '', request.form.get("name")))
-        reference = werkzeug.utils.escape(re.sub(r'[^a-zA-Z0-9]', '', request.form.get("reference")))
+        name = werkzeug.utils.escape(re.sub(r'[^a-zA-Z0-9_]', '', request.form.get("name")))
+        reference = werkzeug.utils.escape(re.sub(r'[^a-zA-Z0-9_]', '', request.form.get("reference")))
 
         # Validate input data
         validate_input_data_to_add(name, reference, accountId)
