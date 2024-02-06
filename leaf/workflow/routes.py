@@ -1,6 +1,8 @@
 import datetime
 import json
 import os
+import re
+
 import paramiko
 import smtplib
 from flask import render_template, Blueprint, jsonify, request, session, url_for, send_from_directory
@@ -609,7 +611,9 @@ def api_upload_workflow_attachments():
     pathToSave = Config.WORKFLOW_FILES_UPLOAD_FOLDER
     pathToSave = pathToSave.replace('//', '/')
     webPathToSave = Config.WORKFLOW_IMAGES_WEBPATH
-    file_path = os.path.join(pathToSave, uploaded_file.filename.lower().replace(' ', '-'))
+    file_path = uploaded_file.filename.lower()
+    file_path = file_path.replace(extension, "")
+    file_path = os.path.join(pathToSave, re.sub(r'[^a-zA-Z0-9_]', '', file_path) + "." + extension)
     fileToReturn = file_path.replace(pathToSave, webPathToSave)
 
     file_path = uniquify(file_path)
@@ -619,5 +623,5 @@ def api_upload_workflow_attachments():
     return jsonify({
         "uploaded": 1,
         "fileName": os.path.basename(file_path),
-        "url": fileToReturn
+        "url": fileToReturn.replace("/leaf/", "/")
     })
