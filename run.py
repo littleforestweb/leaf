@@ -3,10 +3,10 @@
 
 from flask_cors import CORS
 
-from leaf import create_app
+from leaf import create_app, Config
 
 app = create_app()
-CORS(app)
+CORS(app, origins=Config.CORS_ALLOWED_ORIGINS)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run()
