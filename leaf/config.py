@@ -28,6 +28,7 @@ def checkConfig(loaded_json):
     expected_structure = {
         "DEBUG": False,
         "CORS_ALLOWED_ORIGINS": [],
+        "CONTENT_SECURITY_POLICY": "",
         "ACCOUNT_ID": 0,
         "JWT_EXPIRATION_TIME": 24,
         "DB_HOST": "",
@@ -142,6 +143,9 @@ class Config:
 
     # CORS_ALLOWED_ORIGINS
     CORS_ALLOWED_ORIGINS = config["CORS_ALLOWED_ORIGINS"]
+
+    # CONTENT SECURITY POLICY
+    CONTENT_SECURITY_POLICY = config["CONTENT_SECURITY_POLICY"]
 
     # Client Account ID
     ACCOUNT_ID = config["ACCOUNT_ID"]
