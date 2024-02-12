@@ -2,6 +2,7 @@
 # !/usr/bin/python3
 
 from flask_cors import CORS
+
 from leaf import create_app, Config
 
 app = create_app()
