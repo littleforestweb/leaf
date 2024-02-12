@@ -29,7 +29,7 @@ def checkConfig(loaded_json):
         "DEBUG": False,
         "CORS_ALLOWED_ORIGINS": [],
         "CONTENT_SECURITY_POLICY": "",
-        "ACCOUNT_ID": 0,
+        "ACCOUNT_ID": 1,
         "JWT_EXPIRATION_TIME": 24,
         "DB_HOST": "",
         "DB_PORT": 3306,
