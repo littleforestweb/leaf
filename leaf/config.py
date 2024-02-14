@@ -110,12 +110,14 @@ def loadConfig():
     with open(configFile, "r") as inFile:
         config = json.load(inFile)
 
-    # Validate and update the configuration using the checkConfig function
-    config = checkConfig(config)
+    # If the file does not exist, create it with default
+    if not os.path.exists(configFile):
+        # Validate and update the configuration using the checkConfig function
+        config = checkConfig(config)
 
-    # Save the validated configuration back to the 'config.json' file
-    with open(configFile, "w") as outFile:
-        json.dump(config, outFile, indent=2)
+        # Save the validated configuration back to the 'config.json' file
+        with open(configFile, "w") as outFile:
+            json.dump(config, outFile, indent=2)
 
     # Return the validated configuration and the path to the configuration file
     return config, configFile
