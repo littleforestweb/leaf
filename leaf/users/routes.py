@@ -1,8 +1,8 @@
+import werkzeug.utils
 from flask import render_template, Blueprint, jsonify, request, session
 
 from leaf.decorators import login_required
 from .models import get_users_data, add_user_to_database, update_user_in_database, delete_users_from_database
-import werkzeug.utils
 
 users = Blueprint('users', __name__)
 

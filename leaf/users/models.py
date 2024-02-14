@@ -12,10 +12,10 @@ def get_users_data():
 
     try:
         # Execute SQL query to fetch user data
-        mycursor.execute("SELECT users.name, users.email, users.display_name FROM users")
+        mycursor.execute("SELECT user.id, user.username, user.email FROM user")
 
         # Extract user data and create a list of dictionaries
-        users_list = [{"name": user[0], "email": user[1], "display_name": user[2]} for user in mycursor.fetchall()]
+        users_list = [{"id": user[0], "name": user[1], "email": user[2]} for user in mycursor.fetchall()]
 
         return users_list
 
@@ -44,7 +44,7 @@ def add_user_to_database(name, email, is_master, display_name):
 
     try:
         # Run SQL Command to insert the new user
-        mycursor.execute("INSERT INTO users (name, email, ismaster, display_name) VALUES (%s, %s, %s, %s)", (name, email, is_master, display_name))
+        mycursor.execute("INSERT INTO user (name, email, ismaster, display_name) VALUES (%s, %s, %s, %s)", (name, email, is_master, display_name))
         mydb.commit()
 
         return True
@@ -76,7 +76,7 @@ def update_user_in_database(original_user_name, new_user_name, new_user_email, n
 
     try:
         # Run SQL Command to update the user
-        update_users_query = "UPDATE users SET name=%s, email=%s, display_name=%s WHERE name=%s"
+        update_users_query = "UPDATE user SET name=%s, email=%s, display_name=%s WHERE name=%s"
         values = (new_user_name, new_user_email, new_user_display_name, original_user_name)
 
         mycursor.execute(update_users_query, values)
@@ -110,7 +110,7 @@ def delete_users_from_database(usernames):
     try:
         # Run SQL Command to delete users
         placeholders = ','.join(['%s'] * len(usernames))
-        delete_users_cmd = f"DELETE FROM users WHERE name IN ({placeholders})"
+        delete_users_cmd = f"DELETE FROM user WHERE name IN ({placeholders})"
         mycursor.execute(delete_users_cmd, usernames)
         mydb.commit()
 

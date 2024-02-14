@@ -28,7 +28,6 @@ async function addUser() {
             // Show success notification
             $('#addUserSuccessNotification').toast('show');
 
-
             // Refresh page
             setTimeout(function () {
                 location.reload(true);
@@ -154,7 +153,6 @@ async function deleteUsers() {
     console.log("deleteUsers() : END");
 }
 
-
 window.addEventListener('DOMContentLoaded', async function main() {
     console.log("Starting");
     console.log("Get Users");
@@ -176,17 +174,16 @@ window.addEventListener('DOMContentLoaded', async function main() {
     json = json["users"];
     for (let i = 0; i < json.length; i++) {
         let entry = json[i];
+        let id = entry["id"];
         let name = entry["name"];
         let email = entry["email"];
-        let display_name = entry["display_name"];
-        let group_name = entry["group_name"];
-        dataset.push([name, name, email, display_name, group_name]);
+        dataset.push([id, id, name, email]);
     }
 
 
     // Setup - add a text input to each header cell
     $('#table thead tr').clone(true).addClass('filters').appendTo('#table thead');
-    let searchColumns = [1, 2, 3, 4];
+    let searchColumns = [1, 2, 3];
 
     $('#table').DataTable({
         dom: 'Brtip', buttons: {
@@ -231,19 +228,15 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 return "<input type='checkbox' id='" + data + "' value='" + data + "' >";
             },
         }, {
-            "width": "20%", "targets": 1, "render": function (data, type, row) {
+            "width": "5%", "targets": 1, "render": function (data, type, row) {
                 return "<span>" + data + "</span>";
             },
         }, {
-            "width": "25%", "targets": 2, "render": function (data, type, row) {
+            "width": "45%", "targets": 2, "render": function (data, type, row) {
                 return "<span>" + data + "</span>";
             },
         }, {
-            "width": "30%", "targets": 3, "render": function (data, type, row) {
-                return "<span>" + data + "</span>";
-            },
-        }, {
-            "width": "20%", "targets": 4, "render": function (data, type, row) {
+            "width": "45%", "targets": 3, "render": function (data, type, row) {
                 return "<span>" + data + "</span>";
             },
         }]

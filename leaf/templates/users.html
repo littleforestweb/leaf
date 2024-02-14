@@ -4,7 +4,7 @@
 
 {% block content %}
     <script>
-        $("#nav-link-people").addClass("active");
+        $("#nav-link-users").addClass("active");
     </script>
 
     <!-- EDIT USER MODAL -->
@@ -24,27 +24,6 @@
                         <div class="mb-3">
                             <label for="e-user-email" class="col-form-label">Email:</label>
                             <input type="text" class="form-control" id="e-user-email">
-                        </div>
-                        <!--
-                                    <div class="mb-3">
-                                        <label for="e-user-master" class="col-form-label">Is Master:</label>
-                                        <input type="text" class="form-control" id="e-user-master">
-                                    </div>
-                        -->
-                        <div class="mb-3">
-                            <label for="e-user-display-name" class="col-form-label">Display Name:</label>
-                            <input type="text" class="form-control" id="e-user-display-name">
-                        </div>
-                        <div class="mb-3">
-                            <label for="e-user-group-name" class="col-form-label">Group:</label>
-                            <input type="text" class="form-control" id="e-user-group-name">
-
-                            <input type="hidden" id="h-e-user-name">
-                            <input type="hidden" id="h-e-user-email">
-                            <!-- <input type="hidden" id="h-e-user-master"> -->
-                            <input type="hidden" id="h-e-user-display-name">
-                            <input type="hidden" id="h-e-user-group-name">
-
                         </div>
                     </form>
                 </div>
@@ -78,14 +57,6 @@
                             <label for="user-master" class="col-form-label">Is Master:</label>
                             <input type="text" class="form-control" id="user-master" value="no">
                         </div>
-                        <div class="mb-3">
-                            <label for="user-display-name" class="col-form-label">Display Name:</label>
-                            <input type="text" class="form-control" id="user-display-name">
-                        </div>
-                        <div class="mb-3">
-                            <label for="user-group-name" class="col-form-label">Group:</label>
-                            <input type="text" class="form-control" id="user-group-name" value="EVERYONE">
-                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -95,67 +66,6 @@
             </div>
         </div>
     </div>
-
-    <!-- ADD GROUP MODAL -->
-    <div class="modal fade" id="addGroupModal" tabindex="-1" aria-labelledby="addGroupModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addGroupLabel">Add Group</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form>
-                        <div class="mb-3">
-                            <label for="group-name" class="col-form-label">Group Name:</label>
-                            <input type="text" class="form-control" id="group-name">
-                        </div>
-                        <div class="mb-3">
-                            <label for="group-display-name" class="col-form-label">Group Display Name:</label>
-                            <input type="text" class="form-control" id="group-display-name">
-                        </div>
-                        <div class="mb-3">
-                            <label for="group-description" class="col-form-label">Description:</label>
-                            <input type="text" class="form-control" id="group-description">
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-success" onclick="addGroup()">Add</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ADD USER GROUP MAPPING MODAL -->
-    <div class="modal fade" id="addUserGroupMappingModal" tabindex="-1" aria-labelledby="addUserGroupMappingModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addUserGroupMappingLabel">Add User Group Mapping</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form>
-                        <div class="mb-3">
-                            <label for="user-name" class="col-form-label">User Name:</label>
-                            <input type="text" class="form-control" id="user-name">
-                        </div>
-                        <div class="mb-3">
-                            <label for="group-name" class="col-form-label">Group Name:</label>
-                            <input type="text" class="form-control" id="group-name">
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-success" onclick="addUserGroupMapping()">Add</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
 
     <!-- ERROR MODAL -->
     <div class="modal fade" id="errorModal" tabindex="-1">
@@ -174,7 +84,6 @@
             </div>
         </div>
     </div>
-
     <div class="modal fade" id="deleteErrorModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -191,7 +100,6 @@
             </div>
         </div>
     </div>
-
 
     <!-- NOTIFICATIONS -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11">
@@ -213,10 +121,7 @@
             <div class="header-1">
                 <h3 style="float: left">People</h3>
                 <div style="float:right; margin-left: 10px;" class="header-btns">
-                    <!-- Add User Btn -->
                     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal">Add User</button>
-                    <!-- <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addGroupModal">Add Group</button> -->
-                    <!-- <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserGroupMappingModal">Add User Group Mapping</button> -->
                     <button type="button" class="btn btn-red" data-bs-toggle="modal" data-bs-target="#deleteUser" onclick="console.log('deleteUsers()'); deleteUsers();">Delete Users</button>
                     <button type="button" class="btn btn-blue" data-bs-toggle="modal" data-bs-target="#editUserModal" onclick="console.log('populateEditUserModal'); populateEditUserModal();">Edit User</button>
                 </div>
@@ -225,20 +130,18 @@
                 <thead>
                 <tr>
                     <th></th>
+                    <th>ID</th>
                     <th>Name</th>
                     <th>Email</th>
-                    <th>Display Name</th>
-                    <th>Group Name</th>
                 </tr>
                 </thead>
                 <tbody></tbody>
                 <tfoot>
                 <tr>
                     <th></th>
+                    <th>ID</th>
                     <th>Name</th>
                     <th>Email</th>
-                    <th>Display Name</th>
-                    <th>Group Name</th>
                 </tr>
                 </tfoot>
             </table>
