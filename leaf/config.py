@@ -106,18 +106,21 @@ def loadConfig():
     # Get the path to the 'config.json' file
     configFile = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
 
+    # Check if file exists -> create it
+    if not os.path.join(configFile):
+        with open(configFile, "w") as outFile:
+            json.dump({}, outFile, indent=2)
+
     # Read the configuration from the file
     with open(configFile, "r") as inFile:
         config = json.load(inFile)
 
-    # If the file does not exist, create it with default
-    if not os.path.exists(configFile):
-        # Validate and update the configuration using the checkConfig function
-        config = checkConfig(config)
+    # Validate and update the configuration using the checkConfig function
+    config = checkConfig(config)
 
-        # Save the validated configuration back to the 'config.json' file
-        with open(configFile, "w") as outFile:
-            json.dump(config, outFile, indent=2)
+    # Save the validated configuration back to the 'config.json' file
+    with open(configFile, "w") as outFile:
+        json.dump(config, outFile, indent=2)
 
     # Return the validated configuration and the path to the configuration file
     return config, configFile
