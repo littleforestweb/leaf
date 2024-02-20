@@ -1241,39 +1241,42 @@ def delete_multiple_lists(request):
     if not int(accountId) == int(session["accountId"]):
         return jsonify({"error": "Forbidden"}), 403
 
+    lists_to_delete = werkzeug.utils.escape(request.form.get("lists_to_delete"))
+
+    if not lists_to_delete:
+        json_response = {"lists_to_delete": "None provided", "action": "none"}
+        return jsonify(json_response)
+
+    # Convert the string to a list
+    lists_to_delete = [list_name.strip() for list_name in lists_to_delete.split(",")]
+
+    mydb, mycursor = db_connection()
+
     try:
-        lists_to_delete = werkzeug.utils.escape(request.form.get("lists_to_delete"))
+        # Delete rows from the 'lists' table
+        delete_query = "DELETE FROM lists WHERE name IN (%s)"  # Removed the accountId condition temporarily
+        placeholders = ",".join(["%s"] * len(lists_to_delete))
+        delete_query = f"{delete_query} AND accountId=%s"  # Add accountId condition back
+        values = lists_to_delete + [accountId]  # Add accountId to values
+        mycursor.execute(delete_query, values)
+        mydb.commit()
 
-        if not lists_to_delete:
-            json_response = {"lists_to_delete": "None provided", "action": "none"}
-            return jsonify(json_response)
+        # Drop corresponding tables
+        for list_name in lists_to_delete:
+            # Validate input data
+            validate_input_data_to_delete(list_name, accountId)
 
-        # Convert the string to a list
-        lists_to_delete = [list_name.strip() for list_name in lists_to_delete.split(",")]
-
-        # Connect to the database
-        with db_connection() as (mydb, mycursor):
-            # Delete rows from the 'lists' table
-            delete_query = "DELETE FROM lists WHERE name IN (%s) AND accountId=%s"
-            values = (",".join(["%s"] * len(lists_to_delete)), accountId, *lists_to_delete)
-            mycursor.execute(delete_query, values)
+            table_name = f"account_{accountId}_list_{list_name}"
+            mycursor.execute(f"DROP TABLE IF EXISTS {table_name}")
             mydb.commit()
 
-            # Drop corresponding tables
-            for list_name in lists_to_delete:
-                # Validate input data
-                validate_input_data_to_delete(list_name, accountId)
-
-                table_name = f"account_{accountId}_list_{list_name}"
-                mycursor.execute(f"DROP TABLE IF EXISTS %s", (table_name,))
-                mydb.commit()
-
-            json_response = {"lists_to_delete": lists_to_delete, "action": "deleted"}
+        json_response = {"lists_to_delete": lists_to_delete, "action": "deleted"}
 
     except Exception as e:
         print("delete_multiple_lists model")
         print(e)
     finally:
+        mydb.close()
         return jsonify(json_response)
 
 
@@ -1297,21 +1300,21 @@ def delete_single_list(request):
     if not int(accountId) == int(session["accountId"]):
         return jsonify({"error": "Forbidden"}), 403
 
+    name = werkzeug.utils.escape(request.form.get("name"))
+
+    # Validate input data
+    validate_input_data_to_delete(name, accountId)
+
+    mydb, mycursor = db_connection()
+
     try:
-        name = werkzeug.utils.escape(request.form.get("name"))
+        # Delete row from the 'lists' table
+        delete_query = "DELETE FROM lists WHERE name=%s AND accountId=%s"
+        values = (name, accountId)
+        mycursor.execute(delete_query, values)
+        mydb.commit()
 
-        # Validate input data
-        validate_input_data_to_delete(name, accountId)
-
-        # Connect to the database
-        with db_connection() as (mydb, mycursor):
-            # Delete row from the 'lists' table
-            delete_query = "DELETE FROM lists WHERE name=%s AND accountId=%s"
-            values = (name, accountId)
-            mycursor.execute(delete_query, values)
-            mydb.commit()
-
-            json_response = {"name": name, "action": "deleted"}
+        json_response = {"name": name, "action": "deleted"}
 
     except Exception as e:
         print("delete_single_list model")
