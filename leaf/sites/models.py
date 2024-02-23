@@ -1,17 +1,17 @@
 import copy
 import os
 import re
+import shutil
 import urllib.parse
+import xml.etree.ElementTree as ET
 
 import requests
+import urllib3
 from flask import Blueprint, session
+from requests.auth import HTTPDigestAuth
 
 from leaf import decorators
 from leaf.config import Config
-import shutil
-from requests.auth import HTTPDigestAuth
-import urllib3
-import xml.etree.ElementTree as ET
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -290,7 +290,7 @@ def add_new_site(site_data):
                     site_data["site_allowed_domains"].append(site_data["site_url"])
                     for domain in site_data["site_allowed_domains"]:
                         newValue = ET.Element("value")
-                        newValue.text = "^(?:https?:\/\/)?(www.)?" + re.escape(urllib.parse.urlparse(domain).netloc) + ".*$"
+                        newValue.text = r"^(?:https?://)?(www\.)?" + re.escape(urllib.parse.urlparse(domain).netloc) + r".*$"
                         newList.append(newValue)
 
                     newValue = ET.Element("value")
