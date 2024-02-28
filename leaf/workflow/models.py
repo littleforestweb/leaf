@@ -232,14 +232,14 @@ def get_workflows():
 
         for entry in workflowsLst:
             # Get Start User
-            # user = get_user_details(entry["startUser"], mycursor)
-            # startUser = f'({user["username"]}) {user["email"]}'
-            entry["startUser"] = "startUser"
+            user = get_user_details(entry["startUser"], mycursor)
+            startUser = f'({user["username"]}) {user["email"]}'
+            entry["startUser"] = startUser
 
             # Get Assign User
-            # user = get_user_details(entry["assignEditor"], mycursor)
-            # assignEditor = f'({user["username"]}) {user["email"]}'
-            entry["assignEditor"] = "assignEditor"
+            user = get_user_details(entry["assignEditor"], mycursor)
+            assignEditor = f'({user["username"]}) {user["email"]}'
+            entry["assignEditor"] = assignEditor
 
             # Check Status Message
             current_datetime = datetime.datetime.now()
