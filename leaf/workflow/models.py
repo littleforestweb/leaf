@@ -232,14 +232,14 @@ def get_workflows():
 
         for entry in workflowsLst:
             # Get Start User
-            user = get_user_details(entry["startUser"], mycursor)
-            startUser = f'({user["username"]}) {user["email"]}'
-            entry["startUser"] = startUser
+            # user = get_user_details(entry["startUser"], mycursor)
+            # startUser = f'({user["username"]}) {user["email"]}'
+            entry["startUser"] = "startUser"
 
             # Get Assign User
-            user = get_user_details(entry["assignEditor"], mycursor)
-            assignEditor = f'({user["username"]}) {user["email"]}'
-            entry["assignEditor"] = assignEditor
+            # user = get_user_details(entry["assignEditor"], mycursor)
+            # assignEditor = f'({user["username"]}) {user["email"]}'
+            entry["assignEditor"] = "assignEditor"
 
             # Check Status Message
             current_datetime = datetime.datetime.now()
@@ -635,17 +635,17 @@ def add_workflow(thisRequest):
         mydb.commit()
         workflow_id = mycursor.lastrowid
 
-        # if Config.SMTP_USER != "":
-        #     emailToSend = new_task_email(workflow_id, title, session["username"], priority, submittedDate, dueDate)
-        #     message = EmailMessage()
-        #     message['From'] = Config.SMTP_USER
-        #     message['To'] = Config.ASSIGNED_USER_EMAIL
-        #     message['Subject'] = title
-        #     message.set_content(emailToSend, subtype='html')
-        #     with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as server:
-        #         server.starttls()
-        #         server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
-        #         server.send_message(message)
+        if Config.SMTP_USER != "":
+            emailToSend = new_task_email(workflow_id, title, session["username"], priority, submittedDate, dueDate)
+            message = EmailMessage()
+            message['From'] = Config.SMTP_USER
+            message['To'] = Config.ASSIGNED_USER_EMAIL
+            message['Subject'] = title
+            message.set_content(emailToSend, subtype='html')
+            with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as server:
+                server.starttls()
+                server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
+                server.send_message(message)
 
         return {"message": "success", "workflow_id": str(workflow_id)}
 
