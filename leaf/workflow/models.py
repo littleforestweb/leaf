@@ -1,12 +1,14 @@
 import datetime
 import os
-import time
 import smtplib
+import time
+from email.message import EmailMessage
 from urllib.parse import unquote
+
+from flask import session
+
 from leaf import Config
 from leaf import decorators
-from flask import session
-from email.message import EmailMessage
 
 
 def is_workflow_owner(workflow_id):
@@ -549,7 +551,7 @@ def upload_file_with_retry(local_path, remote_path, scp, max_retries=2, retry_de
     Args:
         local_path (str): The local path of the file to be uploaded.
         remote_path (str): The remote path where the file will be uploaded.
-        scp (paramiko.SSHClient): An established SSHClient connected to the remote server.
+        scp (paramiko.SFTPClient): An established SFTPClient connected to the remote server.
         max_retries (int, optional): The maximum number of retry attempts. Default is 2.
         retry_delay (int, optional): The delay (in seconds) between retry attempts. Default is 1.
 
@@ -633,17 +635,17 @@ def add_workflow(thisRequest):
         mydb.commit()
         workflow_id = mycursor.lastrowid
 
-        if Config.SMTP_USER != "":
-            emailToSend = new_task_email(workflow_id, title, session["username"], priority, submittedDate, dueDate)
-            message = EmailMessage()
-            message['From'] = Config.SMTP_USER
-            message['To'] = Config.ASSIGNED_USER_EMAIL
-            message['Subject'] = title
-            message.set_content(emailToSend, subtype='html')
-            with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as server:
-                server.starttls()
-                server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
-                server.send_message(message)
+        # if Config.SMTP_USER != "":
+        #     emailToSend = new_task_email(workflow_id, title, session["username"], priority, submittedDate, dueDate)
+        #     message = EmailMessage()
+        #     message['From'] = Config.SMTP_USER
+        #     message['To'] = Config.ASSIGNED_USER_EMAIL
+        #     message['Subject'] = title
+        #     message.set_content(emailToSend, subtype='html')
+        #     with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as server:
+        #         server.starttls()
+        #         server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
+        #         server.send_message(message)
 
         return {"message": "success", "workflow_id": str(workflow_id)}
 
