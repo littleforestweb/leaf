@@ -228,10 +228,6 @@
                         <div class="row">
                             <h5 class="col-form-header">Templates Settings:</h5>
                             <div class="form-group col-md-12">
-                                <label for="s-template_location" class="col-form-label">URL Pattern: <span class="tip">You can use fields from the table to generate urls dynamically. eg. <strong>{title}</strong>, <strong>{year}</strong>, <strong>{category}</strong>. Find the list of available fields <span class="underline link" onclick="getAvailableFields('{{accountId}}', '{{reference}}')">here<span class="template_fields_container hide"></span></span></span></label>
-                                <input type="text" class="form-control" name="s-template_location" id="s-template_location" value="" onkeyup="sanitizeInput(event)">
-                            </div>
-                            <div class="form-group col-md-12">
                                 <label for="s-templates" class="col-form-label">Templates:</label>
                                 <div class="row">
                                     <div class="form-group col-md-8">
@@ -242,6 +238,10 @@
                                         <input type="button" class="btn btn-red" style="width: 48%; margin: 0; display: inline-block; float: left;" name="s-remove-template" id="s-remove-template" value="Delete" onclick="addTemplateNameToModal()" data-bs-toggle="modal" data-bs-target="#deleteTemplate" disabled />
                                     </div>
                                 </div>
+                            </div>
+                            <div class="form-group col-md-12">
+                                <label for="s-template_location" class="col-form-label">URL Pattern: <span class="tip">You can use fields from the table to generate urls dynamically. eg. <strong>{title}</strong>, <strong>{year}</strong>, <strong>{category}</strong>. Find the list of available fields <span class="underline link" onclick="getAvailableFields('{{accountId}}', '{{reference}}')">here<span class="template_fields_container hide"></span></span></span></label>
+                                <input type="text" class="form-control" name="s-template_location" id="s-template_location" value="" onkeyup="sanitizeInput(event)">
                             </div>
                         </div>
                     </form>

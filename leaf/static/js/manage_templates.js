@@ -10,6 +10,7 @@ async function addTemplate(action) {
 
     if (action === 'save') {
         var form_data = await getFormData('setTemplate-no_list');
+        form_data["s-templates_format"] = "input";
 
         $.ajax({
             type: "POST",
@@ -164,6 +165,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                     return '<a href="/templates/' + source[0] + '">View</a>';
                 },
                 width: "20%",
+                orderable: false,
                 defaultContent: "<i style='color: #CCC;'>No data</i>"
             }
         ],

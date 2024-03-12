@@ -403,10 +403,10 @@ def get_all_templates(request, accountId: str):
 
     mydb, mycursor = db_connection()
 
-    limit = 0
-    skip = 0
-    direction = 0
-    sortingColumn = 0
+    limit = False
+    skip = False
+    direction = "-1"
+    sortingColumn = False
     if request.args.get("iDisplayLength"):
         limit = int(request.args.get("iDisplayLength"))
     if request.args.get("iDisplayStart"):
@@ -438,42 +438,49 @@ def get_all_templates(request, accountId: str):
         mycursor.execute(showColumnsQuery, )
         listColumns = mycursor.fetchall()
 
-        searchColumnsFields = []
-        field_list = []
+        if sortingColumn:
+            searchColumnsFields = []
+            field_list = []
 
-        search_value_1 = request.args.get(f"sSearch_1")
-        search_value_2 = request.args.get(f"sSearch_2")
-        search_value_3 = request.args.get(f"sSearch_3")
-        search_value_4 = request.args.get(f"sSearch_4")
-        if search_value_1:
-            searchColumnsFields.append({"field": "template", "value": search_value_1.replace("((((", "").replace("))))", "")})
-        if search_value_2:
-            searchColumnsFields.append({"field": "template_location", "value": search_value_2.replace("((((", "").replace("))))", "")})
-        if search_value_3:
-            searchColumnsFields.append({"field": "in_lists", "value": search_value_3.replace("((((", "").replace("))))", "")})
-        if search_value_4:
-            # searchColumnsFields.append({"field": "user.id", "value": search_value_4.replace("((((", "").replace("))))", "")})
-            # searchColumnsFields.append({"field": "user.username", "value": search_value_4.replace("((((", "").replace("))))", "")})
-            searchColumnsFields.append({"field": "user.email", "value": search_value_4.replace("((((", "").replace("))))", "")})
+            search_value_1 = request.args.get(f"sSearch_1")
+            search_value_2 = request.args.get(f"sSearch_2")
+            search_value_3 = request.args.get(f"sSearch_3")
+            search_value_4 = request.args.get(f"sSearch_4")
+            if search_value_1:
+                searchColumnsFields.append({"field": "template", "value": search_value_1.replace("((((", "").replace("))))", "")})
+            if search_value_2:
+                searchColumnsFields.append({"field": "template_location", "value": search_value_2.replace("((((", "").replace("))))", "")})
+            if search_value_3:
+                searchColumnsFields.append({"field": "in_lists", "value": search_value_3.replace("((((", "").replace("))))", "")})
+            if search_value_4:
+                # searchColumnsFields.append({"field": "user.id", "value": search_value_4.replace("((((", "").replace("))))", "")})
+                # searchColumnsFields.append({"field": "user.username", "value": search_value_4.replace("((((", "").replace("))))", "")})
+                searchColumnsFields.append({"field": "user.email", "value": search_value_4.replace("((((", "").replace("))))", "")})
 
-        for searchColumnsField in searchColumnsFields:
-            searchColumnsFieldValue = searchColumnsField['value'].replace('"', "'")
-            field_list.append(f"{searchColumnsField['field']} LIKE %s")
+            for searchColumnsField in searchColumnsFields:
+                searchColumnsFieldValue = searchColumnsField['value'].replace('"', "'")
+                field_list.append(f"{searchColumnsField['field']} LIKE %s")
 
-        userUsernameEmail = 'CONCAT(user.id, ", ", user.username, ", ", user.email)'
-        columnsFinal = [f"{tableName}.{row[0]}" if row[0] != 'modified_by' else f"{userUsernameEmail}" for row in listColumns]
+            userUsernameEmail = 'CONCAT(user.id, ", ", user.username, ", ", user.email)'
+            columnsFinal = [f"{tableName}.{row[0]}" if row[0] != 'modified_by' else f"{userUsernameEmail}" for row in listColumns]
 
-        where_clause = " AND ".join(field_list)
-        if field_list:
-            query_params = list(f"%{searchColumnsField['value']}%" for searchColumnsField in searchColumnsFields)
-            get_templates_query = f"SELECT {', '.join(columnsFinal)} FROM {tableName} INNER JOIN user ON {tableName}.modified_by = user.id WHERE {where_clause} ORDER BY {listColumns[int(sortingColumn) - 1][0]} {direction} LIMIT %s, %s"
-            mycursor.execute(get_templates_query, query_params + [skip, limit])
+            where_clause = " AND ".join(field_list)
+            if field_list:
+                query_params = list(f"%{searchColumnsField['value']}%" for searchColumnsField in searchColumnsFields)
+                get_templates_query = f"SELECT {', '.join(columnsFinal)} FROM {tableName} INNER JOIN user ON {tableName}.modified_by = user.id WHERE {where_clause} ORDER BY {listColumns[int(sortingColumn) - 1][0]} {direction} LIMIT %s, %s"
+                mycursor.execute(get_templates_query, query_params + [skip, limit])
+            else:
+                order_by = listColumns[int(sortingColumn)][0]
+                get_templates_query = f"SELECT {', '.join(columnsFinal)} FROM {tableName} INNER JOIN user ON {tableName}.modified_by = user.id ORDER BY {order_by} {direction} LIMIT %s, %s"
+                mycursor.execute(get_templates_query, (skip, limit))
+            
+            config_info = mycursor.fetchall()
+
         else:
-            order_by = listColumns[int(sortingColumn) - 1][0]
-            get_templates_query = f"SELECT {', '.join(columnsFinal)} FROM {tableName} INNER JOIN user ON {tableName}.modified_by = user.id ORDER BY {order_by} {direction} LIMIT %s, %s"
-            mycursor.execute(get_templates_query, (skip, limit))
-        
-        config_info = mycursor.fetchall()
+            # Retrieve templates information
+            get_templates_query = f"SELECT * FROM {tableName} ORDER BY template {direction}"
+            mycursor.execute(get_templates_query)
+            config_info = mycursor.fetchall()
 
         mycursor.execute(f"SELECT COUNT(*) FROM {tableName}")
         listCount = mycursor.fetchone()[0]
@@ -550,7 +557,13 @@ def set_list_template(request, accountId: str, reference: str):
 
     thisRequest = request.get_json()
 
-    template = werkzeug.utils.escape(str(thisRequest.get("s-templates")))
+    template = str(thisRequest.get("s-templates"))
+    template = template.lower()
+    template = ''.join(c if c.isalnum() else '_' for c in template)
+    template = werkzeug.utils.escape(template)
+
+    if not template.endswith(".html"):
+        template += ".html"
 
     if reference == '____no_list_selected____':
         reference = ""
@@ -565,19 +578,48 @@ def set_list_template(request, accountId: str, reference: str):
 
         if isinstance(int(accountId), int):
             # Delete existing template
-            delete_config_query = f"DELETE FROM {tableName} WHERE template = %s"
-            mycursor.execute(delete_config_query, (template,))
-            mydb.commit()
+
+            templates_format = werkzeug.utils.escape(str(thisRequest.get("s-templates_format")))
+
+            if templates_format and templates_format == "select":
+                get_templates_query = f"SELECT * FROM {tableName} WHERE id = %s"
+                mycursor.execute(get_templates_query, (template,))
+                template_info = mycursor.fetchall()
+                template_file = template_info[0][2]
+                template = template_file
+
+                update_config_query = f"UPDATE {tableName} SET in_lists = '' WHERE in_lists = %s"
+                mycursor.execute(update_config_query, (reference,))
+                mydb.commit()
+
+            if templates_format and templates_format == "input":
+                delete_config_query = f"DELETE FROM {tableName} WHERE template = %s"
+                mycursor.execute(delete_config_query, (template,))
+                mydb.commit()
 
             template_location = werkzeug.utils.escape(str(thisRequest.get("s-template_location")))
             modified_by = int(session["id"])
 
             col_to_return = [template, template_location, modified_by]
 
-            # Insert new template
-            insert_config_query = f"INSERT INTO {tableName} (in_lists, template, template_location, modified_by) VALUES (%s, %s, %s, %s)"
-            mycursor.execute(insert_config_query, (reference, template, template_location, modified_by))
-            mydb.commit()
+            if templates_format and templates_format == "select":
+                # Update template
+                update_config_query = f"UPDATE {tableName} SET in_lists = %s, modified_by = %s WHERE template = %s"
+                mycursor.execute(update_config_query, (reference, modified_by, template))
+                mydb.commit()
+            else:
+                # Insert new template
+                insert_config_query = f"INSERT INTO {tableName} (in_lists, template, template_location, modified_by) VALUES (%s, %s, %s, %s)"
+                mycursor.execute(insert_config_query, (reference, template, template_location, modified_by))
+                mydb.commit()
+
+            if templates_format and templates_format == "input":
+                # Save new template in the correct folder
+                file_to_save = os.path.join(Config.TEMPLATES_FOLDER, accountId, template.strip("/"))
+                folder_to_save_item = os.path.dirname(file_to_save)
+                os.makedirs(folder_to_save_item, exist_ok=True)
+                with open(file_to_save, 'w') as out_file:
+                    out_file.write('<html><body><h1>Hi, this is a new template! Start editing here</h1></body></html>')
         else:
             print("Invalid accountId")
 
@@ -616,14 +658,29 @@ def delete_templates(request, accountId: str):
         tableName = f"account_{accountId}_list_template"
 
         if isinstance(int(accountId), int):
+
+            # Retrieve template information
+            get_templates_query = f"SELECT * FROM {tableName} WHERE id = %s"
+            mycursor.execute(get_templates_query, (template_to_delete,))
+            template_info = mycursor.fetchall()
+            template_file = template_info[0][2]
+
             # Delete existing template
-            mycursor.execute(f"DELETE FROM {tableName} WHERE id IN ({template_to_delete})")
+            file_to_delete = os.path.join(Config.TEMPLATES_FOLDER, accountId, template_file)
+            if os.path.exists(file_to_delete):
+                os.remove(file_to_delete)
+                print(f"File '{file_to_delete}' deleted successfully.")
+            else:
+                print(f"File '{file_to_delete}' does not exist.")
+
+            mycursor.execute(f"DELETE FROM {tableName} WHERE id IN (%s)", (template_to_delete,))
             mydb.commit()
+
         else:
             print("Invalid accountId")
 
     except Exception as e:
-        print("set_list_template model")
+        print("delete_templates model")
         print(e)
     finally:
         mydb.close()
@@ -1110,7 +1167,7 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
                 # Removed remaining unused tags
                 list_template_html = list_template_html.replace("{{" + placeholder + "}}", '')
 
-        # Save new page in correct folder based on template
+        # Save new page in the correct folder based on template
         file_to_save = os.path.join(Config.WEBSERVER_FOLDER, reference, file_url_path.strip("/"))
         folder_to_save_item = os.path.dirname(file_to_save)
         os.makedirs(folder_to_save_item, exist_ok=True)

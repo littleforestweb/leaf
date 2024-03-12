@@ -1864,7 +1864,7 @@ async function doTemplatesBehaviour(accountId, reference) {
     });
 
     var availableTemplates = jsonListTemplate.columns;
-    var allTemplates = jsonAllTemplate.columns;
+    var allTemplates = jsonAllTemplate.data;
 
     $('#setTemplateDynamicList #s-templates').empty();
     $('#setTemplateDynamicList #s-template_location').val("");
@@ -1914,6 +1914,8 @@ async function setTemplateDynamicList(accountId, reference, action) {
     if (action === 'save') {
         var form_data = await getFormData('setTemplate-' + reference, false);
 
+        form_data["s-templates_format"] = "select";
+
         $.ajax({
             type: "POST",
             url: "/set/template/" + accountId + "/" + reference,
@@ -1924,7 +1926,7 @@ async function setTemplateDynamicList(accountId, reference, action) {
             processData: false,
             success: function (response) {
                 $('#setTemplateDynamicList').modal('hide');
-                $('#setTemplateDynamicList form input').val('');
+                $('#setTemplateDynamicList form input:not([type="button"])').val('');
 
                 $('#addDynamicListSuccessNotification').toast('show');
 
