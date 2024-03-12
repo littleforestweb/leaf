@@ -140,7 +140,24 @@ window.addEventListener('DOMContentLoaded', async function main() {
         ],
         extraPlugins: "anchor, inserthtml4x, embed, saveBtn, pastefromword",
         filebrowserUploadUrl: "/api/upload?name=fileupload",
-        embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}'
+        embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}',
+        on: {
+            instanceReady: function (evt) {
+                // Get the CKEditor instance
+                let editor = evt.editor;
+
+                // Define element selectors to be blocked from editing
+                let selectorsToBlock = ["head"];
+
+                // Loop through each selector and set contenteditable to false for matching elements
+                selectorsToBlock.forEach(function (selector) {
+                    let elements = editor.editable().$.querySelectorAll(selector);
+                    elements.forEach(function (element) {
+                        element.setAttribute("contenteditable", "false");
+                    });
+                });
+            }
+        }
     });
 
     // Remove loadingBg
