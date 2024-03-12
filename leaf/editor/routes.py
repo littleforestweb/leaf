@@ -1,10 +1,10 @@
+import werkzeug.utils
 from flask import Blueprint, render_template, request, jsonify, session
 
 import leaf.sites.models
-from leaf.decorators import login_required
-from .models import get_page_html_path, add_base_href, remove_base_href, save_html_to_disk, update_modified_date
 from leaf import Config
-import werkzeug.utils
+from leaf.decorators import login_required
+from .models import get_page_html_path, replace_ssi, add_base_href, remove_base_href, save_html_to_disk, update_modified_date
 
 # Create a Blueprint for the editor routes
 editor = Blueprint('editor', __name__)
@@ -56,8 +56,11 @@ def get_htmlCode():
         # Get HTML path for the page
         html_path = get_page_html_path(int(page_id))
 
+        # Replace of SSIs
+        data = replace_ssi(html_path)
+
         # Add base href to HTML
-        data = add_base_href(html_path)
+        data = add_base_href(data)
 
         # Create json
         json_response = {"data": data}
