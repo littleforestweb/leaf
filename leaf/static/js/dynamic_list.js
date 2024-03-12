@@ -631,7 +631,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         }
 
         publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
-        var fieldsToLink = '';
+        var fieldsToLink = thisTemplate;
         var thisValId = '';
         for (var field in matches) {
             if (justPreview) {
@@ -652,7 +652,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
                 }
                 singleField = singleField.split('/');
                 singleField = singleField[singleField.length - 1];
-                fieldsToLink += "/" + singleField.replace(/\//g, '');
+                fieldsToLink = fieldsToLink.replace("{" + matches[field] + "}", singleField);
 
                 selectedItem = thisValId;
             }
