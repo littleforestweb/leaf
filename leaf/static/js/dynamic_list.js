@@ -1812,43 +1812,34 @@ async function setConfigurationDynamicList(accountId, reference, action) {
 }
 
 async function addTemplateNameToModal() {
-    $('#template_to_delete_title').html('<strong>' + $('#s-templates').val() + '</strong>');
+    if ($('#s-templates').val() !== 'false') {
+        $('#template_to_delete_title').html('<strong>' + $('#s-templates option:selected').text() + '</strong>');
+    }
 }
 
 async function deleteTemplate(accountId, action) {
+    if ($('#s-templates').val() !== 'false') {
+        $.ajax({
+            type: "POST",
+            url: "/delete/template/" + accountId,
+            data: {
+                "template_to_delete": $('#s-templates').val()
+            },
+            success: async function (response) {
+                $('#deleteTemplate').modal('hide');
+                $('#deleteTemplate form input').val('');
 
-    $.ajax({
-        type: "POST",
-        url: "/delete/template/" + accountId,
-        contentType: 'application/json',
-        data: {
-            template_to_delete: $('#s-templates').val()
-        },
-        dataType: 'json',
-        cache: false,
-        processData: false,
-        success: async function (response) {
-            $('#deleteTemplate').modal('hide');
-            $('#deleteTemplate form input').val('');
+                doTemplatesBehaviour(accountId, reference);
 
-            // Get all templates
-            let jsonAllTemplate = await $.get("/api/get_all_templates/" + accountId, function (result) {
-                return result;
-            });
-
-            var allTemplates = jsonAllTemplate.columns;
-
-            if (allTemplates && allTemplates[0]) {
-                $('#setTemplateDynamicList #s-template_location').val(allTemplates[0][3]);
-                $('#setTemplateDynamicList #s-templates').append('<option value="' + allTemplates[0][2] + '">' + allTemplates[0][2] + '</option>');
+                $('#deleteTemplateSuccessNotification').toast('show');
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                $('#errorModal').modal('show');
             }
-
-            $('#deleteTemplateSuccessNotification').toast('show');
-        },
-        error: function (XMLHttpRequest, textStatus, errorThrown) {
-            $('#errorModal').modal('show');
-        }
-    });
+        });
+    } else {
+        $('#deleteTemplateErrorNotification').toast('show');
+    }
 }
 
 async function openTemplate(accountId, reference) {
@@ -1858,6 +1849,10 @@ async function openTemplate(accountId, reference) {
 
     dropDownActionsToggle();
 
+    doTemplatesBehaviour(accountId, reference);
+}
+
+async function doTemplatesBehaviour(accountId, reference) {
     // Get list templates
     let jsonListTemplate = await $.get("/api/get_list_template/" + accountId + "/" + reference, function (result) {
         return result;
@@ -1871,19 +1866,35 @@ async function openTemplate(accountId, reference) {
     var availableTemplates = jsonListTemplate.columns;
     var allTemplates = jsonAllTemplate.columns;
 
+    $('#setTemplateDynamicList #s-templates').empty();
+    $('#setTemplateDynamicList #s-template_location').val("");
+
     if (allTemplates) {
+
+        if (!availableTemplates || (availableTemplates && !availableTemplates[0])) {
+            $('#setTemplateDynamicList #s-templates').append('<option value="false">Select Template</option>');
+        }
         for (var template in allTemplates) {
-            $('#setTemplateDynamicList #s-template_location').val(allTemplates[template][3]);
-            $('#setTemplateDynamicList #s-templates').append('<option value="' + allTemplates[template][0] + '" ' + (availableTemplates[0][0] === allTemplates[template][0] ? 'selected' : '') + '>' + allTemplates[template][2] + '</option>');
+            if (availableTemplates && availableTemplates[0] && availableTemplates[0][0] === allTemplates[template][0]) {
+                $('#setTemplateDynamicList #s-template_location').val(allTemplates[template][3]);
+            }
+
+            $('#setTemplateDynamicList #s-templates').append('<option value="' + allTemplates[template][0] + '" ' + (availableTemplates && availableTemplates[0] && availableTemplates[0][0] === allTemplates[template][0] ? 'selected' : '') + '>' + allTemplates[template][2] + '</option>');
         }
     }
 
     $('#s-templates').change(function() {
         var thisVal = $(this).val();
-        if (allTemplates) {
-            for (var template in allTemplates) {
-                if (parseInt(allTemplates[template][0]) === parseInt(thisVal)) {
-                    $('#setTemplateDynamicList #s-template_location').val(allTemplates[template][3]);
+        if (thisVal === 'false') {
+            $('#setTemplateDynamicList #s-template_location').val("");
+            $('#s-remove-template').attr('disabled', true);
+        } else {
+            if (allTemplates) {
+                for (var template in allTemplates) {
+                    if (parseInt(allTemplates[template][0]) === parseInt(thisVal)) {
+                        $('#setTemplateDynamicList #s-template_location').val(allTemplates[template][3]);
+                        $('#s-remove-template').removeAttr('disabled');
+                    }
                 }
             }
         }

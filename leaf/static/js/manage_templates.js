@@ -86,32 +86,94 @@ window.addEventListener('DOMContentLoaded', async function main() {
     $('#table').DataTable().clear().draw();
     $('#table').DataTable().destroy();
 
-    // Get pagesJSON
-    let jsonAllTemplate = await $.get("/api/get_all_templates/" + accountId, function (result) {
-        return result;
-    });
-
-    // Set dataset
-    let dataset = [];
-    json = jsonAllTemplate.columns;
-    for (let i = 0; i < json.length; i++) {
-        let entry = json[i];
-        let id = entry[0];
-        let in_lists = entry[1];
-        let template = entry[2];
-        let template_location = entry[3];
-        let created_by = entry[4];
-        let created = entry[5];
-        let modified = entry[6];
-        dataset.push([[id, template], [id, template, created, modified], template_location, in_lists, created_by, created, modified, id]);
-    }
-
-    // Setup - add a text input to each header cell
     $('#table thead tr').clone(true).addClass('filters').appendTo('#table thead');
     let searchColumns = [1, 2, 3, 4];
 
     $('#table').DataTable({
+        bProcessing: false,
+        bServerSide: true,
+        sAjaxSource: "/api/get_all_templates/" + accountId,
+        aoColumns: [
+            {
+                aTargets: [0],
+                mData: function (source, type, row) {
+                    return "<input type='checkbox' value='" + source[0] + "' >";
+                },
+                width: "5%",
+                orderable: false,
+                defaultContent: "<i style='color: #CCC;'>No data</i>",
+                sClass: "center"
+            },
+            {
+                aTargets: [1],
+                mData: function (source, type, row) {
+                    return '<a href="/templates/' + source[0] + '"><span class="toEdit">' + source[2] + '</span></a>';
+                },
+                width: "50%",
+                defaultContent: "<i style='color: #CCC;'>No data</i>"
+            },
+            {
+                aTargets: [2],
+                mData: function (source, type, row) {
+                    return source[3];
+                },
+                width: "50%",
+                defaultContent: "<i style='color: #CCC;'>No data</i>"
+            },
+            {
+                aTargets: [3],
+                mData: function (source, type, row) {
+                    return source[1];
+                },
+                width: "50%",
+                defaultContent: "<i style='color: #CCC;'>No data</i>"
+            },
+            {
+                aTargets: [4],
+                mData: function (source, type, row) {
+                    val = source[4].split(', ');
+                    if (val[1] === val[2]) {
+                        val = val[1];
+                    } else {
+                        val = val[1] + "(" + val[2] + ")";
+                    }
+                    return val;
+                },
+                width: "50%",
+                defaultContent: "<i style='color: #CCC;'>No data</i>"
+            },
+            {
+                aTargets: [5],
+                mData: function (source, type, row) {
+                    return '<span class="hidden">' + Date.parse(source[5]) + "</span><span class='toEdit'>" + source[5] + "</span>";
+                },
+                width: "30%",
+                defaultContent: "<i style='color: #CCC;'>No data</i>"
+            },
+            {
+                aTargets: [6],
+                mData: function (source, type, row) {
+                    return '<span class="hidden">' + Date.parse(source[6]) + "</span><span class='toEdit'>" + source[6] + "</span>";
+                },
+                width: "30%",
+                defaultContent: "<i style='color: #CCC;'>No data</i>"
+            },
+            {
+                aTargets: [7],
+                mData: function (source, type, row) {
+                    return '<a href="/templates/' + source[0] + '">View</a>';
+                },
+                width: "20%",
+                defaultContent: "<i style='color: #CCC;'>No data</i>"
+            }
+        ],
         dom: 'Brtip',
+        language: {"emptyTable": "No data available"},
+        order: [2, "asc"],
+        pageLength: 100,
+        aLengthMenu: [[50, 100, 200], [50, 100, 200]],
+        autoWidth: true,
+        stateSave: true,
         buttons: {
             buttons: [
                 {
@@ -127,10 +189,29 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 }
             }
         },
-        paginate: false,
-        language: {"emptyTable": "No data available in table"},
-        order: [[2, "desc"]],
-        data: dataset,
+        header: function (html, idx, node) {
+            return $('input', node).attr('placeholder');
+        },
+        stateSaveParams: function (settings, data) {
+            //console.log(data);
+            //delete data.search;
+        },
+        fnDrawCallback: function (oSettings) {
+
+            $('input[type="checkbox"]').on('click', function () {
+                $(".deleteButton").prop('disabled', true);
+                $(".previewButton").prop('disabled', true);
+                if ($('input[type="checkbox"]:checked').length > 0) {
+                    $(".deleteButton").prop('disabled', false);
+                    $(".previewButton").prop('disabled', false);
+                }
+
+                $(".editButton").prop('disabled', true);
+                $('input[type="checkbox"]').not(this).prop('checked', false);
+                $(".editButton").prop('disabled', false);
+            })
+
+        },
         initComplete: function () {
             // For each column
             var api = this.api();
@@ -138,7 +219,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 // Set the header cell to contain the input element
                 var cell = $('.filters th').eq($(api.column(colIdx).header()).index());
                 if (searchColumns.includes(colIdx)) {
-                    $(cell).html('<input type="text" type="text" oninput="stopPropagation(event)" onclick="stopPropagation(event);" class="form-control form-control-sm" placeholder="Search" />');
+                    $(cell).html('<input id="search_col_index_' + colIdx + '" type="text" oninput="stopPropagation(event)" onclick="stopPropagation(event);" class="form-control form-control-sm" placeholder="Search" />');
                 } else {
                     $(cell).html('<span></span>');
                 }
@@ -157,73 +238,50 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 });
             });
 
+            var api = this.api();
+            var state = api.state.loaded();
+            if (state) {
+                api.columns().eq(0).each(function (colIdx) {
+                    var colSearch = state.columns[colIdx].search;
+
+                    if (colSearch.search) {
+                        $('input', $('.filters th')[colIdx]).val(colSearch.search.replace('((((', '').slice(0, -4));
+                    }
+                });
+                api.draw();
+            }
+
+            var queryString = window.location.search;
+            var urlParams = new URLSearchParams(queryString);
+            var itemId = "";
+            if (urlParams.get('id')) {
+                itemId = parseInt(urlParams.get('id'));
+                $('#search_col_index_1').val(itemId);
+                $('#search_col_index_1').keyup();
+                $('input[type="checkbox"]#entry_' + itemId).prop('checked', true);
+                if ($('input[type="checkbox"]#entry_' + itemId + ':checked')) {
+                    $('#editDynamicList').modal('show').addClass('loadingBg');
+                    populateEditDynamicListDialog('3', reference, 'edit', itemId);
+                }
+                $('#editDynamicList .btn.publish-btn').remove();
+            } else {
+                $('#search_col_index_1').val("");
+                $('#search_col_index_1').keyup();
+            }
+
             doMainButtons();
             $(".loadingBg").removeClass("show");
 
-        },
-        autoWidth: false,
-        columnDefs: [
-            {
-                width: "5%",
-                orderable: false,
-                className: "center",
-                targets: 0,
-                render: function (data, type, row) {
-                    return "<input type='checkbox' value='" + data[0] + "' >";
-                },
-            },
-            {
-                width: "50%",
-                targets: 1,
-                render: function (data, type, row) {
-                    return '<a href="/templates/' + data[0] + '"><span class="toEdit">' + data[1] + '</span></a>';
-                },
-            },
-            {
-                width: "50%",
-                targets: 2,
-                render: function (data, type, row) {
-                    return data;
-                },
-            },
-            {
-                width: "50%",
-                targets: 3,
-                render: function (data, type, row) {
-                    return data;
-                },
-            },
-            {
-                width: "50%",
-                targets: 4,
-                render: function (data, type, row) {
-                    return data;
-                },
-            },
-            {
-                width: "30%",
-                targets: 5,
-                render: function (data, type, row) {
-                    return '<span class="hidden">' + Date.parse(data) + "</span><span class='toEdit'>" + data + "</span>";
-                },
-            },
-            {
-                width: "30%",
-                targets: 6,
-                render: function (data, type, row) {
-                    return '<span class="hidden">' + Date.parse(data) + "</span><span class='toEdit'>" + data + "</span>";
-                },
-            },
-            {
-                width: "20%",
-                targets: 7,
-                render: function (data, type, row) {
-                    return '<a href="/templates/' + data + '">View</a>';
-                },
-            }
-        ]
+        }
     });
     $("#table_wrapper > .dt-buttons").appendTo("div.header-btns");
+
+    // $('#table_wrapper > .dt-buttons').appendTo("div.header-btns .actions_container");
+    // if ($("div.header-btns .dataTables_length").length > 0) {
+    //     $("div.header-btns .dataTables_length").remove();
+    // }
+
+    // $(".dataTables_length").addClass('btn pull-right').appendTo('div.header-btns');
 });
 
 function stopPropagation(evt) {

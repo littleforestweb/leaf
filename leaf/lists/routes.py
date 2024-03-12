@@ -204,7 +204,7 @@ def api_get_all_templates(accountId: str):
     Returns:
         JSON response with list templates.
     """
-    return get_all_templates(accountId)
+    return get_all_templates(request, accountId)
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #

@@ -123,7 +123,7 @@ def get_list_data(request, accountId: str, reference: str):
             listCount = mycursor.fetchone()[0]
 
             # Create json
-            jsonR = {"data": lists, "recordsTotal": listCount, "recordsFiltered": listCount}
+            jsonR = {"data": lists, "recordsTotal": listCount, "recordsFiltered": len(lists)}
 
         else:
             print("Invalid accountId")
@@ -386,7 +386,7 @@ def set_list_configuration(request, accountId: str, reference: str):
         return jsonify(col_to_return)
 
 
-def get_all_templates(accountId: str):
+def get_all_templates(request, accountId: str):
     """
     Get templates information for a specific account from the database.
 
@@ -396,12 +396,17 @@ def get_all_templates(accountId: str):
     Returns:
         dict: A JSON response containing templates information for the specified account.
     """
-    jsonR = {'columns': []}
+    jsonR = {'data': [], 'recordsTotal': 0, 'recordsFiltered': 0}
 
     if not int(accountId) == int(session["accountId"]):
         return jsonify({"error": "Forbidden"}), 403
 
     mydb, mycursor = db_connection()
+
+    limit = int(request.args.get("iDisplayLength"))
+    skip = int(request.args.get("iDisplayStart"))
+    direction = request.args.get("sSortDir_0").upper()
+    sortingColumn = request.args.get("iSortCol_0")
 
     if isinstance(int(accountId), int):
 
@@ -421,12 +426,53 @@ def get_all_templates(accountId: str):
         mycursor.execute(create_table_query, )
         mydb.commit()
 
-        # Retrieve templates information
-        get_templates_query = f"SELECT * FROM {tableName}"
-        mycursor.execute(get_templates_query)
+        showColumnsQuery = f"SHOW COLUMNS FROM {tableName}"
+        mycursor.execute(showColumnsQuery, )
+        listColumns = mycursor.fetchall()
+
+        searchColumnsFields = []
+        field_list = []
+
+        search_value_1 = request.args.get(f"sSearch_1")
+        search_value_2 = request.args.get(f"sSearch_2")
+        search_value_3 = request.args.get(f"sSearch_3")
+        search_value_4 = request.args.get(f"sSearch_4")
+        if search_value_1:
+            searchColumnsFields.append({"field": "template", "value": search_value_1.replace("((((", "").replace("))))", "")})
+        if search_value_2:
+            searchColumnsFields.append({"field": "template_location", "value": search_value_2.replace("((((", "").replace("))))", "")})
+        if search_value_3:
+            searchColumnsFields.append({"field": "in_lists", "value": search_value_3.replace("((((", "").replace("))))", "")})
+        if search_value_4:
+            # searchColumnsFields.append({"field": "user.id", "value": search_value_4.replace("((((", "").replace("))))", "")})
+            # searchColumnsFields.append({"field": "user.username", "value": search_value_4.replace("((((", "").replace("))))", "")})
+            searchColumnsFields.append({"field": "user.email", "value": search_value_4.replace("((((", "").replace("))))", "")})
+
+        for searchColumnsField in searchColumnsFields:
+            searchColumnsFieldValue = searchColumnsField['value'].replace('"', "'")
+            field_list.append(f"{searchColumnsField['field']} LIKE %s")
+
+        userUsernameEmail = 'CONCAT(user.id, ", ", user.username, ", ", user.email)'
+        columnsFinal = [f"{tableName}.{row[0]}" if row[0] != 'modified_by' else f"{userUsernameEmail}" for row in listColumns]
+
+        where_clause = " AND ".join(field_list)
+        if field_list:
+            query_params = list(f"%{searchColumnsField['value']}%" for searchColumnsField in searchColumnsFields)
+            get_templates_query = f"SELECT {', '.join(columnsFinal)} FROM {tableName} INNER JOIN user ON {tableName}.modified_by = user.id WHERE {where_clause} ORDER BY {listColumns[int(sortingColumn) - 1][0]} {direction} LIMIT %s, %s"
+            mycursor.execute(get_templates_query, query_params + [skip, limit])
+        else:
+            order_by = listColumns[int(sortingColumn) - 1][0]
+            get_templates_query = f"SELECT {', '.join(columnsFinal)} FROM {tableName} INNER JOIN user ON {tableName}.modified_by = user.id ORDER BY {order_by} {direction} LIMIT %s, %s"
+            mycursor.execute(get_templates_query, (skip, limit))
+        
         config_info = mycursor.fetchall()
 
-        jsonR['columns'] = config_info
+        mycursor.execute(f"SELECT COUNT(*) FROM {tableName}")
+        listCount = mycursor.fetchone()[0]
+
+        jsonR['data'] = config_info
+        jsonR['recordsTotal'] = listCount
+        jsonR['recordsFiltered'] = len(config_info)
     else:
         print("Invalid accountId")
 
