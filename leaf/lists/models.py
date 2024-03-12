@@ -406,14 +406,15 @@ def get_all_templates(request, accountId: str):
     limit = 0
     skip = 0
     direction = 0
+    sortingColumn = 0
     if request.args.get("iDisplayLength"):
         limit = int(request.args.get("iDisplayLength"))
     if request.args.get("iDisplayStart"):
         skip = int(request.args.get("iDisplayStart"))
     if request.args.get("sSortDir_0"):
         direction = request.args.get("sSortDir_0").upper()
-
-    sortingColumn = request.args.get("iSortCol_0")
+    if request.args.get("iSortCol_0"):
+        sortingColumn = request.args.get("iSortCol_0")
 
     if isinstance(int(accountId), int):
 
