@@ -408,3 +408,17 @@ async function getFormData(formid) {
         return formdata;
     }
 }
+
+async function getAvailableFields(accountId, reference = false) {
+    if (reference) {
+        let jsonAvailableFields = await $.get("/api/get_available_fields/" + accountId + "/" + reference, function (result) {
+            return result;
+        });
+    } else {
+        // Getting logic ready
+    }
+    
+    jsonAvailableFields = jsonAvailableFields.columns;
+
+    return jsonAvailableFields;
+}
