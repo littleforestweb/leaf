@@ -61,7 +61,7 @@ def add_tempalte_base_href(template_html):
     try:
         if template_html and template_html != "":
             # Open and read the HTML file
-            soup = BeautifulSoup(template_html, "html5lib")
+            soup = BeautifulSoup(str(template_html), "html5lib")
 
             # Find the head tag and add base tag
             head_tag = soup.find("head")
