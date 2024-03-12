@@ -658,36 +658,8 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
             }
         }
 
-        var pageFormat = thisTemplate.split('.').pop();
-
-        // var thisTemplate = '';
-        // var thisParameters = '';
-        // var thisFields = '';
-        // if (values && values[0]) {
-        //     thisTemplate = values[0][2];
-        //     thisParameters = values[0][3];
-        //     thisFields = values[0][4].split(';');
-        // }
-
-        // var fieldsToLink = '';
-        // var index = 0;
-        // for (var field in thisFields) {
-        //     if (!justPreview) {
-        //         var singleField = $('#a-' + thisFields[field]);
-        //         fieldsToLink += escapeHtml(singleField.val());
-        //     }
-        //     if (justPreview) {
-        //         var thisValId = escapeHtml($('input[type="checkbox"]:checked').val());
-        //         var singleField = $('span#' + thisFields[field] + '_pos_' + thisValId);
-        //         fieldsToLink += singleField.html();
-        //     }
-
-        //     if (thisFields.length > 1 && thisFields.length === index) {
-        //         fieldsToLink += fieldsToLink + '_';
-        //     }
-
-        //     index = index + 1;
-        // }
+        // We have to declare the page format as a global variable
+        var pageFormat = "page";
     }
     var checkCountryField = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.country pre .hidden');
     if (!thisCountry && checkCountryField.length > 0) {
@@ -700,7 +672,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         url: "/publish/account_" + accountId + "_list_" + reference + '/' + accountId + '/' + reference + '/' + env,
         data: JSON.stringify({
             "country_to_update": thisCountry,
-            "file_url_path": fieldsToLink + "." + pageFormat,
+            "file_url_path": fieldsToLink + ".page",
             "list_template_id": listTemplateId,
             "list_item_id": selectedItem
         }),
