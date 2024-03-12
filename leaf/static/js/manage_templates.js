@@ -41,62 +41,6 @@ async function addTemplate(action) {
     }
 }
 
-async function populateEditTemplateModal(accountId) {
-
-    let checked_items = $("input:checked");
-    let n_checked_items = checked_items.length;
-    let row = checked_items.parent().parent();
-
-    let spans = row.find("span.toEdit");
-
-    let template_name = spans[0].textContent;
-    let template_reference = spans[2].textContent;
-    let template_created = spans[1].textContent;
-
-    // Populate edit fields
-    $('#e-template-name').val(template_name);
-    $('#e-template-created').val(template_created);
-
-    // Populate hidden fields (for reference)
-    $('#h-e-template-name').val(template_name);
-    $('#h-e-template-reference').val(template_reference);
-
-    let templateOfUsers = await $.get("/api/get_lfi_users/" + accountId, function (result) {
-        return result;
-    });
-
-    var template_users_with_access = $("input:checked").parent().find('.users_with_access_template').val();
-    template_users_with_access = template_users_with_access.split(',').map(Number);
-
-    $('.users-with-access-container').html('');
-    for (var x = 0; x < templateOfUsers.users.length; x++) {
-        var thisUser = templateOfUsers.users[x];
-        var userImage = '<span class="logo_image_container"><img class="logo_image" src="' + thisUser["user_image"] + '" onerror="this.style.display=\'none\'" /></span>';
-        if (thisUser["user_image"].startsWith('#')) {
-            var colorToFillBg = thisUser["user_image"];
-            var usernameInitial = (thisUser["username"] ? thisUser["username"] : "SEM_NOME").charAt(0);
-            userImage = '<span class="logo_image" style="background-color:' + colorToFillBg + '">' + usernameInitial + '</span>';
-        }
-        $(".users-with-access-container").prepend('<label for="thisUserId_' + thisUser["id"] + '" class="form-control users-with-access users-with-access_' + thisUser["id"] + '">' + userImage + '<span class="userName">' + thisUser["username"] + '</span><input type="checkbox" class="form-check-input pull-right this-user-id" name="thisUserId_' + thisUser["id"] + '" id="thisUserId_' + thisUser["id"] + '" ' + (template_users_with_access.includes(thisUser["id"]) ? "checked" : "") + '/></span>');
-    }
-
-    $('#users-with-access-search').on('keyup', function (e) {
-        var tagElems = $('.users-with-access');
-        $(tagElems).hide();
-        for (var i = 0; i < tagElems.length; i++) {
-            var tag = $(tagElems).eq(i);
-            if (($(tag).children('span.userName').text().toLowerCase()).indexOf($(this).val().toLowerCase()) !== -1) {
-                $(tag).show();
-            }
-        }
-    });
-}
-
-async function updateTemplate() {
-
-    
-}
-
 async function deleteTemplate(accountId, action) {
 
     let checked_entries = [];
@@ -232,7 +176,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 width: "50%",
                 targets: 1,
                 render: function (data, type, row) {
-                    return '<a href="/template/' + data[0] + '"><span class="toEdit">' + data[1] + '</span></a>';
+                    return '<a href="/templates/' + data[0] + '"><span class="toEdit">' + data[1] + '</span></a>';
                 },
             },
             {
@@ -274,7 +218,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 width: "20%",
                 targets: 7,
                 render: function (data, type, row) {
-                    return '<a href="/template/' + data + '">View</a>';
+                    return '<a href="/templates/' + data + '">View</a>';
                 },
             }
         ]
@@ -407,6 +351,19 @@ async function getFormData(formid) {
     } else {
         return formdata;
     }
+}
+
+async function goToEditTemplate(accountId) {
+    let checked_entries = [];
+    let checked_entries_str = "";
+
+    $.each($("input:checked"), function (K, V) {
+        checked_entries.push(escapeHtml(V.value));
+        checked_entries_str += escapeHtml(V.value) + ",";
+    });
+    checked_entries_str = checked_entries_str.slice(0, -1);
+
+    window.location.href = '/templates/' + checked_entries_str;
 }
 
 async function getAvailableFields(accountId, reference = false) {

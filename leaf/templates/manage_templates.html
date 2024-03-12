@@ -139,7 +139,7 @@
                     {% if is_admin %}
                         <!-- Add Template Btn -->
                         <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addTemplateModal">Add Template</button>
-                        <button type="button" class="btn btn-blue editButton" data-bs-toggle="modal" data-bs-target="#editTemplateModal" onclick="populateEditTemplateModal({{accountId}});" disabled>Edit Template</button>
+                        <button type="button" class="btn btn-blue editButton" onclick="goToEditTemplate({{accountId}});" disabled>Edit Template</button>
                         {% if is_admin == 1 %}
                             <button type="button" class="btn btn-red deleteButton" data-bs-toggle="modal" data-bs-target="#deleteTemplateModal" disabled>Delete Templates</button>
                         {% endif %}
