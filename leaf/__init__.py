@@ -17,6 +17,7 @@ def create_app(config_class=Config):
     from leaf.deployments.routes import deployments
     from leaf.workflow.routes import workflow
     from leaf.editor.routes import editor
+    from leaf.template_editor.routes import template_editor
     from leaf.serverside.saml import saml_route
 
     app.register_blueprint(main)
@@ -28,6 +29,7 @@ def create_app(config_class=Config):
     app.register_blueprint(deployments)
     app.register_blueprint(workflow)
     app.register_blueprint(editor)
+    app.register_blueprint(template_editor)
     app.register_blueprint(saml_route)
 
     return app

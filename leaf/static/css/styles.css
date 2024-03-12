@@ -732,7 +732,9 @@ td .partnerPhoto .mb3_img {
     position: relative;
 }
 
-.actions_container {
+.actions_container,
+.template_fields_container,
+.cke_button__availabletags .template_fields_container {
     position: absolute;
     background: #f7f7f7;
     left: 0;
@@ -748,11 +750,40 @@ td .partnerPhoto .mb3_img {
     right: 0;
     left: initial;
 }
+.template_fields_container,
+.cke_button__availabletags .template_fields_container {
+    max-height: 300px;
+    overflow: scroll;
+    top: 20px;
+    padding: 5px;
+}
 
-.actions_container button {
+.actions_container button,
+.template_fields_container button,
+.cke_button__availabletags .template_fields_container button {
     width: 100%;
     box-shadow: none!important;
     text-align: right;
+    font-size: 16px;
+}
+.template_fields_container button,
+.cke_button__availabletags .template_fields_container button {
+    line-height: initial;
+    float: left;
+}
+
+.cke_top.cke_reset_all {
+    overflow: visible;
+    float: left;
+    width: 100%;
+    padding: 5px 0 0;
+}
+
+.cke_contents.cke_reset {
+    height: 32em !important;
+    overflow: scroll;
+    float: left;
+    width: 100%;
 }
 
 .form-select[multiple],
@@ -1061,6 +1092,17 @@ table.dataTable tbody tr.isWhite {
 }
 table.dataTable tbody tr.isGreen {
     background-color: #14671230;
+}
+.tip {
+    font-size: 12px;
+    display: block;
+    color: both;
+}
+.underline.link {
+    text-decoration: underline;
+    color: #176713;
+    cursor: pointer;
+    position: relative;
 }
 
 @media (min-width: 576px) {

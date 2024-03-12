@@ -224,3 +224,5 @@ class Config:
     SCREENSHOTS_FOLDER = os.path.join(WEBSERVER_FOLDER, "leaf_content", "screenshots")
     TEMP_UPLOAD_FOLDER = os.path.join(LEAFCMS_FOLDER, "temp_upload")
     os.makedirs(TEMP_UPLOAD_FOLDER, exist_ok=True)
+    TEMPLATES_FOLDER = os.path.join(LEAFCMS_FOLDER, "templates_folder")
+    os.makedirs(TEMPLATES_FOLDER, exist_ok=True)

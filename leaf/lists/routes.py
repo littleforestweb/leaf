@@ -25,6 +25,20 @@ def view_lists():
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
+@lists.route("/manage_templates")
+@login_required
+def view_manage_templates():
+    """
+    Renders the 'manage_templates.html' template with specific data.
+
+    Returns:
+        HTML template with specific data.
+    """
+    return render_template('manage_templates.html', userId=session['id'], username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'])
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
 @lists.route('/api/get_lists/<accountId>/<userId>/<isAdmin>')
 @login_required
 def api_get_lists(accountId: str, userId: str, isAdmin: str):
@@ -59,7 +73,7 @@ def view_dynamic_list(reference: str):
     referenceNoUnderscores = reference.replace("_", " ")
     preview_server = Config.PREVIEW_SERVER
     dynamic_path = Config.DYNAMIC_PATH
-    return render_template('dynamic_list.html', preview_server=preview_server, dynamic_path=dynamic_path, reference=reference, referenceNoUnderscores=referenceNoUnderscores, username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'])
+    return render_template('dynamic_list.html', preview_server=preview_server, dynamic_path=dynamic_path, reference=reference, referenceNoUnderscores=referenceNoUnderscores, userId=session['id'], username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'])
 
 
 # ---------------------------------------------------------------------------------------------------------- #
@@ -174,6 +188,96 @@ def set_configuration(accountId: str, reference: str):
     """
     if request.method == 'POST':
         return set_list_configuration(request, accountId, reference)
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
+@lists.route('/api/get_all_templates/<accountId>', methods=['GET', 'POST'])
+@login_required
+def api_get_all_templates(accountId: str):
+    """
+    Retrieves templates based on account.
+
+    Args:
+        accountId (str): Account ID.
+
+    Returns:
+        JSON response with list templates.
+    """
+    return get_all_templates(accountId)
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
+@lists.route('/api/get_list_template/<accountId>/<reference>', methods=['GET', 'POST'])
+@login_required
+def api_get_list_template(accountId: str, reference: str):
+    """
+    Retrieves template for a specific list based on account and reference.
+
+    Args:
+        accountId (str): Account ID.
+        reference (str): List reference.
+
+    Returns:
+        JSON response with list template.
+    """
+    return get_list_template(accountId, reference)
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
+@lists.route('/set/template/<accountId>/<reference>', methods=['POST'])
+@login_required
+def set_template(accountId: str, reference: str):
+    """
+    Sets template for a specific list based on account and reference.
+
+    Args:
+        accountId (str): Account ID.
+
+    Returns:
+        JSON response indicating success or failure.
+    """
+    if request.method == 'POST':
+        return set_list_template(request, accountId, reference)
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
+@lists.route('/delete/template/<accountId>', methods=['POST'])
+@login_required
+def delete_template(accountId: str):
+    """
+    Deletes template based on account.
+
+    Args:
+        accountId (str): Account ID.
+
+    Returns:
+        JSON response indicating success or failure.
+    """
+    if request.method == 'POST':
+        return delete_templates(request, accountId)
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
+@lists.route('/api/get_available_fields/<accountId>/<reference>', methods=['GET'])
+@login_required
+def api_get_available_fields(accountId: str, reference: str):
+    """
+    Gets available fields for a specific list based on account and reference.
+
+    Args:
+        accountId (str): Account ID.
+        reference (str): List reference.
+
+    Returns:
+        JSON response indicating success or failure.
+    """
+    if request.method == 'GET':
+        return get_available_fields(accountId, reference)
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #

@@ -1,15 +1,18 @@
 # models.py
 import re
+from bs4 import BeautifulSoup
 
 from flask import jsonify, session, current_app
 from leaf.decorators import db_connection
 from leaf.config import Config
+from leaf.template_editor.models import *
 import pandas as pd
 import csv
 import os
 import html
 import json
 import werkzeug.utils
+from datetime import datetime
 
 
 def get_lists_data(accountId: int, userId: str, isAdmin: str):
@@ -100,17 +103,21 @@ def get_list_data(request, accountId: str, reference: str):
                 searchColumnsFieldValue = searchColumnsField['value'].replace('"', "'")
                 field_list.append(f"{searchColumnsField['field']} LIKE %s")
 
+            userUsernameEmail = 'CONCAT(user.id, ", ", user.username, ", ", user.email)'
+            columnsFinal = [f"{tableName}.{row[0]}" if row[0] != 'modified_by' else f"{userUsernameEmail}" for row in listColumns]
+
             where_clause = " AND ".join(field_list)
             if field_list:
                 query_params = list(f"%{searchColumnsField['value']}%" for searchColumnsField in searchColumnsFields)
-                query = f"SELECT * FROM {tableName} WHERE {where_clause} ORDER BY {listColumns[int(sortingColumn) - 1][0]} {direction} LIMIT %s, %s"
+                query = f"SELECT {', '.join(columnsFinal)} FROM {tableName} INNER JOIN user ON {tableName}.modified_by = user.id WHERE {where_clause} ORDER BY {listColumns[int(sortingColumn) - 1][0]} {direction} LIMIT %s, %s"
                 mycursor.execute(query, query_params + [skip, limit])
             else:
                 order_by = listColumns[int(sortingColumn) - 1][0]
-                query = f"SELECT * FROM {tableName} ORDER BY {order_by} {direction} LIMIT %s, %s"
+                query = f"SELECT {', '.join(columnsFinal)} FROM {tableName} INNER JOIN user ON {tableName}.modified_by = user.id ORDER BY {order_by} {direction} LIMIT %s, %s"
                 mycursor.execute(query, (skip, limit))
 
             lists = mycursor.fetchall()
+            # print(lists)
 
             mycursor.execute(f"SELECT COUNT(*) FROM {tableName}")
             listCount = mycursor.fetchone()[0]
@@ -199,22 +206,26 @@ def get_list_columns_with_returned_id(accountId: str, reference: str, fieldToRet
     mydb, mycursor = db_connection()
 
     try:
-        tableName = f"account_{accountId}_list_{reference}"
+        if isinstance(int(accountId), int):
+            tableName = f"account_{accountId}_list_{reference}"
 
-        # Create table if not exists
-        create_table_query = "CREATE TABLE IF NOT EXISTS %s (id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE, name VARCHAR(255))"
-        mycursor.execute(create_table_query, (tableName,))
-        mydb.commit()
+            # Create table if not exists
+            create_table_query = f"CREATE TABLE IF NOT EXISTS {tableName} (id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE, name VARCHAR(255))"
+            print(create_table_query)
+            mycursor.execute(create_table_query, )
+            mydb.commit()
 
-        # Retrieve column information
-        show_columns_query = "SHOW COLUMNS FROM %s"
-        mycursor.execute(show_columns_query, (tableName,))
-        columns_info = mycursor.fetchall()
+            # Retrieve column information
+            show_columns_query = f"SHOW COLUMNS FROM {tableName}"
+            mycursor.execute(show_columns_query, )
+            columns_info = mycursor.fetchall()
 
-        # Convert bytes to string for column names
-        columns_info = [(item[0], item[1], item[2], item[3], item[4], item[5]) for item in columns_info]
+            # Convert bytes to string for column names
+            columns_info = [(item[0], item[1], item[2], item[3], item[4], item[5]) for item in columns_info]
 
-        jsonR['columns'] = columns_info
+            jsonR['columns'] = columns_info
+        else:
+            print("Invalid accountId")
 
     except Exception as e:
         print("get_list_columns_with_returned_id model")
@@ -285,12 +296,13 @@ def get_list_configuration(accountId: str, reference: str):
 
         field_list_for_config = ['id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE',
                                  'main_table VARCHAR(255) DEFAULT NULL',
-                                 'template VARCHAR(255) DEFAULT NULL',
-                                 'parameters VARCHAR(255) DEFAULT NULL',
-                                 'fields VARCHAR(255) DEFAULT NULL',
                                  'mandatory_fields VARCHAR(255) DEFAULT NULL',
                                  'save_by_field VARCHAR(11) DEFAULT 0',
-                                 'field_to_save_by VARCHAR(255) DEFAULT NULL']
+                                 'field_to_save_by VARCHAR(255) DEFAULT NULL',
+                                 'created_by INT(11) DEFAULT NULL',
+                                 'modified_by INT(11) DEFAULT NULL',
+                                 'created DATETIME NULL DEFAULT CURRENT_TIMESTAMP',
+                                 'modified DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP']
         field_query_for_config = " (" + ", ".join(field_list_for_config) + ")"
 
         tableName = f"account_{accountId}_list_configuration"
@@ -342,12 +354,10 @@ def set_list_configuration(request, accountId: str, reference: str):
 
             thisRequest = request.get_json()
 
-            template = werkzeug.utils.escape(str(thisRequest.get("s-template")))
-            parameters = werkzeug.utils.escape(str(thisRequest.get("s-parameters")))
-            fields = werkzeug.utils.escape(thisRequest.get("s-fields"))
             mfields = werkzeug.utils.escape(thisRequest.get("s-mandatory-fields"))
             save_by_field = werkzeug.utils.escape(thisRequest.get("s-save-by-field"))
             field_to_save_by = werkzeug.utils.escape(thisRequest.get("s-field-to-save-by"))
+            modified_by = session["id"]
 
             # Convert lists to strings for storage
             if isinstance(fields, list):
@@ -359,17 +369,207 @@ def set_list_configuration(request, accountId: str, reference: str):
             if isinstance(field_to_save_by, list):
                 field_to_save_by = ';'.join(field_to_save_by)
 
-            col_to_return = [template, parameters, fields, mfields, save_by_field, field_to_save_by]
+            col_to_return = [mfields, save_by_field, field_to_save_by, modified_by]
 
             # Insert new configuration for the specified list
-            insert_config_query = f"INSERT INTO {tableName} (main_table, template, parameters, fields, mandatory_fields, save_by_field, field_to_save_by) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-            mycursor.execute(insert_config_query, (reference, template, parameters, fields, mfields, save_by_field, field_to_save_by))
+            insert_config_query = f"INSERT INTO {tableName} (main_table, mandatory_fields, save_by_field, field_to_save_by, modified_by) VALUES (%s, %s, %s, %s, %s)"
+            mycursor.execute(insert_config_query, (reference, mfields, save_by_field, field_to_save_by, modified_by))
             mydb.commit()
         else:
             print("Invalid accountId")
 
     except Exception as e:
         print("set_list_configuration model")
+        print(e)
+    finally:
+        mydb.close()
+        return jsonify(col_to_return)
+
+
+def get_all_templates(accountId: str):
+    """
+    Get templates information for a specific account from the database.
+
+    Args:
+        accountId (str): The account ID associated with the list.
+
+    Returns:
+        dict: A JSON response containing templates information for the specified account.
+    """
+    jsonR = {'columns': []}
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    mydb, mycursor = db_connection()
+
+    if isinstance(int(accountId), int):
+
+        field_list_for_config = ['id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE',
+                                 'in_lists VARCHAR(255) DEFAULT NULL',
+                                 'template VARCHAR(255) DEFAULT NULL',
+                                 'template_location VARCHAR(255) DEFAULT NULL',
+                                 'modified_by INT(11) DEFAULT NULL',
+                                 'created DATETIME NULL DEFAULT CURRENT_TIMESTAMP',
+                                 'modified DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP']
+        field_query_for_config = " (" + ", ".join(field_list_for_config) + ")"
+
+        tableName = f"account_{accountId}_list_template"
+
+        # Create table if not exists
+        create_table_query = f"CREATE TABLE IF NOT EXISTS {tableName} {field_query_for_config}"
+        mycursor.execute(create_table_query, )
+        mydb.commit()
+
+        # Retrieve templates information
+        get_templates_query = f"SELECT * FROM {tableName}"
+        mycursor.execute(get_templates_query)
+        config_info = mycursor.fetchall()
+
+        jsonR['columns'] = config_info
+    else:
+        print("Invalid accountId")
+
+    return jsonify(jsonR)
+
+def get_list_template(accountId: str, reference: str):
+    """
+    Get template information for a specific list from the database.
+
+    Args:
+        accountId (str): The account ID associated with the list.
+        reference (str): The reference code for the specific list.
+
+    Returns:
+        dict: A JSON response containing template information for the specified list.
+    """
+    jsonR = {'columns': []}
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    mydb, mycursor = db_connection()
+
+    if isinstance(int(accountId), int):
+
+        field_list_for_config = ['id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE',
+                                 'in_lists VARCHAR(255) DEFAULT NULL',
+                                 'template VARCHAR(255) DEFAULT NULL',
+                                 'template_location VARCHAR(255) DEFAULT NULL',
+                                 'modified_by INT(11) DEFAULT NULL',
+                                 'created DATETIME NULL DEFAULT CURRENT_TIMESTAMP',
+                                 'modified DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP']
+        field_query_for_config = " (" + ", ".join(field_list_for_config) + ")"
+
+        tableName = f"account_{accountId}_list_template"
+
+        # Create table if not exists
+        create_table_query = f"CREATE TABLE IF NOT EXISTS {tableName} {field_query_for_config}"
+        mycursor.execute(create_table_query, )
+        mydb.commit()
+
+        # Retrieve templates information
+        get_templates_query = f"SELECT * FROM {tableName} WHERE in_lists = %s"
+        mycursor.execute(get_templates_query, (reference,))
+        template_info = mycursor.fetchall()
+
+        jsonR['columns'] = template_info
+    else:
+        print("Invalid accountId")
+
+    return jsonify(jsonR)
+
+
+def set_list_template(request, accountId: str, reference: str):
+    """
+    Set template for a specific list in the database.
+
+    Args:
+        request (Request): The HTTP request object.
+        accountId (str): The account ID associated with the list.
+        reference (str): The reference code for the specific list.
+
+    Returns:
+        list: A list containing the values that were inserted into the database for template.
+    """
+    col_to_return = []
+
+    thisRequest = request.get_json()
+
+    template = werkzeug.utils.escape(str(thisRequest.get("s-templates")))
+
+    if reference == '____no_list_selected____':
+        reference = ""
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    mydb, mycursor = db_connection()
+
+    try:
+        tableName = f"account_{accountId}_list_template"
+
+        if isinstance(int(accountId), int):
+            # Delete existing template
+            delete_config_query = f"DELETE FROM {tableName} WHERE template = %s"
+            mycursor.execute(delete_config_query, (template,))
+            mydb.commit()
+
+            template_location = werkzeug.utils.escape(str(thisRequest.get("s-template_location")))
+            modified_by = int(session["id"])
+
+            col_to_return = [template, template_location, modified_by]
+
+            # Insert new template
+            insert_config_query = f"INSERT INTO {tableName} (in_lists, template, template_location, modified_by) VALUES (%s, %s, %s, %s)"
+            mycursor.execute(insert_config_query, (reference, template, template_location, modified_by))
+            mydb.commit()
+        else:
+            print("Invalid accountId")
+
+    except Exception as e:
+        print("set_list_template model")
+        print(e)
+    finally:
+        mydb.close()
+        return jsonify(col_to_return)
+
+
+def delete_templates(request, accountId: str):
+    """
+    Delete selected entries from a templates list in the database.
+
+    Args:
+        request (Request): The HTTP request object containing the IDs of the entries to be deleted.
+        accountId (str): The Account ID.
+
+    Returns:
+        jsonify: JSON response containing the remaining templates after deletion.
+    """
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    col_to_return = []
+    template_to_delete = werkzeug.utils.escape(request.form.get("template_to_delete"))
+
+    # Validate entries_to_delete to prevent SQL injection
+    validate_entries_to_delete(template_to_delete, accountId)
+
+    mydb, mycursor = db_connection()
+
+    try:
+        tableName = f"account_{accountId}_list_template"
+
+        if isinstance(int(accountId), int):
+            # Delete existing template
+            mycursor.execute(f"DELETE FROM {tableName} WHERE id IN ({template_to_delete})")
+            mydb.commit()
+        else:
+            print("Invalid accountId")
+
+    except Exception as e:
+        print("set_list_template model")
         print(e)
     finally:
         mydb.close()
@@ -490,12 +690,65 @@ def parse_csv(accountId: str, reference: str, filePath: str):
 
             # Get CSV column names
             col_names = file.columns.tolist()
-            col_names_to_generate_fields = [field for field in col_names if field.strip().lower() != 'id']
+            col_names_to_generate_fields = [field.strip().lower() for field in col_names if field.strip().lower() != 'id']
 
             field_list = ['id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE']
 
+            # Loop through the column names to generate their fields
             for field in col_names_to_generate_fields:
                 field_list.append(f'{field} LONGTEXT DEFAULT NULL')
+
+            # We will make this an dynamic input so the user can select if there's a field with the created date value
+            modified_by_names = ['modifiedby', 'modified-by', 'modified_by']
+            # We will make this an dynamic input so the user can select if there's a field with the created date value
+            created_names = ['created', 'created-date', 'created_date', 'createddate']
+            # We will make this an dynamic input so the user can select if there's a field with the modified date value
+            modified_names = ['modified', 'modified-date', 'modified_date', 'modifieddate']
+            # We will make this an dynamic input so the user can select if there's a field with the publication date value
+            publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
+
+            foundModified_by = False
+            foundCreated = False
+            foundModified = False
+            foundPublication = False
+
+            for modified_by_name in modified_by_names:
+                if modified_by_name.strip().lower() in col_names_to_generate_fields:
+                    foundModified_by = True
+                    print(f"{modified_by_name} variable exists in the list.")
+                    break
+
+            for created_name in created_names:
+                if created_name.strip().lower() in col_names_to_generate_fields:
+                    foundCreated = True
+                    print(f"{created_name} variable exists in the list.")
+                    break
+
+            for modified_name in modified_names:
+                if modified_name.strip().lower() in col_names_to_generate_fields:
+                    foundModified = True
+                    print(f"{modified_name} variable exists in the list.")
+                    break
+
+            for publication_name in publication_names:
+                if publication_name.strip().lower() in col_names_to_generate_fields:
+                    foundPublication = True
+                    print(f"{publication_name} variable exists in the list.")
+                    break
+
+            # Additional fields for tracking modifications and timestamps
+            if not foundModified_by:
+                field_list.append(f'modified_by INT(11) DEFAULT NULL')  # Track who modified the record
+                col_names.append(f'modified_by')
+            if not foundCreated:
+                field_list.append(f'created DATETIME NULL DEFAULT CURRENT_TIMESTAMP')  # Track creation timestamp
+                col_names.append(f'created')
+            if not foundModified:
+                field_list.append(f'modified DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')  # Track modification timestamp
+                col_names.append(f'modified')
+            if not foundPublication:
+                field_list.append(f'publication_date DATETIME NULL DEFAULT CURRENT_TIMESTAMP')  # Track publication date timestamp
+                col_names.append(f'publication_date')
 
             field_query = " (" + ", ".join(field_list) + ")"
 
@@ -505,15 +758,30 @@ def parse_csv(accountId: str, reference: str, filePath: str):
             mydb.commit()
 
             # Use Pandas to parse the CSV file
-            csv_data = pd.read_csv(filePath, sep=",", encoding="utf-8", encoding_errors='ignore', engine="python", names=col_names, header=None)
+            csv_data = pd.read_csv(filePath, sep=",", encoding="utf-8", encoding_errors='ignore', engine="python", header=None) # names=col_names,
 
             insert_query = f"INSERT INTO {tableName} ({', '.join(col_names)}) VALUES "
+
+            dateTimeNow = datetime.now()
 
             # Loop through the rows
             for i, row in csv_data.iterrows():
                 if i != 0:
                     values = map((lambda x: f'"' + html.escape(str((x if isinstance(x, float) else x.encode('utf-8'))).replace("\\", "__BACKSLASH__TO_REPLACE__")[2:-1]) + '"'), row)
                     joint_value = ', '.join(values)
+                    
+                    if not foundModified_by:
+                        joint_value = joint_value + ', ' + str(session["id"])
+
+                    if not foundCreated:
+                        joint_value = joint_value + ', ' + "'" + dateTimeNow.strftime('%Y-%m-%d %H:%M:%S') + "'"
+
+                    if not foundModified:
+                        joint_value = joint_value + ', ' + "'" + dateTimeNow.strftime('%Y-%m-%d %H:%M:%S') + "'"
+
+                    if not foundPublication:
+                        joint_value = joint_value + ', ' + "'" + dateTimeNow.strftime('%Y-%m-%d %H:%M:%S') + "'"
+
                     mycursor.execute(f"{insert_query}({joint_value})")
                     mydb.commit()
 
@@ -573,6 +841,7 @@ def create_middle_tables(request, accountId: str, reference: str):
             # Iterate through form items
             for key, val in request.form.items():
                 if key.startswith("selectItem"):
+
                     finalKey = str(key.replace("selectItem_", ""))
                     fieldToAssign = str(werkzeug.utils.escape(request.form.get(f"s-{finalKey}-assignedField")))
                     fieldToAssignLabel = str(werkzeug.utils.escape(request.form.get(f"s-{finalKey}-assignedFieldLabel")))
@@ -583,7 +852,7 @@ def create_middle_tables(request, accountId: str, reference: str):
                     mapping_table_name = f"account_{accountId}_mappings_list_{reference}_{val}"
 
                     # Drop existing mapping table
-                    if val != "null":
+                    if val != "null" and val != '-_leaf_users_-':
                         mycursor.execute(f"DROP TABLE IF EXISTS {mapping_table_name}")
                         mydb.commit()
 
@@ -759,17 +1028,51 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         # Fetch all rows from the database table
         full_list = mycursor.fetchall()
 
+        this_request = request.get_json()
+        file_url_path = werkzeug.utils.escape(this_request.get("file_url_path"))
+        list_template_id = werkzeug.utils.escape(this_request.get("list_template_id"))
+        list_item_id = werkzeug.utils.escape(this_request.get("list_item_id"))
+
+        mycursor.execute(f"SELECT * FROM {account_list} WHERE id = %s", (list_item_id, ))
+        selected_item_id = mycursor.fetchone()
+
+        # Combine column names with fetched row values
+        selected_item_data = dict(zip(row_headers, selected_item_id))
+
+        list_template_html = templates_get_template_html(accountId, list_template_id)
+
+        # Replace html_placeholders with actual values from the selected_item_data
+        for key, value in selected_item_data.items():
+            html_placeholder = '{{' + key + '}}'
+            if html_placeholder in list_template_html:
+                list_template_html = list_template_html.replace(html_placeholder, value)
+
+        # Remove any HTML elements that contain html_placeholders that do not exist in the selected_item_data
+        html_placeholders = re.findall(r'{{(.*?)}}', list_template_html)
+        for placeholder in html_placeholders:
+            element_with_placeholder = re.sub(r'{{\w+}}', '', placeholder)  # Remove the placeholder to check for existence
+            if not any(placeholder in selected_item_data for placeholder in re.findall(r'{{(\w+)}}', element_with_placeholder)):
+                list_template_html = remove_elements_with_content_or_src(list_template_html, "{{" + placeholder + "}}")
+                # Removed remaining unused tags
+                list_template_html = list_template_html.replace("{{" + placeholder + "}}", '')
+
+        # Save new page in correct folder based on template
+        file_to_save = os.path.join(Config.WEBSERVER_FOLDER, reference, file_url_path.strip("/"))
+        folder_to_save_item = os.path.dirname(file_to_save)
+        os.makedirs(folder_to_save_item, exist_ok=True)
+        with open(file_to_save, 'w') as out_file:
+            out_file.write(list_template_html)
+
         # Convert data to a JSON format
         json_data = [dict(zip(row_headers, result)) for result in full_list]
-        json_data_to_write = json.dumps(json_data).replace('__BACKSLASH__TO_REPLACE__', '\\')
-
+        json_data_to_write = json.dumps(json_data, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
+        
         # Write JSON data to a file with the specified reference identifier (sanitize reference)
         sanitized_reference = ''.join(e for e in reference if e.isalnum())
         with open(os.path.join(Config.DYNAMIC_PATH, sanitized_reference + 'List.json'), 'w') as out_file:
             out_file.write(json_data_to_write)
 
         # Additional logic to save data by country (sanitize user input)
-        this_request = request.get_json()
         country_to_update = werkzeug.utils.escape(this_request.get("country_to_update"))
         if country_to_update and isinstance(country_to_update, list):
             country_to_update = ';'.join(country_to_update)
@@ -1324,6 +1627,51 @@ def delete_single_list(request):
         return jsonify(json_response)
 
 
+def get_available_fields(accountId, reference):
+
+    jsonR = {'columns': []}
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    mydb, mycursor = db_connection()
+
+    try:
+        if isinstance(int(accountId), int):
+            tableName = f"account_{accountId}_list_{reference}"
+
+            # Create table if not exists
+            create_table_query = f"CREATE TABLE IF NOT EXISTS {tableName} (id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE, name VARCHAR(255))"
+            mycursor.execute(create_table_query, )
+            mydb.commit()
+
+            # Retrieve column information
+            show_columns_query = f"SHOW COLUMNS FROM {tableName}"
+            mycursor.execute(show_columns_query, )
+            columns_info = mycursor.fetchall()
+
+            # Convert bytes to string for column names
+            columns_info = [(item[0]) for item in columns_info]
+
+            if "year" not in columns_info:
+                columns_info.append("year")
+            if "month" not in columns_info:
+                columns_info.append("month")
+            if "day" not in columns_info:
+                columns_info.append("day")
+
+            jsonR = {"columns": columns_info}
+        else:
+            print("Invalid accountId")
+
+    except Exception as e:
+        print("get_available_fields model")
+        print(e)
+    finally:
+        mydb.close()
+        return jsonify(jsonR)
+
+
 def validate_input_data_to_delete(list_to_delete, accountId):
     """
     Validate input data to prevent SQL injection.
@@ -1370,3 +1718,31 @@ def list_belongs_to_account(list_id):
         # Log the exception or handle it as appropriate for your application
         print(f"An error occurred: {str(e)}")
         return False
+
+# Define a custom serializer function
+def custom_serializer(obj):
+    if isinstance(obj, datetime):
+        return obj.isoformat()  # Serialize datetime objects to ISO format
+    raise TypeError("Type not serializable")
+
+
+def remove_elements_with_content_or_src(html_content, target):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Find all elements with src attribute or containing target content
+    elements_to_remove = []
+    for tag in soup.find_all():
+        if tag.get('src') == target:
+            elements_to_remove.append(tag)
+        else:
+            for content in tag.contents:
+                if isinstance(content, str) and content.strip() == target.strip():
+                    elements_to_remove.append(tag)
+                    break
+
+    # Remove the target content and its parent if it makes it empty
+    for element in elements_to_remove:
+        element.extract()
+    
+    # Return the modified HTML
+    return soup.prettify()

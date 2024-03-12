@@ -16,8 +16,8 @@
                     <div class="pull-right" id="buttons_to_add">
                         <div id="link_to_preview_add" class="pull-left"></div>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
-                        <button type="button" class="btn btn-success" onclick="addDynamicList('{{accountId}}', '{{reference}}', 'save', '{{preview_server}}', '{{dynamic_path}}', false, this)">Save & Close</button>
-                        <button type="button" class="btn btn-success" onclick="addDynamicList('{{accountId}}', '{{reference}}', 'preview', '{{preview_server}}', '{{dynamic_path}}', false, this)">Save & Preview</button>
+                        <button type="button" class="btn btn-success" onclick="addDynamicList('{{accountId}}', '{{reference}}', 'save', '{{preview_server}}', '{{dynamic_path}}', false, this, '{{userId}}')">Save & Close</button>
+                        <button type="button" class="btn btn-success" onclick="addDynamicList('{{accountId}}', '{{reference}}', 'preview', '{{preview_server}}', '{{dynamic_path}}', false, this, '{{userId}}')">Save & Preview</button>
                         <button type="button" class="btn btn-blue publish-btn" data-bs-toggle="modal" data-bs-target="#publishDynamicList">Publish</button>
                     </div>
                 </div>
@@ -27,8 +27,8 @@
                 </div>
                 <div class="modal-footer" id="modal-footer-add">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
-                    <button type="button" class="btn btn-success" onclick="addDynamicList('{{accountId}}', '{{reference}}', 'save', '{{preview_server}}', '{{dynamic_path}}', false, this)">Save & Close</button>
-                    <button type="button" class="btn btn-success" onclick="addDynamicList('{{accountId}}', '{{reference}}', 'preview', '{{preview_server}}', '{{dynamic_path}}', false, this)">Save & Preview</button>
+                    <button type="button" class="btn btn-success" onclick="addDynamicList('{{accountId}}', '{{reference}}', 'save', '{{preview_server}}', '{{dynamic_path}}', false, this, '{{userId}}')">Save & Close</button>
+                    <button type="button" class="btn btn-success" onclick="addDynamicList('{{accountId}}', '{{reference}}', 'preview', '{{preview_server}}', '{{dynamic_path}}', false, this, '{{userId}}')">Save & Preview</button>
                     <button type="button" class="btn btn-blue publish-btn" data-bs-toggle="modal" data-bs-target="#publishDynamicList">Publish</button>
                 </div>
             </div>
@@ -69,9 +69,9 @@
                     <div class="pull-right" id="buttons_to_edit">
                         <div id="link_to_preview_edit" class="pull-left"></div>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
-                        <button type="button" class="btn btn-success" onclick="updateDynamicList('{{accountId}}', '{{reference}}', 'saveOnly', '{{preview_server}}', '{{dynamic_path}}', false, this)">Save</button>
-                        <button type="button" class="btn btn-success" onclick="updateDynamicList('{{accountId}}', '{{reference}}', 'save', '{{preview_server}}', '{{dynamic_path}}', false, this)">Save & Close</button>
-                        <button type="button" class="btn btn-success" onclick="updateDynamicList('{{accountId}}', '{{reference}}', 'preview', '{{preview_server}}', '{{dynamic_path}}', false, this)">Save & Preview</button>
+                        <button type="button" class="btn btn-success" onclick="updateDynamicList('{{accountId}}', '{{reference}}', 'saveOnly', '{{preview_server}}', '{{dynamic_path}}', false, this, '{{userId}}')">Save</button>
+                        <button type="button" class="btn btn-success" onclick="updateDynamicList('{{accountId}}', '{{reference}}', 'save', '{{preview_server}}', '{{dynamic_path}}', false, this, '{{userId}}')">Save & Close</button>
+                        <button type="button" class="btn btn-success" onclick="updateDynamicList('{{accountId}}', '{{reference}}', 'preview', '{{preview_server}}', '{{dynamic_path}}', false, this, '{{userId}}')">Save & Preview</button>
                         <button type="button" class="btn btn-blue publish-btn" data-bs-toggle="modal" data-bs-target="#publishDynamicList">Publish</button>
                     </div>
                 </div>
@@ -81,9 +81,9 @@
                 </div>
                 <div class="modal-footer" id="modal-footer-edit">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
-                    <button type="button" class="btn btn-success" onclick="updateDynamicList('{{accountId}}', '{{reference}}', 'saveOnly', '{{preview_server}}', '{{dynamic_path}}', false, this)">Save</button>
-                    <button type="button" class="btn btn-success" onclick="updateDynamicList('{{accountId}}', '{{reference}}', 'save', '{{preview_server}}', '{{dynamic_path}}', false, this)">Save & Close</button>
-                    <button type="button" class="btn btn-success" onclick="updateDynamicList('{{accountId}}', '{{reference}}', 'preview', '{{preview_server}}', '{{dynamic_path}}', false, this)">Save & Preview</button>
+                    <button type="button" class="btn btn-success" onclick="updateDynamicList('{{accountId}}', '{{reference}}', 'saveOnly', '{{preview_server}}', '{{dynamic_path}}', false, this, '{{userId}}')">Save</button>
+                    <button type="button" class="btn btn-success" onclick="updateDynamicList('{{accountId}}', '{{reference}}', 'save', '{{preview_server}}', '{{dynamic_path}}', false, this, '{{userId}}')">Save & Close</button>
+                    <button type="button" class="btn btn-success" onclick="updateDynamicList('{{accountId}}', '{{reference}}', 'preview', '{{preview_server}}', '{{dynamic_path}}', false, this, '{{userId}}')">Save & Preview</button>
                     <button type="button" class="btn btn-blue publish-btn" data-bs-toggle="modal" data-bs-target="#publishDynamicList">Publish</button>
                 </div>
             </div>
@@ -103,7 +103,26 @@
                 </div>
                 <div class="modal-footer" id="modal-footer-delete">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
-                    <button type="button" class="btn btn-danger" onclick="deleteDynamicListEntries('{{accountId}}', '{{reference}}', 'save', '{{preview_server}}', '{{dynamic_path}}', this)">Delete</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteDynamicListEntries('{{accountId}}', '{{reference}}', 'save', '{{preview_server}}', '{{dynamic_path}}', this, '{{userId}}')">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE TEMPLATE MODAL -->
+    <div class="modal fade" id="deleteTemplate" tabindex="-1" aria-labelledby="deleteTemplate" aria-hidden="true" style="z-index: 99999; top: 28%;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteDynamicListLabel">Delete <span id="template_to_delete_title"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="doRefreshPage()"></button>
+                </div>
+                <div class="modal-body">
+                    <h4>Are you sure you want to delete this template?</h4>
+                </div>
+                <div class="modal-footer" id="modal-footer-delete">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteTemplate('{{accountId}}', 'delete')">Yes</button>
                 </div>
             </div>
         </div>
@@ -165,21 +184,6 @@
                     <form method="post" id="setConfiguration-{{reference}}">
                         <input type="hidden" class="form-control" id="h-s-{{reference}}">
                         <div class="row">
-                            <h5 class="col-form-header">Preview Settings:</h5>
-                            <div class="form-group col-md-12">
-                                <label for="s-template" class="col-form-label">Template:</label>
-                                <input type="text" class="form-control" name="s-template" id="s-template" value="" onkeyup="sanitizeInput(event)">
-                            </div>
-                            <div class="form-group col-md-12">
-                                <label for="s-parameters" class="col-form-label">Parameters:</label>
-                                <input type="text" class="form-control" name="s-parameters" id="s-parameters" value="" onkeyup="sanitizeInput(event)">
-                            </div>
-                            <div class="form-group col-md-12">
-                                <label for="s-fields" class="col-form-label">Fields:</label>
-                                <select type="text" class="form-select form-select-md connection" name="s-fields" id="s-fields" multiple></select>
-                            </div>
-                        </div>
-                        <div class="row" style="margin-top: 30px;border-top: 1px solid #CCC;padding-top: 6px;">
                             <h5 class="col-form-header">Save By Specific Field:</h5>
                             <div class="form-group col-md-12">
                                 <label for="s-save-by-field" class="col-form-label">Save by field?</label>
@@ -205,6 +209,47 @@
                 <div class="modal-footer" id="modal-footer-config">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="setConfigurationDynamicList('{{accountId}}', '{{reference}}', 'close')">Close</button>
                     <button type="button" class="btn btn-success" onclick="setConfigurationDynamicList('{{accountId}}', '{{reference}}', 'save')">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TEMPLATE SET FIELDS MODAL -->
+    <div class="modal fade" id="setTemplateDynamicList" tabindex="-1" aria-labelledby="setTemplateDynamicListLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="setTemplateDynamicListLabel">Templates - {{referenceNoUnderscores}}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="setTemplateDynamicList('{{accountId}}', '{{reference}}', 'close')"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" id="setTemplate-{{reference}}">
+                        <input type="hidden" class="form-control" id="h-s-{{reference}}">
+                        <div class="row">
+                            <h5 class="col-form-header">Templates Settings:</h5>
+                            <div class="form-group col-md-12">
+                                <label for="s-template_location" class="col-form-label">URL Pattern: <span class="tip">You can use fields from the table to generate urls dynamically. eg. <strong>{title}</strong>, <strong>{year}</strong>, <strong>{category}</strong>. Find the list of available fields <span class="underline link" onclick="getAvailableFields('{{accountId}}', '{{reference}}')">here<span class="template_fields_container hide"></span></span></span></label>
+                                <input type="text" class="form-control" name="s-template_location" id="s-template_location" value="" onkeyup="sanitizeInput(event)">
+                            </div>
+                            <div class="form-group col-md-12">
+                                <label for="s-templates" class="col-form-label">Templates:</label>
+                                <div class="row">
+                                    <div class="form-group col-md-8">
+                                        <select type="text" class="form-select form-select-md connection" name="s-templates" id="s-templates"></select>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <input type="button" class="btn btn-blue" style="width: 48%; margin: 0 4% 0 0; display: inline-block; float: left;" name="s-edit-template" id="s-edit-template" value="Edit" />
+                                        <input type="button" class="btn btn-red" style="width: 48%; margin: 0; display: inline-block; float: left;" name="s-remove-template" id="s-remove-template" value="Delete" onclick="addTemplateNameToModal()" data-bs-toggle="modal" data-bs-target="#deleteTemplate" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" id="modal-footer-config">
+                    <a class="btn btn-blue" href="/manage_templates">Manage Templates</a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="setTemplateDynamicList('{{accountId}}', '{{reference}}', 'close')">Close</button>
+                    <button type="button" class="btn btn-success" onclick="setTemplateDynamicList('{{accountId}}', '{{reference}}', 'save')">Save</button>
                 </div>
             </div>
         </div>
@@ -288,6 +333,16 @@
                 {{referenceNoUnderscores}} edited successfully!
             </div>
         </div>
+
+        <div id="deleteTemplateSuccessNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Templated deleted successfully!
+            </div>
+        </div>
     </div>
 
     <!-- Table -->
@@ -297,15 +352,16 @@
                 <h3 class="pull-left">{{referenceNoUnderscores}}</h3>
                 <div class="header-btns pull-right">
                     <button type="button" class="btn btn-blue publish-btn" data-bs-toggle="modal" data-bs-target="#publishDynamicList">Publish</button>
-                    <button type="button" class="btn btn-orange" onclick="publishDynamicList('{{accountId}}', '{{reference}}', 'preview', '{{preview_server}}', '{{dynamic_path}}', false, false, false, true, false, false, this)">Preview</button>
-                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addDynamicList" onclick="populateEditDynamicListDialog('{{accountId}}', '{{reference}}', 'add');">Add</button>
-                    <button type="button" class="btn btn-blue editButton" data-bs-toggle="modal" data-bs-target="#editDynamicList" onclick="populateEditDynamicListDialog('{{accountId}}', '{{reference}}', 'edit');" disabled>Edit</button>
+                    <button type="button" class="btn btn-orange previewButton" onclick="publishDynamicList('{{accountId}}', '{{reference}}', 'preview', '{{preview_server}}', '{{dynamic_path}}', false, false, false, true, false, false, this, '{{userId}}')" disabled>Preview</button>
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addDynamicList" onclick="populateEditDynamicListDialog('{{accountId}}', '{{reference}}', 'add', '{{userId}}');">Add</button>
+                    <button type="button" class="btn btn-blue editButton" data-bs-toggle="modal" data-bs-target="#editDynamicList" onclick="populateEditDynamicListDialog('{{accountId}}', '{{reference}}', 'edit', 'false', '{{userId}}');" disabled>Edit</button>
                     <button type="button" class="btn btn-red deleteButton" data-bs-toggle="modal" data-bs-target="#deleteDynamicList" disabled>Delete</button>
                     <span class="dropdown_actions">
                         <button type="button" id="actions" class="btn btn-blue" onclick="dropDownActionsToggle()">Actions</button>
                         <span class="actions_container hide">
                             <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#uploadSetFieldsDynamicList" onclick="populateUploadFieldsForSettings('{{accountId}}', '{{reference}}');">Settings</button>
                             <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#setConfigurationDynamicList" onclick="openConfiguration('{{accountId}}', '{{reference}}');">Configuration</button>
+                            <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#setTemplateDynamicList" onclick="openTemplate('{{accountId}}', '{{reference}}');">Templates</button>
                             <button type="button" class="btn btn-export" data-bs-toggle="modal" data-bs-target="#uploadDynamicList" onclick="dropDownActionsToggle();">Upload CSV</button>
                         </span>
                     </span>

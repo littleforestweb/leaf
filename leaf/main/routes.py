@@ -286,6 +286,48 @@ def api_get_lfi_users(accountId):
     mydb.close()
     return jsonify(jsonR)
 
+# ------------------------------------------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------------------------------------------ #
+
+@main.route("/api/get_lfi_users_columns/<accountId>")
+@login_required
+def api_get_lfi_users_columns(accountId: str):
+    """
+    Get column information for a specific list from the database.
+
+    Args:
+        accountId (str): The account ID associated with the list.
+
+    Returns:
+        dict: A JSON response containing information about the columns of the specified list.
+    """
+    jsonR = {'columns': []}
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    mydb, mycursor = db_connection()
+
+    try:
+        if isinstance(int(accountId), int):
+            # Retrieve column information
+            show_columns_query = f"SHOW COLUMNS FROM user"
+            mycursor.execute(show_columns_query, )
+            columns_info = mycursor.fetchall()
+
+            # Convert bytes to string for column names
+            columns_info = [(item[0], item[1], item[2], item[3], item[4], item[5]) for item in columns_info]
+
+            jsonR = {"columns": columns_info}
+        else:
+            print("Invalid accountId")
+
+    except Exception as e:
+        print("get_lfi_users_columns model")
+        print(e)
+    finally:
+        mydb.close()
+        return jsonify(jsonR)
 
 # ------------------------------------------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------------------------------------------ #
@@ -392,9 +434,9 @@ def api_get_single_user(accountId, is_admin, thisUserId):
 
     if accountId == 1:
         if is_admin == 1:
-            mycursor.execute("SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE AND account.active = 1")
+            mycursor.execute("SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE account.active = 1")
         else:
-            mycursor.execute("SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id AND user.id = %s WHERE AND account.active = 1", (thisUserId,))
+            mycursor.execute("SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id AND user.id = %s WHERE account.active = 1", (thisUserId,))
     else:
         if is_admin == 1:
             sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE account.active = 1 AND account.id = %s"
@@ -411,6 +453,56 @@ def api_get_single_user(accountId, is_admin, thisUserId):
 
     # Create JSON
     jsonR = {"users": usersLst}
+    mydb.close()
+    return jsonify(jsonR)
+
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
+@main.route("/api/get_single_user_by_value/<accountId>/<thisUserId>")
+@login_required
+def api_get_single_user_by_value(accountId, thisUserId):
+    """
+    Retrieve details of a single LFI user in JSON format.
+
+    This route requires the user to be logged in. It queries the database for details
+    of a single LFI user based on the specified account ID, admin status, and user ID.
+    The data is then formatted into a JSON response and returned.
+
+    Parameters:
+    - accountId (str): The ID of the account for which to retrieve the user.
+    - is_admin (str): The admin status indicating whether to retrieve an admin user.
+    - thisUserId (str): The ID of the user to retrieve details for.
+
+    Returns:
+    - Response: JSON response containing details of the specified LFI user.
+    """
+    mydb, mycursor = db_connection()
+
+    # if accountId == 1:
+    #     mycursor.execute("SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id AND user.id = %s WHERE account.active = 1", (thisUserId,))
+    # else:
+    #     sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE account.active = 1 AND user.id = %s AND account.id = %s"
+    #     val = (thisUserId, accountId)
+    #     mycursor.execute(sql, val)
+    # users = mycursor.fetchall()
+
+    # usersLst = [{"id": singleUser[0], "user_image": singleUser[1], "username": singleUser[2], "email": singleUser[3],
+    #              "account_id": singleUser[4], "account_name": singleUser[5], "is_admin": singleUser[6],
+    #              "is_manager": singleUser[7]} for singleUser in users]
+
+    # Execute SQL query to fetch user data
+    mycursor.execute("SELECT user.id, user.username, user.email FROM user WHERE user.id = %s AND user.account_id = %s", (thisUserId, accountId))
+
+    # Extract user data and create a list of dictionaries
+    users_list = [{"id": user[0], "username": user[1], "email": user[2]} for user in mycursor.fetchall()]
+
+    print("Testing users")
+    print(users_list)
+
+    # Create JSON
+    jsonR = {"user": users_list}
     mydb.close()
     return jsonify(jsonR)
 
