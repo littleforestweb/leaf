@@ -15,10 +15,6 @@ async function save_template() {
     	"template_id": template_id
     },
     success: function (entry) {
-      let previewBtn = document.getElementById("preview_template");
-      previewBtn.href = entry.previewURL;
-      previewBtn.target = "_blank";
-
       $('#savedNotification').toast('show');
     },
     error: function (XMLHttpRequest, textStatus, errorThrown) {

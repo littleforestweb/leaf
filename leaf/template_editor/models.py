@@ -7,6 +7,7 @@ import os
 import mysql.connector
 from leaf.config import Config
 from bs4 import BeautifulSoup
+import werkzeug.utils
 
 
 def templates_get_template_html(accountId, template_id):
@@ -99,6 +100,56 @@ def remove_template_base_href(data):
     except Exception:
         raise
 
+def template_save(request, accountId):
+    """
+    Save Template HTML content.
+
+    Args:
+        request: Including the data to save and the template ID
+    """
+
+    json_response = {}
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    mydb, mycursor = db_connection()
+    
+    try:
+        tableName = f"account_{accountId}_list_template"
+
+        if isinstance(int(accountId), int):
+
+            # Get data and page_id from the form
+            data = request.form.get("data", type=str)
+            template_id = werkzeug.utils.escape(request.form.get("template_id", type=str))
+
+            # Remove base href from HTML
+            data = remove_base_href_from_template(data)
+
+            get_templates_query = f"SELECT * FROM {tableName} WHERE id = %s"
+            mycursor.execute(get_templates_query, (template_id,))
+            template_info = mycursor.fetchall()
+
+            template_file = template_info[0][2]
+
+            file_to_save = os.path.join(Config.TEMPLATES_FOLDER, str(accountId), template_file)
+            folder_to_save_item = os.path.dirname(file_to_save)
+
+            os.makedirs(folder_to_save_item, exist_ok=True)
+            with open(file_to_save, 'w') as out_file:
+                out_file.write(data)
+
+            json_response = {"message": "success"}
+
+        else:
+            print("Invalid accountId")
+    except Exception as e:
+        print("template_save model")
+        print(e)
+    finally:
+        mydb.close()
+        return jsonify(json_response)
 
 # Function to save HTML content to the specified path
 def save_template_html_to_disk(html_path, data):
@@ -163,6 +214,28 @@ def get_template_by_id(accountId: str, template_id: str):
 
     return jsonify(jsonR)
 
+# Function to remove base href from the HTML content
+def remove_base_href_from_template(data):
+    """
+    Remove base href from the HTML content.
+
+    Args:
+        data (str): HTML content.
+
+    Returns:
+        str: HTML content with base href removed.
+    """
+    try:
+        # Parse the HTML content
+        soup = BeautifulSoup(data, "html5lib")
+
+        # Find and remove the base tag
+        base_tag = soup.find("base")
+        if base_tag:
+            base_tag.extract()  # Remove the base tag if it exists
+        return soup.prettify()
+    except Exception:
+        raise
 
 def clean_up_html_elements(list_template_html: str):
     # Remove any HTML elements that contain {{ITEM}} placeholders

@@ -52,37 +52,8 @@ def api_templates_save():
     Returns:
         jsonify: JSON response indicating the success of the save operation.
     """
-    try:
-        # Get data and page_id from the form
-        data = werkzeug.utils.escape(request.form.get("data", type=str))
-        page_id = werkzeug.utils.escape(request.form.get("page_id", type=str))
-
-        # Check if the specified page to the user's account
-        siteId = leaf.sites.models.getSiteFromPageId(int(page_id))
-        if not leaf.sites.models.site_belongs_to_account(siteId):
-            return jsonify({"error": "Forbidden"}), 403
-
-        # Get HTML path from page_id
-        html_path = get_page_html_path(int(page_id))
-
-        # Remove base href from HTML
-        data = remove_base_href(data)
-
-        # Save HTML code to disk
-        save_html_to_disk(html_path, data)
-
-        # Update modified_date
-        update_modified_date(page_id)
-
-        # Set previewURL
-        previewURL = html_path.replace(Config.WEBSERVER_FOLDER, Config.PREVIEW_SERVER + '/')
-
-        # Return info back to view
-        json_response = {"message": "success", "previewURL": previewURL}
-        return jsonify(json_response)
-    except Exception as e:
-        # Handle exceptions and return an error response with status code 500
-        return jsonify({"error": str(e)}), 500
+    return template_save(request, session['accountId'])
+    
 
 @template_editor.route('/api/get_template_by_id/<accountId>/<template_id>', methods=['GET', 'POST'])
 @login_required
