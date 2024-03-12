@@ -56,18 +56,22 @@ def add_tempalte_base_href(template_html):
     Returns:
         str: HTML content with added base href.
     """
+    template_html_to_return = ""
+
     try:
-        # Open and read the HTML file
-        soup = BeautifulSoup(template_html, "html5lib")
+        if template_html and template_html != "":
+            # Open and read the HTML file
+            soup = BeautifulSoup(template_html, "html5lib")
 
-        # Find the head tag and add base tag
-        head_tag = soup.find("head")
-        base_tag = soup.new_tag("base", href=Config.PREVIEW_SERVER)
-        head_tag.insert(0, base_tag)
+            # Find the head tag and add base tag
+            head_tag = soup.find("head")
+            base_tag = soup.new_tag("base", href=Config.PREVIEW_SERVER)
+            head_tag.insert(0, base_tag)
 
-        # Prettify the HTML content
-        template_html = soup.prettify()
-        return template_html
+            # Prettify the HTML content
+            template_html_to_return = soup.prettify()
+
+        return template_html_to_return
     except (FileNotFoundError, Exception):
         raise
 
