@@ -598,6 +598,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
     $(".previewButton").prop('disabled', true);
 
     if (justPreview) {
+        var selectedItem = '';
         // Get list configuration
         let jsonConfig = await $.get("/api/get_list_configuration/" + accountId + "/" + reference, function (result) {
             return result;
@@ -635,7 +636,10 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         var thisValId = '';
         for (var field in matches) {
             if (justPreview) {
-                var thisValId = escapeHtml($('input[type="checkbox"]:checked').val());
+                thisValId = escapeHtml($('input[type="checkbox"]:checked').val());
+                if (!thisValId) {
+                    thisValId = escapeHtml($('#e-id').val());
+                }
                 var singleField = $('span#' + matches[field] + '_pos_' + thisValId).html();
                 if (matches[field] === "year" || matches[field] === "month" || matches[field] === "day") {
                     let matchingColumn = null;
