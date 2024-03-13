@@ -130,8 +130,11 @@ def template_save(request, accountId):
             get_templates_query = f"SELECT * FROM {tableName} WHERE id = %s"
             mycursor.execute(get_templates_query, (template_id,))
             template_info = mycursor.fetchall()
-
             template_file = template_info[0][2]
+
+            update_templates_query = f"UPDATE {tableName} SET modified_by = %s, modified = CURRENT_TIMESTAMP WHERE id = %s"
+            mycursor.execute(update_templates_query, (session["id"], str(template_id)))
+            mydb.commit()
 
             file_to_save = os.path.join(Config.TEMPLATES_FOLDER, str(accountId), template_file)
             folder_to_save_item = os.path.dirname(file_to_save)

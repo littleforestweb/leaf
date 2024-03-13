@@ -24,9 +24,6 @@ async function save_template() {
 }
 
 async function show_available_tags() {
-  // Get HTML Code
-  let sourceCode = CKEDITOR.instances.htmlCode.getData();
-
   let jsonAllTemplate = await $.get("/api/get_template_by_id/" + accountId + "/" + template_id, function (result) {
 		return result;
   });
@@ -52,7 +49,31 @@ function dropDownTemplateFieldsToggle() {
 }
 
 function addFieldToPattern(field_name) {
-	$("#cke_1_contents").val($("#cke_1_contents").val() + '{' + field_name + '}');
+  // Get the CKEditor instance
+  let editor = CKEDITOR.instances.htmlCode;
+
+  // Get the current content
+  let content = editor.getData();
+
+  // Get the current selection in the editor
+  let selection = editor.getSelection();
+
+  // Get the range of the current selection
+  let range = selection.getRanges()[0];
+
+  // Get the position where the mouse is in the editor
+  let cursorPosition = range.startContainer;
+
+  // Append something to the content
+  let insertedContent = '{{' + field_name + '}}';
+
+  // Insert the content at the cursor position
+  if (cursorPosition) {
+    editor.insertHtml(insertedContent);
+  } else {
+    // If no cursor position is found, simply append the content to the end
+    editor.insertHtml(insertedContent);
+  }
 }
 
 async function publish_template() {

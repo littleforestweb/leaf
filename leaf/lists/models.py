@@ -1168,7 +1168,7 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
                 list_template_html = list_template_html.replace("{{" + placeholder + "}}", '')
 
         # Save new page in the correct folder based on template
-        file_to_save = os.path.join(Config.WEBSERVER_FOLDER, reference, file_url_path.strip("/"))
+        file_to_save = os.path.join(Config.WEBSERVER_FOLDER, file_url_path.strip("/"))
         folder_to_save_item = os.path.dirname(file_to_save)
         os.makedirs(folder_to_save_item, exist_ok=True)
         with open(file_to_save, 'w') as out_file:
