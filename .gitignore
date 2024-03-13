@@ -155,3 +155,4 @@ addHeritrixJob.py
 warc2html.py
 leaf/config.json
 leaf/secret.key
+templates_folder
