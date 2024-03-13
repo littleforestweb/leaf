@@ -596,75 +596,72 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
     lastEntry = escapeHtml(lastEntry);
 
     $(".previewButton").prop('disabled', true);
+    
+    var selectedItem = '';
+    // Get list configuration
+    let jsonConfig = await $.get("/api/get_list_configuration/" + accountId + "/" + reference, function (result) {
+        return result;
+    });
+    var values = jsonConfig.columns;
 
-    if (justPreview) {
-        var selectedItem = '';
-        // Get list configuration
-        let jsonConfig = await $.get("/api/get_list_configuration/" + accountId + "/" + reference, function (result) {
-            return result;
-        });
-        var values = jsonConfig.columns;
+    let jsonAllTemplate = await $.get("/api/get_list_template/" + accountId + "/" + reference, function (result) {
+        return result;
+    });
+    jsonAllTemplate = jsonAllTemplate.columns;
 
-        let jsonAllTemplate = await $.get("/api/get_list_template/" + accountId + "/" + reference, function (result) {
-            return result;
-        });
-        jsonAllTemplate = jsonAllTemplate.columns;
+    let jsonColumns = await $.get("/api/get_list_columns_with_properties/" + accountId + "/" + reference, function (result) {
+        return result;
+    });
 
-        let jsonColumns = await $.get("/api/get_list_columns_with_properties/" + accountId + "/" + reference, function (result) {
-            return result;
-        });
+    var headColumns = jsonColumns.columns;
 
-        var headColumns = jsonColumns.columns;
-
-        var thisTemplate = '';
-        var listTemplateId = '';
-        if (jsonAllTemplate && jsonAllTemplate[0]) {
-            thisTemplate = jsonAllTemplate[0][3];
-            listTemplateId = jsonAllTemplate[0][0];
-        }
-
-        const regex = /{([^{}]+)}/g;
-        const matches = [];
-        let match;
-
-        while ((match = regex.exec(thisTemplate)) !== null) {
-          matches.push(match[1]);
-        }
-
-        publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
-        var fieldsToLink = thisTemplate;
-        var thisValId = '';
-        for (var field in matches) {
-            if (justPreview) {
-                thisValId = escapeHtml($('input[type="checkbox"]:checked').val());
-                if (!thisValId) {
-                    thisValId = escapeHtml($('#e-id').val());
-                }
-                var singleField = $('span#' + matches[field] + '_pos_' + thisValId).html();
-                if (matches[field] === "year" || matches[field] === "month" || matches[field] === "day") {
-                    let matchingColumn = null;
-
-                    for (const column of headColumns) {
-                        if (publication_names.includes(column[2].toLowerCase())) {
-                            matchingColumn = column;
-                            break;
-                        }
-                    }
-                    singleField = $('span#' + matchingColumn[2].toLowerCase() + '_pos_' + thisValId).html();
-                    singleField = extractMonthAndDay(singleField, matches[field]);
-                    singleField = singleField.toString();
-                }
-                singleField = singleField.split('/');
-                singleField = singleField[singleField.length - 1];
-                fieldsToLink = fieldsToLink.replace("{" + matches[field] + "}", singleField);
-
-                selectedItem = thisValId;
-            }
-        }
-
-        // We have to declare the page format as a global variable
-        var pageFormat = "page";
+    var thisTemplate = '';
+    var listTemplateId = '';
+    if (jsonAllTemplate && jsonAllTemplate[0]) {
+        thisTemplate = jsonAllTemplate[0][3];
+        listTemplateId = jsonAllTemplate[0][0];
     }
+
+    const regex = /{([^{}]+)}/g;
+    const matches = [];
+    let match;
+
+    while ((match = regex.exec(thisTemplate)) !== null) {
+      matches.push(match[1]);
+    }
+
+    publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
+    var fieldsToLink = thisTemplate;
+    var thisValId = '';
+    for (var field in matches) {
+        thisValId = escapeHtml($('input[type="checkbox"]:checked').val());
+        if (!thisValId) {
+            thisValId = escapeHtml($('#e-id').val());
+        }
+        var singleField = $('span#' + matches[field] + '_pos_' + thisValId).html();
+        if (matches[field] === "year" || matches[field] === "month" || matches[field] === "day") {
+            let matchingColumn = null;
+
+            for (const column of headColumns) {
+                if (publication_names.includes(column[2].toLowerCase())) {
+                    matchingColumn = column;
+                    break;
+                }
+            }
+            singleField = $('span#' + matchingColumn[2].toLowerCase() + '_pos_' + thisValId).html();
+            singleField = extractMonthAndDay(singleField, matches[field]);
+            singleField = singleField.toString();
+        }
+        singleField = singleField.split('/');
+        singleField = singleField[singleField.length - 1];
+        fieldsToLink = fieldsToLink.replace("{" + matches[field] + "}", singleField);
+
+        selectedItem = thisValId;
+    }
+
+    // We have to declare the page format as a global variable
+    var pageFormat = "page";
+    
     var checkCountryField = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.country pre .hidden');
     if (!thisCountry && checkCountryField.length > 0) {
         thisCountry = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.country pre .hidden').html().trim();
