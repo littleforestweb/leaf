@@ -588,7 +588,7 @@ def set_list_template(request, accountId: str, reference: str):
                 template_file = template_info[0][2]
                 template = template_file
 
-                update_config_query = f"UPDATE {tableName} SET in_lists = '' WHERE in_lists = %s"
+                update_config_query = f"UPDATE {tableName} SET in_lists = '', modified = CURRENT_TIMESTAMP WHERE in_lists = %s"
                 mycursor.execute(update_config_query, (reference,))
                 mydb.commit()
 
@@ -604,7 +604,7 @@ def set_list_template(request, accountId: str, reference: str):
 
             if templates_format and templates_format == "select":
                 # Update template
-                update_config_query = f"UPDATE {tableName} SET in_lists = %s, modified_by = %s WHERE template = %s"
+                update_config_query = f"UPDATE {tableName} SET in_lists = %s, modified_by = %s, modified = CURRENT_TIMESTAMP WHERE template = %s"
                 mycursor.execute(update_config_query, (reference, modified_by, template))
                 mydb.commit()
             else:
@@ -1284,7 +1284,7 @@ def update_dynamic_lists_database(accountId, account_list, item_id, this_request
                     # Update the database with the new value (use parameterized query to prevent SQL injection)
                     if final_key != 'id':
                         final_val = val.replace('"', "'")
-                        mycursor.execute(f"UPDATE {account_list} SET {final_key} = %s WHERE id = %s", (final_val, item_id))
+                        mycursor.execute(f"UPDATE {account_list} SET {final_key} = %s, modified = CURRENT_TIMESTAMP WHERE id = %s", (final_val, item_id))
                         mydb.commit()
 
                     index += 1
@@ -1435,7 +1435,7 @@ def update_dynamically_linked_fields_when_adding_list(mydb, mycursor, accountId,
                 final_val_to_update_dynamically = val + last_row_id
 
     if final_key_to_update_dynamically:
-        mycursor.execute(f"UPDATE {account_list} SET {final_key_to_update_dynamically} = {final_val_to_update_dynamically} WHERE id = '{last_row_id}'")
+        mycursor.execute(f"UPDATE {account_list} SET {final_key_to_update_dynamically} = {final_val_to_update_dynamically}, modified = CURRENT_TIMESTAMP WHERE id = '{last_row_id}'")
         mydb.commit()
 
 
