@@ -188,9 +188,10 @@ def idp_initiated():
                 return "Access Denied"
 
             # XPath query to get to the Attribute elements
-            attributes = saml_response_xml.xpath("//saml:Assertion/saml:AttributeStatement/saml:Attribute", namespaces=namespaces)
+            attributes = saml_response_xml.xpath("/samlp:Response/Assertion/AttributeStatement/Attribute", namespaces=namespaces)
+
             with open(os.path.join(Config.LEAFCMS_FOLDER, "resp.txt"), "w") as outFile:
-                outFile.write("attributes:" + ";".join(attributes))
+                outFile.write(attributes)
 
             email = None
             username = None
