@@ -154,7 +154,7 @@ def idp_initiated():
 
             saml_response_xml = process_saml_response(request.form["SAMLResponse"])
             if saml_response_xml is not False:
-                print('Saml Response is valid and secure!')
+                current_app.logger.info('Saml Response is valid and secure!')
                 # Extract the X509 certificate
                 # Assuming that there's only one X509Certificate element in the SAML response
                 response_cert_element = saml_response_xml.xpath("//*[local-name()='X509Certificate']")
@@ -165,15 +165,15 @@ def idp_initiated():
                     # Verify the signature using the certificate from the IdP metadata
                     try:
                         verified_data = XMLVerifier().verify(saml_response_xml, x509_cert=cert_pem).signed_xml
-                        print("Signature is valid.")
+                        current_app.logger.info("Signature is valid.")
                     except Exception as e:
-                        print(f"Error verifying signature: {e}")
+                        current_app.logger.info(f"Error verifying signature: {e}")
                         return "Access Denied. Error verifying signature!"
                 else:
-                    print("Certificate not found in the SAML response. This connection might not be secure!")
+                    current_app.logger.info("Certificate not found in the SAML response. This connection might not be secure!")
                     return "Access Denied. Error verifying signature! Certificate not found in the SAML response."
         else:
-            print("X509Certificate element not found in the IdP metadata!")
+            current_app.logger.info("X509Certificate element not found in the IdP metadata!")
             return "Access Denied. Error verifying signature! Certificate not found in the IdP metadata!"
 
         # issuer_text = saml_response_xml.xpath('//saml:Issuer', namespaces=namespaces)
