@@ -4,6 +4,7 @@ import re
 import werkzeug.utils
 from defusedxml.lxml import fromstring
 from flask import Blueprint, render_template, session, request
+from flask import current_app
 from lxml import etree
 from signxml import XMLVerifier
 
@@ -179,8 +180,8 @@ def idp_initiated():
         issuer_elements = saml_response_xml.xpath("//*[local-name() = 'Issuer']")
         if issuer_elements:
             issuer_text = issuer_elements[0].text
-            print("issuer_text:" + issuer_text)
-            print("Config.IDP_ENTITY_ID:" + Config.IDP_ENTITY_ID)
+            current_app.logger.info("issuer_text:" + issuer_text)
+            current_app.logger.info("Config.IDP_ENTITY_ID:" + Config.IDP_ENTITY_ID)
             if issuer_text and issuer_text.lower().strip() != Config.IDP_ENTITY_ID.lower().strip():
                 return "Access Denied"
 
