@@ -187,41 +187,38 @@ def idp_initiated():
             if issuer_text and issuer_text.lower().strip() != Config.IDP_ENTITY_ID.lower().strip():
                 return "Access Denied"
 
-            # XPath query to get to the Attribute elements
-            attributes = saml_response_xml.findall('.//AttributeStatement', namespaces=namespaces)
-            with open(os.path.join(Config.LEAFCMS_FOLDER, "resp.txt"), "w") as outFile:
-                outFile.writelines(attributes)
-
             email = None
             username = None
             firstName = None
             lastName = None
             isAdmin = 0
-            for item in attributes:
-                # XPath query to find the Attribute element with Name="username"
-                username_attribute = saml_response_xml.xpath("//saml:Attribute[@Name='username']/saml:AttributeValue", namespaces=namespaces)
-                if username_attribute:
-                    username = username_attribute[0].text
-                # XPath query to find the Attribute element with Name="email"
-                email_attribute = saml_response_xml.xpath("//saml:Attribute[@Name='email']/saml:AttributeValue", namespaces=namespaces)
 
-                with open(os.path.join(Config.LEAFCMS_FOLDER, "resp.txt"), "w") as outFile:
-                    outFile.write("email_attribute:" + email_attribute)
+            # XPath query to find the Attribute element with Name="username"
+            username_attribute = saml_response_xml.find(".//Attribute[@Name=\"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/email\"]", namespaces=namespaces)
+            with open(os.path.join(Config.LEAFCMS_FOLDER, "resp.txt"), "w") as outFile:
+                outFile.writelines(username_attribute)
+            if username_attribute:
+                username = username_attribute[0].text
 
-                if email_attribute:
-                    email = username_attribute[0].text
-                # XPath query to find the Attribute element with Name="firstName"
-                firstName_attribute = saml_response_xml.xpath("//saml:Attribute[@Name='firstName']/saml:AttributeValue", namespaces=namespaces)
-                if firstName_attribute:
-                    firstName = firstName_attribute[0].text
-                # XPath query to find the Attribute element with Name="lastName"
-                lastName_attribute = saml_response_xml.xpath("//saml:Attribute[@Name='lastName']/saml:AttributeValue", namespaces=namespaces)
-                if lastName_attribute:
-                    lastName = lastName_attribute[0].text
-                # XPath query to find the Attribute element with Name="group"
-                group_values = saml_response_xml.xpath("//saml:Attribute[@Name='group']/saml:AttributeValue", namespaces=namespaces)
-                groups = [value.text.lower() for value in group_values if value.text]
-                isAdmin = 1 if any("poweruser" in group for group in groups) else 0
+            # XPath query to find the Attribute element with Name="email"
+            email_attribute = saml_response_xml.xpath(".//Attribute[@Name=\"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/email\"]", namespaces=namespaces)
+            if email_attribute:
+                email = username_attribute[0].text
+
+            # XPath query to find the Attribute element with Name="firstName"
+            firstName_attribute = saml_response_xml.xpath(".//Attribute[@Name=\"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/firstName\"]", namespaces=namespaces)
+            if firstName_attribute:
+                firstName = firstName_attribute[0].text
+
+            # XPath query to find the Attribute element with Name="lastName"
+            lastName_attribute = saml_response_xml.xpath(".//Attribute[@Name=\"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/lastName\"]", namespaces=namespaces)
+            if lastName_attribute:
+                lastName = lastName_attribute[0].text
+
+            # XPath query to find the Attribute element with Name="group"
+            group_values = saml_response_xml.xpath("//saml:Attribute[@Name='group']/saml:AttributeValue", namespaces=namespaces)
+            groups = [value.text.lower() for value in group_values if value.text]
+            isAdmin = 1 if any("poweruser" in group for group in groups) else 0
 
             if email:
 
