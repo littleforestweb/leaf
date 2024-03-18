@@ -190,7 +190,7 @@ def idp_initiated():
             # XPath query to get to the Attribute elements
             attributes = saml_response_xml.findall('.//AttributeStatement', namespaces=namespaces)
             with open(os.path.join(Config.LEAFCMS_FOLDER, "resp.txt"), "w") as outFile:
-                outFile.writelines(saml_response_xml)
+                outFile.writelines(attributes)
 
             email = None
             username = None
