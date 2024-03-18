@@ -184,15 +184,13 @@ def idp_initiated():
         if issuer_elements:
             issuer_text = issuer_elements[0].text
 
-            with open(os.path.join(Config.LEAFCMS_FOLDER, "resp.txt"), "w") as outFile:
-                outFile.write("issuer_text:" + issuer_text)
-                outFile.write("Config.IDP_ENTITY_ID:" + Config.IDP_ENTITY_ID)
-
             if issuer_text and issuer_text.lower().strip() != Config.IDP_ENTITY_ID.lower().strip():
                 return "Access Denied"
 
             # XPath query to get to the Attribute elements
             attributes = saml_response_xml.xpath("//saml:Assertion/saml:AttributeStatement/saml:Attribute", namespaces=namespaces)
+            with open(os.path.join(Config.LEAFCMS_FOLDER, "resp.txt"), "w") as outFile:
+                outFile.write("attributes:" + attributes)
 
             email = None
             username = None
@@ -206,6 +204,10 @@ def idp_initiated():
                     username = username_attribute[0].text
                 # XPath query to find the Attribute element with Name="email"
                 email_attribute = saml_response_xml.xpath("//saml:Attribute[@Name='email']/saml:AttributeValue", namespaces=namespaces)
+
+                with open(os.path.join(Config.LEAFCMS_FOLDER, "resp.txt"), "w") as outFile:
+                    outFile.write("email_attribute:" + email_attribute)
+
                 if email_attribute:
                     email = username_attribute[0].text
                 # XPath query to find the Attribute element with Name="firstName"
