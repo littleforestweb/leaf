@@ -1,11 +1,9 @@
 import base64
-import os
 import re
 
 import werkzeug.utils
 from defusedxml.lxml import fromstring
 from flask import Blueprint, render_template, session, request
-from flask import current_app
 from lxml import etree
 from signxml import XMLVerifier
 
@@ -57,7 +55,7 @@ def perform_additional_xml_checks(xml_data):
 def is_valid_saml_response(saml_response):
     """
     Validates the SAML response for correct XML structure and checks for injection attacks.
-    
+
     Args:
         saml_response (str): The Base64 encoded SAML response.
 
@@ -113,7 +111,7 @@ def idp_initiated():
     """
     Handle Identity Provider (IdP) initiated SAML authentication.
 
-    This route processes SAML responses for user authentication. 
+    This route processes SAML responses for user authentication.
     If accessed via GET method, it denies access. When accessed via POST, it processes the SAML response.
     The function performs several key actions:
     - Parses IdP metadata to find the X509Certificate and SingleLogoutService details.
@@ -127,11 +125,9 @@ def idp_initiated():
     - Response: A rendered template or a redirect, depending on the authentication outcome and method of request.
     """
     if request.method == "GET":
-        current_app.logger.info("Received GET")
         return "Access Denied"
 
     if request.method == "POST":
-        current_app.logger.info("Received POST")
 
         # Load the IdP's metadata
         idp_metadata = etree.parse(Config.IDP_METADATA)
@@ -157,7 +153,7 @@ def idp_initiated():
 
             saml_response_xml = process_saml_response(request.form["SAMLResponse"])
             if saml_response_xml is not False:
-                current_app.logger.info('Saml Response is valid and secure!')
+                print('Saml Response is valid and secure!')
                 # Extract the X509 certificate
                 # Assuming that there's only one X509Certificate element in the SAML response
                 response_cert_element = saml_response_xml.xpath("//*[local-name()='X509Certificate']")
@@ -168,15 +164,15 @@ def idp_initiated():
                     # Verify the signature using the certificate from the IdP metadata
                     try:
                         verified_data = XMLVerifier().verify(saml_response_xml, x509_cert=cert_pem).signed_xml
-                        current_app.logger.info("Signature is valid.")
+                        print("Signature is valid.")
                     except Exception as e:
-                        current_app.logger.info(f"Error verifying signature: {e}")
+                        print(f"Error verifying signature: {e}")
                         return "Access Denied. Error verifying signature!"
                 else:
-                    current_app.logger.info("Certificate not found in the SAML response. This connection might not be secure!")
+                    print("Certificate not found in the SAML response. This connection might not be secure!")
                     return "Access Denied. Error verifying signature! Certificate not found in the SAML response."
         else:
-            current_app.logger.info("X509Certificate element not found in the IdP metadata!")
+            print("X509Certificate element not found in the IdP metadata!")
             return "Access Denied. Error verifying signature! Certificate not found in the IdP metadata!"
 
         # issuer_text = saml_response_xml.xpath('//saml:Issuer', namespaces=namespaces)
@@ -187,38 +183,35 @@ def idp_initiated():
             if issuer_text and issuer_text.lower().strip() != Config.IDP_ENTITY_ID.lower().strip():
                 return "Access Denied"
 
+            # XPath query to get to the Attribute elements
+            attributes = saml_response_xml.xpath("//saml:Assertion/saml:AttributeStatement/saml:Attribute", namespaces=namespaces)
+
             email = None
             username = None
             firstName = None
             lastName = None
             isAdmin = 0
-
-            # XPath query to find the Attribute element with Name="username"
-            username_attribute = saml_response_xml.find(".//Attribute[@Name=\"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/email\"]", namespaces=namespaces)
-            with open(os.path.join(Config.LEAFCMS_FOLDER, "resp.txt"), "w") as outFile:
-                outFile.writelines(username_attribute)
-            if username_attribute:
-                username = username_attribute[0].text
-
-            # XPath query to find the Attribute element with Name="email"
-            email_attribute = saml_response_xml.xpath(".//Attribute[@Name=\"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/email\"]", namespaces=namespaces)
-            if email_attribute:
-                email = username_attribute[0].text
-
-            # XPath query to find the Attribute element with Name="firstName"
-            firstName_attribute = saml_response_xml.xpath(".//Attribute[@Name=\"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/firstName\"]", namespaces=namespaces)
-            if firstName_attribute:
-                firstName = firstName_attribute[0].text
-
-            # XPath query to find the Attribute element with Name="lastName"
-            lastName_attribute = saml_response_xml.xpath(".//Attribute[@Name=\"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/lastName\"]", namespaces=namespaces)
-            if lastName_attribute:
-                lastName = lastName_attribute[0].text
-
-            # XPath query to find the Attribute element with Name="group"
-            group_values = saml_response_xml.xpath("//saml:Attribute[@Name='group']/saml:AttributeValue", namespaces=namespaces)
-            groups = [value.text.lower() for value in group_values if value.text]
-            isAdmin = 1 if any("poweruser" in group for group in groups) else 0
+            for item in attributes:
+                # XPath query to find the Attribute element with Name="username"
+                username_attribute = saml_response_xml.xpath("//saml:Attribute[@Name='username']/saml:AttributeValue", namespaces=namespaces)
+                if username_attribute:
+                    username = username_attribute[0].text
+                # XPath query to find the Attribute element with Name="email"
+                email_attribute = saml_response_xml.xpath("//saml:Attribute[@Name='email']/saml:AttributeValue", namespaces=namespaces)
+                if email_attribute:
+                    email = username_attribute[0].text
+                # XPath query to find the Attribute element with Name="firstName"
+                firstName_attribute = saml_response_xml.xpath("//saml:Attribute[@Name='firstName']/saml:AttributeValue", namespaces=namespaces)
+                if firstName_attribute:
+                    firstName = firstName_attribute[0].text
+                # XPath query to find the Attribute element with Name="lastName"
+                lastName_attribute = saml_response_xml.xpath("//saml:Attribute[@Name='lastName']/saml:AttributeValue", namespaces=namespaces)
+                if lastName_attribute:
+                    lastName = lastName_attribute[0].text
+                # XPath query to find the Attribute element with Name="group"
+                group_values = saml_response_xml.xpath("//saml:Attribute[@Name='group']/saml:AttributeValue", namespaces=namespaces)
+                groups = [value.text.lower() for value in group_values if value.text]
+                isAdmin = 1 if any("poweruser" in group for group in groups) else 0
 
             if email:
 
