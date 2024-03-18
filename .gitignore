@@ -156,3 +156,5 @@ warc2html.py
 leaf/config.json
 leaf/secret.key
 templates_folder
+log_gunicorn_access.txt
+log_gunicorn_error.txt
