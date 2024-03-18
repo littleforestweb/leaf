@@ -278,9 +278,6 @@ def idp_initiated():
 
                         msg = 'Logged in successfully!'
                         msgClass = 'alert alert-success'
-
-                        msg = 'Logged in successfully!'
-                        msgClass = 'alert alert-success'
                         return render_template('sites.html', userId=session['id'], username=session['username'],
                                                user_image=session['user_image'], accountId=session['accountId'],
                                                accountName=session['accountName'], is_admin=session['is_admin'],
