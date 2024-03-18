@@ -191,7 +191,7 @@ def idp_initiated():
             attributes = saml_response_xml.xpath("/samlp:Response/Assertion/AttributeStatement/Attribute", namespaces=namespaces)
 
             with open(os.path.join(Config.LEAFCMS_FOLDER, "resp.txt"), "w") as outFile:
-                outFile.write(attributes)
+                outFile.writelines(attributes)
 
             email = None
             username = None
