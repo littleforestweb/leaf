@@ -184,7 +184,7 @@ def idp_initiated():
         if issuer_elements:
             issuer_text = issuer_elements[0].text
 
-            with open(os.path.join(Config.LEAFCMS_FOLDER, "resp.txt")) as outFile:
+            with open(os.path.join(Config.LEAFCMS_FOLDER, "resp.txt", "w")) as outFile:
                 outFile.write("issuer_text:" + issuer_text)
                 outFile.write("Config.IDP_ENTITY_ID:" + Config.IDP_ENTITY_ID)
 
