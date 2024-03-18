@@ -1,20 +1,23 @@
-from flask import Blueprint, render_template, session, request
 import base64
-from lxml import etree
-from signxml import methods, XMLVerifier
-from leaf import Config
-from leaf.decorators import db_connection, generate_jwt
+import re
+
 import werkzeug.utils
 from defusedxml.lxml import fromstring
-from werkzeug.exceptions import Forbidden
+from flask import Blueprint, render_template, session, request
+from lxml import etree
+from signxml import XMLVerifier
+
+from leaf import Config
+from leaf.decorators import db_connection, generate_jwt
 
 saml_route = Blueprint("saml_route", __name__)
+
 
 def perform_additional_xml_checks(xml_data):
     # Check for unexpected tags or attributes
     allowed_tags = {
-        'Assertion', 'Issuer', 'Subject', 'NameID', 'AttributeStatement', 
-        'Attribute', 'AttributeValue', 'Conditions', 'AuthnStatement', 
+        'Assertion', 'Issuer', 'Subject', 'NameID', 'AttributeStatement',
+        'Attribute', 'AttributeValue', 'Conditions', 'AuthnStatement',
         'Response', 'Status', 'StatusCode', 'Signature'
     }
 
@@ -48,6 +51,7 @@ def perform_additional_xml_checks(xml_data):
 
     return True
 
+
 def is_valid_saml_response(saml_response):
     """
     Validates the SAML response for correct XML structure and checks for injection attacks.
@@ -80,6 +84,7 @@ def is_valid_saml_response(saml_response):
         return False
     # Add more exceptions as necessary for different types of checks
 
+
 def process_saml_response(saml_response_from_request):
     """
     Process the SAML response from a request.
@@ -99,6 +104,7 @@ def process_saml_response(saml_response_from_request):
         return "Permission Denied. Saml response not valid!", 403
 
     return validate_saml_response
+
 
 @saml_route.route("/saml", methods=["GET", "POST"])
 def idp_initiated():
