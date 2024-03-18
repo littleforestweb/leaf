@@ -126,9 +126,11 @@ def idp_initiated():
     - Response: A rendered template or a redirect, depending on the authentication outcome and method of request.
     """
     if request.method == "GET":
+        current_app.logger.info("Received GET")
         return "Access Denied"
 
     if request.method == "POST":
+        current_app.logger.info("Received POST")
 
         # Load the IdP's metadata
         idp_metadata = etree.parse(Config.IDP_METADATA)
