@@ -179,7 +179,8 @@ def idp_initiated():
         issuer_elements = saml_response_xml.xpath("//*[local-name() = 'Issuer']")
         if issuer_elements:
             issuer_text = issuer_elements[0].text
-
+            print(issuer_text)
+            print(Config.IDP_ENTITY_ID)
             if issuer_text and issuer_text.lower().strip() != Config.IDP_ENTITY_ID.lower().strip():
                 return "Access Denied"
 
