@@ -1,4 +1,5 @@
 import base64
+import os
 import re
 
 import werkzeug.utils
@@ -182,8 +183,11 @@ def idp_initiated():
         issuer_elements = saml_response_xml.xpath("//*[local-name() = 'Issuer']")
         if issuer_elements:
             issuer_text = issuer_elements[0].text
-            current_app.logger.info("issuer_text:" + issuer_text)
-            current_app.logger.info("Config.IDP_ENTITY_ID:" + Config.IDP_ENTITY_ID)
+
+            with open(os.path.join(Config.LEAFCMS_FOLDER, "resp.txt")) as outFile:
+                outFile.write("issuer_text:" + issuer_text)
+                outFile.write("Config.IDP_ENTITY_ID:" + Config.IDP_ENTITY_ID)
+
             if issuer_text and issuer_text.lower().strip() != Config.IDP_ENTITY_ID.lower().strip():
                 return "Access Denied"
 
