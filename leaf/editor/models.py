@@ -127,6 +127,7 @@ def save_html_to_disk(html_path, data):
     try:
         # Open the file and write the HTML content
         with open(html_path, "w") as outFile:
+            data = BeautifulSoup(data, "html5lib").prettify()
             outFile.write(data)
     except (FileNotFoundError, Exception):
         raise

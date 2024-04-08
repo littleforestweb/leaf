@@ -81,7 +81,7 @@ def save_page():
     """
     try:
         # Get data and page_id from the form
-        data = werkzeug.utils.escape(request.form.get("data", type=str))
+        data = request.form.get("data", type=str)
         page_id = werkzeug.utils.escape(request.form.get("page_id", type=str))
 
         # Check if the specified page to the user's account
