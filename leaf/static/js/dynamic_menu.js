@@ -1330,11 +1330,11 @@ async function populateDropdowns(accountId, reference, menusDropdown, fields, is
     })
 }
 
-document.querySelector("#uploadSetFieldsDynamicList").addEventListener("hidden.bs.modal", event => {
-    uploadSetFieldsDynamicMenu(accountId, reference);
-});
-
 async function uploadSetFieldsDynamicMenu(accountId, reference, action) {
+    console.log(accountId);
+    console.log(reference);
+    console.log(action);
+
     accountId = escapeHtml(accountId);
     reference = escapeHtml(reference);
 
@@ -1350,7 +1350,6 @@ async function uploadSetFieldsDynamicMenu(accountId, reference, action) {
         success: function (response) {
             $('#uploadSetFieldsDynamicList').modal('hide');
             $('#uploadSetFieldsDynamicList form').html('<input type="hidden" class="form-control" id="h-s-' + reference + '">');
-
             $('#addDynamicListSuccessNotification').toast('show');
 
             setTimeout(function () {

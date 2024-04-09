@@ -131,12 +131,12 @@
     </div>
 
     <!-- UPLOAD SET FIELDS MODAL -->
-    <div class="modal fade" id="uploadSetFieldsDynamicList" tabindex="-1" aria-labelledby="uploadSetFieldsDynamicListLabel" aria-hidden="true">
+    <div class="modal fade" id="uploadSetFieldsDynamicList" tabindex="-1" aria-labelledby="uploadSetFieldsDynamicListLabel" aria-hidden="true" data-bs-backdrop='static'>
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="uploadSetFieldsDynamicListLabel">Set Up {{referenceNoUnderscores}}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="uploadSetFieldsDynamicMenu('{{accountId}}', '{{reference}}', 'close')"></button>
+                    <button type="button" class="btn-close" aria-label="Close" onclick="uploadSetFieldsDynamicMenu('{{accountId}}', '{{reference}}', 'close')"></button>
                 </div>
                 <div class="modal-body">
                     <form method="post" id="setField-{{reference}}">
@@ -144,7 +144,7 @@
                     </form>
                 </div>
                 <div class="modal-footer" id="modal-footer-upload-set">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="uploadSetFieldsDynamicMenu('{{accountId}}', '{{reference}}', 'close')">Close</button>
+                    <button type="button" class="btn btn-secondary" onclick="uploadSetFieldsDynamicMenu('{{accountId}}', '{{reference}}', 'close')">Close</button>
                     <button type="button" class="btn btn-success" onclick="uploadSetFieldsDynamicMenu('{{accountId}}', '{{reference}}', 'save')">Save</button>
                 </div>
             </div>

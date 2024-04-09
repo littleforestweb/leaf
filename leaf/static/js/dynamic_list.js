@@ -127,7 +127,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                         var spanId = spans[x].getAttribute("id").split('_pos_')[0].toLowerCase();
                         var thisFieldItem = allAccountSettings[f][2].toLowerCase();
                         if (allAccountSettings[f][1] === reference && thisFieldItem === spanId) {
-                            
+
                             if (allAccountSettings[f][3] === '-_leaf_users_-') {
                                 let thisValue = escapeHtml(spans[x].textContent.replace(/__BACKSLASH__TO_REPLACE__/g, "\\").replace(/&comma;/g, ','));
                                 let getUserDetails = await getUserDetailsByValue(thisValue, allAccountSettings[f][5]);
@@ -584,7 +584,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
 }
 
 async function publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, justPreview, lastEntry, thisCountry = false, thisButton, userId = false) {
-    
+
     accountId = escapeHtml(accountId);
     reference = escapeHtml(reference);
     env = escapeHtml(env);
@@ -596,7 +596,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
     lastEntry = escapeHtml(lastEntry);
 
     $(".previewButton").prop('disabled', true);
-    
+
     var selectedItem = '';
     // Get list configuration
     let jsonConfig = await $.get("/api/get_list_configuration/" + accountId + "/" + reference, function (result) {
@@ -627,7 +627,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
     let match;
 
     while ((match = regex.exec(thisTemplate)) !== null) {
-      matches.push(match[1]);
+        matches.push(match[1]);
     }
 
     publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
@@ -661,7 +661,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
 
     // We have to declare the page format as a global variable
     var pageFormat = "page";
-    
+
     var checkCountryField = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.country pre .hidden');
     if (!thisCountry && checkCountryField.length > 0) {
         thisCountry = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.country pre .hidden').html().trim();
@@ -682,7 +682,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         cache: false,
         processData: false,
         success: function (updated) {
-            
+
             $('#publishDynamicListSuccessNotification').toast('show');
 
             if ((env !== 'saveOnly' && env !== 'save')) {
@@ -704,8 +704,8 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
                 }
                 const allActionButtons = buttons_to_edit_or_add_container.getElementsByTagName('button');
                 for (let i = 0; i < allActionButtons.length; i++) {
-                  allActionButtons[i].disabled = false;
-                  allActionButtons[i].classList.remove('disabled');
+                    allActionButtons[i].disabled = false;
+                    allActionButtons[i].classList.remove('disabled');
                 }
                 var modal_footer_links = document.getElementById('modal-footer-edit');
                 if (!modal_footer_links) {
@@ -713,8 +713,8 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
                 }
                 const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
                 for (let i = 0; i < allActionButtonsFooter.length; i++) {
-                  allActionButtonsFooter[i].disabled = false;
-                  allActionButtonsFooter[i].classList.remove('disabled');
+                    allActionButtonsFooter[i].disabled = false;
+                    allActionButtonsFooter[i].classList.remove('disabled');
                 }
             }
 
@@ -730,8 +730,8 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
             }
             const allActionButtons = buttons_to_edit_or_add_container.getElementsByTagName('button');
             for (let i = 0; i < allActionButtons.length; i++) {
-              allActionButtons[i].disabled = false;
-              allActionButtons[i].classList.remove('disabled');
+                allActionButtons[i].disabled = false;
+                allActionButtons[i].classList.remove('disabled');
             }
             var modal_footer_links = document.getElementById('modal-footer-edit');
             if (!modal_footer_links) {
@@ -739,8 +739,8 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
             }
             const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
             for (let i = 0; i < allActionButtonsFooter.length; i++) {
-              allActionButtonsFooter[i].disabled = false;
-              allActionButtonsFooter[i].classList.remove('disabled');
+                allActionButtonsFooter[i].disabled = false;
+                allActionButtonsFooter[i].classList.remove('disabled');
             }
 
             $(".previewButton").prop('disabled', false);
@@ -761,14 +761,14 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
     const buttons_to_edit_container = document.getElementById('buttons_to_edit');
     const allActionButtons = buttons_to_edit_container.getElementsByTagName('button');
     for (let i = 0; i < allActionButtons.length; i++) {
-      allActionButtons[i].disabled = true;
-      allActionButtons[i].classList.add('disabled');
+        allActionButtons[i].disabled = true;
+        allActionButtons[i].classList.add('disabled');
     }
     const modal_footer_links = document.getElementById('modal-footer-edit');
     const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
     for (let i = 0; i < allActionButtonsFooter.length; i++) {
-      allActionButtonsFooter[i].disabled = true;
-      allActionButtonsFooter[i].classList.add('disabled');
+        allActionButtonsFooter[i].disabled = true;
+        allActionButtonsFooter[i].classList.add('disabled');
     }
 
     var idToLink = '';
@@ -877,7 +877,7 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
                         publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, false, false, false, thisButton, userId);
                     }
                 } else {
-                    
+
                     if (thisTemplate !== '') {
                         openInNewTab(linkToPreview);
                     } else {
@@ -895,14 +895,14 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
                         const buttons_to_edit_container = document.getElementById('buttons_to_edit');
                         const allActionButtons = buttons_to_edit_container.getElementsByTagName('button');
                         for (let i = 0; i < allActionButtons.length; i++) {
-                          allActionButtons[i].disabled = false;
-                          allActionButtons[i].classList.remove('disabled');
+                            allActionButtons[i].disabled = false;
+                            allActionButtons[i].classList.remove('disabled');
                         }
                         const modal_footer_links = document.getElementById('modal-footer-edit');
                         const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
                         for (let i = 0; i < allActionButtonsFooter.length; i++) {
-                          allActionButtonsFooter[i].disabled = false;
-                          allActionButtonsFooter[i].classList.remove('disabled');
+                            allActionButtonsFooter[i].disabled = false;
+                            allActionButtonsFooter[i].classList.remove('disabled');
                         }
                     }
                 }
@@ -915,14 +915,14 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
                 const buttons_to_edit_container = document.getElementById('buttons_to_edit');
                 const allActionButtons = buttons_to_edit_container.getElementsByTagName('button');
                 for (let i = 0; i < allActionButtons.length; i++) {
-                  allActionButtons[i].disabled = false;
-                  allActionButtons[i].classList.remove('disabled');
+                    allActionButtons[i].disabled = false;
+                    allActionButtons[i].classList.remove('disabled');
                 }
                 const modal_footer_links = document.getElementById('modal-footer-edit');
                 const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
                 for (let i = 0; i < allActionButtonsFooter.length; i++) {
-                  allActionButtonsFooter[i].disabled = false;
-                  allActionButtonsFooter[i].classList.remove('disabled');
+                    allActionButtonsFooter[i].disabled = false;
+                    allActionButtonsFooter[i].classList.remove('disabled');
                 }
             }
         });
@@ -932,18 +932,18 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
             $('#' + form_data[0]['mandatoryElementsNotCompletedToReturn'][singleItem]).parent().find('.ck-editor').addClass('warning-not-completed');
         }
         alert("You have to complete all mandatory fields (" + form_data[0]['mandatoryElementsNotCompletedToReturn'].join(", ").replace(/e-/g, '') + ")!");
-        
+
         const buttons_to_edit_container = document.getElementById('buttons_to_edit');
         const allActionButtons = buttons_to_edit_container.getElementsByTagName('button');
         for (let i = 0; i < allActionButtons.length; i++) {
-          allActionButtons[i].disabled = false;
-          allActionButtons[i].classList.remove('disabled');
+            allActionButtons[i].disabled = false;
+            allActionButtons[i].classList.remove('disabled');
         }
         const modal_footer_links = document.getElementById('modal-footer-edit');
         const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
         for (let i = 0; i < allActionButtonsFooter.length; i++) {
-          allActionButtonsFooter[i].disabled = false;
-          allActionButtonsFooter[i].classList.remove('disabled');
+            allActionButtonsFooter[i].disabled = false;
+            allActionButtonsFooter[i].classList.remove('disabled');
         }
     }
 }
@@ -992,7 +992,7 @@ async function getFormData(formid, userId = false) {
 
         } else if (element.classList.contains('text-editor')) {
             formdata[element.name] = CKEDITOR.instances[element.id].getData().replace(/,/g, '&comma;').replace(/\\/g, "__BACKSLASH__TO_REPLACE_ON_WEB__").replace(/\'/g, "’").replace(/\xA0/g, '');
-            formdata[element.name] = formdata[element.name].replace(/<[^>]+style="[^"]*"[^>]*>/g, function(match) {
+            formdata[element.name] = formdata[element.name].replace(/<[^>]+style="[^"]*"[^>]*>/g, function (match) {
                 return match.replace(/style="[^"]*"/g, '');
             });
         } else if (element.type === 'checkbox') {
@@ -1092,18 +1092,18 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
     env = escapeHtml(env);
     preview_server = escapeHtml(preview_server);
     dynamic_path = escapeHtml(dynamic_path);
-    
+
     const buttons_to_add_container = document.getElementById('buttons_to_add');
     const allActionButtons = buttons_to_add_container.getElementsByTagName('button');
     for (let i = 0; i < allActionButtons.length; i++) {
-      allActionButtons[i].disabled = true;
-      allActionButtons[i].classList.add('disabled');
+        allActionButtons[i].disabled = true;
+        allActionButtons[i].classList.add('disabled');
     }
     const modal_footer_links = document.getElementById('modal-footer-add');
     const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
     for (let i = 0; i < allActionButtonsFooter.length; i++) {
-      allActionButtonsFooter[i].disabled = true;
-      allActionButtonsFooter[i].classList.add('disabled');
+        allActionButtonsFooter[i].disabled = true;
+        allActionButtonsFooter[i].classList.add('disabled');
     }
 
     var idToLink = '';
@@ -1211,7 +1211,7 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
                         publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, false, updated.lastEntry, false, thisButton, userId);
                     }
                 } else {
-                    
+
                     if (thisTemplate !== '') {
                         openInNewTab(linkToPreview);
                     } else {
@@ -1229,14 +1229,14 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
                         const buttons_to_add_container = document.getElementById('buttons_to_add');
                         const allActionButtons = buttons_to_add_container.getElementsByTagName('button');
                         for (let i = 0; i < allActionButtons.length; i++) {
-                          allActionButtons[i].disabled = false;
-                          allActionButtons[i].classList.remove('disabled');
+                            allActionButtons[i].disabled = false;
+                            allActionButtons[i].classList.remove('disabled');
                         }
                         const modal_footer_links = document.getElementById('modal-footer-add');
                         const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
                         for (let i = 0; i < allActionButtonsFooter.length; i++) {
-                          allActionButtonsFooter[i].disabled = false;
-                          allActionButtonsFooter[i].classList.remove('disabled');
+                            allActionButtonsFooter[i].disabled = false;
+                            allActionButtonsFooter[i].classList.remove('disabled');
                         }
                     }
                 }
@@ -1249,14 +1249,14 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
                 const buttons_to_add_container = document.getElementById('buttons_to_add');
                 const allActionButtons = buttons_to_add_container.getElementsByTagName('button');
                 for (let i = 0; i < allActionButtons.length; i++) {
-                  allActionButtons[i].disabled = false;
-                  allActionButtons[i].classList.remove('disabled');
+                    allActionButtons[i].disabled = false;
+                    allActionButtons[i].classList.remove('disabled');
                 }
                 const modal_footer_links = document.getElementById('modal-footer-add');
                 const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
                 for (let i = 0; i < allActionButtonsFooter.length; i++) {
-                  allActionButtonsFooter[i].disabled = false;
-                  allActionButtonsFooter[i].classList.remove('disabled');
+                    allActionButtonsFooter[i].disabled = false;
+                    allActionButtonsFooter[i].classList.remove('disabled');
                 }
             }
         });
@@ -1266,18 +1266,18 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
             $('#' + form_data[0]['mandatoryElementsNotCompletedToReturn'][singleItem]).parent().find('.ck-editor').addClass('warning-not-completed');
         }
         alert("You have to complete all mandatory fields (" + form_data[0]['mandatoryElementsNotCompletedToReturn'].join(", ").replace(/a-/g, '') + ")!");
-        
+
         const buttons_to_add_container = document.getElementById('buttons_to_add');
         const allActionButtons = buttons_to_add_container.getElementsByTagName('button');
         for (let i = 0; i < allActionButtons.length; i++) {
-          allActionButtons[i].disabled = false;
-          allActionButtons[i].classList.remove('disabled');
+            allActionButtons[i].disabled = false;
+            allActionButtons[i].classList.remove('disabled');
         }
         const modal_footer_links = document.getElementById('modal-footer-add');
         const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
         for (let i = 0; i < allActionButtonsFooter.length; i++) {
-          allActionButtonsFooter[i].disabled = false;
-          allActionButtonsFooter[i].classList.remove('disabled');
+            allActionButtonsFooter[i].disabled = false;
+            allActionButtonsFooter[i].classList.remove('disabled');
         }
     }
 }
@@ -1484,7 +1484,7 @@ async function populateDropdowns(accountId, reference, listsDropdown, fields, is
                                 $('#s-' + fieldToReturn + '-assignedField').remove();
                                 var fieldsDropdown = '<div id="s-' + fieldToReturn + '-assignedFieldRow" class="row"><div class="form-group col-md-6"><label for="s-' + fieldToReturn + '-assignedField" class="col-form-label">Assigned Field:</label><select name="s-' + fieldToReturn + '-assignedField" class="form-select form-select-md" id="s-' + fieldToReturn + '-assignedField"></select></div><div class="form-group col-md-6"><label for="s-' + fieldToReturn + '-assignedFieldLabel" class="col-form-label">Assigned Label:</label><select name="s-' + fieldToReturn + '-assignedFieldLabel" class="form-select form-select-md" id="s-' + fieldToReturn + '-assignedFieldLabel"></select></div></div>';
                                 $('.s-' + fieldToReturn + '-container').append(fieldsDropdown);
-                                
+
                                 $('select#s-' + fieldToReturn + '-assignedField').append('<option value="id" ' + (linkedFieldToReturn === 'id' ? "selected" : "") + '>id</option>');
                                 $('select#s-' + fieldToReturn + '-assignedField').append('<option value="username" ' + (linkedFieldToReturn === 'username' ? "selected" : "") + '>username</option>');
                                 $('select#s-' + fieldToReturn + '-assignedField').append('<option value="email" ' + (linkedFieldToReturn === 'email' ? "selected" : "") + '>email</option>');
@@ -1546,7 +1546,7 @@ async function populateDropdowns(accountId, reference, listsDropdown, fields, is
 
                     // var fieldsDropdown = '<select name="' + thisId + '-assignedField" class="form-select form-select-md" id="' + thisId + '-assignedField"></select>';
                     // var fieldsDropdownLabel = '<select name="' + thisId + '-assignedFieldLabel" class="form-select form-select-md" id="' + thisId + '-assignedFieldLabel"></select>';
-                    
+
                     // $('.' + thisId + '-container .row#' + thisId + '-assignedFieldRow .form-group:nth-child(1)').append(fieldsDropdown);
                     // $('.' + thisId + '-container .row#' + thisId + '-assignedFieldRow .form-group:nth-child(2)').append(fieldsDropdownLabel);
 
@@ -1573,7 +1573,7 @@ async function populateDropdowns(accountId, reference, listsDropdown, fields, is
 
             // var fieldsDropdown = '<select name="' + thisId + '-assignedField" class="form-select form-select-md" id="' + thisId + '-assignedField"></select>';
             // var fieldsDropdownLabel = '<select name="' + thisId + '-assignedFieldLabel" class="form-select form-select-md" id="' + thisId + '-assignedFieldLabel"></select>';
-            
+
             // $('.' + thisId + '-container .row#' + thisId + '-assignedFieldRow .form-group:nth-child(1)').append(fieldsDropdown);
             // $('.' + thisId + '-container .row#' + thisId + '-assignedFieldRow .form-group:nth-child(2)').append(fieldsDropdownLabel);
 
@@ -1585,7 +1585,7 @@ async function populateDropdowns(accountId, reference, listsDropdown, fields, is
 
             $('select#' + thisId + '-assignedField').append('<option value="email">email</option>');
             $('select#' + thisId + '-assignedFieldLabel').append('<option value="email">email</option>');
-            
+
         } else {
             $('#typeSelectItem_' + thisIdClean + ' option').removeAttr('disabled');
             // $('select#' + thisId + '-assignedField').remove();
@@ -1604,11 +1604,6 @@ async function populateDropdowns(accountId, reference, listsDropdown, fields, is
         }
     })
 }
-
-
-document.querySelector("#uploadSetFieldsDynamicList").addEventListener("hidden.bs.modal", event => {
-    uploadSetFieldsDynamicList(accountId, reference);
-});
 
 async function uploadSetFieldsDynamicList(accountId, reference, action) {
 
@@ -1675,7 +1670,7 @@ async function uploadDynamicList(accountId, reference) {
 }
 
 async function populateUploadFieldsForSettings(accountId, reference) {
-    
+
     accountId = escapeHtml(accountId);
     reference = escapeHtml(reference);
 
@@ -1855,7 +1850,7 @@ async function doTemplatesBehaviour(accountId, reference) {
         }
     }
 
-    $('#s-templates').change(function() {
+    $('#s-templates').change(function () {
         var thisVal = $(this).val();
         if (thisVal === 'false') {
             $('#setTemplateDynamicList #s-template_location').val("");
@@ -1872,7 +1867,7 @@ async function doTemplatesBehaviour(accountId, reference) {
         }
     })
 
-    $('#s-edit-template').on('click', function() {
+    $('#s-edit-template').on('click', function () {
         window.location.href = "/templates/" + $('#s-templates').val();
     })
 }
@@ -2018,7 +2013,7 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
                     }
 
 
-                    if (headColumns[xx][0] === e[2] && e[3] === "-_leaf_users_-"){
+                    if (headColumns[xx][0] === e[2] && e[3] === "-_leaf_users_-") {
                         modifiedFieldLabel = true;
                         thisLabel = e[5];
                     }
