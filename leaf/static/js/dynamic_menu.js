@@ -363,7 +363,7 @@ async function populateEditDynamicMenuDialog(accountId, reference, type, itemToS
                                 }
 
                                 // Populate edit fields
-                                let site_dynamic_list = escapeHtml(spans[x].textContent.replace(/__BACKSLASH__TO_REPLACE__/g, "\\").replace(/&comma;/g, ','));
+                                let site_dynamic_menu = escapeHtml(spans[x].textContent.replace(/__BACKSLASH__TO_REPLACE__/g, "\\").replace(/&comma;/g, ','));
 
                                 if (allAccountSettings[f][6] && allAccountSettings[f][6] === "textarea") {
                                     var attrs = {};
@@ -562,7 +562,7 @@ async function populateEditDynamicMenuDialog(accountId, reference, type, itemToS
 }
 
 async function publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink) {
-    
+
     accountId = escapeHtml(accountId);
     reference = escapeHtml(reference);
     env = escapeHtml(env);
@@ -598,8 +598,8 @@ async function publishDynamicMenu(accountId, reference, env, preview_server, dyn
             }
             const allActionButtons = buttons_to_edit_or_add_container.getElementsByTagName('button');
             for (let i = 0; i < allActionButtons.length; i++) {
-              allActionButtons[i].disabled = false;
-              allActionButtons[i].classList.remove('disabled');
+                allActionButtons[i].disabled = false;
+                allActionButtons[i].classList.remove('disabled');
             }
             var modal_footer_links = document.getElementById('modal-footer-edit');
             if (!modal_footer_links) {
@@ -607,8 +607,8 @@ async function publishDynamicMenu(accountId, reference, env, preview_server, dyn
             }
             const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
             for (let i = 0; i < allActionButtonsFooter.length; i++) {
-              allActionButtonsFooter[i].disabled = false;
-              allActionButtonsFooter[i].classList.remove('disabled');
+                allActionButtonsFooter[i].disabled = false;
+                allActionButtonsFooter[i].classList.remove('disabled');
             }
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
@@ -621,8 +621,8 @@ async function publishDynamicMenu(accountId, reference, env, preview_server, dyn
             }
             const allActionButtons = buttons_to_edit_or_add_container.getElementsByTagName('button');
             for (let i = 0; i < allActionButtons.length; i++) {
-              allActionButtons[i].disabled = false;
-              allActionButtons[i].classList.remove('disabled');
+                allActionButtons[i].disabled = false;
+                allActionButtons[i].classList.remove('disabled');
             }
             var modal_footer_links = document.getElementById('modal-footer-edit');
             if (!modal_footer_links) {
@@ -630,8 +630,8 @@ async function publishDynamicMenu(accountId, reference, env, preview_server, dyn
             }
             const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
             for (let i = 0; i < allActionButtonsFooter.length; i++) {
-              allActionButtonsFooter[i].disabled = false;
-              allActionButtonsFooter[i].classList.remove('disabled');
+                allActionButtonsFooter[i].disabled = false;
+                allActionButtonsFooter[i].classList.remove('disabled');
             }
         }
     });
@@ -649,14 +649,14 @@ async function updateDynamicMenu(accountId, reference, env, preview_server, dyna
     const buttons_to_edit_container = document.getElementById('buttons_to_edit');
     const allActionButtons = buttons_to_edit_container.getElementsByTagName('button');
     for (let i = 0; i < allActionButtons.length; i++) {
-      allActionButtons[i].disabled = true;
-      allActionButtons[i].classList.add('disabled');
+        allActionButtons[i].disabled = true;
+        allActionButtons[i].classList.add('disabled');
     }
     const modal_footer_links = document.getElementById('modal-footer-edit');
     const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
     for (let i = 0; i < allActionButtonsFooter.length; i++) {
-      allActionButtonsFooter[i].disabled = true;
-      allActionButtonsFooter[i].classList.add('disabled');
+        allActionButtonsFooter[i].disabled = true;
+        allActionButtonsFooter[i].classList.add('disabled');
     }
     var idToLink = '';
     $('#edit-' + reference + ' > .mb-3').each(function () {
@@ -724,7 +724,7 @@ async function updateDynamicMenu(accountId, reference, env, preview_server, dyna
 
         $.ajax({
             type: "POST",
-            url: "/update_menu/account_" + accountId + "_menu_" + reference,
+            url: "/update_menu/" + accountId + "/account_" + accountId + "_menu_" + reference,
             contentType: 'application/json',
             data: JSON.stringify(form_data),
             dataType: 'json',
@@ -747,14 +747,14 @@ async function updateDynamicMenu(accountId, reference, env, preview_server, dyna
                     const buttons_to_edit_container = document.getElementById('buttons_to_edit');
                     const allActionButtons = buttons_to_edit_container.getElementsByTagName('button');
                     for (let i = 0; i < allActionButtons.length; i++) {
-                      allActionButtons[i].disabled = false;
-                      allActionButtons[i].classList.remove('disabled');
+                        allActionButtons[i].disabled = false;
+                        allActionButtons[i].classList.remove('disabled');
                     }
                     const modal_footer_links = document.getElementById('modal-footer-edit');
                     const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
                     for (let i = 0; i < allActionButtonsFooter.length; i++) {
-                      allActionButtonsFooter[i].disabled = false;
-                      allActionButtonsFooter[i].classList.remove('disabled');
+                        allActionButtonsFooter[i].disabled = false;
+                        allActionButtonsFooter[i].classList.remove('disabled');
                     }
                 }
 
@@ -766,14 +766,14 @@ async function updateDynamicMenu(accountId, reference, env, preview_server, dyna
                 const buttons_to_edit_container = document.getElementById('buttons_to_edit');
                 const allActionButtons = buttons_to_edit_container.getElementsByTagName('button');
                 for (let i = 0; i < allActionButtons.length; i++) {
-                  allActionButtons[i].disabled = false;
-                  allActionButtons[i].classList.remove('disabled');
+                    allActionButtons[i].disabled = false;
+                    allActionButtons[i].classList.remove('disabled');
                 }
                 const modal_footer_links = document.getElementById('modal-footer-edit');
                 const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
                 for (let i = 0; i < allActionButtonsFooter.length; i++) {
-                  allActionButtonsFooter[i].disabled = false;
-                  allActionButtonsFooter[i].classList.remove('disabled');
+                    allActionButtonsFooter[i].disabled = false;
+                    allActionButtonsFooter[i].classList.remove('disabled');
                 }
             }
         });
@@ -783,18 +783,18 @@ async function updateDynamicMenu(accountId, reference, env, preview_server, dyna
             $('#' + form_data[0]['mandatoryElementsNotCompletedToReturn'][singleItem]).parent().find('.ck-editor').addClass('warning-not-completed');
         }
         alert("You have to complete all mandatory fields (" + form_data[0]['mandatoryElementsNotCompletedToReturn'].join(", ").replace(/e-/g, '') + ")!");
-        
+
         const buttons_to_edit_container = document.getElementById('buttons_to_edit');
         const allActionButtons = buttons_to_edit_container.getElementsByTagName('button');
         for (let i = 0; i < allActionButtons.length; i++) {
-          allActionButtons[i].disabled = false;
-          allActionButtons[i].classList.remove('disabled');
+            allActionButtons[i].disabled = false;
+            allActionButtons[i].classList.remove('disabled');
         }
         const modal_footer_links = document.getElementById('modal-footer-edit');
         const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
         for (let i = 0; i < allActionButtonsFooter.length; i++) {
-          allActionButtonsFooter[i].disabled = false;
-          allActionButtonsFooter[i].classList.remove('disabled');
+            allActionButtonsFooter[i].disabled = false;
+            allActionButtonsFooter[i].classList.remove('disabled');
         }
     }
 }
@@ -829,7 +829,7 @@ async function getFormData(formid) {
 
         } else if (element.classList.contains('text-editor')) {
             formdata[element.name] = CKEDITOR.instances[element.id].getData().replace(/,/g, '&comma;').replace(/\\/g, "__BACKSLASH__TO_REPLACE_ON_WEB__").replace(/\'/g, "’").replace(/\xA0/g, '');
-            formdata[element.name] = formdata[element.name].replace(/<[^>]+style="[^"]*"[^>]*>/g, function(match) {
+            formdata[element.name] = formdata[element.name].replace(/<[^>]+style="[^"]*"[^>]*>/g, function (match) {
                 return match.replace(/style="[^"]*"/g, '');
             });
         } else if (element.type === 'checkbox') {
@@ -933,14 +933,14 @@ async function addDynamicMenu(accountId, reference, env, preview_server, dynamic
     const buttons_to_add_container = document.getElementById('buttons_to_add');
     const allActionButtons = buttons_to_add_container.getElementsByTagName('button');
     for (let i = 0; i < allActionButtons.length; i++) {
-      allActionButtons[i].disabled = true;
-      allActionButtons[i].classList.add('disabled');
+        allActionButtons[i].disabled = true;
+        allActionButtons[i].classList.add('disabled');
     }
     const modal_footer_links = document.getElementById('modal-footer-add');
     const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
     for (let i = 0; i < allActionButtonsFooter.length; i++) {
-      allActionButtonsFooter[i].disabled = true;
-      allActionButtonsFooter[i].classList.add('disabled');
+        allActionButtonsFooter[i].disabled = true;
+        allActionButtonsFooter[i].classList.add('disabled');
     }
 
     var idToLink = '';
@@ -1032,14 +1032,14 @@ async function addDynamicMenu(accountId, reference, env, preview_server, dynamic
                 const buttons_to_add_container = document.getElementById('buttons_to_add');
                 const allActionButtons = buttons_to_add_container.getElementsByTagName('button');
                 for (let i = 0; i < allActionButtons.length; i++) {
-                  allActionButtons[i].disabled = false;
-                  allActionButtons[i].classList.remove('disabled');
+                    allActionButtons[i].disabled = false;
+                    allActionButtons[i].classList.remove('disabled');
                 }
                 const modal_footer_links = document.getElementById('modal-footer-add');
                 const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
                 for (let i = 0; i < allActionButtonsFooter.length; i++) {
-                  allActionButtonsFooter[i].disabled = false;
-                  allActionButtonsFooter[i].classList.remove('disabled');
+                    allActionButtonsFooter[i].disabled = false;
+                    allActionButtonsFooter[i].classList.remove('disabled');
                 }
 
             },
@@ -1050,14 +1050,14 @@ async function addDynamicMenu(accountId, reference, env, preview_server, dynamic
                 const buttons_to_add_container = document.getElementById('buttons_to_add');
                 const allActionButtons = buttons_to_add_container.getElementsByTagName('button');
                 for (let i = 0; i < allActionButtons.length; i++) {
-                  allActionButtons[i].disabled = false;
-                  allActionButtons[i].classList.remove('disabled');
+                    allActionButtons[i].disabled = false;
+                    allActionButtons[i].classList.remove('disabled');
                 }
                 const modal_footer_links = document.getElementById('modal-footer-add');
                 const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
                 for (let i = 0; i < allActionButtonsFooter.length; i++) {
-                  allActionButtonsFooter[i].disabled = false;
-                  allActionButtonsFooter[i].classList.remove('disabled');
+                    allActionButtonsFooter[i].disabled = false;
+                    allActionButtonsFooter[i].classList.remove('disabled');
                 }
             }
         });
@@ -1067,18 +1067,18 @@ async function addDynamicMenu(accountId, reference, env, preview_server, dynamic
             $('#' + form_data[0]['mandatoryElementsNotCompletedToReturn'][singleItem]).parent().find('.ck-editor').addClass('warning-not-completed');
         }
         alert("You have to complete all mandatory fields (" + form_data[0]['mandatoryElementsNotCompletedToReturn'].join(", ").replace(/a-/g, '') + ")!");
-        
+
         const buttons_to_add_container = document.getElementById('buttons_to_add');
         const allActionButtons = buttons_to_add_container.getElementsByTagName('button');
         for (let i = 0; i < allActionButtons.length; i++) {
-          allActionButtons[i].disabled = false;
-          allActionButtons[i].classList.remove('disabled');
+            allActionButtons[i].disabled = false;
+            allActionButtons[i].classList.remove('disabled');
         }
         const modal_footer_links = document.getElementById('modal-footer-add');
         const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
         for (let i = 0; i < allActionButtonsFooter.length; i++) {
-          allActionButtonsFooter[i].disabled = false;
-          allActionButtonsFooter[i].classList.remove('disabled');
+            allActionButtonsFooter[i].disabled = false;
+            allActionButtonsFooter[i].classList.remove('disabled');
         }
     }
 }
@@ -1341,7 +1341,7 @@ async function uploadSetFieldsDynamicMenu(accountId, reference, action) {
 
         $.ajax({
             type: "POST",
-            url: "/upload/create_middle_tables/" + accountId + "/" + reference,
+            url: "/upload_menu/create_middle_tables/" + accountId + "/" + reference,
             data: form_data,
             contentType: false,
             cache: false,
@@ -1615,7 +1615,7 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
                             val = val.toString();
                             val = val.replace(/,/g, ',<br>');
                         }
-                        
+
                         if (isWysiwyg) {
                             val = htmlencode(val);
                             fullVal = htmlencode(fullVal);

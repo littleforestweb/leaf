@@ -1,12 +1,14 @@
-from flask import Blueprint, redirect, url_for, render_template, session, request
 import sys
-import csv
-from .models import *
+
+from flask import Blueprint, render_template, request
+
 from leaf.decorators import login_required
+from .models import *
 
 csv.field_size_limit(sys.maxsize)
 
 menus = Blueprint('menus', __name__)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -21,6 +23,7 @@ def view_menus():
         HTML template with user-specific data.
     """
     return render_template('menus.html', userId=session['id'], username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'])
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -40,6 +43,7 @@ def api_get_menus(accountId: str, userId: str, isAdmin: str):
         JSON response with menus data.
     """
     return get_menus_data(accountId, userId, isAdmin)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -99,6 +103,7 @@ def api_get_menu_columns(accountId: str, reference: str):
     """
     return get_menu_columns(accountId, reference)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -120,6 +125,7 @@ def api_get_menu_columns_with_returned_id(accountId: str, reference: str, fieldT
     """
     return get_menu_columns_with_returned_id(accountId, reference, fieldToReturn, linkedFieldToReturn, linkedFieldLabelToReturn)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -137,6 +143,7 @@ def api_get_menu_columns_with_properties(accountId: str, reference: str):
         JSON response with menu columns and their properties.
     """
     return get_menu_columns_with_properties(accountId, reference)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -156,10 +163,11 @@ def api_get_menu_configuration(accountId: str, reference: str):
     """
     return get_menu_configuration(accountId, reference)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
-@menus.route('/set/configuration/<accountId>/<reference>', methods=['POST'])
+@menus.route('/set_menu/configuration/<accountId>/<reference>', methods=['POST'])
 @login_required
 def set_configuration(accountId: str, reference: str):
     """
@@ -174,6 +182,7 @@ def set_configuration(accountId: str, reference: str):
     """
     if request.method == 'POST':
         return set_menu_configuration(request, accountId, reference)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -197,6 +206,7 @@ def api_get_value_columns_with_index(accountId: str, reference: str, fieldToGet:
     """
     return get_value_columns_with_index(accountId, reference, fieldToGet, fieldToLabel, indexToKeep, indexToKeepForAccountSettings)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
 
@@ -212,10 +222,11 @@ def upload_dynamic_menu():
     if request.method == 'POST':
         return upload_dynamic_menus(request)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
 
-@menus.route('/upload/create_middle_tables/<accountId>/<reference>', methods=['GET', 'POST'])
+@menus.route('/upload_menu/create_middle_tables/<accountId>/<reference>', methods=['GET', 'POST'])
 @login_required
 def upload_create_middle_tables(accountId: str, reference: str):
     """
@@ -230,6 +241,7 @@ def upload_create_middle_tables(accountId: str, reference: str):
     """
     if request.method == 'POST':
         return create_middle_tables(request, accountId, reference)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -248,6 +260,7 @@ def api_settings(accountId: str):
     """
     return get_settings(accountId)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -265,10 +278,11 @@ def api_get_all_menus(accountId: str):
     """
     return get_all_menus(accountId)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
 
-@menus.route('/publish/<account_menu>/<accountId>/<reference>/<env>', methods=['POST'])
+@menus.route('/publish_menu/<account_menu>/<accountId>/<reference>/<env>', methods=['POST'])
 @login_required
 def publish_dynamic_menu(account_menu: str, accountId: str, reference: str, env: str):
     """
@@ -286,10 +300,11 @@ def publish_dynamic_menu(account_menu: str, accountId: str, reference: str, env:
     if request.method == 'POST':
         return publish_dynamic_menus(request, account_menu, accountId, reference, env)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
 
-@menus.route('/update/<accountId>/<account_menu>', methods=['POST'])
+@menus.route('/update_menu/<accountId>/<account_menu>', methods=['POST'])
 @login_required
 def update_dynamic_menu(accountId: str, account_menu: str):
     """
@@ -304,6 +319,7 @@ def update_dynamic_menu(accountId: str, account_menu: str):
     """
     if request.method == 'POST':
         return update_dynamic_menus(request, accountId, account_menu)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
@@ -324,6 +340,7 @@ def addnew_dynamic_menu(accountId: str, account_menu: str):
     if request.method == 'POST':
         return add_dynamic_menus(request, accountId, account_menu)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
 
@@ -343,6 +360,7 @@ def delete_dynamic_menu(accountId: str, account_menu: str):
     if request.method == 'POST':
         return delete_dynamic_menus(request, accountId, account_menu)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
 
@@ -357,6 +375,7 @@ def add_menu():
     """
     if request.method == 'POST':
         return add_single_menu(request)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -373,6 +392,7 @@ def update_menu():
     if request.method == 'POST':
         return update_single_menu(request)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -387,6 +407,7 @@ def delete_menus():
     """
     if request.method == 'POST':
         return delete_multiple_menus(request)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
