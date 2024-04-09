@@ -1330,41 +1330,38 @@ async function populateDropdowns(accountId, reference, menusDropdown, fields, is
     })
 }
 
-async function uploadSetFieldsDynamicMenu(accountId, reference, action) {
+document.querySelector("#uploadSetFieldsDynamicList").addEventListener("hidden.bs.modal", event => {
+    uploadSetFieldsDynamicMenu(accountId, reference);
+});
 
+async function uploadSetFieldsDynamicMenu(accountId, reference, action) {
     accountId = escapeHtml(accountId);
     reference = escapeHtml(reference);
-    action = escapeHtml(action);
 
-    if (action === 'save') {
-        var form_data = new FormData($('#setField-' + reference)[0]);
+    var form_data = new FormData($('#setField-' + reference)[0]);
 
-        $.ajax({
-            type: "POST",
-            url: "/upload_menu/create_middle_tables/" + accountId + "/" + reference,
-            data: form_data,
-            contentType: false,
-            cache: false,
-            processData: false,
-            success: function (response) {
-                $('#uploadSetFieldsDynamicList').modal('hide');
-                $('#uploadSetFieldsDynamicList form').html('<input type="hidden" class="form-control" id="h-s-' + reference + '">');
+    $.ajax({
+        type: "POST",
+        url: "/upload_menu/create_middle_tables/" + accountId + "/" + reference,
+        data: form_data,
+        contentType: false,
+        cache: false,
+        processData: false,
+        success: function (response) {
+            $('#uploadSetFieldsDynamicList').modal('hide');
+            $('#uploadSetFieldsDynamicList form').html('<input type="hidden" class="form-control" id="h-s-' + reference + '">');
 
-                $('#addDynamicListSuccessNotification').toast('show');
+            $('#addDynamicListSuccessNotification').toast('show');
 
-                setTimeout(function () {
-                    location.reload(true);
-                }, 400);
-                //doRedrawTable(false, false, true);
-            },
-            error: function (XMLHttpRequest, textStatus, errorThrown) {
-                $('#errorModal').modal('show');
-            }
-        });
-    } else {
-        $('#uploadSetFieldsDynamicList').modal('hide');
-        $('#uploadSetFieldsDynamicList #setField-' + reference).html('<input type="hidden" class="form-control" id="h-s-' + reference + '">');
-    }
+            setTimeout(function () {
+                location.reload(true);
+            }, 400);
+            //doRedrawTable(false, false, true);
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+            $('#errorModal').modal('show');
+        }
+    });
 }
 
 async function uploadDynamicMenu(accountId, reference) {
