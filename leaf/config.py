@@ -211,7 +211,7 @@ class Config:
     IDP_X509CERT = config["IDP_X509CERT"]
 
     # Auto Generated
-    DYNAMIC_PATH = os.path.join(WEBSERVER_FOLDER, "leaf_content", "lists")
+    DYNAMIC_PATH = os.path.join("leaf_content", "lists")
     STATIC_FOLDER = os.path.join(LEAFCMS_FOLDER, "leaf", "static")
     LEAF_STATIC_FOLDER = os.path.join(LEAFCMS_FOLDER, "leaf", "leaf_static")
     os.makedirs(LEAF_STATIC_FOLDER, exist_ok=True)
