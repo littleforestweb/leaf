@@ -60,7 +60,6 @@ def checkConfig(loaded_json):
         "HERITRIX_PORT": "",
         "HERITRIX_USER": "",
         "HERITRIX_PASS": "",
-        "ENV_PATH": "",
         "SP_ENTITY_ID": "",
         "SP_ASSERTION_CONSUMER_SERVICE_URL": "",
         "SP_SINGLE_LOGOUT_SERVICE_URL": "",
@@ -195,9 +194,6 @@ class Config:
     HERITRIX_USER = config["HERITRIX_USER"]
     HERITRIX_PASS = config["HERITRIX_PASS"]
 
-    # Environment
-    ENV_PATH = config["ENV_PATH"]
-
     # SSO
     SP_ENTITY_ID = config["SP_ENTITY_ID"]
     SP_ASSERTION_CONSUMER_SERVICE_URL = config["SP_ASSERTION_CONSUMER_SERVICE_URL"]
@@ -224,5 +220,6 @@ class Config:
     SCREENSHOTS_FOLDER = os.path.join(WEBSERVER_FOLDER, "leaf_content", "screenshots")
     TEMP_UPLOAD_FOLDER = os.path.join(LEAFCMS_FOLDER, "temp_upload")
     os.makedirs(TEMP_UPLOAD_FOLDER, exist_ok=True)
+    ENV_PATH = TEMP_UPLOAD_FOLDER
     TEMPLATES_FOLDER = os.path.join(LEAFCMS_FOLDER, "templates_folder")
     os.makedirs(TEMPLATES_FOLDER, exist_ok=True)
