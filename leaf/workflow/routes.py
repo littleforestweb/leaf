@@ -434,6 +434,7 @@ def action_workflow():
 
     elif listName:
         accountId = session['accountId']
+        listName = ''.join(e for e in listName if e.isalnum())
         if isMenu:
             completeListName = listName + "Menu.json"
             account_list = "account_" + str(accountId) + "_menu_" + listName
