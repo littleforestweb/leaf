@@ -765,7 +765,7 @@ def publish_dynamic_menus(request, account_menu: str, accountId: str, reference:
 
         # Write JSON data to a file with the specified reference identifier (sanitize reference)
         sanitized_reference = ''.join(e for e in reference if e.isalnum())
-        with open(os.path.join(Config.ENV_PATH, sanitized_reference + 'Menu.json'), 'w') as out_file:
+        with open(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH, sanitized_reference + 'Menu.json'), 'w') as out_file:
             out_file.write(json_data_to_write)
 
         # Additional logic to save data by country (sanitize user input)
