@@ -346,12 +346,14 @@ def action_workflow():
     thisType = 1
     if werkzeug.utils.escape(request.form.get("type")):
         thisType = werkzeug.utils.escape(request.form.get("type"))
+    thisType = int(thisType)
 
     listName = False
     if werkzeug.utils.escape(request.form.get("listName")) and werkzeug.utils.escape(request.form.get("listName")) != '':
         listName = werkzeug.utils.escape(request.form.get("listName"))
 
     isMenu = False
+
     if thisType == 4:
         isMenu = True
 
