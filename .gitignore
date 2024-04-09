@@ -158,3 +158,4 @@ leaf/secret.key
 templates_folder
 log_gunicorn_access.txt
 log_gunicorn_error.txt
+/temp_upload
