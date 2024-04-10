@@ -555,7 +555,7 @@ def user_has_access_page(page_id):
     Raises:
         RuntimeError: If an error occurs while checking for page access.
     """
-    
+
     try:
         # Get a database connection using the 'db_connection' decorator
         mydb, mycursor = decorators.db_connection()

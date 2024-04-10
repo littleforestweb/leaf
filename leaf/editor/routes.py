@@ -22,15 +22,15 @@ def view_editor():
         render_template: Rendered template for the editor.
     """
     try:
-        pageId = werkzeug.utils.escape(request.args.get('page_id', type=str))
+        page_id = werkzeug.utils.escape(request.args.get('page_id', type=str))
 
         # Check if the specified page to the user's account
-        siteId = leaf.sites.models.getSiteFromPageId(int(pageId))
-        hasAccess = leaf.sites.models.user_has_access_page(int(pageId))
+        siteId = leaf.sites.models.getSiteFromPageId(int(page_id))
+        hasAccess = leaf.sites.models.user_has_access_page(int(page_id))
         if not leaf.sites.models.site_belongs_to_account(siteId) or not hasAccess:
             return jsonify({"error": "Forbidden"}), 403
 
-        return render_template('editor.html', username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], page_id=pageId)
+        return render_template('editor.html', username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], page_id=page_id)
     except Exception as e:
         # Handle exceptions and return an error response with status code 500
         return jsonify({"error": str(e)}), 500
@@ -51,7 +51,8 @@ def get_htmlCode():
 
         # Check if the specified page to the user's account
         siteId = leaf.sites.models.getSiteFromPageId(int(page_id))
-        if not leaf.sites.models.site_belongs_to_account(siteId):
+        hasAccess = leaf.sites.models.user_has_access_page(int(page_id))
+        if not leaf.sites.models.site_belongs_to_account(siteId) or not hasAccess:
             return jsonify({"error": "Forbidden"}), 403
 
         # Get HTML path for the page
@@ -86,7 +87,8 @@ def save_page():
 
         # Check if the specified page to the user's account
         siteId = leaf.sites.models.getSiteFromPageId(int(page_id))
-        if not leaf.sites.models.site_belongs_to_account(siteId):
+        hasAccess = leaf.sites.models.user_has_access_page(int(page_id))
+        if not leaf.sites.models.site_belongs_to_account(siteId) or not hasAccess:
             return jsonify({"error": "Forbidden"}), 403
 
         # Get HTML path from page_id
