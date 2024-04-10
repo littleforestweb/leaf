@@ -123,9 +123,9 @@
             <div class="header-1">
                 <h3 style="float: left">Users</h3>
                 <div style="float:right; margin-left: 10px;" class="header-btns">
-                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal">Add User</button>
-                    <button type="button" class="btn btn-red" data-bs-toggle="modal" data-bs-target="#deleteUser" onclick="console.log('deleteUsers()'); deleteUsers();">Delete Users</button>
-                    <button type="button" class="btn btn-blue" data-bs-toggle="modal" data-bs-target="#editUserModal" onclick="console.log('populateEditUserModal'); populateEditUserModal();">Edit User</button>
+                    <button id="addUserBtn" type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal">Add User</button>
+                    <button disabled id="deleteUserBtn" type="button" class="btn btn-red" data-bs-toggle="modal" data-bs-target="#deleteUser">Delete Users</button>
+                    <button disabled id="editUserBtn" type="button" class="btn btn-blue" data-bs-toggle="modal" data-bs-target="#editUserModal">Edit User</button>
                 </div>
             </div>
             <table class="table" id="table">

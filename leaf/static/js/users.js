@@ -3,6 +3,38 @@
     Author     : xhico
 */
 
+function stopPropagation(evt) {
+    if (evt.stopPropagation !== undefined) {
+        evt.preventDefault();
+        evt.stopPropagation();
+    } else {
+        evt.cancelBubble = true;
+    }
+}
+
+async function doMainButtons() {
+    $('#table').on('change', 'input[type="checkbox"]', function () {
+        var checkboxes = document.querySelectorAll("input[type='checkbox'].dt-checkboxes");
+        if (this.checked) {
+            for (var i = 0; i < checkboxes.length; i++) {
+                if (checkboxes[i] !== this) {
+                    checkboxes[i].checked = false;
+                }
+            }
+        }
+
+        $("#deleteUserBtn").prop('disabled', true);
+        if ($('input[type="checkbox"]:checked').length === 1) {
+            $("#deleteUserBtn").prop('disabled', false);
+        }
+
+        $("#editUserBtn").prop('disabled', true);
+        if ($('input[type="checkbox"]:checked').length === 1) {
+            $("#editUserBtn").prop('disabled', false);
+        }
+    })
+}
+
 async function addUser() {
     let user_name = escapeHtml(document.getElementById("user-name").value);
     let user_email = escapeHtml(document.getElementById("user-email").value);
@@ -221,6 +253,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                     $(this).focus()[0].setSelectionRange(cursorPosition, cursorPosition);
                 });
 
+                doMainButtons();
                 $(".loadingBg").removeClass("show");
             });
         }, "autoWidth": false, "columnDefs": [{
@@ -243,4 +276,6 @@ window.addEventListener('DOMContentLoaded', async function main() {
     });
     $("#table_wrapper > .dt-buttons").appendTo("div.header-btns");
 });
+
+
 
