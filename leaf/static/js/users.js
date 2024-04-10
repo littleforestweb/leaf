@@ -38,21 +38,24 @@ async function doMainButtons() {
 async function addUser() {
     let user_name = escapeHtml(document.getElementById("user-name").value);
     let user_email = escapeHtml(document.getElementById("user-email").value);
-    let user_master = escapeHtml(document.getElementById("user-master").value);
-    let user_display_name = escapeHtml(document.getElementById("user-display-name").value);
-    let user_group_name = escapeHtml(document.getElementById("user-group-name").value);
+    let user_is_admin = escapeHtml(document.getElementById("user-is-admin").value);
+    let user_password = document.getElementById("user-password").value;
 
     // Post
     $.ajax({
-        type: "POST", url: "/add/user", data: {
-            "name": user_name, "email": user_email, "ismaster": user_master, "display_name": user_display_name, 'user_group_name': user_group_name
-        }, success: function (entry) {
+        type: "POST", url: "/add/user",
+        data: {
+            "username": user_name,
+            "email": user_email,
+            "is_admin": user_is_admin,
+            "password": user_password
+        },
+        success: function (entry) {
             // Add row to Table
-            let name = entry["name"];
+            let username = entry["username"];
             let email = entry["email"];
-            let ismaster = entry["ismaster"];
-            let display_name = entry["display_name"];
-            $('#table').DataTable().row.add(["", name, email, ismaster, display_name, "NO_GROUP"]).order([0, 'desc']).draw();
+            let is_admin = entry["is_admin"];
+            $('#table').DataTable().row.add(["", username, email, is_admin]).order([0, 'desc']).draw();
 
             // Hide Create Modal
             $('#addUserModal').modal('hide');

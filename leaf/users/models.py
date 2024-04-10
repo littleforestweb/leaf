@@ -1,3 +1,5 @@
+from flask import session
+
 from leaf.decorators import db_connection
 
 
@@ -27,31 +29,32 @@ def get_users_data():
             mydb.close()
 
 
-def add_user_to_database(name, email, is_master, display_name):
+def add_user_to_database(username, email, is_admin, password):
     """
     Add a new user to the database.
 
     Args:
-        name (str): User's name.
+        username (str): User's name.
         email (str): User's email.
-        is_master (str): User's master status.
-        display_name (str): User's display name.
+        is_admin (str): User's master status.
+        password (str): User's password.
 
     Returns:
         bool: True if the user is added successfully, False otherwise.
     """
+
     mydb, mycursor = db_connection()
 
     try:
         # Run SQL Command to insert the new user
-        mycursor.execute("INSERT INTO user (name, email, ismaster, display_name) VALUES (%s, %s, %s, %s)", (name, email, is_master, display_name))
+        mycursor.execute("INSERT INTO user (username, email, is_admin, account_id, password) VALUES (%s, %s, %s, %s, %s)", (username, email, is_admin, session["accountId"], password))
         mydb.commit()
 
         return True
 
     except Exception as e:
         # Log the error or handle it appropriately
-        print(f"Error in update_user_in_database: {e}")
+        print(f"Error in add_user_to_database: {e}")
         return False
     finally:
         # Always close the database connection

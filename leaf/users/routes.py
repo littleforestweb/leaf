@@ -1,3 +1,5 @@
+import hashlib
+
 import werkzeug.utils
 from flask import render_template, Blueprint, jsonify, request, session
 
@@ -62,19 +64,20 @@ def add_user():
     Returns:
         flask.Response: JSON response containing the result of adding a new user.
     """
+
     try:
         # Get post params
-        name = werkzeug.utils.escape(request.form.get("name"))
-        email = werkzeug.utils.escape(request.form.get("email"))
-        is_master = werkzeug.utils.escape(request.form.get("ismaster"))
-        display_name = werkzeug.utils.escape(request.form.get("display_name"))
+        username = werkzeug.utils.escape(request.form.get("username", type=str))
+        email = werkzeug.utils.escape(request.form.get("email", type=str))
+        is_admin = werkzeug.utils.escape(request.form.get("is_admin", type=str))
+        password = hashlib.sha1(werkzeug.utils.escape(request.form['password']).encode()).hexdigest()
 
         # Add user to the database
-        success = add_user_to_database(name, email, is_master, display_name)
+        success = add_user_to_database(username, email, is_admin, password)
 
         if success:
             # Return fields back to view
-            json_response = {"name": name, "email": email, "display_name": display_name}
+            json_response = {"username": username, "email": email, "is_admin": is_admin}
             return jsonify(json_response)
         else:
             return jsonify({"error": "An error occurred while adding the user"}), 500

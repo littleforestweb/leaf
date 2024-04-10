@@ -7,6 +7,45 @@
         $("#nav-link-users").addClass("active");
     </script>
 
+    <!-- ADD USER MODAL -->
+    <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addUserLabel">Add User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="user-name" class="col-form-label">Name:</label>
+                            <input type="text" class="form-control" id="user-name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="user-email" class="col-form-label">Email:</label>
+                            <input type="text" class="form-control" id="user-email">
+                        </div>
+                        <div class="mb-3">
+                            <label for="user-password" class="col-form-label">Password:</label>
+                            <input type="password" class="form-control" id="user-password">
+                        </div>
+                        <div class="mb-3">
+                            <label for="user-is-admin" class="col-form-label">Admin:</label>
+                            <select id="user-is-admin" class="form-select" aria-label="Default select example">
+                                <option selected value="0">No</option>
+                                <option value="1">Yes</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" onclick="addUser()">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- EDIT USER MODAL -->
     <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -35,33 +74,20 @@
         </div>
     </div>
 
-    <!-- ADD USER MODAL -->
-    <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+
+    <!-- DELETE ERROR MODAL -->
+    <div class="modal fade" id="deleteErrorModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addUserLabel">Add User</h5>
+                    <h5 class="modal-title">Error deleting user/s</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form>
-                        <div class="mb-3">
-                            <label for="user-name" class="col-form-label">Name:</label>
-                            <input type="text" class="form-control" id="user-name">
-                        </div>
-                        <div class="mb-3">
-                            <label for="user-email" class="col-form-label">Email:</label>
-                            <input type="text" class="form-control" id="user-email">
-                        </div>
-                        <div class="mb-3">
-                            <label for="user-master" class="col-form-label">Is Master:</label>
-                            <input type="text" class="form-control" id="user-master" value="no">
-                        </div>
-                    </form>
+                    <p>There was an error deleting your user/s<br>Please try again.</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-success" onclick="addUser()">Add</button>
                 </div>
             </div>
         </div>
@@ -77,24 +103,6 @@
                 </div>
                 <div class="modal-body">
                     <p>There was an error adding your user<br>Please try again.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- DELETE ERROR MODAL -->
-    <div class="modal fade" id="deleteErrorModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Error deleting user/s</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>There was an error deleting your user/s<br>Please try again.</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
