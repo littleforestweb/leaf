@@ -131,12 +131,24 @@ def get_site_data(site_id):
         # Get a database connection using the 'db_connection' decorator
         mydb, mycursor = decorators.db_connection()
 
-        # Get pages from the site using a parameterized query
-        mycursor.execute("SELECT id, id, title, HTMLPath, modified_date, id FROM site_meta WHERE status = 200 AND site_id = %s", [site_id])
-        pages = mycursor.fetchall()
-        pages = [{"id": page[0], "Screenshot": page[1], "Title": page[2], "URL": os.path.join(Config.PREVIEW_SERVER, page[3]), "Modified Date": page[4], "Action": page[5]} for page in pages]
+        # Get User Access folders
+        query = "SELECT ua.folder_path FROM leaf.user_access ua JOIN leaf.user_groups ug ON ua.group_id = ug.group_id JOIN leaf.group_member gm ON ug.group_id = gm.group_id WHERE gm.user_id = %s"
+        mycursor.execute(query, (session["id"],))
+        folder_paths = [folder_path[0] for folder_path in mycursor.fetchall()]
 
-        return pages
+        # Get pages from the site
+        query = "SELECT id, title, HTMLPath, modified_date FROM site_meta  WHERE status = 200 AND site_id = %s"
+        mycursor.execute(query, [site_id])
+        site_pages = mycursor.fetchall()
+
+        # Only add pages that the user has access
+        access_pages = []
+        for page in site_pages:
+            for path in folder_paths:
+                if page[2].startswith(path.lstrip("/")):
+                    access_pages.append({"id": page[0], "Title": page[1], "URL": os.path.join(Config.PREVIEW_SERVER, page[2]), "Modified Date": page[3]})
+
+        return access_pages
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
         raise RuntimeError(f"An error occurred while fetching sites: {str(e)}")
