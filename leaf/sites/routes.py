@@ -1,22 +1,16 @@
+import urllib3
+import werkzeug.utils
 from flask import render_template, Blueprint, request, jsonify, session
 
 from leaf.config import Config
-import urllib3
-from leaf.serverside.serverside_table import ServerSideTable
-from leaf.serverside import table_schemas
 from leaf.decorators import login_required
+from leaf.serverside import table_schemas
+from leaf.serverside.serverside_table import ServerSideTable
 from leaf.sites import models
-import werkzeug.utils
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 sites = Blueprint('sites', __name__)
-
-HERITRIX_FOLDER = Config.HERITRIX_FOLDER
-HERITRIX_PORT = Config.HERITRIX_PORT
-HERITRIX_USER = Config.HERITRIX_USER
-HERITRIX_PASS = Config.HERITRIX_PASS
-HERITRIX_HEADERS = {"Accept": "application/xml"}
 
 
 # ---------------------------------------------------------------------------------------------------------- #
