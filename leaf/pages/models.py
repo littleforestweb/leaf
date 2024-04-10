@@ -1,9 +1,11 @@
 import os
-from flask import request, send_from_directory, session
-from leaf.decorators import db_connection
-from leaf.config import Config
 import shutil
+
 from bs4 import BeautifulSoup
+from flask import send_from_directory, session
+
+from leaf.config import Config
+from leaf.decorators import db_connection
 
 
 def get_all_pages_data():
