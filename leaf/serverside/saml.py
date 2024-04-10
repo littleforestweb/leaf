@@ -18,38 +18,119 @@ def perform_additional_xml_checks(xml_data):
     allowed_tags = {
         'Assertion', 'Issuer', 'Subject', 'NameID', 'AttributeStatement',
         'Attribute', 'AttributeValue', 'Conditions', 'AuthnStatement',
-        'Response', 'Status', 'StatusCode', 'Signature'
+        'Response', 'Status', 'StatusCode', 'Signature', 'SignedInfo',
+        'CanonicalizationMethod', 'SignatureMethod', 'Reference', 'Transforms',
+        'Transform', 'DigestMethod', 'DigestValue', 'DigestValueType', 'SignatureValue',
+        'X509Data', 'X509Certificate', 'EncryptedAssertion', 'EncryptedData',
+        'EncryptedKey', 'EncryptedAttribute', 'EncryptionMethod', 'KeyDescriptor',
+        'KeyInfo', 'KeyName', 'KeyInfoReference', 'KeyValue', 'MgmtData', 
+        'AuthenticatingAuthority', 'AuthenticatingAuthorityRef', 
+        'AssertionIDRef', 'AssertionURIRef', 'AssertionURI', 'NameIDPolicy',
+        'AuthnRequest', 'AuthnResponse', 'LogoutRequest', 'LogoutResponse',
+        'ManageNameIDResponse', 'NewEncryptedID', 'NewID', 'IDPList', 'IDPEntry', 
+        'AffiliationDescriptor', 'AttributeAuthorityDescriptor', 
+        'AuthnAuthorityDescriptor', 'PDPDescriptor', 'RoleDescriptor',
+        'ServiceDescription', 'ServiceName', 'ServiceDisplayName',
+        'AssertionConsumerService', 'AttributeService', 'AuthzService',
+        'ManageNameIDService', 'ArtifactResolutionService', 'AssertionIDRequestService',
+        'NameIDMappingService', 'NameIDManagementService', 'AttributeQueryService', 'BatchRequest', 
+        'BatchResponse', 'Request', 'IDPSSODescriptor', 'AttributeConsumingService',
+        'NameIDMappingRequest', 'AttributeQuery', 'AuthnQuery', 'ArtifactResponse',
+        'LogoutNotification', 'AuthzDecisionStatement', 'Action', 'Evidence', 'DoNotCacheCondition',
+        'AuthnContext', 'AuthnContextClassRef', 'AuthnContextDeclRef', 'AuthnContextDecl', 'RequestedAuthnContext',
+        'ArtifactResolve', 'AssertionIDRequest', 'AuthzDecisionQuery', 'ManageNameIDRequest',
+        'SubjectConfirmation', 'SubjectConfirmationData', 'AudienceRestriction', 'Audience',
+        'CipherData', 'CipherValue'
     }
 
     allowed_attributes = {
-        'Name', 'Format', 'InResponseTo', 'Version', 'IssueInstant', 'Method'
+        'id', 'name', 'format', 'nameformat', 'inresponseto', 'version',
+        'issueinstant', 'method', 'type', 'algorithm', 'uri', 'notonorafter',
+        'recipient', 'destination', 'value', 'notbefore', 'authninstant', 'sessionindex'
     }
 
+    xpath_expressions = [
+        ".//ns0:Assertion", ".//ns1:Assertion", ".//saml2:EncryptedAssertion",
+        ".//*[local-name()='Assertion']"
+    ]
+
+    # Extract namespace dynamically for Assertion
+    # Find Assertion element using XPath expressions
+    assertion_element = None
+    for xpath_expression in xpath_expressions:
+        assertion_elements = xml_data.xpath(xpath_expression, namespaces=namespaces)
+        if assertion_elements:
+            assertion_element = assertion_elements[0]
+            break
+
+    if assertion_element is None:
+        print('No Assertion element found!')
+        return False
+
+    # Get the namespace of the Assertion element
+    assertion_namespace = assertion_element.tag.split('}')[0][1:]
+
+    attributes_elements = [] 
     for element in xml_data.iter():
         # Check if the tag is in the allowed list
-        if element.tag not in allowed_tags:
-            return f'Invalid XML. {element.tag} tag found but not allowed!'
+        namespace, this_tag = element.tag[1:].split('}')
+
+        # Validate namespaces
+        if namespace not in namespaces.values():
+            print(f'Invalid XML. {namespace} namespace found but not allowed!')
+            return False
+
+        if this_tag not in allowed_tags:
+            print(f'Invalid XML. {this_tag} tag found but not allowed!')
+            return False
+
+
+        # Extract Name and NameFormat attributes
+        if element.tag.endswith('}Attribute'):
+            name = element.get('Name')
+            name_format = element.get('NameFormat', '')
+
+            # Extract AttributeValue text
+            attribute_value = element.find('{*}AttributeValue').text
+
+            # Add extracted information to the array
+            attributes_elements.append({
+                'Name': name,
+                'NameFormat': name_format,
+                'AttributeValue': attribute_value
+            })
 
         # Check each attribute of the element
-        for attribute in element.attrib:
-            if attribute not in allowed_attributes:
-                return f'Invalid XML. {attribute} attribute found but not allowed!'
+        for attribute, value in element.attrib.items():
+            # Split the attribute to separate namespace and attribute name
+            if '}' in attribute:
+                attr_namespace, attr_name = attribute[1:].split('}')  # Remove the leading '{'
+            else:
+                attr_namespace = ''
+                attr_name = attribute
+
+            # Check if the attribute namespace is in the predefined namespaces
+            if attr_namespace and attr_namespace not in namespaces.values():
+                print(f'Invalid XML. Attribute Namespace {attr_namespace} not allowed!')
+                return False
+
+            # Check if the attribute name is in the allowed attributes
+            if attr_name.lower() not in allowed_attributes:
+                print(f'Invalid XML. {attr_name} attribute found but not allowed!')
+                return False
 
     # Check for suspicious patterns (like script tags or SQL commands)
-    if re.search(r'<script|SELECT\s+.*\s+FROM|INSERT\s+INTO', xml_data, re.IGNORECASE):
-        return 'Invalid XML. Found Suspicious patterns!'
-
-    # Validate namespaces
-    for element in etree.fromstring(xml_data).iter():
-        if element.tag.namespace not in namespaces:
-            return f'Invalid XML. {element.tag.namespace} namespace found but not allowed!'
+    if re.search(r'<script|SELECT\s+.*\s+FROM|INSERT\s+INTO', etree.tostring(xml_data).decode(), re.IGNORECASE):
+        print(f'Invalid XML. Found Suspicious patterns!')
+        return False
 
     # Remove or check comments
     comments = xml_data.xpath('//comment()')
     if comments:
-        return 'Invalid XML. Comments found but not allowed!'
+        print('Invalid XML. Comments found but not allowed!')
+        return False
 
-    return True
+    return attributes_elements
 
 
 def is_valid_saml_response(saml_response):
@@ -71,17 +152,16 @@ def is_valid_saml_response(saml_response):
         saml_response_xml = fromstring(response_str.encode('utf-8'))
 
         # Optional: Schema validation can be performed here if an XSD is available
-        print(response_str)
         # Check for any other malicious content or patterns
-        additional_checks_validation = perform_additional_xml_checks(saml_response_xml)
-        if additional_checks_validation is None or additional_checks_validation is False:
+        attributes_elements = perform_additional_xml_checks(saml_response_xml)
+        if attributes_elements is None or attributes_elements is False:
             # If validation fails, return a permission denied response
-            return "Permission Denied. Saml response not valid!", 403
+            return [False, False]
 
-        return saml_response_xml
+        return [saml_response_xml, attributes_elements]
     except etree.XMLSyntaxError:
         # Handle malformed XML
-        return False
+        return [False, False]
     # Add more exceptions as necessary for different types of checks
 
 
@@ -98,12 +178,12 @@ def process_saml_response(saml_response_from_request):
     # Read SAMLRequest and escape special characters in the string it receives to prevent injection attacks
     saml_response = werkzeug.utils.escape(saml_response_from_request)
 
-    validate_saml_response = is_valid_saml_response(saml_response)
+    validate_saml_response, attributes_elements = is_valid_saml_response(saml_response)
     if validate_saml_response is None or validate_saml_response is False:
         # If validation fails, return a permission denied response
-        return "Permission Denied. Saml response not valid!", 403
+        return [False, False]
 
-    return validate_saml_response
+    return [validate_saml_response, attributes_elements]
 
 
 @saml_route.route("/saml", methods=["GET", "POST"])
@@ -150,8 +230,7 @@ def idp_initiated():
         if cert_elem is not None:
             # Get the text of the X509Certificate element, which is base64 encoded
             idp_metadata_cert = cert_elem.text
-
-            saml_response_xml = process_saml_response(request.form["SAMLResponse"])
+            saml_response_xml, attributes_elements = process_saml_response(request.form["SAMLResponse"])
             if saml_response_xml is not False:
                 print('Saml Response is valid and secure!')
                 # Extract the X509 certificate
@@ -167,13 +246,17 @@ def idp_initiated():
                         print("Signature is valid.")
                     except Exception as e:
                         print(f"Error verifying signature: {e}")
-                        return "Access Denied. Error verifying signature!"
+                        return "Access Denied. Error verifying signature!", 403
                 else:
                     print("Certificate not found in the SAML response. This connection might not be secure!")
-                    return "Access Denied. Error verifying signature! Certificate not found in the SAML response."
+                    return "Access Denied. Error verifying signature! Certificate not found in the SAML response.", 403
+            else:
+                print(f"Permission Denied. Saml response not valid!")
+                return f"Permission Denied. Saml response not valid!", 403
+
         else:
             print("X509Certificate element not found in the IdP metadata!")
-            return "Access Denied. Error verifying signature! Certificate not found in the IdP metadata!"
+            return "Access Denied. Error verifying signature! Certificate not found in the IdP metadata!", 403
 
         # issuer_text = saml_response_xml.xpath('//saml:Issuer', namespaces=namespaces)
         issuer_elements = saml_response_xml.xpath("//*[local-name() = 'Issuer']")
@@ -183,33 +266,25 @@ def idp_initiated():
             if issuer_text and issuer_text.lower().strip() != Config.IDP_ENTITY_ID.lower().strip():
                 return "Access Denied"
 
-            # XPath query to get to the Attribute elements
-            attributes = saml_response_xml.xpath("//saml:Assertion/saml:AttributeStatement/saml:Attribute", namespaces=namespaces)
-
             email = None
             username = None
             firstName = None
             lastName = None
             isAdmin = 0
-            for item in attributes:
-                # XPath query to find the Attribute element with Name="username"
-                username_attribute = saml_response_xml.xpath("//saml:Attribute[@Name='username']/saml:AttributeValue", namespaces=namespaces)
-                if username_attribute:
-                    username = username_attribute[0].text
-                # XPath query to find the Attribute element with Name="email"
-                email_attribute = saml_response_xml.xpath("//saml:Attribute[@Name='email']/saml:AttributeValue", namespaces=namespaces)
-                if email_attribute:
-                    email = username_attribute[0].text
-                # XPath query to find the Attribute element with Name="firstName"
-                firstName_attribute = saml_response_xml.xpath("//saml:Attribute[@Name='firstName']/saml:AttributeValue", namespaces=namespaces)
-                if firstName_attribute:
-                    firstName = firstName_attribute[0].text
-                # XPath query to find the Attribute element with Name="lastName"
-                lastName_attribute = saml_response_xml.xpath("//saml:Attribute[@Name='lastName']/saml:AttributeValue", namespaces=namespaces)
-                if lastName_attribute:
-                    lastName = lastName_attribute[0].text
-                # XPath query to find the Attribute element with Name="group"
-                group_values = saml_response_xml.xpath("//saml:Attribute[@Name='group']/saml:AttributeValue", namespaces=namespaces)
+
+            attributes = {}
+
+            for attr in attributes_elements:
+                if attr['Name'] in Config.SAML_ATTRIBUTES_MAP:
+                    attributes[Config.SAML_ATTRIBUTES_MAP[attr['Name']]] = attr['AttributeValue']
+
+            email = attributes.get('email')
+            username = attributes.get('username', email)
+            first_name = attributes.get('firstName')
+            last_name = attributes.get('lastName')
+            
+            group_values = attributes.get('group')
+            if group_values is not None:
                 groups = [value.text.lower() for value in group_values if value.text]
                 isAdmin = 1 if any("poweruser" in group for group in groups) else 0
 
