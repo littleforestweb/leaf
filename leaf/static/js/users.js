@@ -76,36 +76,6 @@ async function addUser() {
     });
 }
 
-async function populateEditUserModal() {
-    console.log("populateEditUserModal() START");
-
-    let checked_items = $("input:checked");
-    let row = checked_items.parent().parent();
-    console.log("n checked_items = " + checked_items.length);
-    console.log("row html = " + row.html());
-    console.log("row text = " + row.text());
-
-    let spans = row.find("span");
-    let user_name = escapeHtml(spans[0].textContent);
-    let user_email = escapeHtml(spans[1].textContent);
-    let user_is_master = escapeHtml(spans[2].textContent);
-    let user_display_name = escapeHtml(spans[2].textContent);
-
-    // Populate edit fields
-    $('#e-user-name').val(user_name);
-    $('#e-user-email').val(user_email);
-    $('#e-user-master').val(user_is_master);
-    $('#e-user-display-name').val(user_display_name);
-
-    // Populate hidden fields (for reference)
-    $('#h-e-user-name').val(user_name);
-    $('#h-e-user-email').val(user_email);
-    $('#h-e-user-master').val(user_is_master);
-    $('#h-e-user-display-name').val(user_display_name);
-
-    console.log("populateEditUserModal() END");
-}
-
 async function updateUser() {
     let e_user_name = escapeHtml(document.getElementById("e-user-name").value);
     let e_user_email = escapeHtml(document.getElementById("e-user-email").value);
