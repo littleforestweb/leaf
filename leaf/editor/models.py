@@ -1,6 +1,5 @@
 import datetime
 import os
-import re
 
 import mysql.connector
 from bs4 import BeautifulSoup
@@ -33,36 +32,6 @@ def get_page_html_path(page_id):
         return html_path
     except (mysql.connector.Error, FileNotFoundError):
         raise
-
-
-def replace_ssi(html_path):
-    """
-    Replace Server Side Includes (SSI) directives in an HTML file with their actual content.
-
-    Args:
-        html_path (str): The path to the HTML file containing SSI directives.
-
-    Returns:
-        str: The modified content of the HTML file with SSI directives replaced with actual content.
-    """
-    with open(html_path, 'r') as f:
-        content = f.read()
-
-    # Regular expression to match SSI include directives
-    ssi_pattern = re.compile(r'<!--#include\s+virtual="(.*?)"\s+-->')
-
-    def replace_match(match):
-        include_path = match.group(1)
-        # Resolve virtual path to the actual file path
-        include_file_path = os.path.join(os.path.dirname(html_path), include_path[1:])
-        # Read the content of the included file
-        with open(include_file_path, 'r') as include_file:
-            return include_file.read()
-
-    # Replace SSI includes with actual content
-    replaced_content = ssi_pattern.sub(replace_match, content)
-
-    return replaced_content
 
 
 # Function to add base href to the HTML file

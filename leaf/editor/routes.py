@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, request, jsonify, session
 import leaf.sites.models
 from leaf import Config
 from leaf.decorators import login_required
-from .models import get_page_html_path, replace_ssi, add_base_href, remove_base_href, save_html_to_disk, update_modified_date
+from .models import get_page_html_path, remove_base_href, save_html_to_disk, update_modified_date, add_base_href
 
 # Create a Blueprint for the editor routes
 editor = Blueprint('editor', __name__)
@@ -55,15 +55,14 @@ def get_htmlCode():
 
         # Get HTML path for the page
         html_path = get_page_html_path(int(page_id))
-
-        # Replace of SSIs
-        data = replace_ssi(html_path)
+        with open(html_path, 'r') as in_file:
+            content = in_file.read()
 
         # Add base href to HTML
-        data = add_base_href(data)
+        content = add_base_href(content)
 
         # Create json
-        json_response = {"data": data}
+        json_response = {"data": content}
         return jsonify(json_response)
     except Exception as e:
         # Handle exceptions and return an error response with status code 500
