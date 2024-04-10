@@ -112,6 +112,24 @@ def getSitesList():
         raise RuntimeError(f"An error occurred while fetching sites: {str(e)}")
 
 
+def get_user_access_folder(mycursor):
+    """
+    Retrieve the folder paths that a user has access to.
+
+    Parameters:
+    - mycursor: MySQL cursor object used to execute queries.
+
+    Returns:
+    - List of folder paths (strings) that the user has access to.
+    """
+
+    # Get User Access folders
+    query = "SELECT ua.folder_path FROM leaf.user_access ua JOIN leaf.user_groups ug ON ua.group_id = ug.group_id JOIN leaf.group_member gm ON ug.group_id = gm.group_id WHERE gm.user_id = %s"
+    mycursor.execute(query, (session["id"],))
+    folder_paths = [folder_path[0] for folder_path in mycursor.fetchall()]
+    return folder_paths
+
+
 def get_site_data(site_id):
     """
     Retrieve pages from the specified site.
@@ -132,9 +150,7 @@ def get_site_data(site_id):
         mydb, mycursor = decorators.db_connection()
 
         # Get User Access folders
-        query = "SELECT ua.folder_path FROM leaf.user_access ua JOIN leaf.user_groups ug ON ua.group_id = ug.group_id JOIN leaf.group_member gm ON ug.group_id = gm.group_id WHERE gm.user_id = %s"
-        mycursor.execute(query, (session["id"],))
-        folder_paths = [folder_path[0] for folder_path in mycursor.fetchall()]
+        folder_paths = get_user_access_folder(mycursor)
 
         # Get pages from the site
         query = "SELECT id, id, title, HTMLPath, modified_date, id FROM site_meta  WHERE status = 200 AND site_id = %s"
@@ -524,3 +540,39 @@ def delete_sites(sites_to_delete):
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
         raise RuntimeError(f"An error occurred while deleting sites: {str(e)}")
+
+
+def user_has_access_page(page_id):
+    """
+    Checks if a user has access to a specific page based on their permissions.
+
+    Args:
+        page_id (int): The ID of the page to check access for.
+
+    Returns:
+        bool: True if the user has access to the page, False otherwise.
+
+    Raises:
+        RuntimeError: If an error occurs while checking for page access.
+    """
+    
+    try:
+        # Get a database connection using the 'db_connection' decorator
+        mydb, mycursor = decorators.db_connection()
+
+        # Get User Access folders
+        folder_paths = get_user_access_folder(mycursor)
+        print(folder_paths)
+
+        # Get URL from PageID
+        mycursor.execute("SELECT HTMLPath FROM site_meta WHERE id=%s", (page_id,))
+        HTMLPath = os.path.join(mycursor.fetchone()[0])
+
+        for path in folder_paths:
+            if HTMLPath.startswith(path.lstrip("/")):
+                return True
+        mydb.close()
+        return False
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        raise RuntimeError(f"An error occurred while checking for page access: {str(e)}")

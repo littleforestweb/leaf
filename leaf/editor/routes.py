@@ -26,7 +26,8 @@ def view_editor():
 
         # Check if the specified page to the user's account
         siteId = leaf.sites.models.getSiteFromPageId(int(pageId))
-        if not leaf.sites.models.site_belongs_to_account(siteId):
+        hasAccess = leaf.sites.models.user_has_access_page(int(pageId))
+        if not leaf.sites.models.site_belongs_to_account(siteId) or not hasAccess:
             return jsonify({"error": "Forbidden"}), 403
 
         return render_template('editor.html', username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], page_id=pageId)
