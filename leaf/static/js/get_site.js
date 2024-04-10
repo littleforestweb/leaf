@@ -303,12 +303,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [5],
                 mData: function (source, type, val) {
-                    if (is_admin === 1) {
-                        return "<a class='green-link' target='_blank' href='/editor?page_id=" + source["id"] + "'>Edit</a>";
-                    } else {
-                        return "<span></span>";
-                    }
-
+                    return "<a class='green-link' target='_blank' href='/editor?page_id=" + source["id"] + "'>Edit</a>";
                 }
             }
         ], initComplete: function () {

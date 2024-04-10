@@ -137,7 +137,7 @@ def get_site_data(site_id):
         folder_paths = [folder_path[0] for folder_path in mycursor.fetchall()]
 
         # Get pages from the site
-        query = "SELECT id, title, HTMLPath, modified_date FROM site_meta  WHERE status = 200 AND site_id = %s"
+        query = "SELECT id, id, title, HTMLPath, modified_date, id FROM site_meta  WHERE status = 200 AND site_id = %s"
         mycursor.execute(query, [site_id])
         site_pages = mycursor.fetchall()
 
@@ -145,8 +145,8 @@ def get_site_data(site_id):
         access_pages = []
         for page in site_pages:
             for path in folder_paths:
-                if page[2].startswith(path.lstrip("/")):
-                    access_pages.append({"id": page[0], "Title": page[1], "URL": os.path.join(Config.PREVIEW_SERVER, page[2]), "Modified Date": page[3]})
+                if page[3].startswith(path.lstrip("/")):
+                    access_pages.append({"id": page[0], "Screenshot": page[1], "Title": page[2], "URL": os.path.join(Config.PREVIEW_SERVER, page[3]), "Modified Date": page[4], "Action": page[5]})
 
         return access_pages
     except Exception as e:
