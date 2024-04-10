@@ -1,47 +1,11 @@
-from flask import render_template, Blueprint, jsonify, redirect, session, url_for, request
-from leaf.decorators import login_required
-from .models import get_all_pages_data, get_page, get_screenshot, duplicate_page
 import werkzeug.utils
+from flask import Blueprint, jsonify, request
+
+from leaf.decorators import login_required
+from .models import get_page, get_screenshot, duplicate_page
 
 # Create a Blueprint for the pages routes
 pages = Blueprint('pages', __name__)
-
-
-# ---------------------------------------------------------------------------------------------------------- #
-# ---------------------------------------------------------------------------------------------------------- #
-
-@pages.route('/all_pages')
-@login_required
-def view_all_pages():
-    """
-    View all pages route.
-
-    Returns:
-        render_template: Rendered template for all pages.
-    """
-    try:
-        # Render the template with user information
-        return render_template('all_pages.html', username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'])
-    except Exception as e:
-        # Handle exceptions and return an error response with status code 500
-        return jsonify({"error": str(e)}), 500
-
-
-@pages.route("/api/all_pages")
-@login_required
-def api_all_pages():
-    """
-    API endpoint to fetch all pages data.
-
-    Returns:
-        jsonify: JSON response containing all pages data.
-    """
-    try:
-        all_pages_data = get_all_pages_data()
-        return jsonify(all_pages_data)
-    except Exception as e:
-        # Handle exceptions and return an error response with status code 500
-        return jsonify({"error": str(e)}), 500
 
 
 # ---------------------------------------------------------------------------------------------------------- #

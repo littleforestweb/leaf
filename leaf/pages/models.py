@@ -8,28 +8,6 @@ from leaf.config import Config
 from leaf.decorators import db_connection
 
 
-def get_all_pages_data():
-    """
-    Get all pages data from the database.
-
-    Returns:
-        dict: Dictionary containing all pages data.
-    """
-    try:
-        mydb, mycursor = db_connection()
-
-        # Get all pages
-        mycursor.execute("SELECT url, status, title FROM site_meta")
-        results = mycursor.fetchall()
-        pages_list = [{"url": page[0], "status": page[1], "title": page[2]} for page in results]
-
-        # Create json
-        json_response = {"pages": pages_list}
-        return json_response
-    except Exception as e:
-        raise
-
-
 def get_page(pid):
     """
     Get a specific page from the database and serve its HTML content.
