@@ -39,6 +39,7 @@ async function addUser() {
     let user_name = escapeHtml(document.getElementById("user-name").value);
     let user_email = escapeHtml(document.getElementById("user-email").value);
     let user_is_admin = escapeHtml(document.getElementById("user-is-admin").value);
+    let user_is_master = escapeHtml(document.getElementById("user-is-master").value);
     let user_password = document.getElementById("user-password").value;
 
     // Post
@@ -48,15 +49,10 @@ async function addUser() {
             "username": user_name,
             "email": user_email,
             "is_admin": user_is_admin,
+            "is_master": user_is_master,
             "password": user_password
         },
         success: function (entry) {
-            // Add row to Table
-            let username = entry["username"];
-            let email = entry["email"];
-            let is_admin = entry["is_admin"];
-            $('#table').DataTable().row.add(["", username, email, is_admin]).order([0, 'desc']).draw();
-
             // Hide Create Modal
             $('#addUserModal').modal('hide');
 
@@ -67,8 +63,6 @@ async function addUser() {
             setTimeout(function () {
                 location.reload(true);
             }, 500);
-
-
         }, error: function (XMLHttpRequest, textStatus, errorThrown) {
             // Hide Create Modal
             $('#addUserModal').modal('hide');

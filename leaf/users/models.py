@@ -29,14 +29,15 @@ def get_users_data():
             mydb.close()
 
 
-def add_user_to_database(username, email, is_admin, password):
+def add_user_to_database(username, email, is_admin, is_master, password):
     """
     Add a new user to the database.
 
     Args:
         username (str): User's name.
         email (str): User's email.
-        is_admin (str): User's master status.
+        is_admin (str): User's admin status.
+        is_master (str): User's master status.
         password (str): User's password.
 
     Returns:
@@ -47,7 +48,7 @@ def add_user_to_database(username, email, is_admin, password):
 
     try:
         # Run SQL Command to insert the new user
-        mycursor.execute("INSERT INTO user (username, email, is_admin, account_id, password) VALUES (%s, %s, %s, %s, %s)", (username, email, is_admin, session["accountId"], password))
+        mycursor.execute("INSERT INTO user (username, email, is_admin, is_manager, account_id, password) VALUES (%s, %s, %s, %s, %s, %s)", (username, email, is_admin, is_master, session["accountId"], password))
         mydb.commit()
 
         return True
