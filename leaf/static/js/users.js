@@ -23,14 +23,19 @@ async function doMainButtons() {
             }
         }
 
-        $("#deleteUserBtn").prop('disabled', true);
+        $("#addUserBtn").prop('disabled', false);
         if ($('input[type="checkbox"]:checked').length === 1) {
-            $("#deleteUserBtn").prop('disabled', false);
+            $("#addUserBtn").prop('disabled', true);
         }
 
         $("#editUserBtn").prop('disabled', true);
         if ($('input[type="checkbox"]:checked').length === 1) {
             $("#editUserBtn").prop('disabled', false);
+        }
+
+        $("#deleteUserBtn").prop('disabled', true);
+        if ($('input[type="checkbox"]:checked').length === 1) {
+            $("#deleteUserBtn").prop('disabled', false);
         }
     })
 }
