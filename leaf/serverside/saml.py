@@ -292,7 +292,7 @@ def idp_initiated():
 
                 mydb, mycursor = db_connection()
 
-                query = (
+                main_query = (
                     "SELECT user.id, "
                     "CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) "
                     "WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, "
@@ -307,23 +307,23 @@ def idp_initiated():
 
                 try:
 
-                    mycursor.execute(query, (email,))
+                    mycursor.execute(main_query, (email,))
                     lfi_user = mycursor.fetchone()
 
                     if not lfi_user:
-                        query = "INSERT INTO user(account_id, email, username, is_admin) VALUES(?, ?, ?, ?)"
+                        query = "INSERT INTO user(account_id, email, username, is_admin) VALUES(%s, %s, %s, %s)"
                         values = (3, email, username, isAdmin)
                         mycursor.execute(query, values)
                         mydb.commit()
 
                         user_id = mycursor.lastrowid
 
-                        query = "INSERT INTO user_image(user_id, first_name, last_name) VALUES(?, ?, ?)"
+                        query = "INSERT INTO user_image(user_id, first_name, last_name) VALUES(%s, %s, %s)"
                         values = (user_id, firstName, lastName)
                         mycursor.execute(query, values)
                         mydb.commit()
 
-                        mycursor.execute(query, (email,))
+                        mycursor.execute(main_query, (email,))
                         lfi_user = mycursor.fetchone()
 
                     if lfi_user:
