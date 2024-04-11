@@ -54,12 +54,6 @@ async function addUser() {
     let user_is_master = escapeHtml($("#user-is-master").val());
     let user_password = $("#user-password").val();
 
-    // Check if email already exists
-    $('#notificationToast rect').attr("fill", "red");
-    $('#notificationToast strong').text("Error");
-    $('#notificationToast .toast-body').text("Email already exists");
-    $('#notificationToast').toast("show");
-
     // Post
     $.ajax({
         type: "POST", url: "/add/user",
