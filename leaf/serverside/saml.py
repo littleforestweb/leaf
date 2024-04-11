@@ -323,7 +323,7 @@ def idp_initiated():
 
                         query = "INSERT INTO user_image(user_id, first_name, last_name) VALUES(%s, %s, %s)"
                         values = (user_id, firstName, lastName)
-                        with open("/tmp/firstq", "w") as f:
+                        with open("/tmp/secondq", "w") as f:
                             f.write(query)
                             f.write(str(values))
                         mycursor.execute(query, values)
