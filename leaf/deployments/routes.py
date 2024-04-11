@@ -1,7 +1,8 @@
-from flask import Blueprint, jsonify, request, session, render_template
-from leaf.decorators import login_required, db_connection
-from .models import get_deployments, format_deployments
 import werkzeug.utils
+from flask import Blueprint, jsonify, request, session, render_template
+
+from leaf.decorators import login_required, db_connection, admin_required
+from .models import get_deployments, format_deployments
 
 deployments = Blueprint('deployments', __name__)
 
@@ -10,6 +11,7 @@ deployments = Blueprint('deployments', __name__)
 
 @deployments.route("/deployments")
 @login_required
+@admin_required
 def view_deployments():
     """
     View deployments route.
@@ -27,6 +29,7 @@ def view_deployments():
 
 @deployments.route("/api/deployments")
 @login_required
+@admin_required
 def api_deployments():
     """
     API endpoint to fetch deployments.
@@ -51,6 +54,7 @@ def api_deployments():
 
 @deployments.route('/delete/deployments', methods=['POST'])
 @login_required
+@admin_required
 def delete_deployments():
     """
     Delete deployments route.
@@ -82,6 +86,7 @@ def delete_deployments():
 
 @deployments.route('/pause/deployments', methods=['POST'])
 @login_required
+@admin_required
 def pause_deployments():
     """
     Pause deployments route.
@@ -113,6 +118,7 @@ def pause_deployments():
 
 @deployments.route('/update/deployment', methods=['POST'])
 @login_required
+@admin_required
 def deployment_group():
     """
     Update deployment route.
