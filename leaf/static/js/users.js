@@ -56,8 +56,10 @@ async function addUser() {
             // Hide Create Modal
             $('#addUserModal').modal('hide');
 
-            // Show success notification
-            $('#addUserSuccessNotification').toast('show');
+            // Set Success Notification Information
+            $('#notificationToast strong').text("Notification");
+            $('#notificationToast .toast-body').text("User added successfully");
+            $('#notificationToast').toast("show");
 
             // Refresh page
             setTimeout(function () {
@@ -67,89 +69,12 @@ async function addUser() {
             // Hide Create Modal
             $('#addUserModal').modal('hide');
 
-            // Show Error Modal
-            $('#errorModal').modal('show');
+            // Set Success Notification Information
+            $('#notificationToast strong').text("Notification");
+            $('#notificationToast .toast-body').text("There was an error adding user. Please try again.");
+            $('#notificationToast').toast("show");
         }
     });
-}
-
-async function updateUser() {
-    let e_user_name = escapeHtml(document.getElementById("e-user-name").value);
-    let e_user_email = escapeHtml(document.getElementById("e-user-email").value);
-    let e_user_master = escapeHtml(document.getElementById("e-user-master").value);
-    let e_user_display_name = escapeHtml(document.getElementById("e-user-display-name").value);
-    let e_user_group_name = escapeHtml(document.getElementById("e-user-group-name").value);
-
-    let h_e_user_name = escapeHtml(document.getElementById("h-e-user-name").value);
-    let h_e_user_email = escapeHtml(document.getElementById("h-e-user-email").value);
-    let h_e_user_master = escapeHtml(document.getElementById("h-e-user-master").value);
-    let h_e_user_display_name = escapeHtml(document.getElementById("h-e-user-display-name").value);
-    let h_e_user_group_name = escapeHtml(document.getElementById("h-e-user-group-name").value);
-
-    // Post
-    $.ajax({
-        type: "POST", url: "/update/user", data: {
-            "original_user_name": h_e_user_name, "original_user_email": h_e_user_email, "original_user_master": h_e_user_master, "original_user_display_name": h_e_user_display_name, "original_user_group_name": h_e_user_group_name,
-
-            "new_user_name": e_user_name, "new_user_email": e_user_email, "new_user_master": e_user_master, "new_user_display_name": e_user_display_name, "new_user_group_name": e_user_group_name
-
-        }, success: function (entry) {
-
-            // Hide Modal
-            $('#editUserModal').modal('hide');
-
-            // Show success notification
-            $('#editUserSuccessNotification').toast('show');
-
-            // Refresh page
-            setTimeout(function () {
-                location.reload(true);
-            }, 2000);
-        }, error: function (XMLHttpRequest, textStatus, errorThrown) {
-            // Hide Modal
-            $('#editUserModal').modal('hide');
-
-            // Show Error Modal
-            $('#errorModal').modal('show');
-        }
-    });
-}
-
-async function deleteUsers() {
-    console.log("deleteUsers() : START");
-
-    let checked_users = [];
-    let checked_users_str = "";
-
-    $.each($("input:checked"), function (K, V) {
-        checked_users.push(V.value);
-        checked_users_str += V.value + ",";
-    });
-
-    checked_users_str = checked_users_str.slice(0, -1);
-
-    // Post
-    $.ajax({
-        type: "POST", url: "/delete/users", data: {
-            "users_to_delete": checked_users_str
-        }, success: function (entry) {
-            // Show success notification
-            $('#deleteUserSuccessNotification').toast('show');
-            // Refresh page
-            setTimeout(function () {
-                location.reload(true);
-            }, 2000);
-        }, error: function (XMLHttpRequest, textStatus, errorThrown) {
-            // Hide Create Modal
-            $('#deleteUserModal').modal('hide');
-
-            // Show Error Modal
-            $('#deleteErrorModal').modal('show');
-
-        }
-    });
-
-    console.log("deleteUsers() : END");
 }
 
 window.addEventListener('DOMContentLoaded', async function main() {
