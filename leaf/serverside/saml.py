@@ -23,17 +23,17 @@ def perform_additional_xml_checks(xml_data):
         'Transform', 'DigestMethod', 'DigestValue', 'DigestValueType', 'SignatureValue',
         'X509Data', 'X509Certificate', 'EncryptedAssertion', 'EncryptedData',
         'EncryptedKey', 'EncryptedAttribute', 'EncryptionMethod', 'KeyDescriptor',
-        'KeyInfo', 'KeyName', 'KeyInfoReference', 'KeyValue', 'MgmtData', 
-        'AuthenticatingAuthority', 'AuthenticatingAuthorityRef', 
+        'KeyInfo', 'KeyName', 'KeyInfoReference', 'KeyValue', 'MgmtData',
+        'AuthenticatingAuthority', 'AuthenticatingAuthorityRef',
         'AssertionIDRef', 'AssertionURIRef', 'AssertionURI', 'NameIDPolicy',
         'AuthnRequest', 'AuthnResponse', 'LogoutRequest', 'LogoutResponse',
-        'ManageNameIDResponse', 'NewEncryptedID', 'NewID', 'IDPList', 'IDPEntry', 
-        'AffiliationDescriptor', 'AttributeAuthorityDescriptor', 
+        'ManageNameIDResponse', 'NewEncryptedID', 'NewID', 'IDPList', 'IDPEntry',
+        'AffiliationDescriptor', 'AttributeAuthorityDescriptor',
         'AuthnAuthorityDescriptor', 'PDPDescriptor', 'RoleDescriptor',
         'ServiceDescription', 'ServiceName', 'ServiceDisplayName',
         'AssertionConsumerService', 'AttributeService', 'AuthzService',
         'ManageNameIDService', 'ArtifactResolutionService', 'AssertionIDRequestService',
-        'NameIDMappingService', 'NameIDManagementService', 'AttributeQueryService', 'BatchRequest', 
+        'NameIDMappingService', 'NameIDManagementService', 'AttributeQueryService', 'BatchRequest',
         'BatchResponse', 'Request', 'IDPSSODescriptor', 'AttributeConsumingService',
         'NameIDMappingRequest', 'AttributeQuery', 'AuthnQuery', 'ArtifactResponse',
         'LogoutNotification', 'AuthzDecisionStatement', 'Action', 'Evidence', 'DoNotCacheCondition',
@@ -70,7 +70,7 @@ def perform_additional_xml_checks(xml_data):
     # Get the namespace of the Assertion element
     assertion_namespace = assertion_element.tag.split('}')[0][1:]
 
-    attributes_elements = [] 
+    attributes_elements = []
     for element in xml_data.iter():
         # Check if the tag is in the allowed list
         namespace, this_tag = element.tag[1:].split('}')
@@ -83,7 +83,6 @@ def perform_additional_xml_checks(xml_data):
         if this_tag not in allowed_tags:
             print(f'Invalid XML. {this_tag} tag found but not allowed!')
             return False
-
 
         # Extract Name and NameFormat attributes
         if element.tag.endswith('}Attribute'):
@@ -282,7 +281,7 @@ def idp_initiated():
             username = attributes.get('username', email)
             first_name = attributes.get('firstName')
             last_name = attributes.get('lastName')
-            
+
             group_values = attributes.get('group')
             if group_values is not None:
                 groups = [value.text.lower() for value in group_values if value.text]
@@ -312,7 +311,11 @@ def idp_initiated():
 
                     if not lfi_user:
                         query = "INSERT INTO user(account_id, email, username, is_admin) VALUES(%s, %s, %s, %s)"
-                        values = (3, email, username, isAdmin)
+                        values = (Config.ACCOUNT_ID, email, username, isAdmin)
+                        with open("/tmp/firstq", "w") as f:
+                            f.write(query)
+                            f.write(str(values))
+
                         mycursor.execute(query, values)
                         mydb.commit()
 
@@ -320,6 +323,9 @@ def idp_initiated():
 
                         query = "INSERT INTO user_image(user_id, first_name, last_name) VALUES(%s, %s, %s)"
                         values = (user_id, firstName, lastName)
+                        with open("/tmp/firstq", "w") as f:
+                            f.write(query)
+                            f.write(str(values))
                         mycursor.execute(query, values)
                         mydb.commit()
 
