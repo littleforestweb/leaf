@@ -1,5 +1,6 @@
 from flask import session
 
+from leaf import Config
 from leaf.decorators import db_connection
 
 
@@ -49,82 +50,21 @@ def add_user_to_database(username, email, is_admin, is_master, password):
     try:
         # Run SQL Command to insert the new user
         mycursor.execute("INSERT INTO user (username, email, is_admin, is_manager, account_id, password) VALUES (%s, %s, %s, %s, %s, %s)", (username, email, is_admin, is_master, session["accountId"], password))
-        mydb.commit()
+        user_id = mycursor.lastrowid
 
+        # Add to Admin Group
+        if int(is_admin) == 1:
+            mycursor.execute("SELECT group_id FROM user_groups WHERE group_name = %s", (Config.POWER_USER_GROUP,))
+            admin_group_id = mycursor.fetchone()[0]
+            mycursor.execute("INSERT INTO group_member (group_id, user_id) VALUES (%s, %s)", (admin_group_id, user_id))
+
+        mydb.commit()
         return True
 
     except Exception as e:
         # Log the error or handle it appropriately
         print(f"Error in add_user_to_database: {e}")
         return False
-    finally:
-        # Always close the database connection
-        if mydb:
-            mydb.close()
-
-
-def update_user_in_database(original_user_name, new_user_name, new_user_email, new_user_display_name):
-    """
-    Update user information in the database.
-
-    Args:
-        original_user_name (str): Original name of the user to update.
-        new_user_name (str): New name for the user.
-        new_user_email (str): New email for the user.
-        new_user_display_name (str): New display name for the user.
-
-    Returns:
-        bool: True if the user is updated successfully, False otherwise.
-    """
-    mydb, mycursor = db_connection()
-
-    try:
-        # Run SQL Command to update the user
-        update_users_query = "UPDATE user SET name=%s, email=%s, display_name=%s WHERE name=%s"
-        values = (new_user_name, new_user_email, new_user_display_name, original_user_name)
-
-        mycursor.execute(update_users_query, values)
-        mydb.commit()
-
-        return True
-
-    except Exception as e:
-        # Log the error or handle it appropriately
-        print(f"Error in update_user_in_database: {e}")
-        return False
-
-    finally:
-        # Always close the database connection
-        if mydb:
-            mydb.close()
-
-
-def delete_users_from_database(usernames):
-    """
-    Delete users from the database.
-
-    Args:
-        usernames (list): List of usernames to be deleted.
-
-    Returns:
-        bool: True if users are deleted successfully, False otherwise.
-    """
-    mydb, mycursor = db_connection()
-
-    try:
-        # Run SQL Command to delete users
-        placeholders = ','.join(['%s'] * len(usernames))
-        delete_users_cmd = f"DELETE FROM user WHERE name IN ({placeholders})"
-        mycursor.execute(delete_users_cmd, usernames)
-        mydb.commit()
-
-        return True
-
-    except Exception as e:
-        # Log the error or handle it appropriately
-        print(f"Error in delete_users_from_database: {e}")
-        return False
-
     finally:
         # Always close the database connection
         if mydb:
