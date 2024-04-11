@@ -47,6 +47,20 @@ async function addUser() {
     let user_is_master = escapeHtml($("#user-is-master").val());
     let user_password = $("#user-password").val();
 
+    // Check if email already exists
+    let email_values = [];
+    $('#table tbody tr').each(function () {
+        let emailValue = $(this).find('td:eq(3)').text();
+        email_values.push(emailValue);
+    });
+    if (email_values.includes(user_email)) {
+        $('#notificationToast rect').attr("fill", "red");
+        $('#notificationToast strong').text("Error");
+        $('#notificationToast .toast-body').text("Email already exists");
+        $('#notificationToast').toast("show");
+        return;
+    }
+
     // Post
     $.ajax({
         type: "POST", url: "/add/user",
@@ -92,13 +106,10 @@ window.addEventListener('DOMContentLoaded', async function main() {
     $('#table').DataTable().clear().draw();
     $('#table').DataTable().destroy();
 
-    //console.log("D1");
-
     // Get pagesJSON
     let json = await $.get("/api/get_users", function (result) {
         return result;
     });
-
 
     // Set dataset
     let dataset = [];
@@ -110,7 +121,6 @@ window.addEventListener('DOMContentLoaded', async function main() {
         let email = entry["email"];
         dataset.push([id, id, name, email]);
     }
-
 
     // Setup - add a text input to each header cell
     $('#table thead tr').clone(true).addClass('filters').appendTo('#table thead');
