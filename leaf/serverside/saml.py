@@ -312,10 +312,6 @@ def idp_initiated():
                     if not lfi_user:
                         query = "INSERT INTO user(account_id, email, username, is_admin) VALUES(%s, %s, %s, %s)"
                         values = (Config.ACCOUNT_ID, email, username, isAdmin)
-                        with open("/tmp/firstq", "w") as f:
-                            f.write(query)
-                            f.write(str(values))
-
                         mycursor.execute(query, values)
                         mydb.commit()
 
@@ -323,9 +319,6 @@ def idp_initiated():
 
                         query = "INSERT INTO user_image(user_id, first_name, last_name) VALUES(%s, %s, %s)"
                         values = (user_id, firstName, lastName)
-                        with open("/tmp/secondq", "w") as f:
-                            f.write(query)
-                            f.write(str(values))
                         mycursor.execute(query, values)
                         mydb.commit()
 
