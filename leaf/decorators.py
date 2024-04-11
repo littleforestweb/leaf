@@ -1,12 +1,14 @@
+import base64
 import datetime
 from functools import wraps
-from flask import session, render_template
-from leaf.config import Config
-import base64
+
+import jwt
 import mysql.connector
+from flask import session, render_template, jsonify
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-import jwt
+
+from leaf.config import Config
 
 SECRET_KEY = base64.b64encode(Config.SECRET_KEY.encode()).decode()
 
@@ -148,3 +150,13 @@ def db_connection():
         return f"Error - {ex}"
 
     return connection, cursor
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("is_admin") == 0:
+            return jsonify({"error": "Forbidden"}), 403
+        return f(*args, **kwargs)
+
+    return decorated_function

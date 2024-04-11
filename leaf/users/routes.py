@@ -3,7 +3,7 @@ import hashlib
 import werkzeug.utils
 from flask import render_template, Blueprint, jsonify, request, session
 
-from leaf.decorators import login_required
+from leaf.decorators import login_required, admin_required
 from .models import get_users_data, add_user_to_database, update_user_in_database, delete_users_from_database
 
 users = Blueprint('users', __name__)
@@ -14,6 +14,7 @@ users = Blueprint('users', __name__)
 
 @users.route("/users")
 @login_required
+@admin_required
 def view_users():
     """
     Render the users page.
