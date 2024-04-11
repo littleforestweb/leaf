@@ -31,6 +31,7 @@ def view_users():
 
 @users.route('/api/get_users')
 @login_required
+@admin_required
 def api_get_users():
     """
     API endpoint to retrieve user information.
@@ -58,6 +59,7 @@ def api_get_users():
 
 @users.route('/add/user', methods=['POST'])
 @login_required
+@admin_required
 def add_user():
     """
     API endpoint to add a new user.
@@ -95,6 +97,7 @@ def add_user():
 
 @users.route('/update/user', methods=['POST'])
 @login_required
+@admin_required
 def update_user():
     """
     API endpoint to update user information.
@@ -130,6 +133,7 @@ def update_user():
 
 @users.route('/delete/users', methods=['POST'])
 @login_required
+@admin_required
 def delete_users():
     """
     API endpoint to delete users.
