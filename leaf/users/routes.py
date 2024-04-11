@@ -76,6 +76,13 @@ def add_user():
         is_master = werkzeug.utils.escape(request.form.get("is_master", type=str))
         password = hashlib.sha1(werkzeug.utils.escape(request.form['password']).encode()).hexdigest()
 
+        # Check if User email already exists
+        users_list = get_users_data()
+        user_emails = [user["email"] for user in users_list]
+        if email in user_emails:
+            json_response = {"error": "Email already registered"}
+            return jsonify(json_response)
+
         # Add user to the database
         result = add_user_to_database(username, email, is_admin, is_master, password)
 

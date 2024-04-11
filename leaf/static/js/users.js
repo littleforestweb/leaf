@@ -40,6 +40,13 @@ async function doMainButtons() {
     })
 }
 
+function showNotification(title, message, color) {
+    $('#notificationToast rect').attr("fill", color);
+    $('#notificationToast strong').text(title);
+    $('#notificationToast .toast-body').text(message);
+    $('#notificationToast').toast("show");
+}
+
 async function addUser() {
     let user_name = escapeHtml($("#user-name").val());
     let user_email = escapeHtml($("#user-email").val());
@@ -48,18 +55,10 @@ async function addUser() {
     let user_password = $("#user-password").val();
 
     // Check if email already exists
-    let email_values = [];
-    $('#table tbody tr').each(function () {
-        let emailValue = $(this).find('td:eq(3)').text();
-        email_values.push(emailValue);
-    });
-    if (email_values.includes(user_email)) {
-        $('#notificationToast rect').attr("fill", "red");
-        $('#notificationToast strong').text("Error");
-        $('#notificationToast .toast-body').text("Email already exists");
-        $('#notificationToast').toast("show");
-        return;
-    }
+    $('#notificationToast rect').attr("fill", "red");
+    $('#notificationToast strong').text("Error");
+    $('#notificationToast .toast-body').text("Email already exists");
+    $('#notificationToast').toast("show");
 
     // Post
     $.ajax({
@@ -75,25 +74,22 @@ async function addUser() {
             // Hide Create Modal
             $('#addUserModal').modal('hide');
 
-            // Set Success Notification Information
-            $('#notificationToast rect').attr("fill", "green");
-            $('#notificationToast strong').text("Success");
-            $('#notificationToast .toast-body').text("User added successfully");
-            $('#notificationToast').toast("show");
-
-            // Refresh page
-            setTimeout(function () {
-                location.reload(true);
-            }, 500);
+            // Set notification details based on response
+            if (entry.error === "Email already registered") {
+                showNotification("Error", entry.error, "red");
+            } else {
+                showNotification("Success", "User added successfully", "green");
+                // Refresh page after a short delay
+                setTimeout(() => {
+                    location.reload(true);
+                }, 500);
+            }
         }, error: function (XMLHttpRequest, textStatus, errorThrown) {
             // Hide Create Modal
             $('#addUserModal').modal('hide');
 
             // Set Success Notification Information
-            $('#notificationToast rect').attr("fill", "red");
-            $('#notificationToast strong').text("Notification");
-            $('#notificationToast .toast-body').text("There was an error adding user. Please try again.");
-            $('#notificationToast').toast("show");
+            showNotification("Notification", "There was an error adding user. Please try again.", "red");
         }
     });
 }
