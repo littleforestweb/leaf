@@ -36,11 +36,11 @@ async function doMainButtons() {
 }
 
 async function addUser() {
-    let user_name = escapeHtml(document.getElementById("user-name").value);
-    let user_email = escapeHtml(document.getElementById("user-email").value);
-    let user_is_admin = escapeHtml(document.getElementById("user-is-admin").value);
-    let user_is_master = escapeHtml(document.getElementById("user-is-master").value);
-    let user_password = document.getElementById("user-password").value;
+    let user_name = escapeHtml($("#user-name").val());
+    let user_email = escapeHtml($("#user-email").val());
+    let user_is_admin = escapeHtml($("#user-is-admin").val());
+    let user_is_master = escapeHtml($("#user-is-master").val());
+    let user_password = $("#user-password").val();
 
     // Post
     $.ajax({
@@ -57,7 +57,8 @@ async function addUser() {
             $('#addUserModal').modal('hide');
 
             // Set Success Notification Information
-            $('#notificationToast strong').text("Notification");
+            $('#notificationToast rect').attr("fill", "green");
+            $('#notificationToast strong').text("Success");
             $('#notificationToast .toast-body').text("User added successfully");
             $('#notificationToast').toast("show");
 
@@ -70,6 +71,7 @@ async function addUser() {
             $('#addUserModal').modal('hide');
 
             // Set Success Notification Information
+            $('#notificationToast rect').attr("fill", "red");
             $('#notificationToast strong').text("Notification");
             $('#notificationToast .toast-body').text("There was an error adding user. Please try again.");
             $('#notificationToast').toast("show");
