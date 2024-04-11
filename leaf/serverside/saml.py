@@ -89,14 +89,21 @@ def perform_additional_xml_checks(xml_data):
             name = element.get('Name')
             name_format = element.get('NameFormat', '')
 
-            # Extract AttributeValue text
-            attribute_value = element.find('{*}AttributeValue').text
+            # Find all AttributeValue elements under the current Attribute element
+            attribute_values = element.findall('{*}AttributeValue')
+            
+            # Extract text from each AttributeValue and create a list of those values
+            attribute_value_texts = [attr_value.text.strip() for attr_value in attribute_values]
+            
+            # Depending on your use case, you can join these values into a single string or keep them as a list
+            # For example, joining with a comma:
+            attribute_value_joined = ', '.join(attribute_value_texts)
 
             # Add extracted information to the array
             attributes_elements.append({
                 'Name': name,
                 'NameFormat': name_format,
-                'AttributeValue': attribute_value
+                'AttributeValue': attribute_value_joined
             })
 
         # Check each attribute of the element
@@ -283,9 +290,15 @@ def idp_initiated():
             last_name = attributes.get('lastName')
 
             group_values = attributes.get('group')
+            groups = []
             if group_values is not None:
-                groups = [value.text.lower() for value in group_values if value.text]
-                isAdmin = 1 if any("poweruser" in group for group in groups) else 0
+                if isinstance(group_values, str):
+                    # If it's a string, split it into a list by commas
+                    groups = group_values.split(',')
+
+                # Ensure the groups are stripped of leading/trailing whitespace
+                groups = [group.strip() for group in groups]
+                isAdmin = 1 if any(Config.POWER_USER_GROUP == group for group in groups) else 0
 
             if email:
 
@@ -342,7 +355,7 @@ def idp_initiated():
                         session['email'] = lfi_user[3]
                         session['accountId'] = lfi_user[4]
                         session['accountName'] = '' if lfi_user[5] is None else lfi_user[5]
-                        session['is_admin'] = lfi_user[6]
+                        session['is_admin'] = isAdmin
                         session['is_manager'] = lfi_user[7]
                         session['logout_redirect'] = logout_redirect
 

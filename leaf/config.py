@@ -70,7 +70,8 @@ def checkConfig(loaded_json):
         "IDP_SINGLE_SIGN_ON_SERVICE_URL": "",
         "IDP_SINGLE_LOGOUT_SERVICE_URL": "",
         "IDP_X509CERT": "",
-        "SAML_ATTRIBUTES_MAP": {}
+        "SAML_ATTRIBUTES_MAP": {},
+        "POWER_USER_GROUP": "admin"
     }
 
     # Update the loaded JSON with the expected structure
@@ -207,6 +208,7 @@ class Config:
     IDP_SINGLE_LOGOUT_SERVICE_URL = config["IDP_SINGLE_LOGOUT_SERVICE_URL"]
     IDP_X509CERT = config["IDP_X509CERT"]
     SAML_ATTRIBUTES_MAP = config["SAML_ATTRIBUTES_MAP"]
+    POWER_USER_GROUP = config["POWER_USER_GROUP"]
 
     # Auto Generated
     DYNAMIC_PATH = os.path.join("leaf_content", "lists")
