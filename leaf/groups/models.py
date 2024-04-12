@@ -15,7 +15,7 @@ def get_groups():
     mydb, mycursor = decorators.db_connection()
 
     # Execute the SQL query to fetch deployments
-    mycursor.execute(f"SELECT group_id, group_name, created_date, modified_date FROM user_groups where user_groups.account_id = {session["accountId"]}")
+    mycursor.execute("SELECT group_id, group_name, created_date, modified_date FROM user_groups where user_groups.account_id = " + str(session["accountId"]))
 
     # Fetch all the rows
     groups = mycursor.fetchall()
