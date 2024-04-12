@@ -15,22 +15,7 @@ def get_deployments():
     mycursor.execute("SELECT deployment_number, deployment_user, submitted_timestamp, source_files, destination_location, completed_timestamp, status, deployment_log FROM deployments")
     # Fetch all the rows
     deployments = mycursor.fetchall()
-    # Close the database connection
-    mydb.close()
-    return deployments
-
-
-def format_deployments(deployments):
-    """
-    Format deployments for JSON response.
-
-    Args:
-        deployments (list): List of deployments.
-
-    Returns:
-        list: Formatted list of deployments for JSON response.
-    """
-    return [
+    deployments = [
         {
             "deployment_number": deployment[0],
             "deployment_user": deployment[1],
@@ -43,3 +28,6 @@ def format_deployments(deployments):
         }
         for deployment in deployments
     ]
+    # Close the database connection
+    mydb.close()
+    return deployments

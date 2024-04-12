@@ -2,7 +2,7 @@ import werkzeug.utils
 from flask import Blueprint, jsonify, request, session, render_template
 
 from leaf.decorators import login_required, db_connection, admin_required
-from .models import get_deployments, format_deployments
+from .models import get_deployments
 
 deployments = Blueprint('deployments', __name__)
 
@@ -40,10 +40,8 @@ def api_deployments():
     try:
         # Fetch deployments data from the model
         deployments_data = get_deployments()
-        # Format deployments for JSON response
-        deployments_list = format_deployments(deployments_data)
         # Create JSON response
-        json_response = {"deployments": deployments_list}
+        json_response = {"deployments": deployments_data}
         return jsonify(json_response)
     except Exception as e:
         # Handle exceptions and return an error response with status code 500
