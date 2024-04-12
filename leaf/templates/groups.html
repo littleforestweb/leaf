@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Groups{% endblock %}
+
+{% block content %}
+    <script>
+        $("#nav-link-groups").addClass("active");
+    </script>
+
+    <!-- Table -->
+    <div id="TableDiv" class="card mb-4">
+        <div class="card-body">
+            <div class="header-1">
+                <h3 style="float: left">Groups</h3>
+                <div style="float:right; margin-left: 10px;" class="header-btns"></div>
+            </div>
+            <table class="table" id="table">
+                <thead>
+                <tr>
+                    <th></th>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Created Date</th>
+                    <th>Modified Date</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot>
+                <tr>
+                    <th></th>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Created Date</th>
+                    <th>Modified Date</th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <!-- End Table -->
+
+{% endblock %}
+
+{% block script %}
+    <script src="{{ url_for('static', filename='js/groups.js') }}"></script>
+{% endblock %}

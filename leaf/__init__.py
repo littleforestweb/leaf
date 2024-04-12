@@ -1,4 +1,5 @@
 from flask import Flask
+
 from leaf.config import Config
 from leaf.decorators import limiter
 
@@ -12,6 +13,7 @@ def create_app(config_class=Config):
     from leaf.sites.routes import sites
     from leaf.pages.routes import pages
     from leaf.users.routes import users
+    from leaf.groups.routes import groups
     from leaf.lists.routes import lists
     from leaf.menus.routes import menus
     from leaf.deployments.routes import deployments
@@ -24,6 +26,7 @@ def create_app(config_class=Config):
     app.register_blueprint(sites)
     app.register_blueprint(pages)
     app.register_blueprint(users)
+    app.register_blueprint(groups)
     app.register_blueprint(lists)
     app.register_blueprint(menus)
     app.register_blueprint(deployments)
