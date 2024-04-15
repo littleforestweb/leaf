@@ -258,7 +258,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 }
             }
         },
-        language: {"emptyTable": "No data available in table"},
+        language: {"emptyTable": "No data available in table or invalid permissions"},
         bProcessing: true,
         bServerSide: true,
         sPaginationType: "full_numbers",
