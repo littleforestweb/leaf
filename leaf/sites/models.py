@@ -150,21 +150,21 @@ def get_site_data(site_id):
         mydb, mycursor = decorators.db_connection()
 
         # Get User Access folders
-        folder_paths = get_user_access_folder(mycursor)
+        folder_paths = set(get_user_access_folder(mycursor))
 
         # Get pages from the site
         query = "SELECT id, id, title, HTMLPath, modified_date, id FROM site_meta  WHERE status = 200 AND site_id = %s"
         mycursor.execute(query, [site_id])
         site_pages = mycursor.fetchall()
 
-        # Only add pages that the user has access
-        access_pages = []
-        for page in site_pages:
-            for path in folder_paths:
-                if page[3].startswith(path.lstrip("/")):
-                    access_pages.append({"id": page[0], "Screenshot": page[1], "Title": page[2], "URL": os.path.join(Config.PREVIEW_SERVER, page[3]), "Modified Date": page[4], "Action": page[5]})
+        # Filter pages based on user access
+        if session["is_admin"] == 0:
+            access_pages = [{"id": page[0], "Screenshot": page[1], "Title": page[2], "URL": os.path.join(Config.PREVIEW_SERVER, page[3]), "Modified Date": page[4], "Action": page[5]} for page in site_pages if any(page[3].startswith(path.lstrip("/")) for path in folder_paths)]
+        else:
+            access_pages = [{"id": page[0], "Screenshot": page[1], "Title": page[2], "URL": os.path.join(Config.PREVIEW_SERVER, page[3]), "Modified Date": page[4], "Action": page[5]} for page in site_pages]
 
         return access_pages
+
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
         raise RuntimeError(f"An error occurred while fetching sites: {str(e)}")
