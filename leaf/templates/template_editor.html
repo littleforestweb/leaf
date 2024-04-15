@@ -17,9 +17,26 @@
 
     <link href="/static/css/editor.css" rel="stylesheet">
 
-    <!-- CODE IFRAME -->
-    <div id="mainCodeDiv" class="iframe-container">
-        <textarea id="htmlCode"></textarea>
+    <div class="card-body">
+        <div class="header-1">
+            <h3 class="pull-left">Template <span id="template_name"></span></h3>
+            <div class="pull-right header-btns">
+                <input type="button" class="btn btn-success" name="s-edit-template" id="s-edit-template" value="Save" onclick="save_template()" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group col-md-12">
+                <label for="s-template_location" class="col-form-label">URL Pattern: <span class="tip">Use fields from the list that you want to link this template to generate urls dynamically. eg. <strong>{title}</strong>, <strong>{year}</strong>, <strong>{category}</strong>.</span></span></label>
+                <input type="text" class="form-control" name="s-template_location" id="s-template_location" value="" onkeyup="sanitizeInput(event)">
+            </div>
+
+            <div class="form-group col-md-12">
+                <div id="mainCodeDiv" class="iframe-container">
+                    <textarea id="htmlCode"></textarea>
+                </div>
+            </div>
+        </div>
     </div>
 
 {% endblock %}

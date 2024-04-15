@@ -120,9 +120,10 @@ def template_save(request, accountId):
 
         if isinstance(int(accountId), int):
 
-            # Get data and page_id from the form
+            # Get data, page_id and template_url_pattern from the form
             data = request.form.get("data", type=str)
             template_id = werkzeug.utils.escape(request.form.get("template_id", type=str))
+            template_url_pattern = werkzeug.utils.escape(request.form.get("template_url_pattern", type=str))
 
             # Remove base href from HTML
             data = remove_base_href_from_template(data)
@@ -132,8 +133,8 @@ def template_save(request, accountId):
             template_info = mycursor.fetchall()
             template_file = template_info[0][2]
 
-            update_templates_query = f"UPDATE {tableName} SET modified_by = %s, modified = CURRENT_TIMESTAMP WHERE id = %s"
-            mycursor.execute(update_templates_query, (session["id"], str(template_id)))
+            update_templates_query = f"UPDATE {tableName} SET template_location = %s, modified_by = %s, modified = CURRENT_TIMESTAMP WHERE id = %s"
+            mycursor.execute(update_templates_query, (template_url_pattern, session["id"], str(template_id)))
             mydb.commit()
 
             file_to_save = os.path.join(Config.TEMPLATES_FOLDER, str(accountId), template_file)

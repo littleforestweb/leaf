@@ -6,13 +6,13 @@
 async function save_template() {
   // Get HTML Code
   let sourceCode = CKEDITOR.instances.htmlCode.getData();
-
   return $.ajax({
     type: "POST",
     url: "/api/templates/save",
     data: {
     	"data": sourceCode,
-    	"template_id": template_id
+    	"template_id": template_id,
+      "template_url_pattern": document.getElementById("s-template_location").value
     },
     success: function (entry) {
       $('#savedNotification').toast('show');
@@ -88,7 +88,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
   // Load page html code
   let data = await $.get("/api/templates/get_template_id/" + accountId + "/" + template_id, function (htmlContent) {
-      return htmlContent;
+    return htmlContent;
   });
 
   // Find if page has carousel
@@ -215,6 +215,17 @@ window.addEventListener('DOMContentLoaded', async function main() {
     embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}'
   });
 
+  await get_template_by_id(template_id);
+
   // Remove loadingBg
   $(".loadingBg").removeClass("show");
 });
+
+async function get_template_by_id(template_id) {
+  let jsonAllTemplate = await $.get("/api/get_template_by_id/" + accountId + "/" + template_id, function (result) {
+    return result;
+  });
+  jsonAllTemplate = jsonAllTemplate.columns;
+
+  document.getElementById("s-template_location").value = jsonAllTemplate[0][3];
+}

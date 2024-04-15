@@ -562,6 +562,8 @@ def set_list_template(request, accountId: str, reference: str):
     template = ''.join(c if c.isalnum() else '_' for c in template)
     template = werkzeug.utils.escape(template)
 
+    template_location = werkzeug.utils.escape(str(thisRequest.get("s-template_location")))
+
     if not template.endswith(".html"):
         template += ".html"
 
@@ -588,8 +590,8 @@ def set_list_template(request, accountId: str, reference: str):
                 template_file = template_info[0][2]
                 template = template_file
 
-                update_config_query = f"UPDATE {tableName} SET in_lists = '', modified = CURRENT_TIMESTAMP WHERE in_lists = %s"
-                mycursor.execute(update_config_query, (reference,))
+                update_config_query = f"UPDATE {tableName} SET in_lists = '', template_location = %s, modified = CURRENT_TIMESTAMP WHERE in_lists = %s"
+                mycursor.execute(update_config_query, (template_location, reference))
                 mydb.commit()
 
             if templates_format and templates_format == "input":
@@ -597,15 +599,14 @@ def set_list_template(request, accountId: str, reference: str):
                 mycursor.execute(delete_config_query, (template,))
                 mydb.commit()
 
-            template_location = werkzeug.utils.escape(str(thisRequest.get("s-template_location")))
             modified_by = int(session["id"])
 
             col_to_return = [template, template_location, modified_by]
 
             if templates_format and templates_format == "select":
                 # Update template
-                update_config_query = f"UPDATE {tableName} SET in_lists = %s, modified_by = %s, modified = CURRENT_TIMESTAMP WHERE template = %s"
-                mycursor.execute(update_config_query, (reference, modified_by, template))
+                update_config_query = f"UPDATE {tableName} SET in_lists = %s, template_location = %s, modified_by = %s, modified = CURRENT_TIMESTAMP WHERE template = %s"
+                mycursor.execute(update_config_query, (reference, template_location, modified_by, template))
                 mydb.commit()
             else:
                 # Insert new template
