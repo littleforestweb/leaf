@@ -3,23 +3,20 @@ import re
 
 import werkzeug.utils
 from defusedxml.lxml import fromstring
-from flask import Blueprint, render_template, session, request, url_for, redirect, Response
-from flask import current_app as saml_app
+from flask import Blueprint, render_template, session, request, redirect, Response
 from lxml import etree
-from signxml import XMLVerifier
-
-from saml2 import entity
-from saml2 import config
-from saml2.client import Saml2Client
-from saml2 import metadata
 from saml2 import BINDING_HTTP_POST
 from saml2 import BINDING_HTTP_REDIRECT
-import saml2.xmldsig as ds
+from saml2 import config
+from saml2 import metadata
+from saml2.client import Saml2Client
+from signxml import XMLVerifier
 
 from leaf import Config
 from leaf.decorators import db_connection, generate_jwt
 
 saml_route = Blueprint("saml_route", __name__)
+
 
 def perform_additional_xml_checks(xml_data):
     # Check for unexpected tags or attributes
@@ -99,10 +96,10 @@ def perform_additional_xml_checks(xml_data):
 
             # Find all AttributeValue elements under the current Attribute element
             attribute_values = element.findall('{*}AttributeValue')
-            
+
             # Extract text from each AttributeValue and create a list of those values
             attribute_value_texts = [attr_value.text.strip() for attr_value in attribute_values]
-            
+
             # Depending on your use case, you can join these values into a single string or keep them as a list
             # For example, joining with a comma:
             attribute_value_joined = ', '.join(attribute_value_texts)
@@ -401,6 +398,7 @@ def idp_initiated():
             print("Issuer element not found.")
             return "Access Denied. Issuer not found!"
 
+
 def pysaml2_config():
     cfg = {
         "entityid": Config.SP_ENTITY_ID,
@@ -436,9 +434,10 @@ def pysaml2_config():
     sp_config.load(cfg)
     return sp_config
 
+
 @saml_route.route('/saml/login')
 def sp_saml_login():
-    if Config.IDP_METADATA is not "":
+    if Config.IDP_METADATA != "":
         saml_client = Saml2Client(config=pysaml2_config())
         # Prepare the SAML Authentication Request
         _, info = saml_client.prepare_for_authenticate()
@@ -448,17 +447,18 @@ def sp_saml_login():
         print("IDP Metadata not defined!")
         return "IDP Metadata not defined!"
 
+
 @saml_route.route('/saml/metadata')
 def saml_metadata():
-
-    if Config.SP_ENTITY_ID is not "":
+    if Config.SP_ENTITY_ID != "":
         cfg = pysaml2_config()
         # Use the metadata service to get the metadata as a string
-        metadata_string = metadata.create_metadata_string(None, cfg, sign=True, valid=365*24)  # Generate metadata
+        metadata_string = metadata.create_metadata_string(None, cfg, sign=True, valid=365 * 24)  # Generate metadata
         return Response(metadata_string, mimetype='text/xml')
     else:
         print("SP Entity ID not defined!")
         return "SP Entity ID not defined!"
+
 
 namespaces = {
     'md': 'urn:oasis:names:tc:SAML:2.0:metadata',
