@@ -63,6 +63,7 @@ def checkConfig(loaded_json):
         "SP_ENTITY_ID": "",
         "SP_ASSERTION_CONSUMER_SERVICE_URL": "",
         "SP_SINGLE_LOGOUT_SERVICE_URL": "",
+        "SP_METADATA": "",
         "SP_X509CERT": "",
         "SP_X509KEY": "",
         "IDP_ENTITY_ID": "",
@@ -200,6 +201,7 @@ class Config:
     SP_ENTITY_ID = config["SP_ENTITY_ID"]
     SP_ASSERTION_CONSUMER_SERVICE_URL = config["SP_ASSERTION_CONSUMER_SERVICE_URL"]
     SP_SINGLE_LOGOUT_SERVICE_URL = config["SP_SINGLE_LOGOUT_SERVICE_URL"]
+    SP_METADATA = config["SP_METADATA"]
     SP_X509CERT = config["SP_X509CERT"]
     SP_X509KEY = config["SP_X509KEY"]
     IDP_ENTITY_ID = config["IDP_ENTITY_ID"]

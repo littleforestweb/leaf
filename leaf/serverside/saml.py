@@ -3,15 +3,23 @@ import re
 
 import werkzeug.utils
 from defusedxml.lxml import fromstring
-from flask import Blueprint, render_template, session, request
+from flask import Blueprint, render_template, session, request, url_for, redirect, Response
+from flask import current_app as saml_app
 from lxml import etree
 from signxml import XMLVerifier
+
+from saml2 import entity
+from saml2 import config
+from saml2.client import Saml2Client
+from saml2 import metadata
+from saml2 import BINDING_HTTP_POST
+from saml2 import BINDING_HTTP_REDIRECT
+import saml2.xmldsig as ds
 
 from leaf import Config
 from leaf.decorators import db_connection, generate_jwt
 
 saml_route = Blueprint("saml_route", __name__)
-
 
 def perform_additional_xml_checks(xml_data):
     # Check for unexpected tags or attributes
@@ -393,6 +401,56 @@ def idp_initiated():
             print("Issuer element not found.")
             return "Access Denied. Issuer not found!"
 
+def pysaml2_config():
+    cfg = {
+        "entityid": Config.SP_ENTITY_ID,
+        "service": {
+            "sp": {
+                "endpoints": {
+                    "assertion_consumer_service": [
+                        (Config.SP_ASSERTION_CONSUMER_SERVICE_URL, BINDING_HTTP_POST),
+                    ],
+                    "single_logout_service": [
+                        (Config.SP_SINGLE_LOGOUT_SERVICE_URL, BINDING_HTTP_REDIRECT),
+                    ],
+                },
+                "allow_unsolicited": True,
+                "authn_requests_signed": False,
+                "logout_requests_signed": True,
+                "want_assertions_signed": True,
+                "want_response_signed": True,
+            }
+        },
+        "metadata": {
+            "remote": [{
+                "url": Config.IDP_METADATA,
+                "cert": None,  # Optional: Path to a certificate file to verify the HTTPS connection
+            }]
+        },
+        "xmlsec_binary": "/opt/homebrew/bin/xmlsec1",
+        "key_file": Config.SP_X509KEY,
+        "cert_file": Config.SP_X509CERT
+    }
+
+    sp_config = config.SPConfig()
+    sp_config.load(cfg)
+    return sp_config
+
+saml_client = Saml2Client(config=pysaml2_config())
+
+@saml_route.route('/saml/login')
+def sp_saml_login():
+    # Prepare the SAML Authentication Request
+    _, info = saml_client.prepare_for_authenticate()
+    redirect_url = dict(info["headers"])["Location"]
+    return redirect(redirect_url)
+
+@saml_route.route('/saml/metadata')
+def saml_metadata():
+    cfg = pysaml2_config()
+    # Use the metadata service to get the metadata as a string
+    metadata_string = metadata.create_metadata_string(None, cfg, sign=True, valid=365*24)  # Generate metadata
+    return Response(metadata_string, mimetype='text/xml')
 
 namespaces = {
     'md': 'urn:oasis:names:tc:SAML:2.0:metadata',
