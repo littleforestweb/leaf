@@ -436,21 +436,29 @@ def pysaml2_config():
     sp_config.load(cfg)
     return sp_config
 
-saml_client = Saml2Client(config=pysaml2_config())
-
 @saml_route.route('/saml/login')
 def sp_saml_login():
-    # Prepare the SAML Authentication Request
-    _, info = saml_client.prepare_for_authenticate()
-    redirect_url = dict(info["headers"])["Location"]
-    return redirect(redirect_url)
+    if Config.IDP_METADATA is not "":
+        saml_client = Saml2Client(config=pysaml2_config())
+        # Prepare the SAML Authentication Request
+        _, info = saml_client.prepare_for_authenticate()
+        redirect_url = dict(info["headers"])["Location"]
+        return redirect(redirect_url)
+    else:
+        print("IDP Metadata not defined!")
+        return "IDP Metadata not defined!"
 
 @saml_route.route('/saml/metadata')
 def saml_metadata():
-    cfg = pysaml2_config()
-    # Use the metadata service to get the metadata as a string
-    metadata_string = metadata.create_metadata_string(None, cfg, sign=True, valid=365*24)  # Generate metadata
-    return Response(metadata_string, mimetype='text/xml')
+
+    if Config.SP_ENTITY_ID is not "":
+        cfg = pysaml2_config()
+        # Use the metadata service to get the metadata as a string
+        metadata_string = metadata.create_metadata_string(None, cfg, sign=True, valid=365*24)  # Generate metadata
+        return Response(metadata_string, mimetype='text/xml')
+    else:
+        print("SP Entity ID not defined!")
+        return "SP Entity ID not defined!"
 
 namespaces = {
     'md': 'urn:oasis:names:tc:SAML:2.0:metadata',
