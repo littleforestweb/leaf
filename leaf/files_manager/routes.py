@@ -1,18 +1,15 @@
-import hashlib
+import mimetypes
 import os
 import re
-from urllib.parse import urlparse
-import mimetypes
 
-import paramiko
 import werkzeug.utils
-from flask import render_template, Blueprint, jsonify, request, session, send_from_directory, redirect
+from flask import render_template, Blueprint, jsonify, request, session
 
 from leaf.config import Config
+from leaf.decorators import login_required
+from leaf.files_manager import models
 from leaf.serverside import table_schemas
 from leaf.serverside.serverside_table import ServerSideTable
-from leaf.decorators import login_required, limiter, db_connection, generate_jwt
-from leaf.files_manager import models
 from leaf.sites import models as site_models
 
 files_manager = Blueprint('files_manager', __name__)
@@ -81,7 +78,7 @@ def files_api_upload():
     # SCP to deployment servers
     preview_url = Config.PREVIEW_SERVER + "/" if not Config.PREVIEW_SERVER.endswith("/") else Config.PREVIEW_SERVER
     preview_url = preview_url + os.path.join(folder, filename)
-    
+
     mime_type = mimetypes.guess_type(preview_url)[0]
 
     models.insert_file_into_db(account_id, site_id, filename, folder, mime_type, 200)

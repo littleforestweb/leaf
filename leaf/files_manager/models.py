@@ -1,9 +1,11 @@
 import os
-from flask import Blueprint, session
+
 import werkzeug.utils
+from flask import session
 
 from leaf import decorators
 from leaf.config import Config
+
 
 def list_all_files(site_id):
     """
@@ -45,6 +47,7 @@ def list_all_files(site_id):
         # Log the exception or handle it as appropriate for your application
         raise RuntimeError(f"An error occurred while fetching files: {str(e)}")
 
+
 def insert_file_into_db(accountId, site_id, filename, folder, mime_type, status):
     """
     Insert file for a specific site in the database.
@@ -80,6 +83,7 @@ def insert_file_into_db(accountId, site_id, filename, folder, mime_type, status)
     finally:
         mydb.close()
         return mycursor.lastrowid
+
 
 def remove_files(request):
     """
