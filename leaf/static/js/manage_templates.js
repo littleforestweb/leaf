@@ -340,7 +340,7 @@ async function getFormData(formid) {
 
         } else if (element.classList.contains('text-editor')) {
             formdata[element.name] = CKEDITOR.instances[element.id].getData().replace(/,/g, '&comma;').replace(/\\/g, "__BACKSLASH__TO_REPLACE_ON_WEB__").replace(/\'/g, "’").replace(/\xA0/g, '');
-            formdata[element.name] = formdata[element.name].replace(/<[^>]+style="[^"]*"[^>]*>/g, function(match) {
+            formdata[element.name] = formdata[element.name].replace(/<[^>]+style="[^"]*"[^>]*>/g, function (match) {
                 return match.replace(/style="[^"]*"/g, '');
             });
         } else if (element.type === 'checkbox') {
@@ -434,7 +434,7 @@ async function getAvailableFields(accountId, reference = false) {
     } else {
         // Getting logic ready
     }
-    
+
     jsonAvailableFields = jsonAvailableFields.columns;
 
     return jsonAvailableFields;

@@ -186,7 +186,7 @@ async function getFormData(formid) {
     let formdata = {};
 
     var mandatoryElementsNotCompleted = [];
-    
+
     for (const element of allFormElements) {
 
         if (element.name) {
@@ -258,7 +258,7 @@ async function getFormData(formid) {
         } else if (element.options) {
             var selected = [...element.selectedOptions].map(option => option.value);
             if (selected.length > 1) {
-                formdata[theElementName] =  escapeHtml(selected);
+                formdata[theElementName] = escapeHtml(selected);
             } else {
                 formdata[theElementName] = escapeHtml(element.value);
             }
@@ -290,7 +290,7 @@ async function getFormData(formid) {
 
 // Function to pad numbers with leading zeros if necessary
 function padNumber(number) {
-  return number.toString().padStart(2, '0');
+    return number.toString().padStart(2, '0');
 }
 
 function uploadSingleFile(form_data) {

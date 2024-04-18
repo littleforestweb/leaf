@@ -39,7 +39,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
         let type = entry["type"];
         let tags = entry["tags"];
         let statusMessage = entry["statusMessage"];
-        
+
         dataset.push([id, id, title, startUser, assignEditor, comments, submittedDate, dueDate, [id, attachments], tags, type, priority, status, [id, status, statusMessage]]);
     }
 
@@ -72,7 +72,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             })
 
         },
-        fnRowCallback: function(nRow, mData, iDisplayIndex) {
+        fnRowCallback: function (nRow, mData, iDisplayIndex) {
             if (mData[13] && mData[13][2]) {
                 var thisStatusAction = mData[13][2];
                 var thisStatusActionColor = "isWhite";

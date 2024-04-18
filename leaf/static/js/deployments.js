@@ -71,7 +71,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 });
             });
 
-            $('input[type="checkbox"]').on('click', function() {
+            $('input[type="checkbox"]').on('click', function () {
                 $(".deleteButton").prop('disabled', true);
                 if ($('input[type="checkbox"]:checked').length === 1) {
                     $(".deleteButton").prop('disabled', false);

@@ -187,7 +187,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                             }
                                         }
 
-                                        var arrayToCompare = new Array();
+                                        var arrayToCompare = [];
                                         var allFieldsResponseDistinct = [...new Map(allFieldsResponse.map((item) => [(item[1] ? item[1].trim().toLowerCase() : item[0].trim().toLowerCase()), item])).values()];
 
                                         if (allFieldsResponseDistinct.length > 0 && allFieldsResponseDistinct[0][1]) {
