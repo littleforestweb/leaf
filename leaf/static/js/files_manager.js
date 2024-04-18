@@ -99,7 +99,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                     return "<span>" + source["Created"] + "</span>";
                 }
             }
-            
+
         ],
         fnDrawCallback: function (oSettings) {
             $('input[type="checkbox"]').on('click', function () {
@@ -149,7 +149,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
     var upload_files_form = document.getElementById("upload_files_form");
 
-    upload_files_form.addEventListener('submit', function(event) {
+    upload_files_form.addEventListener('submit', function (event) {
         event.preventDefault();
 
         const formData = new FormData();
@@ -179,30 +179,30 @@ function upload_file(formData) {
         method: 'POST',
         body: formData,
     })
-    .then(data => {
-        document.getElementById('modal-footer-upload-btn').disabled = true;
-        document.getElementById('modal-footer-upload-close').disabled = true;
-        document.getElementById('file_upload_result').classList.add("form-control");
-        document.getElementById('file_upload_result').classList.remove("is-invalid");
-        document.getElementById('file_upload_result').classList.add("is-valid");
-        document.getElementById('file_upload_result').textContent = 'Upload successful!';
-        console.log(data);
-        setTimeout(function() {
-            window.location.reload();
-        }, 500);
-    })
-    .catch(error => {
-        document.getElementById('file_upload_result').classList.add("form-control");
-        document.getElementById('file_upload_result').classList.remove("is-valid");
-        document.getElementById('file_upload_result').classList.add("is-invalid");
-        document.getElementById('file_upload_result').textContent = 'Upload failed.';
-        console.error('Error:', error);
-    });
+        .then(data => {
+            document.getElementById('modal-footer-upload-btn').disabled = true;
+            document.getElementById('modal-footer-upload-close').disabled = true;
+            document.getElementById('file_upload_result').classList.add("form-control");
+            document.getElementById('file_upload_result').classList.remove("is-invalid");
+            document.getElementById('file_upload_result').classList.add("is-valid");
+            document.getElementById('file_upload_result').textContent = 'Upload successful!';
+            console.log(data);
+            setTimeout(function () {
+                window.location.reload();
+            }, 500);
+        })
+        .catch(error => {
+            document.getElementById('file_upload_result').classList.add("form-control");
+            document.getElementById('file_upload_result').classList.remove("is-valid");
+            document.getElementById('file_upload_result').classList.add("is-invalid");
+            document.getElementById('file_upload_result').textContent = 'Upload failed.';
+            console.error('Error:', error);
+        });
 }
 
 function removeFiles(accountId, button) {
     accountId = escapeHtml(accountId);
-    var entriesToDelete = $('#files_table').find('input[type="checkbox"]:checked').map(function() {
+    var entriesToDelete = $('#files_table').find('input[type="checkbox"]:checked').map(function () {
         return $(this).val();
     }).get();
 
@@ -220,13 +220,13 @@ function removeFiles(accountId, button) {
         cache: false,
         processData: false,
         success: function (status) {
-            setTimeout(function() {
+            setTimeout(function () {
                 window.location.reload();
             }, 500);
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
             console.log("ERROR");
-            setTimeout(function() {
+            setTimeout(function () {
                 window.location.reload();
             }, 500);
         }
@@ -241,7 +241,7 @@ function createPublishTicket(accountId) {
     dueDate.setDate(dueDate.getDate() + 5);
     var formattedDate = dueDate.toISOString().slice(0, 10);
 
-    var entries = $('#files_table').find('input[type="checkbox"]:checked').map(function() {
+    var entries = $('#files_table').find('input[type="checkbox"]:checked').map(function () {
         return $(this).val();
     }).get();
 
