@@ -16,6 +16,7 @@ from leaf.sites.routes import sites
 from leaf.template_editor.routes import template_editor
 from leaf.users.routes import users
 from leaf.workflow.routes import workflow
+from leaf.files_manager.routes import files_manager
 
 
 def check_db():
@@ -95,6 +96,7 @@ def create_app(config_class=Config):
     app.register_blueprint(editor)
     app.register_blueprint(template_editor)
     app.register_blueprint(saml_route)
+    app.register_blueprint(files_manager)
 
     # Check Database Integrity
     check_db()

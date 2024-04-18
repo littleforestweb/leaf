@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}Deployments{% endblock %}
+
+{% block content %}
+    <script>
+        $("#nav-link-deployments").addClass("active");
+    </script>
+
+    <!-- UPLOAD FILES MODAL -->
+    <div class="modal fade" id="uploadFilesModal" tabindex="-1" aria-labelledby="uploadFilesModalLabel" aria-hidden="true">
+        <div class="modal-dialog small-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadFilesModalLabel">Upload Files <span id="file_name_to_publish"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="" action="" enctype="multipart/form-data" id="upload_files_form">
+                    <div class="modal-body">
+                        <div class="container">
+                            <div class="row">
+                                <div class="mb-3">
+                                  <label for="file" class="form-label">Select file:</label>
+                                  <input class="form-control form-control-lg" name="file" id="file" type="file">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="folder" class="form-label">Select Folder:</label>
+                                    <input class="form-control form-control-lg" type="text" name="folder" id="folder" placeholder="Type the folder to upload your file" aria-label=".form-control-lg">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="folder" class="form-label">Full Path:</label>
+                                    <input id="full_path" class="form-control" type="text" value="/" aria-label="Full path will show up here." readonly>
+                                </div>
+                            </div>
+                            <div id="file_upload_result"></div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer" id="modal-footer-upload">
+                        <button type="button" id="modal-footer-upload-close" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" id="modal-footer-upload-btn" class="btn btn-success">Upload</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- PUBLISH MODAL -->
+    <div class="modal fade" id="createPublishTicketModal" tabindex="-1" aria-labelledby="createPublishTicketModalLabel" aria-hidden="true">
+        <div class="modal-dialog small-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createPublishTicketModalLabel">Publish <span id="file_name_to_publish"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col text-left">
+                                This will create a workflow request to publish the selected files. Do you want to proceed?
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" id="modal-footer-publish">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" onclick="createPublishTicket('{{ accountId }}', this)">Publish</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE MODAL -->
+    <div class="modal fade" id="removeFilesModal" tabindex="-1" aria-labelledby="removeFileLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="removeFileLabel">Delete {{ referenceNoUnderscores }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h4>Are you sure you want to delete this {{ reference }} file(s)?</h4>
+                </div>
+                <div class="modal-footer" id="modal-footer-delete">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger" onclick="removeFiles('{{ accountId }}', this)">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="header-1">
+                <h3 style="float: left">Files Manager</h3>
+                <div style="float:right; margin-left: 10px;" class="header-btns">
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#uploadFilesModal">Upload Files</button>
+                    <button type="button" id="remove_file_btn" class="btn btn-blue deleteButton" data-bs-toggle="modal" data-bs-target="#removeFilesModal" disabled>Remove File</button>
+                    <button type="button" id="publish_file_btn" class="btn btn-red editButton" data-bs-toggle="modal" data-bs-target="#createPublishTicketModal" disabled>Publish</button>
+                </div>
+            </div>
+
+            <table class="table" id="files_table">
+                <thead>
+                <tr>
+                    <th></th>
+                    <th>File Path</th>
+                    <th>File Name</th>
+                    <th>Mime Type</th>
+                    <th>Created By</th>
+                    <th>Created</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot>
+                <tr>
+                    <th></th>
+                    <th>File Path</th>
+                    <th>File Name</th>
+                    <th>Mime Type</th>
+                    <th>Created By</th>
+                    <th>Created</th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block script %}
+    <script type="text/javascript">var accountId = {{ accountId }};</script>
+    <script src="{{ url_for('static', filename='js/files_manager.js') }}"></script>
+{% endblock %}

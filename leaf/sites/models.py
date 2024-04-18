@@ -153,7 +153,7 @@ def get_site_data(site_id):
         folder_paths = set(get_user_access_folder(mycursor))
 
         # Get pages from the site
-        query = "SELECT id, id, title, HTMLPath, modified_date, id FROM site_meta  WHERE status = 200 AND site_id = %s"
+        query = "SELECT id, id, title, HTMLPath, modified_date, id FROM site_meta WHERE status = 200 AND site_id = %s"
         mycursor.execute(query, [site_id])
         site_pages = mycursor.fetchall()
 
