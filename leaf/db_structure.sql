@@ -130,6 +130,9 @@ CREATE TABLE IF NOT EXISTS `site_assets` (
   `filename` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `status` int NOT NULL,
   `mimeType` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `modified_by` varchar(45) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `created` datetime DEFAULT CURRENT_TIMESTAMP,
+  `modified` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `site_assets_FK` (`site_id`),
   CONSTRAINT `site_assets_FK` FOREIGN KEY (`site_id`) REFERENCES `sites` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
