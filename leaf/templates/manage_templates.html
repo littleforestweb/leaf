@@ -19,7 +19,7 @@
                     <form method="post" id="setTemplate-no_list">
                         <div class="mb-3">
                             <label for="template-name" class="col-form-label">Template:</label>
-                            <input type="text" class="form-control" name="s-templates" id="s-templates" />
+                            <input type="text" class="form-control" name="s-templates" id="s-templates"/>
                         </div>
                         <div class="mb-3">
                             <label for="s-template_location" class="col-form-label">URL Pattern: <span class="tip">You can use fields from the table to generate urls dynamically. eg. <strong>{title}</strong>, <strong>{year}</strong>, <strong>{category}</strong>. </span></span></label> <!-- Find the list of available fields <span class="underline link" onclick="getAvailableFields('{{accountId}}', '{{reference}}')">here<span class="template_fields_container hide"></span> -->
@@ -53,7 +53,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
-                    <button type="button" class="btn btn-red" id="delete_template_btn" onclick="deleteTemplate('{{accountId}}', 'delete')">Yes</button>
+                    <button type="button" class="btn btn-red" id="delete_template_btn" onclick="deleteTemplate('{{ accountId }}', 'delete')">Yes</button>
                 </div>
             </div>
         </div>
@@ -139,7 +139,7 @@
                     {% if is_admin %}
                         <!-- Add Template Btn -->
                         <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addTemplateModal">Add Template</button>
-                        <button type="button" class="btn btn-blue editButton" onclick="goToEditTemplate({{accountId}});" disabled>Edit Template</button>
+                        <button type="button" class="btn btn-blue editButton" onclick="goToEditTemplate({{ accountId }});" disabled>Edit Template</button>
                         {% if is_admin == 1 %}
                             <button type="button" class="btn btn-red deleteButton" data-bs-toggle="modal" data-bs-target="#deleteTemplateModal" disabled>Delete Templates</button>
                         {% endif %}
@@ -180,6 +180,8 @@
 
 
 {% block script %}
-    <script type="text/javascript">var accountId = {{ accountId }}; var userId = {{ userId }}; var isAdmin = {{ is_admin }}</script>
+    <script type="text/javascript">var accountId = {{ accountId }};
+    var userId = {{ userId }};
+    var isAdmin = {{ is_admin }}</script>
     <script src="{{ url_for('static', filename='js/manage_templates.js') }}"></script>
 {% endblock %}
