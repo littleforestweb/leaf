@@ -434,6 +434,7 @@ def action_workflow():
 
     elif not listName and thisType == "6":
         # Publish files in live servers
+        pass
 
     elif listName:
         accountId = session['accountId']
