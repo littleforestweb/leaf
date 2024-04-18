@@ -432,6 +432,9 @@ def action_workflow():
         # do something with TASK
         pass
 
+    elif not listName and thisType == "6":
+        # Publish files in live servers
+
     elif listName:
         accountId = session['accountId']
         listName = ''.join(e for e in listName if e.isalnum())

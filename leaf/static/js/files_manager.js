@@ -241,13 +241,16 @@ function createPublishTicket(accountId) {
     dueDate.setDate(dueDate.getDate() + 5);
     var formattedDate = dueDate.toISOString().slice(0, 10);
 
-    var entryId = $('.table_' + reference).find('input[type="checkbox"]:checked').val();
+    var entries = $('#files_table').find('input[type="checkbox"]:checked').map(function() {
+        return $(this).val();
+    }).get();
 
     form_data = {
         accountId: accountId,
-        title: 'Submit file: ' + entryId,
+        title: 'New file(s) submition',
         dueDate: formattedDate,
-        entryId: entryId,
+        priority: 1,
+        entryId: entries,
         type: 6
     }
 

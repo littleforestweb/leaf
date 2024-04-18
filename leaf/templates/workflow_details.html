@@ -70,6 +70,20 @@
                             </div>
                         </div>
                     {% endif %}
+                    {% if data.files_details %}
+                        <div class="mb-2 col-sm-12">
+                            <div class="card">
+                                <h5 class="card-header">Files</h5>
+                                <div class="card-body">
+                                    {% for singleFile in data.files_details %}
+                                        <div class="row">
+                                            <div class="col-12"><span><a target="_blank" href="{{ data.preview_server }}/{{ singleFile[0] }}/{{ singleFile[1] }}">{{ data.preview_server }}/{{ singleFile[0] }}/{{ singleFile[1] }}</a></span></div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
                     <div class="mb-2 col-sm-12">
                         <div class="card" id="comments-sections">
                             <h5 class="card-header">Comments
@@ -241,6 +255,8 @@
                                 <div class="card-body">Request</div>
                             {% elif data.type == 5 %}
                                 <div class="card-body">Deletion</div>
+                            {% elif data.type == 6 %}
+                                <div class="card-body">Files Deployment</div>
                             {% else %}
                                 <div class="card-body">List Deployment</div>
                             {% endif %}

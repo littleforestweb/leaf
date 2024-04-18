@@ -136,6 +136,8 @@ def process_specific_workflow_type(workflow_data, mycursor):
     """
     if workflow_data["type"] == 1 or workflow_data["type"] == 5:
         process_type_1_or_5(workflow_data, mycursor)
+    elif workflow_data["type"] == 6:
+        process_type_6(workflow_data, mycursor)
     elif str(workflow_data["type"]) == "3":
         process_type_3(workflow_data, mycursor)
 
@@ -167,6 +169,30 @@ def process_type_1_or_5(workflow_data, mycursor):
         workflow_data["siteUrl"] = Config.PREVIEW_SERVER + "/" + result[2]
 
         workflow_data["siteInfo"] = dict(zip(workflow_data["siteIds"], workflow_data["siteTitles"]))
+
+def process_type_6(workflow_data, mycursor):
+    """
+    Process workflow details for type 6.
+
+    Args:
+        workflow_data (dict): Workflow details.
+        mycursor (mysql.connector.cursor): MySQL cursor for executing queries.
+    """
+    if workflow_data["siteIds"]:
+        filesIds = workflow_data["siteIds"]
+
+        # Create a string with placeholders for each ID in the list
+        placeholders = ', '.join(['%s'] * len(filesIds))
+
+        # Construct the SQL query
+        query = f"SELECT site_assets.path, site_assets.filename FROM site_assets WHERE id IN ({placeholders})"
+
+        # Execute the query
+        mycursor.execute(query, tuple(filesIds))  # Convert list to tuple for the query parameters
+        result = mycursor.fetchall()  # fetchall if you expect more than one row, fetchone if you expect only one
+
+        workflow_data["files_details"] = result
+        workflow_data["preview_server"] = Config.PREVIEW_SERVER
 
 
 def process_type_3(workflow_data, mycursor):
@@ -620,6 +646,19 @@ def add_workflow(thisRequest):
 
         if thisType == 3 or thisType == 5:
             siteIds = thisRequest.get("entryId")
+
+        if thisType == 6:
+            # This is file IDs but we will save within the siteId field in the database. We can differentiate by the type = 6
+            filesIds = thisRequest.get("entryId")
+
+            # Check if filesIds is not None and is a list
+            if filesIds and isinstance(filesIds, list):
+                # Join the list into a comma-separated string
+                siteIds = ', '.join(filesIds)
+            else:
+                # Handle the case where filesIds is None or not a list
+                siteIds = ""
+                print("No valid entry IDs provided.")
 
         status = str("1")
 
