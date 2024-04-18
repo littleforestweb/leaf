@@ -16,8 +16,8 @@
             <form id="newJob">
                 <div class="mb-3">
                     <label for="job-title" class="col-form-label">Title:</label>
-                    <input type="text" class="form-control mandatoryField" id="job-title" name="job-title" />
-                    <input type="hidden" class="form-control mandatoryField" id="job-type" name="job-type" value="2" />
+                    <input type="text" class="form-control mandatoryField" id="job-title" name="job-title"/>
+                    <input type="hidden" class="form-control mandatoryField" id="job-type" name="job-type" value="2"/>
                 </div>
                 <div class="mb-3">
                     <label for="job-comments" class="col-form-label">Request details:</label>
@@ -25,10 +25,10 @@
                 </div>
                 <div class="mb-3">
                     <label for="job-attachments" class="col-form-label">Attachments:</label>
-                    <input type="file" class="form-control" id="job-attachments" name="job-attachments" accept=".png, .jpg, .jpeg, .gif, .pdf, .doc, .docx" multiple />
+                    <input type="file" class="form-control" id="job-attachments" name="job-attachments" accept=".png, .jpg, .jpeg, .gif, .pdf, .doc, .docx" multiple/>
                 </div>
                 {% if session.is_manager != 0 %}
-                <!-- <div class="mb-3">
+                    <!-- <div class="mb-3">
                     <div class="mb-3 list-users">
                         <div class="row form-row">
                             <div class="form-group col-md-8">
@@ -45,17 +45,17 @@
                 </div> -->
                 {% endif %}
                 {% if session.is_manager != 0 %}
-                <!-- <div class="mb-3">
-                    <label for="job-dueDate" class="col-form-label">Due Date:</label>
-                    <input type="text" class="form-control mandatoryField" id="job-dueDate" name="job-dueDate" />
-                </div> -->
+                    <!-- <div class="mb-3">
+                        <label for="job-dueDate" class="col-form-label">Due Date:</label>
+                        <input type="text" class="form-control mandatoryField" id="job-dueDate" name="job-dueDate" />
+                    </div> -->
                 {% endif %}
                 <div class="mb-3" style="display:none!important">
                     <label for="job-tags" class="col-form-label">Tags:</label>
-                    <input type="text" class="form-control" id="job-tags" name="job-tags" />
+                    <input type="text" class="form-control" id="job-tags" name="job-tags"/>
 
                     {% if session.is_manager != 1 %}
-                        <input type="hidden" class="form-control" id="job-priority" name="job-priority" value="1" />
+                        <input type="hidden" class="form-control" id="job-priority" name="job-priority" value="1"/>
                     {% endif %}
                 </div>
                 {% if session.is_manager != 0 %}

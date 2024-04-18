@@ -17,7 +17,7 @@
                 </div>
                 <div class="modal-body">
                     <form>
-                        <div class="mb-3"> 
+                        <div class="mb-3">
                             <label for="e-list-name" class="col-form-label">Name:</label>
                             <input type="text" class="form-control" id="e-list-name">
                         </div>
@@ -179,7 +179,7 @@
                     {% if is_admin %}
                         <!-- Add List Btn -->
                         <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addListModal">Add List</button>
-                        <button type="button" class="btn btn-blue editButton" data-bs-toggle="modal" data-bs-target="#editListModal" onclick="populateEditListModal({{accountId}});" disabled>Edit List</button>
+                        <button type="button" class="btn btn-blue editButton" data-bs-toggle="modal" data-bs-target="#editListModal" onclick="populateEditListModal({{ accountId }});" disabled>Edit List</button>
                         {% if is_admin == 1 %}
                             <button type="button" class="btn btn-red deleteButton" data-bs-toggle="modal" data-bs-target="#deleteListModal" disabled>Delete Lists</button>
                         {% endif %}
@@ -212,6 +212,8 @@
 
 
 {% block script %}
-    <script type="text/javascript">var accountId = {{ accountId }}; var userId = {{ userId }}; var isAdmin = {{ is_admin }}</script>
+    <script type="text/javascript">var accountId = {{ accountId }};
+    var userId = {{ userId }};
+    var isAdmin = {{ is_admin }}</script>
     <script src="{{ url_for('static', filename='js/lists.js') }}"></script>
 {% endblock %}
