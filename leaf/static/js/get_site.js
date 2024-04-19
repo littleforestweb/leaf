@@ -303,7 +303,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [5],
                 mData: function (source, type, val) {
-                    return "<a class='green-link' target='_blank' href='/editor?page_id=" + source["id"] + "'>Edit</a>";
+                    return "<a class='btn btn-sm' target='_blank' href='/editor?page_id=" + source["id"] + "'>Edit</a>";
                 }
             }
         ], initComplete: function () {
