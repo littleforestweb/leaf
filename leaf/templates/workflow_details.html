@@ -179,13 +179,13 @@
                                 <h5 class="card-header">Action{% if data.status == "6" or data.status == "Approved" or data.status == "Rejected" %} - <span id="action_message" class="{% if data.status == 'Rejected' %}isRed{% else %}isGreen{% endif %}">{% if data.status == "6" %}Complete{% else %}{{ data.status }}{% endif %}</span>{% endif %}</h5>
                                 <div class="card-body" id="actionContainer">
                                     {% if (data.status != "6" and data.status != "Approved") and data.status != "Rejected" %}
-                                        <a class='btn btn-success green-link' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}")'>Approve</a>
+                                        <a class='btn btn-success green-link' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}")'>Approve</a>
                                         -
-                                        <a class='btn btn-red green-link' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}")'>Reject</a>
+                                        <a class='btn btn-red green-link' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}")'>Reject</a>
                                     {% elif data.status == "Rejected" %}
-                                        <a class='btn btn-success green-link' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}")'>Approve</a>
+                                        <a class='btn btn-success green-link' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}")'>Approve</a>
                                         -
-                                        <a class='btn btn-red green-link' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}")'>Reject</a>
+                                        <a class='btn btn-red green-link' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}")'>Reject</a>
                                     {% else %}
                                         <span>No Action needed</span>
                                     {% endif %}

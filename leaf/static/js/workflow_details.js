@@ -37,7 +37,7 @@ CKEDITOR.plugins.add("anchor", {
     }
 });
 
-async function setStatus(status, id, type, listName, accountId) {
+async function setStatus(status, id, type, listName, accountId, files_details) {
     document.getElementById("actionContainer").innerHTML = "<span>Deploying...</span>"
 
     let jsonConfigSaveByFields = false;
@@ -63,7 +63,8 @@ async function setStatus(status, id, type, listName, accountId) {
         "type": type,
         "listName": listName,
         "saveByFields": jsonConfigSaveByFields,
-        "fieldsToSaveBy": jsonConfigFieldsToSaveBy
+        "fieldsToSaveBy": jsonConfigFieldsToSaveBy,
+        "files_details": files_details
     }
 
     $.ajax({

@@ -4,6 +4,7 @@ import os
 import re
 import smtplib
 from email.message import EmailMessage
+import ast
 
 import paramiko
 import werkzeug.utils
@@ -432,9 +433,41 @@ def action_workflow():
         # do something with TASK
         pass
 
-    elif not listName and thisType == "6":
-        # Publish files in live servers
-        pass
+    elif not listName and thisType == 6:
+
+        # Unescape HTML entities
+        files_details = request.form.get("files_details")
+
+        # Safely convert the string back to a list
+        try:
+            files_details = ast.literal_eval(files_details)
+        except ValueError as e:
+            print("Error evaluating string:", e)
+            files_details = []
+
+        # Loop through each item in the list
+        for file_detail in files_details:
+            folder, filename = file_detail  # Assuming each tuple contains (filename, file_id)
+            
+            folder = werkzeug.utils.escape(folder)
+            filename = werkzeug.utils.escape(filename)
+
+            # SCP to deployment servers
+            remote_paths = []
+            live_urls = []
+
+            for srv in Config.DEPLOYMENTS_SERVERS:
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                with ssh.open_sftp() as scp:
+                    remote_path = os.path.join(srv["remote_path"], folder, filename)
+                    remote_paths.append(remote_path)
+                    webserver_url = srv["webserver_url"] + "/" if not srv["webserver_url"].endswith("/") else srv["webserver_url"]
+                    live_urls.append(webserver_url + os.path.join(folder, filename))
+                    folder_path = os.path.dirname(remote_path)
+                    ssh.exec_command("if not exist \"" + folder_path + "\" mkdir \"" + folder_path + "\" else mkdir -p " + folder_path)
+                    scp.put(local_path, remote_path)
 
     elif listName:
         accountId = session['accountId']
