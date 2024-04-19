@@ -101,7 +101,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [6],
                 mData: function (source, type, val) {
-                    return '<span><a class="button" target="_blank" href="' + unescape(source["Path"]) + '">Preview</a></span>';
+                    return '<span><a class="btn btn-sm" target="_blank" href="' + unescape(source["Path"]) + '">Preview</a></span>';
                 }
             }
 
