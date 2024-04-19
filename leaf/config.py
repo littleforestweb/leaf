@@ -44,7 +44,8 @@ def checkConfig(loaded_json):
                 "user": "",
                 "pw": "",
                 "pkey": "",
-                "remote_path": ""
+                "remote_path": "",
+                "webserver_url": ""
             }
         ],
         "WEBSERVER_FOLDER": "",

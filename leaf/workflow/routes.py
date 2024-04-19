@@ -1,10 +1,10 @@
+import ast
 import datetime
 import json
 import os
 import re
 import smtplib
 from email.message import EmailMessage
-import ast
 
 import paramiko
 import werkzeug.utils
@@ -447,10 +447,9 @@ def action_workflow():
 
         # Loop through each item in the list
         for file_detail in files_details:
-            folder, filename = file_detail  # Assuming each tuple contains (filename, file_id)
-            
-            folder = werkzeug.utils.escape(folder)
-            filename = werkzeug.utils.escape(filename)
+            file_path, _ = file_detail
+            file_path = werkzeug.utils.escape(file_path)
+            local_path = os.path.join(Config.WEBSERVER_FOLDER, file_path)
 
             # SCP to deployment servers
             remote_paths = []
@@ -461,10 +460,10 @@ def action_workflow():
                 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                 ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
                 with ssh.open_sftp() as scp:
-                    remote_path = os.path.join(srv["remote_path"], folder, filename)
+                    remote_path = os.path.join(srv["remote_path"], file_path)
                     remote_paths.append(remote_path)
                     webserver_url = srv["webserver_url"] + "/" if not srv["webserver_url"].endswith("/") else srv["webserver_url"]
-                    live_urls.append(webserver_url + os.path.join(folder, filename))
+                    live_urls.append(webserver_url + os.path.join(file_path))
                     folder_path = os.path.dirname(remote_path)
                     ssh.exec_command("if not exist \"" + folder_path + "\" mkdir \"" + folder_path + "\" else mkdir -p " + folder_path)
                     scp.put(local_path, remote_path)
