@@ -89,9 +89,9 @@ def save_page():
         page_id = werkzeug.utils.escape(request.form.get("page_id", type=str))
 
         # Check if the specified page to the user's account
-        siteId = leaf.sites.models.getSiteFromPageId(int(page_id))
-        hasAccess = leaf.sites.models.user_has_access_page(int(page_id))
-        if not leaf.sites.models.site_belongs_to_account(siteId) or not hasAccess:
+        siteId = getSiteFromPageId(int(page_id))
+        hasAccess = user_has_access_page(int(page_id))
+        if not site_belongs_to_account(siteId) or not hasAccess:
             return jsonify({"error": "Forbidden"}), 403
 
         # Get HTML path from page_id
