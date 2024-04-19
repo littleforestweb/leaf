@@ -31,6 +31,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
     const urlParams = new URLSearchParams(window.location.search);
     const site_id = urlParams.get('siteId');
+    const archive = urlParams.get('archive');
 
     $("#files_table").DataTable({
         dom: "Brtip",
@@ -47,7 +48,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
         bServerSide: true,
         sPaginationType: "full_numbers",
         lengthMenu: [[50, 100, 250], [50, 100, 250]],
-        sAjaxSource: "/files/list_all_files?id=" + site_id,
+        sAjaxSource: "/files/list_all_files?id=" + site_id + "&archive=" + archive,
         order: [[3, "asc"]],
         bAutoWidth: false,
         aoColumnDefs: [
@@ -239,7 +240,7 @@ function removeFiles(accountId, button) {
     });
 }
 
-function createPublishTicket(accountId) {
+function createPublishTicket(accountId, type=6) {
 
     accountId = escapeHtml(accountId);
 
@@ -251,13 +252,18 @@ function createPublishTicket(accountId) {
         return $(this).val();
     }).get();
 
+    var theTitle = 'New file(s) submition';
+    if (type == 7) {
+        theTitle = 'New file(s) removal';
+    }
+
     form_data = {
         accountId: accountId,
-        title: 'New file(s) submition',
+        title: theTitle,
         dueDate: formattedDate,
         priority: 1,
         entryId: entries,
-        type: 6
+        type: type
     }
 
     $.ajax({

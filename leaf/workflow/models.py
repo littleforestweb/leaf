@@ -136,8 +136,8 @@ def process_specific_workflow_type(workflow_data, mycursor):
     """
     if workflow_data["type"] == 1 or workflow_data["type"] == 5:
         process_type_1_or_5(workflow_data, mycursor)
-    elif workflow_data["type"] == 6:
-        process_type_6(workflow_data, mycursor)
+    elif workflow_data["type"] == 6 or workflow_data["type"] == 7:
+        process_type_6_or_7(workflow_data, mycursor)
     elif str(workflow_data["type"]) == "3":
         process_type_3(workflow_data, mycursor)
 
@@ -171,7 +171,7 @@ def process_type_1_or_5(workflow_data, mycursor):
         workflow_data["siteInfo"] = dict(zip(workflow_data["siteIds"], workflow_data["siteTitles"]))
 
 
-def process_type_6(workflow_data, mycursor):
+def process_type_6_or_7(workflow_data, mycursor):
     """
     Process workflow details for type 6.
 
@@ -648,7 +648,7 @@ def add_workflow(thisRequest):
         if thisType == 3 or thisType == 5:
             siteIds = thisRequest.get("entryId")
 
-        if thisType == 6:
+        if thisType == 6 or thisType == 7:
             # This is file IDs but we will save within the siteId field in the database. We can differentiate by the type = 6
             filesIds = thisRequest.get("entryId")
 

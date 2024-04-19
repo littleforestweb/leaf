@@ -8,7 +8,7 @@ from leaf.config import Config
 from leaf.sites.models import get_user_access_folder
 
 
-def list_all_files(site_id):
+def list_all_files(site_id, archive):
     """
     Retrieve files from the specified site.
 
@@ -18,6 +18,7 @@ def list_all_files(site_id):
 
     Args:
         site_id (str): The ID of the site for which to retrieve files.
+        archive (str): The archive variable to understand if it's archived files or not.
 
     Returns:
         list: A list of dictionaries containing files data.
@@ -37,7 +38,10 @@ def list_all_files(site_id):
 
         # Get files from the site
         userUsernameEmail = 'CONCAT(user.id, ", ", user.username, ", ", user.email)'
-        query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, IFNULL({userUsernameEmail}, '{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}') AS modified_by, site_assets.created FROM site_assets LEFT JOIN user ON site_assets.modified_by = user.id WHERE site_id = %s AND site_assets.status <> -1"
+        if archive != "1":
+            query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, IFNULL({userUsernameEmail}, '{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}') AS modified_by, site_assets.created FROM site_assets LEFT JOIN user ON site_assets.modified_by = user.id WHERE site_id = %s AND site_assets.status <> -1"
+        else:
+            query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, IFNULL({userUsernameEmail}, '{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}') AS modified_by, site_assets.created FROM site_assets LEFT JOIN user ON site_assets.modified_by = user.id WHERE site_id = %s AND site_assets.status = -1"
         mycursor.execute(query, [site_id])
         site_files = mycursor.fetchall()
 

@@ -30,7 +30,9 @@ def files_view_upload():
     Returns:
     - Response: The rendered template for the temporary file upload view.
     """
-    return render_template("files_manager.html", userId=session['id'], username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], preview_webserver=Config.PREVIEW_SERVER.strip("/"))
+    site_id = werkzeug.utils.escape(request.args.get("siteId", type=str))
+    archive = werkzeug.utils.escape(request.args.get("archive", type=str))
+    return render_template("files_manager.html", userId=session['id'], username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], site_id=site_id, archive=archive, preview_webserver=Config.PREVIEW_SERVER.strip("/"))
 
 
 @files_manager.route("/files/fileupload_api", methods=["POST"])
@@ -124,13 +126,15 @@ def files_list_all_files():
     try:
         # Retrieve the 'id' parameter from the request arguments
         site_id = werkzeug.utils.escape(request.args.get("id", type=str))
+        # Retrieve the 'archive' parameter from the request arguments
+        archive = werkzeug.utils.escape(request.args.get("archive", type=str))
 
         # Check if the specified site belongs to the user's account
         if not site_models.site_belongs_to_account(int(site_id)):
             return jsonify({"error": "Forbidden"}), 403
 
         # Get files from the site using a parameterized query
-        files = models.list_all_files(site_id)
+        files = models.list_all_files(site_id, archive)
 
         # Define columns for the ServerSideTable
         columns = table_schemas.SERVERSIDE_TABLE_COLUMNS["get_site_files"]

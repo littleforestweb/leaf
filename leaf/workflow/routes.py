@@ -629,7 +629,7 @@ def action_workflow():
         res = mycursor.fetchone()
         assetsId, path = str(res[0]).split(",")[0], res[1]
 
-        # Update page to "deleted" on db
+        # Update asset to "deleted" on db
         query = "UPDATE site_assets SET status = %s WHERE id = %s"
         params = ("-1", assetsId)
         mycursor.execute(query, params)
