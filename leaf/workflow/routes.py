@@ -371,7 +371,7 @@ def action_workflow():
         jsonR = {"message": "success", "action": action}
         return jsonify(jsonR)
 
-    if not listName and thisType == "1":
+    if not listName and thisType == 1:
         # Get local file path
         query = "SELECT site_meta.HTMLPath FROM site_meta JOIN workflow ON site_meta.id = workflow.siteIds WHERE workflow.id = %s"
         params = (workflow_id,)
@@ -429,7 +429,7 @@ def action_workflow():
             with open(local_path, "w") as outFile:
                 outFile.write(original_content)
 
-    elif not listName and thisType == "2":
+    elif not listName and thisType == 2:
         # do something with TASK
         pass
 
@@ -588,7 +588,7 @@ def action_workflow():
                         except Exception as e:
                             pass
 
-    if not listName and thisType == "5":
+    if not listName and thisType == 5:
         # Get local file path
         query = "SELECT site_meta.id, site_meta.HTMLPath FROM site_meta JOIN workflow ON site_meta.id = workflow.siteIds WHERE workflow.id = %s"
         params = (workflow_id,)
@@ -617,6 +617,39 @@ def action_workflow():
                     ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
                 with ssh.open_sftp() as scp:
                     remote_path = os.path.join(srv["remote_path"], HTMLPath)
+                    scp.remove(remote_path)
+            except Exception as e:
+                pass
+
+    if not listName and thisType == 7:
+        # Get local file path
+        query = "SELECT site_assets.id, site_assets.path FROM site_assets JOIN workflow ON site_assets.id = workflow.siteIds WHERE workflow.id = %s"
+        params = (workflow_id,)
+        mycursor.execute(query, params)
+        res = mycursor.fetchone()
+        assetsId, path = str(res[0]).split(",")[0], res[1]
+
+        # Update page to "deleted" on db
+        query = "UPDATE site_assets SET status = %s WHERE id = %s"
+        params = ("-1", assetsId)
+        mycursor.execute(query, params)
+        mydb.commit()
+
+        # Remove from Deployment servers
+        for srv in Config.DEPLOYMENTS_SERVERS:
+            try:
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                if srv["pkey"] != "":
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                    if srv["pw"] == "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                    else:
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                else:
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                with ssh.open_sftp() as scp:
+                    remote_path = os.path.join(srv["remote_path"], path)
                     scp.remove(remote_path)
             except Exception as e:
                 pass
