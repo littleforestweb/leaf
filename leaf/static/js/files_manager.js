@@ -240,7 +240,7 @@ function removeFiles(accountId, button) {
     });
 }
 
-function createPublishTicket(accountId, type=6) {
+function createPublishTicket(accountId, type = 6) {
 
     accountId = escapeHtml(accountId);
 
