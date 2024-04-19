@@ -127,6 +127,9 @@
 {% endblock %}
 
 {% block script %}
-    <script type="text/javascript">var accountId = {{ accountId }};</script>
+    <script type="text/javascript">
+        let accountId = {{ accountId }};
+        let preview_webserver = '{{ preview_webserver }}';
+    </script>
     <script src="{{ url_for('static', filename='js/files_manager.js') }}"></script>
 {% endblock %}

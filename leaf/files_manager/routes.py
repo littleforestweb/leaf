@@ -30,7 +30,7 @@ def files_view_upload():
     Returns:
     - Response: The rendered template for the temporary file upload view.
     """
-    return render_template("files_manager.html", userId=session['id'], username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'])
+    return render_template("files_manager.html", userId=session['id'], username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], preview_webserver=Config.PREVIEW_SERVER.strip("/"))
 
 
 @files_manager.route("/files/fileupload_api", methods=["POST"])
