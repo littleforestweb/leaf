@@ -14,7 +14,7 @@ function stopPropagation(evt) {
 
 async function doMainButtons() {
     $('#table').on('change', 'input[type="checkbox"]', function () {
-        var checkboxes = document.querySelectorAll("input[type='checkbox'].dt-checkboxes");
+        var checkboxes = document.querySelectorAll('#table input[type="checkbox"]');
         if (this.checked) {
             for (var i = 0; i < checkboxes.length; i++) {
                 if (checkboxes[i] !== this) {
@@ -56,7 +56,7 @@ async function addUser() {
 
     // Post
     $.ajax({
-        type: "POST", url: "/add/user",
+        type: "POST", url: "/user/add",
         data: {
             "username": user_name,
             "email": user_email,
@@ -84,6 +84,27 @@ async function addUser() {
 
             // Set Success Notification Information
             showNotification("Notification", "There was an error adding user. Please try again.", "red");
+        }
+    });
+}
+
+async function deleteUser(thisButton) {
+    thisButton.classList.add('disabled');
+    let user_id = $('input[type="checkbox"]:checked:first').val();
+
+    // Post
+    $.ajax({
+        type: "POST",
+        url: "/user/delete",
+        data: {"user_id": user_id},
+        success: function (entry) {
+            location.reload(true);
+        }, error: function (XMLHttpRequest, textStatus, errorThrown) {
+            // Hide Delete Modal
+            $('#deleteUserModal').modal('hide');
+
+            // Set Success Notification Information
+            showNotification("Notification", "There was an error deleting the user. Please try again.", "red");
         }
     });
 }

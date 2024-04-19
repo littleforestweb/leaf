@@ -69,3 +69,32 @@ def add_user_to_database(username, email, is_admin, is_master, password):
         # Always close the database connection
         if mydb:
             mydb.close()
+
+
+def delete_user_to_database(user_id):
+    """
+    Delete a user from the database.
+
+    Args:
+        user_id (str): User's ID.
+
+    Returns:
+        bool: True if the user is deleted successfully, False otherwise.
+    """
+
+    mydb, mycursor = db_connection()
+
+    try:
+        # Run SQL Command to delete the user
+        mycursor.execute("DELETE FROM user WHERE user.id = %s", (user_id,))
+        mydb.commit()
+        return True
+
+    except Exception as e:
+        # Log the error or handle it appropriately
+        print(f"Error in delete_user_to_database: {e}")
+        return False
+    finally:
+        # Always close the database connection
+        if mydb:
+            mydb.close()

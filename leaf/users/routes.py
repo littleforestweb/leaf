@@ -4,7 +4,7 @@ import werkzeug.utils
 from flask import render_template, Blueprint, jsonify, request, session
 
 from leaf.decorators import login_required, admin_required
-from .models import get_users_data, add_user_to_database
+from .models import get_users_data, add_user_to_database, delete_user_to_database
 
 users = Blueprint('users', __name__)
 
@@ -54,10 +54,7 @@ def api_get_users():
         return jsonify({"error": "An error occurred while processing the request"}), 500
 
 
-# ---------------------------------------------------------------------------------------------------------- #
-# ---------------------------------------------------------------------------------------------------------- #
-
-@users.route('/add/user', methods=['POST'])
+@users.route('/user/add', methods=['POST'])
 @login_required
 @admin_required
 def add_user():
@@ -96,4 +93,21 @@ def add_user():
     except Exception as e:
         # Log the error or handle it appropriately
         print(f"Error in add_user: {e}")
+        return jsonify({"error": "An error occurred while processing the request"}), 500
+
+
+@users.route('/user/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_user():
+    try:
+        user_id = werkzeug.utils.escape(request.form.get("user_id", type=int))
+
+        # Delete User from DB
+        delete_user_to_database(user_id)
+
+        return jsonify({"Message": "success"})
+    except Exception as e:
+        # Log the error or handle it appropriately
+        print(f"Error in delete_user: {e}")
         return jsonify({"error": "An error occurred while processing the request"}), 500
