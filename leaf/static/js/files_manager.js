@@ -82,7 +82,6 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 aTargets: [4],
                 mData: function (source, type, val) {
                     var userData = source["Created By"].split(", ");
-                    var userId = userData[0];
                     var userName = userData[1];
                     var userEmail = userData[2];
                     var displayName = userEmail;

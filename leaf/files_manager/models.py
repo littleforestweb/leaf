@@ -1,7 +1,7 @@
 import os
 
 import werkzeug.utils
-from flask import session
+from flask import session, jsonify
 
 from leaf import decorators
 from leaf.config import Config
@@ -29,9 +29,14 @@ def list_all_files(site_id):
         # Get User Access folders
         folder_paths = set(get_user_access_folder(mycursor))
 
-        userUsernameEmail = 'CONCAT(user.id, ", ", user.username, ", ", user.email)'
+        # Get first admin user
+        query = f"SELECT user.id, user.username, user.email FROM user WHERE user.is_admin = 1"
+        mycursor.execute(query)
+        first_user_admin = mycursor.fetchone()
+
         # Get files from the site
-        query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, {userUsernameEmail}, site_assets.created FROM site_assets INNER JOIN user ON site_assets.modified_by = user.id WHERE site_id = %s"
+        userUsernameEmail = 'CONCAT(user.id, ", ", user.username, ", ", user.email)'
+        query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, IFNULL({userUsernameEmail}, '{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}') AS modified_by, site_assets.created FROM site_assets LEFT JOIN user ON site_assets.modified_by = user.id WHERE site_id = %s"
         mycursor.execute(query, [site_id])
         site_files = mycursor.fetchall()
 
