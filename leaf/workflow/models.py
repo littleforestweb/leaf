@@ -170,6 +170,7 @@ def process_type_1_or_5(workflow_data, mycursor):
 
         workflow_data["siteInfo"] = dict(zip(workflow_data["siteIds"], workflow_data["siteTitles"]))
 
+
 def process_type_6(workflow_data, mycursor):
     """
     Process workflow details for type 6.
@@ -179,7 +180,7 @@ def process_type_6(workflow_data, mycursor):
         mycursor (mysql.connector.cursor): MySQL cursor for executing queries.
     """
     if workflow_data["siteIds"]:
-        filesIds = workflow_data["siteIds"]
+        filesIds = workflow_data["siteIds"].split(",")
 
         # Create a string with placeholders for each ID in the list
         placeholders = ', '.join(['%s'] * len(filesIds))
