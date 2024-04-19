@@ -97,6 +97,12 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 mData: function (source, type, val) {
                     return "<span>" + source["Created"] + "</span>";
                 }
+            },
+            {
+                aTargets: [6],
+                mData: function (source, type, val) {
+                    return '<span><a class="btn btn-sm" target="_blank" href="' + unescape(source["Path"]) + '">Preview</a></span>';
+                }
             }
 
         ],
