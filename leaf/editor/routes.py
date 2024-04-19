@@ -1,9 +1,11 @@
+import traceback
+
 import werkzeug.utils
 from flask import Blueprint, render_template, request, jsonify, session
 
-import leaf.sites.models
 from leaf import Config
 from leaf.decorators import login_required
+from leaf.sites.models import getSiteFromPageId, user_has_access_page, site_belongs_to_account
 from .models import get_page_html_path, remove_base_href, save_html_to_disk, update_modified_date, add_base_href
 
 # Create a Blueprint for the editor routes
@@ -25,13 +27,14 @@ def view_editor():
         page_id = werkzeug.utils.escape(request.args.get('page_id', type=str))
 
         # Check if the specified page to the user's account
-        siteId = leaf.sites.models.getSiteFromPageId(int(page_id))
-        hasAccess = leaf.sites.models.user_has_access_page(int(page_id))
-        if not leaf.sites.models.site_belongs_to_account(siteId) or not hasAccess:
+        siteId = getSiteFromPageId(int(page_id))
+        hasAccess = user_has_access_page(int(page_id))
+        if not site_belongs_to_account(siteId) or not hasAccess:
             return jsonify({"error": "Forbidden"}), 403
 
         return render_template('editor.html', username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], page_id=page_id)
     except Exception as e:
+        print(traceback.format_exc())
         # Handle exceptions and return an error response with status code 500
         return jsonify({"error": str(e)}), 500
 
@@ -50,9 +53,9 @@ def get_htmlCode():
         page_id = werkzeug.utils.escape(request.args.get('page_id', type=str))
 
         # Check if the specified page to the user's account
-        siteId = leaf.sites.models.getSiteFromPageId(int(page_id))
-        hasAccess = leaf.sites.models.user_has_access_page(int(page_id))
-        if not leaf.sites.models.site_belongs_to_account(siteId) or not hasAccess:
+        siteId = getSiteFromPageId(int(page_id))
+        hasAccess = user_has_access_page(int(page_id))
+        if not site_belongs_to_account(siteId) or not hasAccess:
             return jsonify({"error": "Forbidden"}), 403
 
         # Get HTML path for the page

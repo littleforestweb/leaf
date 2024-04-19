@@ -557,6 +557,11 @@ def user_has_access_page(page_id):
     """
 
     try:
+
+        # Check if admin
+        if session["is_admin"] == 1:
+            return True
+
         # Get a database connection using the 'db_connection' decorator
         mydb, mycursor = decorators.db_connection()
 
