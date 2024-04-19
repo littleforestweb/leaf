@@ -81,7 +81,7 @@ def files_api_upload():
 
     mime_type = mimetypes.guess_type(preview_url)[0]
 
-    models.insert_file_into_db(account_id, site_id, filename, folder, mime_type, 200)
+    models.insert_file_into_db(account_id, site_id, filename, folder, mime_type, "200")
 
     return "File uploaded successfully.<br>" + local_path + "<br>" + preview_url
 
