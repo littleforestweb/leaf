@@ -562,7 +562,6 @@ def user_has_access_page(page_id):
 
         # Get User Access folders
         folder_paths = get_user_access_folder(mycursor)
-        print(folder_paths)
 
         # Get URL from PageID
         mycursor.execute("SELECT HTMLPath FROM site_meta WHERE id=%s", (page_id,))
