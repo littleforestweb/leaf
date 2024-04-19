@@ -58,6 +58,7 @@ def insert_file_into_db(accountId, site_id, filename, folder, mime_type, status)
     Insert file for a specific site in the database.
 
     Args:
+        accountId: Users Account Id
         site_id (str): The site ID associated with the file.
         filename (str): The filename for the specific file.
         folder (str): The folder for the specific file.
