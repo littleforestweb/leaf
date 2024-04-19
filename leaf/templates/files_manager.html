@@ -94,9 +94,9 @@
                     <button type="button" id="remove_file_btn" class="btn btn-blue deleteButton" data-bs-toggle="modal" data-bs-target="#removeFilesModal" disabled>Remove File</button>
                     <button type="button" id="publish_file_btn" class="btn btn-red editButton" data-bs-toggle="modal" data-bs-target="#createPublishTicketModal" disabled>Publish</button>
                     {% if archive != "1" %}
-                        <a class="btn" target="_self" href="/files/fileupload?siteId={{site_id}}&archive=1">Archived</a>
+                        <a class="btn" target="_self" href="/files/fileupload?siteId={{ site_id }}&archive=1">Archived</a>
                     {% else %}
-                        <a class="btn" target="_self" href="/files/fileupload?siteId={{site_id}}">Files Manager</a>
+                        <a class="btn" target="_self" href="/files/fileupload?siteId={{ site_id }}">Files Manager</a>
                     {% endif %}
                 </div>
             </div>
