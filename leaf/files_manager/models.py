@@ -5,6 +5,7 @@ from flask import session, jsonify
 
 from leaf import decorators
 from leaf.config import Config
+from leaf.sites.models import get_user_access_folder
 
 
 def list_all_files(site_id):
@@ -150,24 +151,6 @@ def remove_files(request):
     finally:
         mydb.close()
         return entries_to_delete
-
-
-def get_user_access_folder(mycursor):
-    """
-    Retrieve the folder paths that a user has access to.
-
-    Parameters:
-    - mycursor: MySQL cursor object used to execute queries.
-
-    Returns:
-    - List of folder paths (strings) that the user has access to.
-    """
-
-    # Get User Access folders
-    query = "SELECT ua.folder_path FROM leaf.user_access ua JOIN leaf.user_groups ug ON ua.group_id = ug.group_id JOIN leaf.group_member gm ON ug.group_id = gm.group_id WHERE gm.user_id = %s"
-    mycursor.execute(query, (session["id"],))
-    folder_paths = [folder_path[0] for folder_path in mycursor.fetchall()]
-    return folder_paths
 
 
 def validate_files_entries_to_delete(entries_to_delete, accountId):
