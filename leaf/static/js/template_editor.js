@@ -83,9 +83,6 @@ async function publish_template() {
 window.addEventListener('DOMContentLoaded', async function main() {
     console.log("Starting Template Editor");
 
-    // Add padding-top
-    document.getElementById("mainCodeDiv").style.paddingTop = document.getElementsByClassName("navbar")[0].clientHeight - 10 + "px";
-
     // Load page html code
     let data = await $.get("/api/templates/get_template_id/" + accountId + "/" + template_id, function (htmlContent) {
         return htmlContent;
