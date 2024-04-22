@@ -233,7 +233,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 return "<input type='checkbox' id='" + data + "' value='" + data + "' >";
             },
         }, {
-            "width": "5%", "visible": false, "targets": 1, "render": function (data, type, row) {
+            "width": "5%", "targets": 1, "render": function (data, type, row) {
                 return "<span>" + data + "</span>";
             },
         }, {
