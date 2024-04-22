@@ -102,12 +102,12 @@ def login_required(f):
             if jwt_token:
                 if not is_authenticated(jwt_token):
                     # Redirect to the login page instead of rendering
-                    return render_template('login.html', msg="", msgClass="")
+                    return render_template('login.html', msg="", msgClass="", is_saml_active=Config.SAML_ACTIVE)
                 else:
                     return f(*args, **kwargs)
             else:
                 # Redirect to the login page instead of rendering
-                return render_template('login.html', msg="", msgClass="")
+                return render_template('login.html', msg="", msgClass="", is_saml_active=Config.SAML_ACTIVE)
         else:
             session['loggedin'] = False
             session['id'] = False
@@ -121,7 +121,7 @@ def login_required(f):
             session['jwt_token'] = False
 
             # Redirect to the login page instead of rendering
-            return render_template('login.html', msg="", msgClass="")
+            return render_template('login.html', msg="", msgClass="", is_saml_active=Config.SAML_ACTIVE)
 
     return wrapper
 

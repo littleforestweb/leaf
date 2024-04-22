@@ -61,6 +61,7 @@ def checkConfig(loaded_json):
         "HERITRIX_PORT": "",
         "HERITRIX_USER": "",
         "HERITRIX_PASS": "",
+        "SAML_ACTIVE": 1,
         "SP_ENTITY_ID": "",
         "SP_ASSERTION_CONSUMER_SERVICE_URL": "",
         "SP_SINGLE_LOGOUT_SERVICE_URL": "",
@@ -200,6 +201,7 @@ class Config:
     HERITRIX_PASS = config["HERITRIX_PASS"]
 
     # SSO
+    SAML_ACTIVE = config["SAML_ACTIVE"]
     SP_ENTITY_ID = config["SP_ENTITY_ID"]
     SP_ASSERTION_CONSUMER_SERVICE_URL = config["SP_ASSERTION_CONSUMER_SERVICE_URL"]
     SP_SINGLE_LOGOUT_SERVICE_URL = config["SP_SINGLE_LOGOUT_SERVICE_URL"]

@@ -214,12 +214,13 @@ def idp_initiated():
                         check_query = "SELECT * FROM group_member WHERE group_id=%s AND user_id=%s"
                         # SQL query to insert a new record
                         insert_query = "INSERT INTO group_member(group_id, user_id) VALUES (%s, %s)"
+                        # SQL query to delete a new record
+                        delete_query = "DELETE FROM group_member WHERE group_id=%s AND user_id=%s"
 
                         for group in groups:
                             if group in leaf_user_groups:
                                 # Get the corresponding group_id
                                 group_id = leaf_user_groups[group]
-
                                 # Check if this user is already a member of this group
                                 mycursor.execute(check_query, (group_id, lfi_user[0]))
                                 result = mycursor.fetchone()
@@ -231,6 +232,21 @@ def idp_initiated():
                                 else:
                                     print(f"Skipped inserting '{group}' as it already exists.")
 
+                        # Remove entries for groups no longer present
+                        # First, fetch all groups associated with the user
+                        mycursor.execute("SELECT group_id FROM group_member WHERE user_id=%s", (lfi_user[0],))
+                        existing_groups_for_this_user = mycursor.fetchall()
+                        mydb.commit()
+
+                        # Create a set of current group IDs for fast lookup
+                        current_group_ids = set(leaf_user_groups[group] for group in groups if group in leaf_user_groups)
+
+                        # Check and remove any group not in the current list
+                        for (group_id,) in existing_groups_for_this_user:
+                            if group_id not in current_group_ids:
+                                mycursor.execute(delete_query, (group_id, lfi_user[0]))
+                                mydb.commit()
+                                print(f"Removed group_id {group_id} for user_id {lfi_user[0]} as it is no longer in the current groups.")
 
                         # Create session data, we can access this data in other routes
                         session['loggedin'] = True
@@ -259,21 +275,21 @@ def idp_initiated():
                         # Account doesnt exist or username/password incorrect
                         msg = 'Incorrect username/password!'
                         msgClass = 'alert alert-danger'
-                        return render_template('login.html', msg=msg, msgClass=msgClass)
+                        return render_template('login.html', msg=msg, msgClass=msgClass, is_saml_active=Config.SAML_ACTIVE)
 
                 except Exception as e:
                     # Log the error or provide more details
                     print(f"Error during login: {e}")
                     msg = 'An error occurred during login.'
                     msgClass = 'alert alert-danger'
-                    return render_template('login.html', msg=msg, msgClass=msgClass)
+                    return render_template('login.html', msg=msg, msgClass=msgClass, is_saml_active=Config.SAML_ACTIVE)
                 finally:
                     mydb.close()
 
             else:
                 msg = 'Missing email!'
                 msgClass = 'alert alert-danger'
-                return render_template('login.html', msg=msg, msgClass=msgClass)
+                return render_template('login.html', msg=msg, msgClass=msgClass, is_saml_active=Config.SAML_ACTIVE)
         else:
             print("Issuer element not found.")
             return "Access Denied. Issuer not found!"

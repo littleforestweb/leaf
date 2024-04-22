@@ -37,7 +37,7 @@ def ratelimit_handler():
     """
     msg = 'Too many attempts. Please try again in 1 minute.'
     msgClass = 'alert alert-danger'
-    return render_template('login.html', msg=msg, msgClass=msgClass)
+    return render_template('login.html', msg=msg, msgClass=msgClass, is_saml_active=Config.SAML_ACTIVE)
 
 
 @main.route("/")
@@ -148,18 +148,18 @@ def login():
                 # Account doesn't exist or username/password incorrect
                 msg = 'Incorrect username/password!'
                 msgClass = 'alert alert-danger'
-                return render_template('login.html', msg=msg, msgClass=msgClass)
+                return render_template('login.html', msg=msg, msgClass=msgClass, is_saml_active=Config.SAML_ACTIVE)
         except Exception as e:
             # Log the error or provide more details
             print(f"Error during login: {e}")
             msg = 'An error occurred during login.'
             msgClass = 'alert alert-danger'
-            return render_template('login.html', msg=msg, msgClass=msgClass)
+            return render_template('login.html', msg=msg, msgClass=msgClass, is_saml_active=Config.SAML_ACTIVE)
         finally:
             mydb.close()
     else:
         # Redirect to the login page for GET requests
-        return render_template('login.html', msg="", msgClass="")
+        return render_template('login.html', msg="", msgClass="", is_saml_active=Config.SAML_ACTIVE)
 
 
 # ------------------------------------------------------------------------------------------------------------ #
@@ -198,7 +198,7 @@ def logout():
         return redirect(logout_redirect)
 
     # Redirect to login page
-    return render_template('login.html', msg="", msgClass="")
+    return render_template('login.html', msg="", msgClass="", is_saml_active=Config.SAML_ACTIVE)
 
 
 # ------------------------------------------------------------------------------------------------------------ #

@@ -37,6 +37,14 @@ input[type="checkbox"] {
     margin-top: 70px;
     min-width: 360px;
 }
+.login.container.hasSAML {
+    padding-bottom: 1em!important;
+}
+
+.saml_login_link {
+    float: right;
+    font-size: 14px;
+}
 
 main {
     min-height: 40em;
