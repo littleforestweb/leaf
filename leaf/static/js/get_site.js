@@ -195,6 +195,7 @@ async function doMainButtons() {
 }
 
 async function populateUserList() {
+    console.log("populateUserList");
     let listOfUsers = await $.get("/api/get_lfi_admin_users/" + accountId, function (result) {
         return result;
     });
@@ -211,6 +212,14 @@ async function populateUserList() {
         $(".users-with-access-container").prepend('<label for="thisUserId_' + thisUser["id"] + '" class="form-control users-with-access users-with-access_' + thisUser["id"] + '">' + userImage + '<span class="userName">' + thisUser["username"] + '</span><input type="checkbox" class="form-check-input pull-right this-user-id" name="thisUserId_' + thisUser["id"] + '" id="thisUserId_' + thisUser["id"] + '" ' + '/></span>');
     }
 
+    // Disable Enter
+    $('#users-with-access-search').on('keypress', function (e) {
+        if (e.keyCode === 13) {
+            e.preventDefault(); // Prevent default behavior of return key
+            return false; // Stop further execution
+        }
+    });
+
     $('#users-with-access-search').on('keyup', function (e) {
         let tagElems = $('.users-with-access');
         $(tagElems).hide();
@@ -221,6 +230,7 @@ async function populateUserList() {
             }
         }
     });
+
 
     $('.this-user-id').click(function () {
         $('.this-user-id').not(this).prop("checked", false);
