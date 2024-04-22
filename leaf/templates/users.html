@@ -18,27 +18,27 @@
                 <div class="modal-body">
                     <form>
                         <div class="mb-3">
-                            <label for="user-name" class="col-form-label">Name:</label>
-                            <input type="text" class="form-control" id="user-name">
+                            <label for="add-user-name" class="col-form-label">Name:</label>
+                            <input type="text" class="form-control" id="add-user-name">
                         </div>
                         <div class="mb-3">
-                            <label for="user-email" class="col-form-label">Email:</label>
-                            <input type="text" class="form-control" id="user-email">
+                            <label for="add-user-email" class="col-form-label">Email:</label>
+                            <input type="text" class="form-control" id="add-user-email">
                         </div>
                         <div class="mb-3">
-                            <label for="user-password" class="col-form-label">Password:</label>
-                            <input type="password" class="form-control" id="user-password">
+                            <label for="add-user-password" class="col-form-label">Password:</label>
+                            <input type="password" class="form-control" id="add-user-password">
                         </div>
                         <div class="mb-3">
-                            <label for="user-is-admin" class="col-form-label">Admin:</label>
-                            <select id="user-is-admin" class="form-select" aria-label="Default select example">
+                            <label for="add-user-is-admin" class="col-form-label">Admin:</label>
+                            <select id="add-user-is-admin" class="form-select" aria-label="Default select example">
                                 <option selected value="0">No</option>
                                 <option value="1">Yes</option>
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="user-is-master" class="col-form-label">Allow Publish:</label>
-                            <select id="user-is-master" class="form-select" aria-label="Default select example">
+                            <label for="add-user-is-manager" class="col-form-label">Manager:</label>
+                            <select id="add-user-is-manager" class="form-select" aria-label="Default select example">
                                 <option selected value="0">No</option>
                                 <option value="1">Yes</option>
                             </select>
@@ -48,6 +48,48 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-success" onclick="addUser()">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT USER MODAL -->
+    <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editUserLabel">Add User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="edit-user-name" class="col-form-label">Name:</label>
+                            <input disabled type="text" class="form-control" id="edit-user-name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-user-email" class="col-form-label">Email:</label>
+                            <input disabled type="text" class="form-control" id="edit-user-email">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-user-is-admin" class="col-form-label">Admin:</label>
+                            <select id="edit-user-is-admin" class="form-select" aria-label="Default select example">
+                                <option selected value="0">No</option>
+                                <option value="1">Yes</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-user-is-manager" class="col-form-label">Manager:</label>
+                            <select id="edit-user-is-manager" class="form-select" aria-label="Default select example">
+                                <option selected value="0">No</option>
+                                <option value="1">Yes</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" onclick="editUser()">Save</button>
                 </div>
             </div>
         </div>
@@ -94,8 +136,8 @@
                 <h3 style="float: left">Users</h3>
                 <div style="float:right; margin-left: 10px;" class="header-btns">
                     <button id="addUserBtn" type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal">Add User</button>
-                    <button disabled id="deleteUserBtn" type="button" class="btn btn-red" data-bs-toggle="modal" data-bs-target="#deleteUserModal">Delete Users</button>
-                    <button hidden disabled id="editUserBtn" type="button" class="btn btn-blue" data-bs-toggle="modal" data-bs-target="#editUserModal">Edit User</button>
+                    <button disabled id="editUserBtn" type="button" class="btn btn-blue" data-bs-toggle="modal" data-bs-target="#editUserModal">Edit User</button>
+                    <button disabled id="deleteUserBtn" type="button" class="btn btn-red" data-bs-toggle="modal" data-bs-target="#deleteUserModal">Delete User</button>
                 </div>
             </div>
             <table class="table" id="table">
@@ -105,6 +147,8 @@
                     <th>ID</th>
                     <th>Name</th>
                     <th>Email</th>
+                    <th>Admin</th>
+                    <th>Manager</th>
                 </tr>
                 </thead>
                 <tbody></tbody>
@@ -114,6 +158,8 @@
                     <th>ID</th>
                     <th>Name</th>
                     <th>Email</th>
+                    <th>Admin</th>
+                    <th>Manager</th>
                 </tr>
                 </tfoot>
             </table>

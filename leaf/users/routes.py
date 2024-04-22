@@ -4,7 +4,7 @@ import werkzeug.utils
 from flask import render_template, Blueprint, jsonify, request, session
 
 from leaf.decorators import login_required, admin_required
-from .models import get_users_data, add_user_to_database, delete_user_to_database
+from .models import get_users_data, add_user_to_database, edit_user_to_database, delete_user_to_database
 
 users = Blueprint('users', __name__)
 
@@ -67,10 +67,10 @@ def add_user():
 
     try:
         # Get post params
-        username = werkzeug.utils.escape(request.form.get("username", type=str))
-        email = werkzeug.utils.escape(request.form.get("email", type=str))
-        is_admin = werkzeug.utils.escape(request.form.get("is_admin", type=str))
-        is_master = werkzeug.utils.escape(request.form.get("is_master", type=str))
+        username = str(werkzeug.utils.escape(request.form.get("username", type=str)))
+        email = str(werkzeug.utils.escape(request.form.get("email", type=str)))
+        is_admin = int(werkzeug.utils.escape(request.form.get("is_admin", type=int)))
+        is_manager = int(werkzeug.utils.escape(request.form.get("is_manager", type=int)))
         password = hashlib.sha1(werkzeug.utils.escape(request.form['password']).encode()).hexdigest()
 
         # Check if User email already exists
@@ -81,7 +81,7 @@ def add_user():
             return jsonify(json_response)
 
         # Add user to the database
-        result = add_user_to_database(username, email, is_admin, is_master, password)
+        result = add_user_to_database(username, email, is_admin, is_manager, password)
 
         if result:
             # Return fields back to view
@@ -96,12 +96,31 @@ def add_user():
         return jsonify({"error": "An error occurred while processing the request"}), 500
 
 
+@users.route('/user/edit', methods=['POST'])
+@login_required
+@admin_required
+def edit_user():
+    try:
+        user_id = int(werkzeug.utils.escape(request.form.get("user_id", type=int)))
+        is_admin = int(werkzeug.utils.escape(request.form.get("is_admin", type=int)))
+        is_manager = int(werkzeug.utils.escape(request.form.get("is_manager", type=int)))
+
+        # Edit User from DB
+        edit_user_to_database(user_id, is_admin, is_manager)
+
+        return jsonify({"Message": "success"})
+    except Exception as e:
+        # Log the error or handle it appropriately
+        print(f"Error in edit_user: {e}")
+        return jsonify({"error": "An error occurred while processing the request"}), 500
+
+
 @users.route('/user/delete', methods=['POST'])
 @login_required
 @admin_required
 def delete_user():
     try:
-        user_id = werkzeug.utils.escape(request.form.get("user_id", type=int))
+        user_id = int(werkzeug.utils.escape(request.form.get("user_id", type=int)))
 
         # Delete User from DB
         delete_user_to_database(user_id)

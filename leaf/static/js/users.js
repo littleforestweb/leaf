@@ -48,11 +48,11 @@ function showNotification(title, message, color) {
 }
 
 async function addUser() {
-    let user_name = escapeHtml($("#user-name").val());
-    let user_email = escapeHtml($("#user-email").val());
-    let user_is_admin = escapeHtml($("#user-is-admin").val());
-    let user_is_master = escapeHtml($("#user-is-master").val());
-    let user_password = $("#user-password").val();
+    let user_name = escapeHtml($("#add-user-name").val());
+    let user_email = escapeHtml($("#add-user-email").val());
+    let user_is_admin = escapeHtml($("#add-user-is-admin").val());
+    let user_is_manager = escapeHtml($("#add-user-is-manager").val());
+    let user_password = $("#add-user-password").val();
 
     // Post
     $.ajax({
@@ -61,7 +61,7 @@ async function addUser() {
             "username": user_name,
             "email": user_email,
             "is_admin": user_is_admin,
-            "is_master": user_is_master,
+            "is_mmanager": user_is_manager,
             "password": user_password
         },
         success: function (entry) {
@@ -84,6 +84,56 @@ async function addUser() {
 
             // Set Success Notification Information
             showNotification("Notification", "There was an error adding user. Please try again.", "red");
+        }
+    });
+}
+
+document.querySelector("#editUserModal").addEventListener("show.bs.modal", event => {
+    let selectedCheckbox = $('input[type="checkbox"]:checked:first');
+    let row = selectedCheckbox.closest('tr');
+    let userName = row.find('td:eq(2)').text().trim();
+    let userEmail = row.find('td:eq(3)').text().trim();
+    let userIsAdmin = row.find('td:eq(4)').text().trim() === "Yes" ? 1 : 0;
+    let userIsManager = row.find('td:eq(5)').text().trim() === "Yes" ? 1 : 0;
+    document.querySelector("#edit-user-name").value = userName;
+    document.querySelector("#edit-user-email").value = userEmail;
+    document.querySelector("#edit-user-is-admin").value = userIsAdmin;
+    document.querySelector("#edit-user-is-manager").value = userIsManager;
+});
+
+async function editUser() {
+    let selectedCheckbox = $('input[type="checkbox"]:checked:first');
+    let row = selectedCheckbox.closest('tr');
+    let userId = row.find('td:eq(1)').text().trim();
+    let userIsAdmin = escapeHtml($("#edit-user-is-admin").val());
+    let userIsManager = escapeHtml($("#edit-user-is-manager").val());
+    console.log(userId, userIsAdmin, userIsManager)
+
+    // Post
+    $.ajax({
+        type: "POST", url: "/user/edit",
+        data: {
+            "user_id": userId,
+            "is_admin": userIsAdmin,
+            "is_manager": userIsManager,
+        },
+        success: function (entry) {
+            // Hide Create Modal
+            $('#editUserModal').modal('hide');
+
+            // Set notification details based on response
+            showNotification("Success", "User edited successfully", "green");
+
+            // Refresh page after a short delay
+            setTimeout(() => {
+                location.reload(true);
+            }, 500);
+        }, error: function (XMLHttpRequest, textStatus, errorThrown) {
+            // Hide Create Modal
+            $('#editUserModal').modal('hide');
+
+            // Set Success Notification Information
+            showNotification("Notification", "There was an error editing user. Please try again.", "red");
         }
     });
 }
@@ -130,12 +180,14 @@ window.addEventListener('DOMContentLoaded', async function main() {
         let id = entry["id"];
         let name = entry["name"];
         let email = entry["email"];
-        dataset.push([id, id, name, email]);
+        let is_admin = entry["is_admin"] === 1 ? "Yes" : "No";
+        let is_manager = entry["is_manager"] === 1 ? "Yes" : "No";
+        dataset.push([id, id, name, email, is_admin, is_manager]);
     }
 
     // Setup - add a text input to each header cell
     $('#table thead tr').clone(true).addClass('filters').appendTo('#table thead');
-    let searchColumns = [1, 2, 3];
+    let searchColumns = [1, 2, 3, 4, 5];
 
     $('#table').DataTable({
         dom: 'Brtip', buttons: {
@@ -185,11 +237,19 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 return "<span>" + data + "</span>";
             },
         }, {
-            "width": "45%", "targets": 2, "render": function (data, type, row) {
+            "width": "35%", "targets": 2, "render": function (data, type, row) {
                 return "<span>" + data + "</span>";
             },
         }, {
-            "width": "45%", "targets": 3, "render": function (data, type, row) {
+            "width": "35%", "targets": 3, "render": function (data, type, row) {
+                return "<span>" + data + "</span>";
+            },
+        }, {
+            "width": "10%", "targets": 4, "render": function (data, type, row) {
+                return "<span>" + data + "</span>";
+            },
+        }, {
+            "width": "10%", "targets": 5, "render": function (data, type, row) {
                 return "<span>" + data + "</span>";
             },
         }]
