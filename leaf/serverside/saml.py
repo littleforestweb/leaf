@@ -425,7 +425,7 @@ def pysaml2_config():
                 "cert": None,  # Optional: Path to a certificate file to verify the HTTPS connection
             }]
         },
-        "xmlsec_binary": "/opt/homebrew/bin/xmlsec1",
+        "xmlsec_binary": Config.XMLSEC_BINARY,
         "key_file": Config.SP_X509KEY,
         "cert_file": Config.SP_X509CERT
     }
