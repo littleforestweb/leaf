@@ -341,7 +341,7 @@ def action_workflow():
     action = werkzeug.utils.escape(request.form.get("status"))
 
     # Check if the workflow belongs to the user's account
-    if not is_workflow_owner(int(workflow_id)):
+    if not is_workflow_owner(int(workflow_id)) or session["is_manager"] == 0:
         return jsonify({"error": "Forbidden"}), 403
 
     thisType = 1

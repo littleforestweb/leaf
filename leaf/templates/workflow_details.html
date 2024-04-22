@@ -3,10 +3,6 @@
 {% block title %}Workflow Details{% endblock %}
 
 {% block content %}
-    <script>
-        let workflow_id = '{{ data.id }}';
-        let is_manager = '{{ data.is_manager }}';
-    </script>
 
     <!-- NOTIFICATIONS -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11">
@@ -179,13 +175,13 @@
                                 <h5 class="card-header">Action{% if data.status == "6" or data.status == "Approved" or data.status == "Rejected" %} - <span id="action_message" class="{% if data.status == 'Rejected' %}isRed{% else %}isGreen{% endif %}">{% if data.status == "6" %}Complete{% else %}{{ data.status }}{% endif %}</span>{% endif %}</h5>
                                 <div class="card-body" id="actionContainer">
                                     {% if (data.status != "6" and data.status != "Approved") and data.status != "Rejected" %}
-                                        <a class='btn btn-success green-link' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}")'>Approve</a>
+                                        <button class='btn btn-success' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}")' {% if session.is_manager == 0 %} disabled {% endif %}>Approve</button>
                                         -
-                                        <a class='btn btn-red green-link' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}")'>Reject</a>
+                                        <button class='btn btn-red' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}")' {% if session.is_manager == 0 %} disabled {% endif %}>Reject</button>
                                     {% elif data.status == "Rejected" %}
-                                        <a class='btn btn-success green-link' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}")'>Approve</a>
+                                        <button class='btn btn-success' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}")' {% if session.is_manager == 0 %} disabled {% endif %}>Approve</button>
                                         -
-                                        <a class='btn btn-red green-link' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}")'>Reject</a>
+                                        <button class='btn btn-red' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}")' {% if session.is_manager == 0 %} disabled {% endif %}>Reject</button>
                                     {% else %}
                                         <span>No Action needed</span>
                                     {% endif %}
@@ -216,7 +212,7 @@
                         <div class="card">
                             <h5 class="card-header">Status - <span id="status_message" class="{% if data.status != '6' and (data.statusMessage == 'Overdue' or data.statusMessage == 'Rejected') %}isRed{% elif data.status != '6' and data.statusMessage == 'At risk' %}isOrange{% else %}isGreen{% endif %}">{% if data.status != '6' %}{{ data.statusMessage }}{% else %}Complete{% endif %}</span></h5>
                             <div class="card-body" id="statusContainer">
-                                <select id="status-selection" class="form-control form-select" {% if is_manager == 0 %}disabled{% endif %} onchange="statusChange('{{ data.id }}', '{{ session.accountId }}', '{{ data.startUserEmail }}')">
+                                <select id="status-selection" class="form-control form-select" {% if session.is_manager == 0 %}disabled{% endif %} onchange="statusChange('{{ data.id }}', '{{ session.accountId }}', '{{ data.startUserEmail }}')">
                                     {% if data.status == "Rejected" %}
                                         <option value="1" hidden selected>Rejected</option>
                                     {% endif %}
