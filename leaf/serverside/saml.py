@@ -15,8 +15,269 @@ from signxml import XMLVerifier
 
 from leaf import Config
 from leaf.decorators import db_connection, generate_jwt
+from leaf.groups import models as groups_model
 
 saml_route = Blueprint("saml_route", __name__)
+
+
+@saml_route.route('/saml/login')
+def sp_saml_login():
+    if Config.IDP_METADATA != "":
+        saml_client = Saml2Client(config=pysaml2_config())
+        # Prepare the SAML Authentication Request
+        _, info = saml_client.prepare_for_authenticate()
+        redirect_url = dict(info["headers"])["Location"]
+        return redirect(redirect_url)
+    else:
+        print("IDP Metadata not defined!")
+        return "IDP Metadata not defined!"
+
+
+@saml_route.route('/saml/metadata')
+def saml_metadata():
+    if Config.SP_ENTITY_ID != "":
+        cfg = pysaml2_config()
+        # Use the metadata service to get the metadata as a string
+        metadata_string = metadata.create_metadata_string(None, cfg, sign=True, valid=365 * 24)  # Generate metadata
+        return Response(metadata_string, mimetype='text/xml')
+    else:
+        print("SP Entity ID not defined!")
+        return "SP Entity ID not defined!"
+
+@saml_route.route("/saml", methods=["GET", "POST"])
+def idp_initiated():
+    """
+    Handle Identity Provider (IdP) initiated SAML authentication.
+
+    This route processes SAML responses for user authentication.
+    If accessed via GET method, it denies access. When accessed via POST, it processes the SAML response.
+    The function performs several key actions:
+    - Parses IdP metadata to find the X509Certificate and SingleLogoutService details.
+    - Validates the SAML response signature using the X509Certificate.
+    - Extracts user attributes (like email, username) from the SAML response.
+    - Checks the user's existence in the database, creates a new user if not existing, and updates user data.
+    - Sets session data for the authenticated user.
+    - Redirects the user to the appropriate page based on the authentication result.
+
+    Returns:
+    - Response: A rendered template or a redirect, depending on the authentication outcome and method of request.
+    """
+    if request.method == "GET":
+        return "Access Denied"
+
+    if request.method == "POST":
+
+        # Load the IdP's metadata
+        # Fetch the content from the URL
+        idp_metadata_response = requests.get(Config.IDP_METADATA)
+        if idp_metadata_response.status_code == 200:
+            # Parse the XML from the fetched content
+            idp_metadata = etree.fromstring(idp_metadata_response.content)
+        else:
+            print("Failed to retrieve the IDP Metadata file: HTTP Status", response.status_code)
+            return "Failed to retrieve the IDP Metadata file: HTTP Status", 403
+
+
+        # Find the X509Certificate element (assuming there's only one)
+        # Note: '{http://www.w3.org/2000/09/xmldsig#}X509Certificate' is the full tag name with namespace
+        cert_elem = idp_metadata.find(".//ds:X509Certificate", namespaces=namespaces)
+
+        # Find the SingleLogoutService element
+        slo_elements = idp_metadata.findall(".//md:SingleLogoutService", namespaces=namespaces)
+
+        for slo in slo_elements:
+            # Extract attributes like Binding and Location from the SingleLogoutService element
+            binding = slo.get('Binding')
+            location = slo.get('Location')
+            logout_redirect = False
+            if binding == 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect':
+                logout_redirect = location
+
+        if cert_elem is not None:
+            # Get the text of the X509Certificate element, which is base64 encoded
+            idp_metadata_cert = cert_elem.text
+            saml_response_xml, attributes_elements = process_saml_response(request.form["SAMLResponse"])
+            if saml_response_xml is not False:
+                print('Saml Response is valid and secure!')
+                # Extract the X509 certificate
+                # Assuming that there's only one X509Certificate element in the SAML response
+                response_cert_element = saml_response_xml.xpath("//*[local-name()='X509Certificate']")
+                if response_cert_element:
+                    cert_pem = f"-----BEGIN CERTIFICATE-----\n{idp_metadata_cert.strip()}\n-----END CERTIFICATE-----"
+                    reponse_cert_pem = f"-----BEGIN CERTIFICATE-----\n{response_cert_element[0].text.strip()}\n-----END CERTIFICATE-----"
+
+                    # Verify the signature using the certificate from the IdP metadata
+                    try:
+                        verified_data = XMLVerifier().verify(saml_response_xml, x509_cert=cert_pem).signed_xml
+                        print("Signature is valid.")
+                    except Exception as e:
+                        print(f"Error verifying signature: {e}")
+                        return "Access Denied. Error verifying signature!", 403
+                else:
+                    print("Certificate not found in the SAML response. This connection might not be secure!")
+                    return "Access Denied. Error verifying signature! Certificate not found in the SAML response.", 403
+            else:
+                print(f"Permission Denied. Saml response not valid!")
+                return f"Permission Denied. Saml response not valid!", 403
+
+        else:
+            print("X509Certificate element not found in the IdP metadata!")
+            return "Access Denied. Error verifying signature! Certificate not found in the IdP metadata!", 403
+
+        # issuer_text = saml_response_xml.xpath('//saml:Issuer', namespaces=namespaces)
+        issuer_elements = saml_response_xml.xpath("//*[local-name() = 'Issuer']")
+        if issuer_elements:
+            issuer_text = issuer_elements[0].text
+
+            if issuer_text and issuer_text.lower().strip() != Config.IDP_ENTITY_ID.lower().strip():
+                return "Access Denied"
+
+            email = None
+            username = None
+            firstName = None
+            lastName = None
+            isAdmin = 0
+
+            attributes = {}
+
+            for attr in attributes_elements:
+                if attr['Name'] in Config.SAML_ATTRIBUTES_MAP:
+                    attributes[Config.SAML_ATTRIBUTES_MAP[attr['Name']]] = attr['AttributeValue']
+
+            email = attributes.get('email')
+            username = attributes.get('username', email)
+            first_name = attributes.get('firstName')
+            last_name = attributes.get('lastName')
+
+            group_values = attributes.get('group')
+            groups = []
+            if group_values is not None:
+                if isinstance(group_values, str):
+                    # If it's a string, split it into a list by commas
+                    groups = group_values.split(',')
+
+                # Ensure the groups are stripped of leading/trailing whitespace
+                groups = [group.strip() for group in groups]
+                isAdmin = 1 if any(Config.POWER_USER_GROUP == group for group in groups) else 0
+
+            if email:
+
+                mydb, mycursor = db_connection()
+
+                main_query = (
+                    "SELECT user.id, "
+                    "CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) "
+                    "WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, "
+                    "CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username "
+                    "ELSE CONCAT(first_name, ' ', last_name) END AS username, "
+                    "user.email, user.account_id, name, user.is_admin, user.is_manager "
+                    "FROM user "
+                    "LEFT JOIN user_image ON user_id = user.id "
+                    "LEFT JOIN account ON user.account_id = account.id "
+                    "WHERE email = %s"
+                )
+
+                try:
+
+                    mycursor.execute(main_query, (email,))
+                    lfi_user = mycursor.fetchone()
+
+                    if not lfi_user:
+                        query = "INSERT INTO user(account_id, email, username, is_admin) VALUES(%s, %s, %s, %s)"
+                        values = (Config.ACCOUNT_ID, email, username, isAdmin)
+                        mycursor.execute(query, values)
+                        mydb.commit()
+
+                        user_id = mycursor.lastrowid
+
+                        query = "INSERT INTO user_image(user_id, first_name, last_name) VALUES(%s, %s, %s)"
+                        values = (user_id, firstName, lastName)
+                        mycursor.execute(query, values)
+                        mydb.commit()
+
+                        mycursor.execute(main_query, (email,))
+                        lfi_user = mycursor.fetchone()
+
+                    if lfi_user:
+                        if lfi_user[6] != isAdmin:
+                            query = "UPDATE user SET is_admin = %s WHERE id = %s"
+                            values = (isAdmin, lfi_user[0])
+                            mycursor.execute(query, values)
+                            mydb.commit()
+
+                    # If account exists in accounts table in out database
+                    if lfi_user:
+
+                        leaf_user_groups = groups_model.get_all_user_groups(lfi_user[4])
+                        
+                        # SQL query to check if an entry already exists
+                        check_query = "SELECT * FROM group_member WHERE group_id=%s AND user_id=%s"
+                        # SQL query to insert a new record
+                        insert_query = "INSERT INTO group_member(group_id, user_id) VALUES (%s, %s)"
+
+                        for group in groups:
+                            if group in leaf_user_groups:
+                                # Get the corresponding group_id
+                                group_id = leaf_user_groups[group]
+
+                                # Check if this user is already a member of this group
+                                mycursor.execute(check_query, (group_id, lfi_user[0]))
+                                result = mycursor.fetchone()
+                                mydb.commit()
+                                if not result:  # If there is no such record, insert it
+                                    mycursor.execute(insert_query, (group_id, lfi_user[0]))
+                                    mydb.commit()
+                                    print(f"Inserted '{group}' into group_member.")
+                                else:
+                                    print(f"Skipped inserting '{group}' as it already exists.")
+
+
+
+                        # Create session data, we can access this data in other routes
+                        session['loggedin'] = True
+                        session['id'] = lfi_user[0]
+                        session['user_image'] = lfi_user[1]
+                        session['username'] = lfi_user[2]
+                        session['email'] = lfi_user[3]
+                        session['accountId'] = lfi_user[4]
+                        session['accountName'] = '' if lfi_user[5] is None else lfi_user[5]
+                        session['is_admin'] = isAdmin
+                        session['is_manager'] = lfi_user[7]
+                        session['logout_redirect'] = logout_redirect
+
+                        # Generate and store JWT token in the session
+                        jwt_token = generate_jwt()
+                        session['jwt_token'] = jwt_token
+
+                        msg = 'Logged in successfully!'
+                        msgClass = 'alert alert-success'
+                        return render_template('sites.html', userId=session['id'], username=session['username'],
+                                               user_image=session['user_image'], accountId=session['accountId'],
+                                               accountName=session['accountName'], is_admin=session['is_admin'],
+                                               is_manager=session['is_manager'], msg=msg, msgClass=msgClass,
+                                               jwt_token=jwt_token)
+                    else:
+                        # Account doesnt exist or username/password incorrect
+                        msg = 'Incorrect username/password!'
+                        msgClass = 'alert alert-danger'
+                        return render_template('login.html', msg=msg, msgClass=msgClass)
+
+                except Exception as e:
+                    # Log the error or provide more details
+                    print(f"Error during login: {e}")
+                    msg = 'An error occurred during login.'
+                    msgClass = 'alert alert-danger'
+                    return render_template('login.html', msg=msg, msgClass=msgClass)
+                finally:
+                    mydb.close()
+
+            else:
+                msg = 'Missing email!'
+                msgClass = 'alert alert-danger'
+                return render_template('login.html', msg=msg, msgClass=msgClass)
+        else:
+            print("Issuer element not found.")
+            return "Access Denied. Issuer not found!"
 
 
 def perform_additional_xml_checks(xml_data):
@@ -198,216 +459,6 @@ def process_saml_response(saml_response_from_request):
     return [validate_saml_response, attributes_elements]
 
 
-@saml_route.route("/saml", methods=["GET", "POST"])
-def idp_initiated():
-    """
-    Handle Identity Provider (IdP) initiated SAML authentication.
-
-    This route processes SAML responses for user authentication.
-    If accessed via GET method, it denies access. When accessed via POST, it processes the SAML response.
-    The function performs several key actions:
-    - Parses IdP metadata to find the X509Certificate and SingleLogoutService details.
-    - Validates the SAML response signature using the X509Certificate.
-    - Extracts user attributes (like email, username) from the SAML response.
-    - Checks the user's existence in the database, creates a new user if not existing, and updates user data.
-    - Sets session data for the authenticated user.
-    - Redirects the user to the appropriate page based on the authentication result.
-
-    Returns:
-    - Response: A rendered template or a redirect, depending on the authentication outcome and method of request.
-    """
-    if request.method == "GET":
-        return "Access Denied"
-
-    if request.method == "POST":
-
-        # Load the IdP's metadata
-        # Fetch the content from the URL
-        idp_metadata_response = requests.get(Config.IDP_METADATA)
-        if idp_metadata_response.status_code == 200:
-            # Parse the XML from the fetched content
-            idp_metadata = etree.fromstring(idp_metadata_response.content)
-        else:
-            print("Failed to retrieve the IDP Metadata file: HTTP Status", response.status_code)
-            return "Failed to retrieve the IDP Metadata file: HTTP Status", 403
-
-
-        # Find the X509Certificate element (assuming there's only one)
-        # Note: '{http://www.w3.org/2000/09/xmldsig#}X509Certificate' is the full tag name with namespace
-        cert_elem = idp_metadata.find(".//ds:X509Certificate", namespaces=namespaces)
-
-        # Find the SingleLogoutService element
-        slo_elements = idp_metadata.findall(".//md:SingleLogoutService", namespaces=namespaces)
-
-        for slo in slo_elements:
-            # Extract attributes like Binding and Location from the SingleLogoutService element
-            binding = slo.get('Binding')
-            location = slo.get('Location')
-            logout_redirect = False
-            if binding == 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect':
-                logout_redirect = location
-
-        if cert_elem is not None:
-            # Get the text of the X509Certificate element, which is base64 encoded
-            idp_metadata_cert = cert_elem.text
-            saml_response_xml, attributes_elements = process_saml_response(request.form["SAMLResponse"])
-            if saml_response_xml is not False:
-                print('Saml Response is valid and secure!')
-                # Extract the X509 certificate
-                # Assuming that there's only one X509Certificate element in the SAML response
-                response_cert_element = saml_response_xml.xpath("//*[local-name()='X509Certificate']")
-                if response_cert_element:
-                    cert_pem = f"-----BEGIN CERTIFICATE-----\n{idp_metadata_cert.strip()}\n-----END CERTIFICATE-----"
-                    reponse_cert_pem = f"-----BEGIN CERTIFICATE-----\n{response_cert_element[0].text.strip()}\n-----END CERTIFICATE-----"
-
-                    # Verify the signature using the certificate from the IdP metadata
-                    try:
-                        verified_data = XMLVerifier().verify(saml_response_xml, x509_cert=cert_pem).signed_xml
-                        print("Signature is valid.")
-                    except Exception as e:
-                        print(f"Error verifying signature: {e}")
-                        return "Access Denied. Error verifying signature!", 403
-                else:
-                    print("Certificate not found in the SAML response. This connection might not be secure!")
-                    return "Access Denied. Error verifying signature! Certificate not found in the SAML response.", 403
-            else:
-                print(f"Permission Denied. Saml response not valid!")
-                return f"Permission Denied. Saml response not valid!", 403
-
-        else:
-            print("X509Certificate element not found in the IdP metadata!")
-            return "Access Denied. Error verifying signature! Certificate not found in the IdP metadata!", 403
-
-        # issuer_text = saml_response_xml.xpath('//saml:Issuer', namespaces=namespaces)
-        issuer_elements = saml_response_xml.xpath("//*[local-name() = 'Issuer']")
-        if issuer_elements:
-            issuer_text = issuer_elements[0].text
-
-            if issuer_text and issuer_text.lower().strip() != Config.IDP_ENTITY_ID.lower().strip():
-                return "Access Denied"
-
-            email = None
-            username = None
-            firstName = None
-            lastName = None
-            isAdmin = 0
-
-            attributes = {}
-
-            for attr in attributes_elements:
-                if attr['Name'] in Config.SAML_ATTRIBUTES_MAP:
-                    attributes[Config.SAML_ATTRIBUTES_MAP[attr['Name']]] = attr['AttributeValue']
-
-            email = attributes.get('email')
-            username = attributes.get('username', email)
-            first_name = attributes.get('firstName')
-            last_name = attributes.get('lastName')
-
-            group_values = attributes.get('group')
-            groups = []
-            if group_values is not None:
-                if isinstance(group_values, str):
-                    # If it's a string, split it into a list by commas
-                    groups = group_values.split(',')
-
-                # Ensure the groups are stripped of leading/trailing whitespace
-                groups = [group.strip() for group in groups]
-                isAdmin = 1 if any(Config.POWER_USER_GROUP == group for group in groups) else 0
-
-            if email:
-
-                mydb, mycursor = db_connection()
-
-                main_query = (
-                    "SELECT user.id, "
-                    "CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) "
-                    "WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, "
-                    "CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username "
-                    "ELSE CONCAT(first_name, ' ', last_name) END AS username, "
-                    "user.email, user.account_id, name, user.is_admin, user.is_manager "
-                    "FROM user "
-                    "LEFT JOIN user_image ON user_id = user.id "
-                    "LEFT JOIN account ON user.account_id = account.id "
-                    "WHERE email = %s"
-                )
-
-                try:
-
-                    mycursor.execute(main_query, (email,))
-                    lfi_user = mycursor.fetchone()
-
-                    if not lfi_user:
-                        query = "INSERT INTO user(account_id, email, username, is_admin) VALUES(%s, %s, %s, %s)"
-                        values = (Config.ACCOUNT_ID, email, username, isAdmin)
-                        mycursor.execute(query, values)
-                        mydb.commit()
-
-                        user_id = mycursor.lastrowid
-
-                        query = "INSERT INTO user_image(user_id, first_name, last_name) VALUES(%s, %s, %s)"
-                        values = (user_id, firstName, lastName)
-                        mycursor.execute(query, values)
-                        mydb.commit()
-
-                        mycursor.execute(main_query, (email,))
-                        lfi_user = mycursor.fetchone()
-
-                    if lfi_user:
-                        if lfi_user[6] != isAdmin:
-                            query = "UPDATE user SET is_admin = %s WHERE id = %s"
-                            values = (isAdmin, lfi_user[0])
-                            mycursor.execute(query, values)
-                            mydb.commit()
-
-                    # If account exists in accounts table in out database
-                    if lfi_user:
-                        # Create session data, we can access this data in other routes
-                        session['loggedin'] = True
-                        session['id'] = lfi_user[0]
-                        session['user_image'] = lfi_user[1]
-                        session['username'] = lfi_user[2]
-                        session['email'] = lfi_user[3]
-                        session['accountId'] = lfi_user[4]
-                        session['accountName'] = '' if lfi_user[5] is None else lfi_user[5]
-                        session['is_admin'] = isAdmin
-                        session['is_manager'] = lfi_user[7]
-                        session['logout_redirect'] = logout_redirect
-
-                        # Generate and store JWT token in the session
-                        jwt_token = generate_jwt()
-                        session['jwt_token'] = jwt_token
-
-                        msg = 'Logged in successfully!'
-                        msgClass = 'alert alert-success'
-                        return render_template('sites.html', userId=session['id'], username=session['username'],
-                                               user_image=session['user_image'], accountId=session['accountId'],
-                                               accountName=session['accountName'], is_admin=session['is_admin'],
-                                               is_manager=session['is_manager'], msg=msg, msgClass=msgClass,
-                                               jwt_token=jwt_token)
-                    else:
-                        # Account doesnt exist or username/password incorrect
-                        msg = 'Incorrect username/password!'
-                        msgClass = 'alert alert-danger'
-                        return render_template('login.html', msg=msg, msgClass=msgClass)
-
-                except Exception as e:
-                    # Log the error or provide more details
-                    print(f"Error during login: {e}")
-                    msg = 'An error occurred during login.'
-                    msgClass = 'alert alert-danger'
-                    return render_template('login.html', msg=msg, msgClass=msgClass)
-                finally:
-                    mydb.close()
-
-            else:
-                msg = 'Missing email!'
-                msgClass = 'alert alert-danger'
-                return render_template('login.html', msg=msg, msgClass=msgClass)
-        else:
-            print("Issuer element not found.")
-            return "Access Denied. Issuer not found!"
-
-
 def pysaml2_config():
     cfg = {
         "entityid": Config.SP_ENTITY_ID,
@@ -442,31 +493,6 @@ def pysaml2_config():
     sp_config = config.SPConfig()
     sp_config.load(cfg)
     return sp_config
-
-
-@saml_route.route('/saml/login')
-def sp_saml_login():
-    if Config.IDP_METADATA != "":
-        saml_client = Saml2Client(config=pysaml2_config())
-        # Prepare the SAML Authentication Request
-        _, info = saml_client.prepare_for_authenticate()
-        redirect_url = dict(info["headers"])["Location"]
-        return redirect(redirect_url)
-    else:
-        print("IDP Metadata not defined!")
-        return "IDP Metadata not defined!"
-
-
-@saml_route.route('/saml/metadata')
-def saml_metadata():
-    if Config.SP_ENTITY_ID != "":
-        cfg = pysaml2_config()
-        # Use the metadata service to get the metadata as a string
-        metadata_string = metadata.create_metadata_string(None, cfg, sign=True, valid=365 * 24)  # Generate metadata
-        return Response(metadata_string, mimetype='text/xml')
-    else:
-        print("SP Entity ID not defined!")
-        return "SP Entity ID not defined!"
 
 
 namespaces = {
