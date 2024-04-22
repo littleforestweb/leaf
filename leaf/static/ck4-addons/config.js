@@ -9,5 +9,7 @@ CKEDITOR.editorConfig = function (config) {
     config.autoEmbed_widget = 'customEmbed';
     config.iframe_attributes = {
         sandbox: 'allow-scripts allow-same-origin'
-    }
+    };
+    config.protectedSource.push(/<a[\s\S]*?\>/g);
+    config.protectedSource.push(/<\/a[\s\S]*?\>/g);
 };
