@@ -232,7 +232,6 @@ def idp_initiated():
                                     print(f"Skipped inserting '{group}' as it already exists.")
 
 
-
                         # Create session data, we can access this data in other routes
                         session['loggedin'] = True
                         session['id'] = lfi_user[0]
