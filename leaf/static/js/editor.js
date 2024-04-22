@@ -29,9 +29,6 @@ async function publishPage() {
 window.addEventListener('DOMContentLoaded', async function main() {
     console.log("Starting Editor");
 
-    // Add padding-top
-    document.getElementById("mainCodeDiv").style.paddingTop = document.getElementsByClassName("navbar")[0].clientHeight - 10 + "px";
-
     // Load page html code
     let data = await $.get("/editor/getPageCode?page_id=" + page_id, function (htmlContent) {
         return htmlContent;
