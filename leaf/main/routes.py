@@ -351,7 +351,7 @@ def api_get_lfi_admin_users(accountId):
     """
     mydb, mycursor = db_connection()
 
-    sql = "SELECT user.id, '' user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE user.is_admin = 1 AND account.id = %s"
+    sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE account.id = %s"
     val = (accountId,)
     mycursor.execute(sql, val)
     users = mycursor.fetchall()
@@ -387,12 +387,9 @@ def api_get_all_users(accountId):
     """
     mydb, mycursor = db_connection()
 
-    if accountId == 1:
-        mycursor.execute("SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE account.active = 1")
-    else:
-        sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE account.active = 1 AND account.id = %s"
-        val = (accountId,)
-        mycursor.execute(sql, val)
+    sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE account.id = %s"
+    val = (accountId,)
+    mycursor.execute(sql, val)
     users = mycursor.fetchall()
 
     usersLst = [{"id": singleUser[0], "user_image": singleUser[1], "username": singleUser[2], "email": singleUser[3],
@@ -428,19 +425,13 @@ def api_get_single_user(accountId, is_admin, thisUserId):
     """
     mydb, mycursor = db_connection()
 
-    if accountId == 1:
-        if is_admin == 1:
-            mycursor.execute("SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE account.active = 1")
-        else:
-            mycursor.execute("SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id AND user.id = %s WHERE account.active = 1", (thisUserId,))
+    if is_admin == 1:
+        sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE account.id = %s"
+        val = (accountId,)
     else:
-        if is_admin == 1:
-            sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE account.active = 1 AND account.id = %s"
-            val = (accountId,)
-        else:
-            sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id AND user.id = %s WHERE account.active = 1 AND account.id = %s"
-            val = (thisUserId, accountId)
-        mycursor.execute(sql, val)
+        sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id AND user.id = %s WHERE account.id = %s"
+        val = (thisUserId, accountId)
+    mycursor.execute(sql, val)
     users = mycursor.fetchall()
 
     usersLst = [{"id": singleUser[0], "user_image": singleUser[1], "username": singleUser[2], "email": singleUser[3],

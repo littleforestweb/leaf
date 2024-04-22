@@ -195,7 +195,6 @@ async function doMainButtons() {
 }
 
 async function populateUserList() {
-    console.log("populateUserList");
     let listOfUsers = await $.get("/api/get_lfi_admin_users/" + accountId, function (result) {
         return result;
     });
