@@ -1,5 +1,6 @@
 import base64
 import re
+import requests
 
 import werkzeug.utils
 from defusedxml.lxml import fromstring
@@ -221,7 +222,15 @@ def idp_initiated():
     if request.method == "POST":
 
         # Load the IdP's metadata
-        idp_metadata = etree.parse(Config.IDP_METADATA)
+        # Fetch the content from the URL
+        idp_metadata_response = requests.get(Config.IDP_METADATA)
+        if idp_metadata_response.status_code == 200:
+            # Parse the XML from the fetched content
+            idp_metadata = etree.fromstring(idp_metadata_response.content)
+        else:
+            print("Failed to retrieve the IDP Metadata file: HTTP Status", response.status_code)
+            return "Failed to retrieve the IDP Metadata file: HTTP Status", 403
+
 
         # Find the X509Certificate element (assuming there's only one)
         # Note: '{http://www.w3.org/2000/09/xmldsig#}X509Certificate' is the full tag name with namespace
