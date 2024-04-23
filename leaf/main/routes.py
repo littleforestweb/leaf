@@ -94,7 +94,7 @@ def login():
                    THEN username \
                    ELSE CONCAT(first_name, ' ', last_name) \
                END AS username, \
-               user.email, user.account_id, name, user.is_admin, user.is_manager \
+               user.email, user.account_id, name, user.is_admin, user.is_manager, user_image.first_name, user_image.last_name, user_image.display_name \
                FROM user \
                LEFT JOIN user_image ON user_id = user.id \
                LEFT JOIN account ON user.account_id = account.id \
@@ -115,6 +115,9 @@ def login():
                 session.pop('username', None)
                 session.pop('user_image', None)
                 session.pop('email', None)
+                session.pop('first_name', None)
+                session.pop('last_name', None)
+                session.pop('display_name', None)
                 session.pop('accountId', None)
                 session.pop('accountName', None)
                 session.pop('is_admin', None)
@@ -125,6 +128,9 @@ def login():
                 # Create session data
                 session['loggedin'] = True
                 session['id'] = lfi_user[0]
+                session['first_name'] = lfi_user[8]
+                session['last_name'] = lfi_user[9]
+                session['display_name'] = lfi_user[10]
                 session['user_image'] = lfi_user[1]
                 session['username'] = lfi_user[2]
                 session['email'] = lfi_user[3]
