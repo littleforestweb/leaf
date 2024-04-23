@@ -55,7 +55,7 @@ def index():
     """
     return render_template('sites.html', username=session['username'], user_image=session['user_image'],
                            accountId=session['accountId'], accountName=session['accountName'],
-                           is_admin=session['is_admin'], is_manager=session['is_manager'])
+                           is_admin=session['is_admin'], is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE)
 
 
 @main.route("/login", methods=['GET', 'POST'])
@@ -143,7 +143,7 @@ def login():
                                        user_image=session['user_image'], accountId=session['accountId'],
                                        accountName=session['accountName'], is_admin=session['is_admin'],
                                        is_manager=session['is_manager'], msg=msg, msgClass=msgClass,
-                                       jwt_token=jwt_token)
+                                       jwt_token=jwt_token, site_notice=Config.SITE_NOTICE)
             else:
                 # Account doesn't exist or username/password incorrect
                 msg = 'Incorrect username/password!'
@@ -241,7 +241,7 @@ def api_list_lfi_users():
     return render_template('list_lfi_users.html', username=session['username'],
                            user_image=session['user_image'], accountId=session['accountId'],
                            accountName=session['accountName'], is_admin=session['is_admin'],
-                           is_manager=session['is_manager'])
+                           is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE)
 
 
 # ------------------------------------------------------------------------------------------------------------ #

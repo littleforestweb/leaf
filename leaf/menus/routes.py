@@ -22,7 +22,7 @@ def view_menus():
     Returns:
         HTML template with user-specific data.
     """
-    return render_template('menus.html', userId=session['id'], username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'])
+    return render_template('menus.html', userId=session['id'], username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE)
 
 
 # ---------------------------------------------------------------------------------------------------------- #
@@ -63,7 +63,7 @@ def view_dynamic_menu(reference: str):
     referenceNoUnderscores = reference.replace("_", " ")
     preview_server = Config.PREVIEW_SERVER
     dynamic_path = Config.DYNAMIC_PATH
-    return render_template('dynamic_menu.html', preview_server=preview_server, dynamic_path=dynamic_path, reference=reference, referenceNoUnderscores=referenceNoUnderscores, username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'])
+    return render_template('dynamic_menu.html', preview_server=preview_server, dynamic_path=dynamic_path, reference=reference, referenceNoUnderscores=referenceNoUnderscores, username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE)
 
 
 # ---------------------------------------------------------------------------------------------------------- #

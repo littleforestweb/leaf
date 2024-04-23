@@ -270,7 +270,7 @@ def idp_initiated():
                                                user_image=session['user_image'], accountId=session['accountId'],
                                                accountName=session['accountName'], is_admin=session['is_admin'],
                                                is_manager=session['is_manager'], msg=msg, msgClass=msgClass,
-                                               jwt_token=jwt_token)
+                                               jwt_token=jwt_token, site_notice=Config.SITE_NOTICE)
                     else:
                         # Account doesnt exist or username/password incorrect
                         msg = 'Incorrect username/password!'

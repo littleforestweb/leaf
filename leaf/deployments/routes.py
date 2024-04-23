@@ -21,7 +21,7 @@ def view_deployments():
     """
     try:
         # Render the template with user information
-        return render_template('deployments.html', username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'])
+        return render_template('deployments.html', username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE)
     except Exception as e:
         # Handle exceptions and return an error response with status code 500
         return jsonify({"error": str(e)}), 500

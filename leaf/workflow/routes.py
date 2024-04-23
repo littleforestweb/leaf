@@ -33,7 +33,7 @@ def view_workflow():
     Returns:
         flask.Response: The rendered workflow template.
     """
-    return render_template("workflow.html", userId=session["id"], username=session["username"], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"])
+    return render_template("workflow.html", userId=session["id"], username=session["username"], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE)
 
 
 @workflow.route("/task_requests")
@@ -45,7 +45,7 @@ def view_task_requests():
     Returns:
         flask.Response: The rendered task requests template.
     """
-    return render_template("task_requests.html", userId=session["id"], username=session["username"], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"])
+    return render_template("task_requests.html", userId=session["id"], username=session["username"], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE)
 
 
 @workflow.route("/assignment_form")
@@ -57,7 +57,7 @@ def view_assignment_form():
     Returns:
         flask.Response: The rendered assignment form template.
     """
-    return render_template("assignment_form.html", userId=session["id"], username=session["username"], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"])
+    return render_template("assignment_form.html", userId=session["id"], username=session["username"], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE)
 
 
 @workflow.route("/workflow_details")
@@ -75,7 +75,7 @@ def view_workflow_details():
         # Get workflow details from models
         data = get_workflow_details(wid)
 
-        return render_template("workflow_details.html", username=session["username"], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], data=data)
+        return render_template("workflow_details.html", username=session["username"], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], data=data, site_notice=Config.SITE_NOTICE)
 
     except Exception as e:
         # Log the exception or handle it as appropriate for your application

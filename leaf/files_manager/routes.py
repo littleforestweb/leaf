@@ -32,7 +32,7 @@ def files_view_upload():
     """
     site_id = werkzeug.utils.escape(request.args.get("siteId", type=str))
     archive = werkzeug.utils.escape(request.args.get("archive", type=str))
-    return render_template("files_manager.html", userId=session['id'], username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], site_id=site_id, archive=archive, preview_webserver=Config.PREVIEW_SERVER.strip("/"))
+    return render_template("files_manager.html", userId=session['id'], username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], site_id=site_id, archive=archive, preview_webserver=Config.PREVIEW_SERVER.strip("/"), site_notice=Config.SITE_NOTICE)
 
 
 @files_manager.route("/files/fileupload_api", methods=["POST"])

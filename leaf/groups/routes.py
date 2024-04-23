@@ -20,7 +20,7 @@ def view_groups():
         flask.Response: Rendered HTML page with groups information.
     """
     try:
-        return render_template('groups.html', username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'])
+        return render_template('groups.html', username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE)
     except Exception as e:
         # Handle exceptions and return an error response with status code 500
         return jsonify({"error": str(e)}), 500

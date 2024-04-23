@@ -75,7 +75,8 @@ def checkConfig(loaded_json):
         "IDP_X509CERT": "",
         "SAML_ATTRIBUTES_MAP": {},
         "POWER_USER_GROUP": "admin",
-        "XMLSEC_BINARY": ""
+        "XMLSEC_BINARY": "",
+        "SITE_NOTICE": "This is a site notice that you can control on your config.json file. Keep it empty to remove the notice!"
     }
 
     # Update the loaded JSON with the expected structure
@@ -216,6 +217,8 @@ class Config:
     SAML_ATTRIBUTES_MAP = config["SAML_ATTRIBUTES_MAP"]
     POWER_USER_GROUP = config["POWER_USER_GROUP"]
     XMLSEC_BINARY = config["XMLSEC_BINARY"]
+
+    SITE_NOTICE = config["SITE_NOTICE"]
 
     # Auto Generated
     DYNAMIC_PATH = os.path.join("leaf_content", "lists")

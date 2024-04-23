@@ -32,7 +32,7 @@ def view_editor():
         if not site_belongs_to_account(siteId) or not hasAccess:
             return jsonify({"error": "Forbidden"}), 403
 
-        return render_template('editor.html', username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], page_id=page_id)
+        return render_template('editor.html', username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], page_id=page_id, site_notice=Config.SITE_NOTICE)
     except Exception as e:
         print(traceback.format_exc())
         # Handle exceptions and return an error response with status code 500

@@ -1113,6 +1113,11 @@ table.dataTable tbody tr.isGreen {
     position: relative;
 }
 
+#site_notice.alert {
+    margin-top: 20px;
+    padding: 10px 1rem;
+}
+
 @media (min-width: 576px) {
     .modal-dialog {
         max-width: 1120px;

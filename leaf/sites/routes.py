@@ -37,7 +37,7 @@ def view_sites():
         is_manager = session['is_manager']
 
         # Render the template with user information
-        return render_template('sites.html', username=username, user_image=user_image, accountId=account_id, is_admin=is_admin, is_manager=is_manager)
+        return render_template('sites.html', username=username, user_image=user_image, accountId=account_id, is_admin=is_admin, is_manager=is_manager, site_notice=Config.SITE_NOTICE)
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
         error_message = f"An error occurred: {str(e)}"
@@ -99,13 +99,13 @@ def view_get_site():
         site_id = werkzeug.utils.escape(request.args.get('id', type=str))
 
         # Render the template with user and site information
-        return render_template('get_site.html', user_id=user_id, username=username, user_image=user_image, accountId=account_id, is_admin=is_admin, is_manager=is_manager, id=site_id, preview_webserver=Config.PREVIEW_SERVER)
+        return render_template('get_site.html', user_id=user_id, username=username, user_image=user_image, accountId=account_id, is_admin=is_admin, is_manager=is_manager, id=site_id, preview_webserver=Config.PREVIEW_SERVER, site_notice=Config.SITE_NOTICE)
 
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
         error_message = f"An error occurred: {str(e)}"
         # Render an error template or redirect to an error page
-        return render_template('error.html', error_message=error_message)
+        return render_template('error.html', error_message=error_message, site_notice=Config.SITE_NOTICE)
 
 
 @sites.route('/api/get_site')
