@@ -270,9 +270,9 @@ window.addEventListener('DOMContentLoaded', async function main() {
         }, {
             "width": "5%", orderable: false, "targets": 6, "render": function (data, type, row) {
                 if (data[1] === "Complete") {
-                    return "<a class='green-link' href='/get_site?id=" + data[0] + "'>View</a>";
+                    return "<a class='btn btn-sm' href='/get_site?id=" + data[0] + "'>View</a>";
                 } else {
-                    return "<a class='green-link' onclick='viewLog(\"" + data[0] + "\")' href='javascript:void(0);'>View Log</a>"
+                    return "<a class='btn btn-sm' onclick='viewLog(\"" + data[0] + "\")' href='javascript:void(0);'>View Log</a>"
                 }
             },
         }]
