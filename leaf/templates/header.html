@@ -37,14 +37,14 @@
                             <label class="image-user" style="background-image:url('{{ user_image }}');"></label>
                         {% endif %}
                         {#<label class="image-user" style="background-image:url('{{ url_for('static', filename='images/lf_logo_circle.png') }}');"></label>#}
-                        <label>{{ display_name }}</label>
+                        <label>{% if display_name %}{{ display_name }}{% elif firstName and lastName %}{{ first_name }}{{ last_name }}{% else %}{{ username }}{% endif %}</label>
                     </span>
                     <span class="logout_btn"><a href="/logout" onclick="logout()"><i class="fal fa-sign-out"></i> Log out</a></span>
                 </div>
             {% endif %}
         </div>
     </nav>
-    {% if site_notice != "" %}
+    {% if site_notice and site_notice != "" %}
         <div class="alert alert-success" role="alert" id="site_notice">{{ site_notice }}</div>
     {% endif %}
 </header>

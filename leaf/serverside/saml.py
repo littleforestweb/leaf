@@ -230,6 +230,10 @@ def idp_initiated():
                             mycursor.execute(update_user_is_admin_query, update_user_is_admin_values)
                             mydb.commit()
 
+                        mycursor.execute(main_query, (email,))
+                        lfi_user = mycursor.fetchone()
+                        mydb.commit()
+
                         leaf_user_groups = groups_model.get_all_user_groups(lfi_user[4])
 
                         # SQL query to check if an entry already exists
