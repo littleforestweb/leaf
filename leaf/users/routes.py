@@ -24,7 +24,7 @@ def view_users():
         flask.Response: Rendered HTML page with user information.
     """
     try:
-        return render_template('users.html', username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE)
+        return render_template('users.html', email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE)
     except Exception as e:
         # Handle exceptions and return an error response with status code 500
         return jsonify({"error": str(e)}), 500

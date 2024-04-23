@@ -31,10 +31,9 @@
                 <div class="pull-right">
                     {% if is_admin %}PowerUser{% else %}Editor{% endif %}
                     <span>
-{#                        <label class="image-user" style="background-image:url('{{ user_image }}');"></label>#}
-                        <label class="image-user"
-                               style="background-image:url('{{ url_for('static', filename='images/lf_logo_circle.png') }}');"></label>
-                        <label>{{ username }}</label>
+                        <label class="image-user" style="background-image:url('{{ user_image }}');"></label>
+                        {#<label class="image-user" style="background-image:url('{{ url_for('static', filename='images/lf_logo_circle.png') }}');"></label>#}
+                        <label>{{ display_name }}</label>
                     </span>
                     <span class="logout_btn"><a href="/logout" onclick="logout()"><i class="fal fa-sign-out"></i> Log out</a></span>
                 </div>

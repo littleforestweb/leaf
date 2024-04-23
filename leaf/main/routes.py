@@ -53,7 +53,8 @@ def index():
     Returns:
     - str: HTML content to be rendered, displaying the main index page.
     """
-    return render_template('sites.html', username=session['username'], user_image=session['user_image'],
+    return render_template('sites.html', email=session['email'], username=session['username'], user_image=session['user_image'],
+                           first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'],
                            accountId=session['accountId'], accountName=session['accountName'],
                            is_admin=session['is_admin'], is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE)
 
@@ -139,7 +140,8 @@ def login():
 
                 msg = 'Logged in successfully!'
                 msgClass = 'alert alert-success'
-                return render_template('sites.html', userId=session['id'], username=session['username'],
+                return render_template('sites.html', userId=session['id'], email=session['email'], username=session['username'],
+                                       first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'],
                                        user_image=session['user_image'], accountId=session['accountId'],
                                        accountName=session['accountName'], is_admin=session['is_admin'],
                                        is_manager=session['is_manager'], msg=msg, msgClass=msgClass,
@@ -238,7 +240,8 @@ def api_list_lfi_users():
     Returns:
     - str: HTML content to be rendered, displaying the list of LFI users page.
     """
-    return render_template('list_lfi_users.html', username=session['username'],
+    return render_template('list_lfi_users.html', email=session['email'], username=session['username'],
+                           first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'],
                            user_image=session['user_image'], accountId=session['accountId'],
                            accountName=session['accountName'], is_admin=session['is_admin'],
                            is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE)

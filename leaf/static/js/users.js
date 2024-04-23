@@ -178,16 +178,19 @@ window.addEventListener('DOMContentLoaded', async function main() {
     for (let i = 0; i < json.length; i++) {
         let entry = json[i];
         let id = entry["id"];
-        let name = entry["name"];
+        let username = entry["username"];
         let email = entry["email"];
+        let first_name = entry["first_name"];
+        let last_name = entry["last_name"];
+        let display_name = entry["display_name"];
         let is_admin = entry["is_admin"] === 1 ? "Yes" : "No";
         let is_manager = entry["is_manager"] === 1 ? "Yes" : "No";
-        dataset.push([id, id, name, email, is_admin, is_manager]);
+        dataset.push([id, id, username, email, first_name, last_name, display_name ,is_admin, is_manager]);
     }
 
     // Setup - add a text input to each header cell
     $('#table thead tr').clone(true).addClass('filters').appendTo('#table thead');
-    let searchColumns = [1, 2, 3, 4, 5];
+    let searchColumns = [1, 2, 3, 4, 5, 6, 7];
 
     $('#table').DataTable({
         dom: 'Brtip', buttons: {
@@ -250,6 +253,18 @@ window.addEventListener('DOMContentLoaded', async function main() {
             },
         }, {
             "width": "10%", "targets": 5, "render": function (data, type, row) {
+                return "<span>" + data + "</span>";
+            },
+        }, {
+            "width": "10%", "targets": 6, "render": function (data, type, row) {
+                return "<span>" + data + "</span>";
+            },
+        }, {
+            "width": "10%", "targets": 7, "render": function (data, type, row) {
+                return "<span>" + data + "</span>";
+            },
+        }, {
+            "width": "10%", "targets": 8, "render": function (data, type, row) {
                 return "<span>" + data + "</span>";
             },
         }]

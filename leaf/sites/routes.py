@@ -31,13 +31,17 @@ def view_sites():
     try:
         # Retrieve user information from the session
         username = session['username']
+        email = session['email']
+        first_name = session['first_name']
+        last_name = session['last_name']
+        display_name = session['display_name']
         user_image = session['user_image']
         account_id = session['accountId']
         is_admin = session['is_admin']
         is_manager = session['is_manager']
 
         # Render the template with user information
-        return render_template('sites.html', username=username, user_image=user_image, accountId=account_id, is_admin=is_admin, is_manager=is_manager, site_notice=Config.SITE_NOTICE)
+        return render_template('sites.html', email=email, username=username, first_name=first_name, last_name=last_name, display_name=display_name, user_image=user_image, accountId=account_id, is_admin=is_admin, is_manager=is_manager, site_notice=Config.SITE_NOTICE)
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
         error_message = f"An error occurred: {str(e)}"
@@ -89,7 +93,11 @@ def view_get_site():
     try:
         # Retrieve user information from the session
         user_id = session['id']
+        email = session['email']
         username = session['username']
+        first_name = session['first_name']
+        last_name = session['last_name']
+        display_name = session['display_name']
         user_image = session['user_image']
         account_id = session['accountId']
         is_admin = session['is_admin']
@@ -99,7 +107,7 @@ def view_get_site():
         site_id = werkzeug.utils.escape(request.args.get('id', type=str))
 
         # Render the template with user and site information
-        return render_template('get_site.html', user_id=user_id, username=username, user_image=user_image, accountId=account_id, is_admin=is_admin, is_manager=is_manager, id=site_id, preview_webserver=Config.PREVIEW_SERVER, site_notice=Config.SITE_NOTICE)
+        return render_template('get_site.html', user_id=user_id, email=email, username=username, first_name=first_name, last_name=last_name, display_name=display_name, user_image=user_image, accountId=account_id, is_admin=is_admin, is_manager=is_manager, id=site_id, preview_webserver=Config.PREVIEW_SERVER, site_notice=Config.SITE_NOTICE)
 
     except Exception as e:
         # Log the exception or handle it as appropriate for your application

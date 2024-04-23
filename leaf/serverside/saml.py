@@ -273,9 +273,9 @@ def idp_initiated():
                         # Create session data, we can access this data in other routes
                         session['loggedin'] = True
                         session['id'] = lfi_user[0]
-                        session['firstName'] = lfi_user[8]
-                        session['lastName'] = lfi_user[9]
-                        session['displayName'] = lfi_user[10]
+                        session['first_name'] = lfi_user[8]
+                        session['last_name'] = lfi_user[9]
+                        session['display_name'] = lfi_user[10]
                         session['user_image'] = lfi_user[1]
                         session['username'] = lfi_user[2]
                         session['email'] = lfi_user[3]
@@ -291,7 +291,8 @@ def idp_initiated():
 
                         msg = 'Logged in successfully!'
                         msgClass = 'alert alert-success'
-                        return render_template('sites.html', userId=session['id'], username=session['username'],
+                        return render_template('sites.html', userId=session['id'], email=session['email'], username=session['username'],
+                                               first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'],
                                                user_image=session['user_image'], accountId=session['accountId'],
                                                accountName=session['accountName'], is_admin=session['is_admin'],
                                                is_manager=session['is_manager'], msg=msg, msgClass=msgClass,

@@ -22,7 +22,7 @@ def view_template_editor(template_id):
         render_template: Rendered template for the template_editor.
     """
     try:
-        return render_template('template_editor.html', userId=session['id'], username=session['username'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], template_id=template_id, site_notice=Config.SITE_NOTICE)
+        return render_template('template_editor.html', userId=session['id'], email=session['email'], username=session['username'], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], template_id=template_id, site_notice=Config.SITE_NOTICE)
     except Exception as e:
         # Handle exceptions and return an error response with status code 500
         return jsonify({"error": str(e)}), 500
