@@ -5,6 +5,7 @@ from flask import render_template, Blueprint, jsonify, request, session
 
 from leaf.decorators import login_required, admin_required
 from .models import get_users_data, add_user_to_database, edit_user_to_database, delete_user_to_database
+from leaf import Config
 
 users = Blueprint('users', __name__)
 

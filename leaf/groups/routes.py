@@ -2,6 +2,7 @@ from flask import render_template, Blueprint, jsonify, session
 
 from leaf.decorators import login_required, admin_required
 from leaf.groups.models import get_groups
+from leaf import Config
 
 groups = Blueprint('groups', __name__)
 

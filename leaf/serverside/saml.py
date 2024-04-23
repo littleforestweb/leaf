@@ -134,8 +134,9 @@ def idp_initiated():
 
             email = None
             username = None
-            firstName = None
-            lastName = None
+            first_name = None
+            last_name = None
+            display_name = None
             isAdmin = 0
 
             attributes = {}
@@ -148,6 +149,7 @@ def idp_initiated():
             username = attributes.get('username', email)
             first_name = attributes.get('firstName')
             last_name = attributes.get('lastName')
+            display_name = attributes.get('displayName')
 
             group_values = attributes.get('group')
             groups = []
@@ -168,9 +170,9 @@ def idp_initiated():
                     "SELECT user.id, "
                     "CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) "
                     "WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, "
-                    "CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username "
+                    "CASE WHEN (first_name IS NULL OR first_name = '') AND (last_name IS NULL OR last_name = '') THEN username "
                     "ELSE CONCAT(first_name, ' ', last_name) END AS username, "
-                    "user.email, user.account_id, name, user.is_admin, user.is_manager "
+                    "user.email, user.account_id, name, user.is_admin, user.is_manager, user_image.first_name, user_image.last_name, user_image.display_name "
                     "FROM user "
                     "LEFT JOIN user_image ON user_id = user.id "
                     "LEFT JOIN account ON user.account_id = account.id "
@@ -181,32 +183,52 @@ def idp_initiated():
 
                     mycursor.execute(main_query, (email,))
                     lfi_user = mycursor.fetchone()
+                    mydb.commit()
 
                     if not lfi_user:
-                        query = "INSERT INTO user(account_id, email, username, is_admin) VALUES(%s, %s, %s, %s)"
-                        values = (Config.ACCOUNT_ID, email, username, isAdmin)
-                        mycursor.execute(query, values)
+                        insert_user_query = "INSERT INTO user(account_id, email, username, is_admin) VALUES(%s, %s, %s, %s)"
+                        insert_user_values = (Config.ACCOUNT_ID, email, username, isAdmin)
+                        mycursor.execute(insert_user_query, insert_user_values)
                         mydb.commit()
 
                         user_id = mycursor.lastrowid
 
-                        query = "INSERT INTO user_image(user_id, first_name, last_name) VALUES(%s, %s, %s)"
-                        values = (user_id, firstName, lastName)
-                        mycursor.execute(query, values)
+                        insert_user_details_query = "INSERT INTO user_image(user_id, first_name, last_name, display_name) VALUES(%s, %s, %s, %s)"
+                        insert_user_details_values = (user_id, first_name, last_name, display_name)
+                        mycursor.execute(insert_user_details_query, insert_user_details_values)
                         mydb.commit()
 
                         mycursor.execute(main_query, (email,))
                         lfi_user = mycursor.fetchone()
-
-                    if lfi_user:
-                        if lfi_user[6] != isAdmin:
-                            query = "UPDATE user SET is_admin = %s WHERE id = %s"
-                            values = (isAdmin, lfi_user[0])
-                            mycursor.execute(query, values)
-                            mydb.commit()
+                        mydb.commit()
 
                     # If account exists in accounts table in out database
                     if lfi_user:
+
+                        # First, check if the user_id already exists in the database
+                        check_user_exists_query = "SELECT COUNT(*) FROM user_image WHERE user_id = %s"
+                        check_user_exists_values = (lfi_user[0],)
+                        mycursor.execute(check_user_exists_query, check_user_exists_values)
+                        user_details_exists = mycursor.fetchone()[0] > 0
+
+                        if not user_details_exists:
+                            # If user_id does not exist, insert the new user details
+                            insert_user_details_query = "INSERT INTO user_image(user_id, first_name, last_name, display_name) VALUES(%s, %s, %s, %s)"
+                            insert_user_details_values = (lfi_user[0], first_name, last_name, display_name)
+                            mycursor.execute(insert_user_details_query, insert_user_details_values)
+                            mydb.commit()
+                        else:
+                            # If user_id exists, update the existing user details
+                            update_user_details_query = "UPDATE user_image SET first_name = %s, last_name = %s, display_name = %s WHERE user_id = %s"
+                            update_user_details_values = (first_name, last_name, display_name, lfi_user[0])
+                            mycursor.execute(update_user_details_query, update_user_details_values)
+                            mydb.commit()
+
+                        if lfi_user[6] != isAdmin:
+                            update_user_is_admin_query = "UPDATE user SET is_admin = %s WHERE id = %s"
+                            update_user_is_admin_values = (isAdmin, lfi_user[0])
+                            mycursor.execute(update_user_is_admin_query, update_user_is_admin_values)
+                            mydb.commit()
 
                         leaf_user_groups = groups_model.get_all_user_groups(lfi_user[4])
                         
@@ -251,6 +273,9 @@ def idp_initiated():
                         # Create session data, we can access this data in other routes
                         session['loggedin'] = True
                         session['id'] = lfi_user[0]
+                        session['firstName'] = lfi_user[8]
+                        session['lastName'] = lfi_user[9]
+                        session['displayName'] = lfi_user[10]
                         session['user_image'] = lfi_user[1]
                         session['username'] = lfi_user[2]
                         session['email'] = lfi_user[3]
