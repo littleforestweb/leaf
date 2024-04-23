@@ -14,3 +14,7 @@
 .cke_button__preview_label {
     display: inline !important;
 }
+
+#cke_htmlCode #cke_1_contents {
+    min-height: 74vh;
+}
