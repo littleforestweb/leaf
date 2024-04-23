@@ -205,7 +205,7 @@ async function populateUserList() {
         let userImage = '<span class="logo_image_container"><img class="logo_image" src="' + thisUser["user_image"] + '" onerror="this.style.display=\'none\'" /></span>';
         if (thisUser["user_image"].startsWith('#')) {
             let colorToFillBg = thisUser["user_image"];
-            let usernameInitial = (thisUser["username"] ? thisUser["username"] : "SEM_NOME").charAt(0);
+            let usernameInitial = (thisUser["username"] ? thisUser["username"] : "LF").charAt(0);
             userImage = '<span class="logo_image" style="background-color:' + colorToFillBg + '">' + usernameInitial + '</span>';
         }
         $(".users-with-access-container").prepend('<label for="thisUserId_' + thisUser["id"] + '" class="form-control users-with-access users-with-access_' + thisUser["id"] + '">' + userImage + '<span class="userName">' + thisUser["username"] + '</span><input type="checkbox" class="form-check-input pull-right this-user-id" name="thisUserId_' + thisUser["id"] + '" id="thisUserId_' + thisUser["id"] + '" ' + '/></span>');

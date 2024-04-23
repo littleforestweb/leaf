@@ -31,7 +31,11 @@
                 <div class="pull-right">
                     {% if is_admin %}PowerUser{% else %}Editor{% endif %}
                     <span>
-                        <label class="image-user" style="background-image:url('{{ user_image }}');"></label>
+                        {% if user_image.startswith('#') %}
+                            <label class="image-user" style="background-color:{{ user_image }};">{{ username[0] }}</label>
+                        {% else %}
+                            <label class="image-user" style="background-image:url('{{ user_image }}');"></label>
+                        {% endif %}
                         {#<label class="image-user" style="background-image:url('{{ url_for('static', filename='images/lf_logo_circle.png') }}');"></label>#}
                         <label>{{ display_name }}</label>
                     </span>
