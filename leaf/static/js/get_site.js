@@ -300,7 +300,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 aTargets: [3],
                 sClass: "truncate",
                 mData: function (source, type, val) {
-                    return "<a class='green-link' href='" + source["URL"] + "' target='_blank'>" + source["URL"] + "</a>";
+                    return "<a class='green-link' href='" + source["URL"] + "' target='_blank'>" + source["URL"].replace(preview_webserver, "") + "</a>";
                 }
             },
             {
