@@ -4,7 +4,7 @@
 
 {% block content %}
 
-    <div class="login container border text-center col-4 px-4 py-5 rounded-5 {% if is_saml_active == 1%}hasSAML{% endif %}">
+    <div class="login container border text-center col-4 px-4 py-5 rounded-5 {% if is_saml_active == 1 %}hasSAML{% endif %}">
         <h1>Welcome to Leaf</h1>
         <h2>Please login</h2>
         <form action="{{ url_for('main.login') }}" method="post">
@@ -31,7 +31,7 @@
                 <input type="submit" class="btn btn-success btn-block mb-4" value="Login"/>
             </div>
         </form>
-        {% if is_saml_active == 1%}
+        {% if is_saml_active == 1 %}
             <a class="saml_login_link" href="/saml/login">SAML Login</a>
         {% endif %}
     </div>

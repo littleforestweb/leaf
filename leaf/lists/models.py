@@ -1,18 +1,15 @@
 # models.py
-import re
-from bs4 import BeautifulSoup
 
-from flask import jsonify, session, current_app
-from leaf.decorators import db_connection
-from leaf.config import Config
-from leaf.template_editor.models import *
-import pandas as pd
 import csv
-import os
 import html
 import json
-import werkzeug.utils
+import os
 from datetime import datetime
+
+import pandas as pd
+import werkzeug.utils
+
+from leaf.template_editor.models import *
 
 
 def get_lists_data(accountId: int, userId: str, isAdmin: str):
@@ -473,7 +470,7 @@ def get_all_templates(request, accountId: str):
                 order_by = listColumns[int(sortingColumn)][0]
                 get_templates_query = f"SELECT {', '.join(columnsFinal)} FROM {tableName} INNER JOIN user ON {tableName}.modified_by = user.id ORDER BY {order_by} {direction} LIMIT %s, %s"
                 mycursor.execute(get_templates_query, (skip, limit))
-            
+
             config_info = mycursor.fetchall()
 
         else:
@@ -492,6 +489,7 @@ def get_all_templates(request, accountId: str):
         print("Invalid accountId")
 
     return jsonify(jsonR)
+
 
 def get_list_template(accountId: str, reference: str):
     """
@@ -870,7 +868,7 @@ def parse_csv(accountId: str, reference: str, filePath: str):
             mydb.commit()
 
             # Use Pandas to parse the CSV file
-            csv_data = pd.read_csv(filePath, sep=",", encoding="utf-8", encoding_errors='ignore', engine="python", header=None) # names=col_names,
+            csv_data = pd.read_csv(filePath, sep=",", encoding="utf-8", encoding_errors='ignore', engine="python", header=None)  # names=col_names,
 
             insert_query = f"INSERT INTO {tableName} ({', '.join(col_names)}) VALUES "
 
@@ -881,7 +879,7 @@ def parse_csv(accountId: str, reference: str, filePath: str):
                 if i != 0:
                     values = map((lambda x: f'"' + html.escape(str((x if isinstance(x, float) else x.encode('utf-8'))).replace("\\", "__BACKSLASH__TO_REPLACE__")[2:-1]) + '"'), row)
                     joint_value = ', '.join(values)
-                    
+
                     if not foundModified_by:
                         joint_value = joint_value + ', ' + str(session["id"])
 
@@ -1145,7 +1143,7 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         list_template_id = werkzeug.utils.escape(this_request.get("list_template_id"))
         list_item_id = werkzeug.utils.escape(this_request.get("list_item_id"))
 
-        mycursor.execute(f"SELECT * FROM {account_list} WHERE id = %s", (list_item_id, ))
+        mycursor.execute(f"SELECT * FROM {account_list} WHERE id = %s", (list_item_id,))
         selected_item_id = mycursor.fetchone()
 
         # Combine column names with fetched row values
@@ -1178,7 +1176,7 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         # Convert data to a JSON format
         json_data = [dict(zip(row_headers, result)) for result in full_list]
         json_data_to_write = json.dumps(json_data, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
-        
+
         # Write JSON data to a file with the specified reference identifier (sanitize reference)
         sanitized_reference = ''.join(e for e in reference if e.isalnum())
         with open(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH, sanitized_reference + 'List.json'), 'w') as out_file:
@@ -1740,7 +1738,6 @@ def delete_single_list(request):
 
 
 def get_available_fields(accountId, reference):
-
     jsonR = {'columns': []}
 
     if not int(accountId) == int(session["accountId"]):
@@ -1831,6 +1828,7 @@ def list_belongs_to_account(list_id):
         print(f"An error occurred: {str(e)}")
         return False
 
+
 # Define a custom serializer function
 def custom_serializer(obj):
     if isinstance(obj, datetime):
@@ -1840,7 +1838,7 @@ def custom_serializer(obj):
 
 def remove_elements_with_content_or_src(html_content, target):
     soup = BeautifulSoup(html_content, 'html.parser')
-    
+
     # Find all elements with src attribute or containing target content
     elements_to_remove = []
     for tag in soup.find_all():
@@ -1855,6 +1853,6 @@ def remove_elements_with_content_or_src(html_content, target):
     # Remove the target content and its parent if it makes it empty
     for element in elements_to_remove:
         element.extract()
-    
+
     # Return the modified HTML
     return soup.prettify()

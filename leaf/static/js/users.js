@@ -185,7 +185,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
         let display_name = entry["display_name"];
         let is_admin = entry["is_admin"] === 1 ? "Yes" : "No";
         let is_manager = entry["is_manager"] === 1 ? "Yes" : "No";
-        dataset.push([id, id, username, email, first_name, last_name, display_name ,is_admin, is_manager]);
+        dataset.push([id, id, username, email, first_name, last_name, display_name, is_admin, is_manager]);
     }
 
     // Setup - add a text input to each header cell

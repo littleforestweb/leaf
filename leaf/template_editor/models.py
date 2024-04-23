@@ -1,13 +1,12 @@
+import os
 import re
 
-from flask import jsonify, session, current_app
-from leaf.decorators import db_connection
-import datetime
-import os
-import mysql.connector
-from leaf.config import Config
-from bs4 import BeautifulSoup
 import werkzeug.utils
+from bs4 import BeautifulSoup
+from flask import jsonify, session
+
+from leaf.config import Config
+from leaf.decorators import db_connection
 
 
 def templates_get_template_html(accountId, template_id):
@@ -100,6 +99,7 @@ def remove_template_base_href(data):
     except Exception:
         raise
 
+
 def template_save(request, accountId):
     """
     Save Template HTML content.
@@ -114,7 +114,7 @@ def template_save(request, accountId):
         return jsonify({"error": "Forbidden"}), 403
 
     mydb, mycursor = db_connection()
-    
+
     try:
         tableName = f"account_{accountId}_list_template"
 
@@ -155,6 +155,7 @@ def template_save(request, accountId):
         mydb.close()
         return jsonify(json_response)
 
+
 # Function to save HTML content to the specified path
 def save_template_html_to_disk(html_path, data):
     """
@@ -170,6 +171,7 @@ def save_template_html_to_disk(html_path, data):
             outFile.write(data)
     except (FileNotFoundError, Exception):
         raise
+
 
 def get_template_by_id(accountId: str, template_id: str):
     """
@@ -218,6 +220,7 @@ def get_template_by_id(accountId: str, template_id: str):
 
     return jsonify(jsonR)
 
+
 # Function to remove base href from the HTML content
 def remove_base_href_from_template(data):
     """
@@ -240,6 +243,7 @@ def remove_base_href_from_template(data):
         return soup.prettify()
     except Exception:
         raise
+
 
 def clean_up_html_elements(list_template_html: str):
     # Remove any HTML elements that contain {{ITEM}} placeholders

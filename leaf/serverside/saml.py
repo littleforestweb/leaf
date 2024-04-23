@@ -1,7 +1,7 @@
 import base64
 import re
-import requests
 
+import requests
 import werkzeug.utils
 from defusedxml.lxml import fromstring
 from flask import Blueprint, render_template, session, request, redirect, Response
@@ -44,6 +44,7 @@ def saml_metadata():
         print("SP Entity ID not defined!")
         return "SP Entity ID not defined!"
 
+
 @saml_route.route("/saml", methods=["GET", "POST"])
 def idp_initiated():
     """
@@ -76,7 +77,6 @@ def idp_initiated():
         else:
             print("Failed to retrieve the IDP Metadata file: HTTP Status", response.status_code)
             return "Failed to retrieve the IDP Metadata file: HTTP Status", 403
-
 
         # Find the X509Certificate element (assuming there's only one)
         # Note: '{http://www.w3.org/2000/09/xmldsig#}X509Certificate' is the full tag name with namespace
@@ -231,7 +231,7 @@ def idp_initiated():
                             mydb.commit()
 
                         leaf_user_groups = groups_model.get_all_user_groups(lfi_user[4])
-                        
+
                         # SQL query to check if an entry already exists
                         check_query = "SELECT * FROM group_member WHERE group_id=%s AND user_id=%s"
                         # SQL query to insert a new record

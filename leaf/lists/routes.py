@@ -1,12 +1,14 @@
-from flask import Blueprint, redirect, url_for, render_template, session, request
 import sys
-import csv
-from .models import *
+
+from flask import Blueprint, render_template, request
+
 from leaf.decorators import login_required
+from .models import *
 
 csv.field_size_limit(sys.maxsize)
 
 lists = Blueprint('lists', __name__)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -22,6 +24,7 @@ def view_lists():
     """
     return render_template('lists.html', userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -35,6 +38,7 @@ def view_manage_templates():
         HTML template with specific data.
     """
     return render_template('manage_templates.html', userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -54,6 +58,7 @@ def api_get_lists(accountId: str, userId: str, isAdmin: str):
         JSON response with lists data.
     """
     return get_lists_data(accountId, userId, isAdmin)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -113,6 +118,7 @@ def api_get_list_columns(accountId: str, reference: str):
     """
     return get_list_columns(accountId, reference)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -134,6 +140,7 @@ def api_get_list_columns_with_returned_id(accountId: str, reference: str, fieldT
     """
     return get_list_columns_with_returned_id(accountId, reference, fieldToReturn, linkedFieldToReturn, linkedFieldLabelToReturn)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -152,6 +159,7 @@ def api_get_list_columns_with_properties(accountId: str, reference: str):
     """
     return get_list_columns_with_properties(accountId, reference)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -169,6 +177,7 @@ def api_get_list_configuration(accountId: str, reference: str):
         JSON response with list configuration.
     """
     return get_list_configuration(accountId, reference)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -189,6 +198,7 @@ def set_configuration(accountId: str, reference: str):
     if request.method == 'POST':
         return set_list_configuration(request, accountId, reference)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -205,6 +215,7 @@ def api_get_all_templates(accountId: str):
         JSON response with list templates.
     """
     return get_all_templates(request, accountId)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -224,6 +235,7 @@ def api_get_list_template(accountId: str, reference: str):
     """
     return get_list_template(accountId, reference)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -241,6 +253,7 @@ def set_template(accountId: str, reference: str):
     """
     if request.method == 'POST':
         return set_list_template(request, accountId, reference)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -260,6 +273,7 @@ def delete_template(accountId: str):
     if request.method == 'POST':
         return delete_templates(request, accountId)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -278,6 +292,7 @@ def api_get_available_fields(accountId: str, reference: str):
     """
     if request.method == 'GET':
         return get_available_fields(accountId, reference)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -301,6 +316,7 @@ def api_get_value_columns_with_index(accountId: str, reference: str, fieldToGet:
     """
     return get_value_columns_with_index(accountId, reference, fieldToGet, fieldToLabel, indexToKeep, indexToKeepForAccountSettings)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
 
@@ -315,6 +331,7 @@ def upload_dynamic_list():
     """
     if request.method == 'POST':
         return upload_dynamic_lists(request)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
@@ -335,6 +352,7 @@ def upload_create_middle_tables(accountId: str, reference: str):
     if request.method == 'POST':
         return create_middle_tables(request, accountId, reference)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -352,6 +370,7 @@ def api_settings(accountId: str):
     """
     return get_settings(accountId)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -368,6 +387,7 @@ def api_get_all_lists(accountId: str):
         JSON response with all lists.
     """
     return get_all_lists(accountId)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
@@ -390,6 +410,7 @@ def publish_dynamic_list(account_list: str, accountId: str, reference: str, env:
     if request.method == 'POST':
         return publish_dynamic_lists(request, account_list, accountId, reference, env)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
 
@@ -408,6 +429,7 @@ def update_dynamic_list(accountId: str, account_list: str):
     """
     if request.method == 'POST':
         return update_dynamic_lists(request, accountId, account_list)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
@@ -428,6 +450,7 @@ def addnew_dynamic_list(accountId: str, account_list: str):
     if request.method == 'POST':
         return add_dynamic_lists(request, accountId, account_list)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
 
@@ -447,6 +470,7 @@ def delete_dynamic_list(accountId: str, account_list: str):
     if request.method == 'POST':
         return delete_dynamic_lists(request, accountId, account_list)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
 
@@ -461,6 +485,7 @@ def add_list():
     """
     if request.method == 'POST':
         return add_single_list(request)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -477,6 +502,7 @@ def update_list():
     if request.method == 'POST':
         return update_single_list(request)
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -491,6 +517,7 @@ def delete_lists():
     """
     if request.method == 'POST':
         return delete_multiple_lists(request)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #

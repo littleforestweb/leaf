@@ -1,9 +1,9 @@
 import werkzeug.utils
 from flask import Blueprint, jsonify, request, session, render_template
 
+from leaf import Config
 from leaf.decorators import login_required, db_connection, admin_required
 from .models import get_deployments
-from leaf import Config
 
 deployments = Blueprint('deployments', __name__)
 

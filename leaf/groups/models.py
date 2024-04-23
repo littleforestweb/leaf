@@ -28,6 +28,7 @@ def get_groups():
     mydb.close()
     return groups
 
+
 def get_all_user_groups(account_id):
     """
     Fetch groups from the database.

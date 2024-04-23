@@ -1,10 +1,8 @@
-from flask import Blueprint, render_template, request, jsonify, session
+from flask import Blueprint, render_template, request
 
-import leaf.sites.models
+from leaf import Config
 from leaf.decorators import login_required
 from .models import *
-from leaf import Config
-import werkzeug.utils
 
 # Create a Blueprint for the template_editor routes
 template_editor = Blueprint('template_editor', __name__)
@@ -53,7 +51,7 @@ def api_templates_save():
         jsonify: JSON response indicating the success of the save operation.
     """
     return template_save(request, session['accountId'])
-    
+
 
 @template_editor.route('/api/get_template_by_id/<accountId>/<template_id>', methods=['GET', 'POST'])
 @login_required
