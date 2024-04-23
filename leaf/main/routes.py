@@ -59,7 +59,7 @@ def index():
                            is_admin=session['is_admin'], is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE)
 
 
-@main.route("/login", methods=['GET', 'POST'])
+@main.route("/login", methods=['POST'])
 @limiter.limit("5/minute")
 def login():
     """
