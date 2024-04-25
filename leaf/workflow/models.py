@@ -620,14 +620,9 @@ def add_workflow(thisRequest):
 
     try:
         startUser = str(session["id"])
+
+        # Extract workflow details from the request
         assignEditor = thisRequest.get("assignEditor")
-
-        # Check for SQL injection in assignEditor
-        if assignEditor and "@" in assignEditor:
-            assignEditor = ';'.join(assignEditor)
-        else:
-            assignEditor = str(Config.ASSIGNED_USER_EMAIL)
-
         dueDate = str(thisRequest.get("dueDate")) if thisRequest.get("dueDate") else str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         comments = str(thisRequest.get("comments")) if thisRequest.get("comments") else ""
         tags = str(thisRequest.get("tags")) if thisRequest.get("tags") else ""
@@ -635,6 +630,7 @@ def add_workflow(thisRequest):
         thisType = int(thisRequest.get("type")) if thisRequest.get("type") else 1
         listName = thisRequest.get("listName") if thisRequest.get("listName") else ""
 
+        # Set default title based on workflow type
         if thisRequest.get("title"):
             title = str(thisRequest.get("title"))
         else:
@@ -645,41 +641,40 @@ def add_workflow(thisRequest):
             }
             title = title_dict.get(thisType, 'New Leaf dynamic workflow review')
 
+        # Handle specific types
         if thisType == 3 or thisType == 5:
             siteIds = thisRequest.get("entryId")
 
         if thisType == 6 or thisType == 7:
-            # This is file IDs but we will save within the siteId field in the database. We can differentiate by the type = 6
+            # For file types, save file IDs within siteId field
             filesIds = thisRequest.get("entryId")
-
-            # Check if filesIds is not None and is a list
             if filesIds and isinstance(filesIds, list):
-                # Join the list into a comma-separated string
                 siteIds = ', '.join(filesIds)
             else:
-                # Handle the case where filesIds is None or not a list
                 siteIds = ""
-                print("No valid entry IDs provided.")
 
+        # Set default status, attachments, priority, and submitted date
         status = str("1")
-
         attachments = ';'.join(thisRequest.get("attachments")) if thisRequest.get("attachments") else ""
         priority = str(thisRequest.get("priority"))
         submittedDate = str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         accountId = session["accountId"]
 
-        # Run SQL Command
+        # Add Workflow to DB
         query = "INSERT INTO workflow (startUser, assignEditor, comments, siteIds, submittedDate, title, type, status, tags, dueDate, attachments, priority, accountId, listName) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
         params = (startUser, assignEditor, comments, siteIds, submittedDate, title, thisType, status, tags, dueDate, attachments, priority, accountId, listName)
         mycursor.execute(query, params)
         mydb.commit()
         workflow_id = mycursor.lastrowid
 
+        # Send email notification if SMTP_USER is configured
         if Config.SMTP_USER != "":
+            mycursor.execute(f"SELECT email FROM user WHERE id={assignEditor}")
+            assignEditorEmail = mycursor.fetchone()[0]
             emailToSend = new_task_email(workflow_id, title, session["username"], priority, submittedDate, dueDate)
             message = EmailMessage()
             message['From'] = Config.SMTP_USER
-            message['To'] = Config.ASSIGNED_USER_EMAIL
+            message['To'] = assignEditorEmail
             message['Subject'] = title
             message.set_content(emailToSend, subtype='html')
             with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as server:
