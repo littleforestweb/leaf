@@ -1,6 +1,6 @@
 import hashlib
 import os
-from urllib.parse import urlparse
+import urllib.parse
 
 import werkzeug.utils
 from flask import render_template, Blueprint, jsonify, request, session, send_from_directory, redirect
@@ -226,7 +226,7 @@ def is_valid_url(url):
     Returns:
     - bool: True if the URL has both a scheme and a netloc, False otherwise.
     """
-    parsed = urlparse(url)
+    parsed = urllib.parse.urlparse(url)
     return bool(parsed.scheme) and bool(parsed.netloc)
 
 
@@ -674,38 +674,51 @@ def api_upload():
     Returns:
     - Response: JSON response containing the details of the uploaded file.
     """
+    # Retrieve uploaded file from the request
     uploaded_file = request.files.get('upload')
-    lastIndexOfFileNamePath = werkzeug.utils.escape(request.form.get('lastIndexOfFileNamePath'))
 
+    # Retrieve the last index of the file path if available
+    last_index_of_file_path = None
+    if request.form.get('lastIndexOfFileNamePath'):
+        last_index_of_file_path = werkzeug.utils.escape(request.form.get('lastIndexOfFileNamePath'))
+
+    # If single file upload is not found, check for multiple files upload
     if uploaded_file is None:
         uploaded_file = request.files.getlist('files[]')[0]
-        # request.files['files[]']
 
+    # Secure the filename
     uploaded_file_name = werkzeug.utils.secure_filename(uploaded_file.filename)
 
+    # Get the extension of the uploaded file
     extension = uploaded_file_name.split('.')[-1].lower()
+
+    # Check if the extension is allowed
     if extension.lower() not in ['jpg', 'gif', 'png', 'jpeg', 'pdf']:
         return jsonify(message='Image or PDF only!')
 
-    imagePathToCheck = Config.IMAGES_WEBPATH.replace(Config.PREVIEW_SERVER, '')
-    if lastIndexOfFileNamePath and imagePathToCheck not in lastIndexOfFileNamePath:
-        pathToSave = Config.WEBSERVER_FOLDER
-        webPathToSave = lastIndexOfFileNamePath.replace(Config.LEAFCMS_SERVER, '').replace(Config.PREVIEW_SERVER, '')
-        file_path = (pathToSave + webPathToSave + uploaded_file_name).replace('//', '/')
-        fileToReturn = file_path.replace(pathToSave, Config.PREVIEW_SERVER + "/")
+    # Prepare paths for saving the file
+    image_path_to_check = Config.IMAGES_WEBPATH.replace(Config.PREVIEW_SERVER, '')
+    if last_index_of_file_path and image_path_to_check not in last_index_of_file_path:
+        web_path_to_save = last_index_of_file_path.replace(Config.LEAFCMS_SERVER, '').replace(Config.PREVIEW_SERVER, '')
+        file_path = os.path.join(Config.WEBSERVER_FOLDER, web_path_to_save, uploaded_file_name).replace('//', '/')
+        file_to_return = file_path.replace(Config.WEBSERVER_FOLDER, Config.PREVIEW_SERVER + "/")
     else:
-        pathToSave = Config.FILES_UPLOAD_FOLDER
-        pathToSave = pathToSave.replace('//', '/')
-        webPathToSave = Config.LEAFCMS_SERVER + Config.IMAGES_WEBPATH
-        file_path = os.path.join(pathToSave, uploaded_file_name.lower().replace(' ', '-'))
-        fileToReturn = webPathToSave + '/' + uploaded_file_name.lower().replace(' ', '-')
+        path_to_save = Config.FILES_UPLOAD_FOLDER.replace('//', '/')
+        web_path_to_save = urllib.parse.urljoin(Config.LEAFCMS_SERVER, Config.IMAGES_WEBPATH.lstrip("/"))
+        file_path = os.path.join(path_to_save, uploaded_file_name.lower().replace(' ', '-'))
+        file_to_return = os.path.join(web_path_to_save, uploaded_file_name.lower().replace(' ', '-'))
 
-    # set the file path
-    uploaded_file.save(file_path)
+    # Adjust file path
+    file_to_return = file_to_return.replace("/leaf/", "/")
+
+    # Save the uploaded file
+    uploaded_file.save(str(file_path))
+
+    # Return JSON response with file details
     return jsonify({
         "uploaded": 1,
         "fileName": os.path.basename(file_path),
-        "url": fileToReturn
+        "url": file_to_return
     })
 
 
