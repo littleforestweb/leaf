@@ -700,16 +700,11 @@ def api_upload():
     image_path_to_check = Config.IMAGES_WEBPATH.replace(Config.PREVIEW_SERVER, '')
     if last_index_of_file_path and image_path_to_check not in last_index_of_file_path:
         web_path_to_save = last_index_of_file_path.replace(Config.LEAFCMS_SERVER, '').replace(Config.PREVIEW_SERVER, '')
-        file_path = os.path.join(Config.WEBSERVER_FOLDER, web_path_to_save, uploaded_file_name).replace('//', '/')
-        file_to_return = file_path.replace(Config.WEBSERVER_FOLDER, Config.PREVIEW_SERVER + "/")
+        file_path = os.path.join(Config.WEBSERVER_FOLDER, web_path_to_save, uploaded_file_name)
+        url_to_return = file_path.replace(Config.WEBSERVER_FOLDER, Config.PREVIEW_SERVER)
     else:
-        path_to_save = Config.FILES_UPLOAD_FOLDER.replace('//', '/')
-        web_path_to_save = urllib.parse.urljoin(Config.LEAFCMS_SERVER, Config.IMAGES_WEBPATH.lstrip("/"))
-        file_path = os.path.join(path_to_save, uploaded_file_name.lower().replace(' ', '-'))
-        file_to_return = os.path.join(web_path_to_save, uploaded_file_name.lower().replace(' ', '-'))
-
-    # Adjust file path
-    file_to_return = file_to_return.replace("/leaf/", "/")
+        file_path = uniquify(os.path.join(Config.FILES_UPLOAD_FOLDER, uploaded_file_name.lower().replace(' ', '-')))
+        url_to_return = f"{Config.LEAFCMS_SERVER.rstrip("/")}/{Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/")}/{os.path.basename(file_path)}"
 
     # Save the uploaded file
     uploaded_file.save(str(file_path))
@@ -718,7 +713,7 @@ def api_upload():
     return jsonify({
         "uploaded": 1,
         "fileName": os.path.basename(file_path),
-        "url": file_to_return
+        "url": url_to_return
     })
 
 
