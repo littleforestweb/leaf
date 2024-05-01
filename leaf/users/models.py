@@ -136,3 +136,31 @@ def delete_user_to_database(user_id):
         # Always close the database connection
         if mydb:
             mydb.close()
+
+
+def get_user_permission_level(user_id, htmlpath):
+    mydb, mycursor = db_connection()
+
+    try:
+        # Query to retrieve permission level
+        query = """
+            SELECT ua.permission_level
+            FROM user_access ua
+            INNER JOIN user_groups ug ON ua.group_id = ug.group_id
+            INNER JOIN group_member gm ON ug.group_id = gm.group_id
+            WHERE gm.user_id = %s
+            AND %s LIKE CONCAT(ua.folder_path, '%%')
+        """
+        mycursor.execute(query, (user_id, htmlpath))
+
+        # Fetch the result
+        result = mycursor.fetchone()
+        result = result[0] if result else result
+        return result
+
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        raise RuntimeError(f"An error occurred while fetching user permission level: {str(e)}")
+    finally:
+        if mydb:
+            mydb.close()

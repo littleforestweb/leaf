@@ -9,6 +9,7 @@ from flask import session
 
 from leaf import Config
 from leaf import decorators
+from leaf.users.models import get_user_permission_level
 
 
 def is_workflow_owner(workflow_id):
@@ -59,11 +60,23 @@ def get_workflow_details(workflow_id):
         mycursor.execute(query, params)
         results = mycursor.fetchone()
 
+        # Set workflow_data
         workflow_data = extract_workflow_data(results)
         user = get_user_details(workflow_data["startUser"], mycursor)
         workflow_data["startUser"], workflow_data["startUserEmail"] = user["username"], user["email"]
         workflow_data["assignEditor"] = get_user_details(workflow_data["assignEditor"], mycursor)["email"]
         process_specific_workflow_type(workflow_data, mycursor)
+
+        # Get workflow folder
+        query = "SELECT sm.HTMLPath FROM site_meta sm WHERE sm.id=%s"
+        params = (workflow_data["siteIds"],)
+        mycursor.execute(query, params)
+        workflow_folder_path = f"/{mycursor.fetchone()[0].lstrip("/")}"
+
+        # Get user Permission Level for the workflow folder
+        user_permission_level = get_user_permission_level(session["id"], workflow_folder_path)
+        workflow_data["user_permission_level"] = user_permission_level
+        print(workflow_data["user_permission_level"])
 
         mydb.close()
         return workflow_data
