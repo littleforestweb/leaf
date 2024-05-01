@@ -704,7 +704,7 @@ def api_upload():
         url_to_return = file_path.replace(Config.WEBSERVER_FOLDER, Config.PREVIEW_SERVER)
     else:
         file_path = uniquify(os.path.join(Config.FILES_UPLOAD_FOLDER, uploaded_file_name.lower().replace(' ', '-')))
-        url_to_return = f"{Config.LEAFCMS_SERVER.rstrip("/")}/{Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/")}/{os.path.basename(file_path)}"
+        url_to_return = Config.LEAFCMS_SERVER.rstrip("/") + "/" + Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/") + "/" + os.path.basename(file_path)
 
     # Save the uploaded file
     uploaded_file.save(str(file_path))
