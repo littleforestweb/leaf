@@ -68,15 +68,17 @@ def get_workflow_details(workflow_id):
         process_specific_workflow_type(workflow_data, mycursor)
 
         # Get workflow folder
-        query = "SELECT sm.HTMLPath FROM site_meta sm WHERE sm.id=%s"
-        params = (workflow_data["siteIds"],)
-        mycursor.execute(query, params)
-        workflow_folder_path = f"/{mycursor.fetchone()[0].lstrip("/")}"
+        if workflow_data["type"] == 1:
+            query = "SELECT sm.HTMLPath FROM site_meta sm WHERE sm.id=%s"
+            params = (workflow_data["siteIds"],)
+            mycursor.execute(query, params)
+            workflow_folder_path = f"/{mycursor.fetchone()[0].lstrip("/")}"
 
-        # Get user Permission Level for the workflow folder
-        user_permission_level = get_user_permission_level(session["id"], workflow_folder_path)
-        workflow_data["user_permission_level"] = user_permission_level
-        print(workflow_data["user_permission_level"])
+            # Get user Permission Level for the workflow folder
+            user_permission_level = get_user_permission_level(session["id"], workflow_folder_path)
+            workflow_data["user_permission_level"] = user_permission_level
+        else:
+            workflow_data["user_permission_level"] = 4
 
         mydb.close()
         return workflow_data
