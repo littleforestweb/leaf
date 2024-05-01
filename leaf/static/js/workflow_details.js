@@ -77,6 +77,9 @@ async function setStatus(status, id, type, listName, accountId, files_details) {
             document.getElementById("workflowNotification").classList.add("bg-success");
             document.getElementById("workflowNotificationMsg").innerHTML = "<span>Workflow Completed</span>"
             $('#workflowNotification').toast('show');
+            window.location.reload();
+        }, error: function (entry, XMLHttpRequest, textStatus, errorThrown) {
+            window.location.reload();
         }
     });
 }
