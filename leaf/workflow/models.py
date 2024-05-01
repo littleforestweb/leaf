@@ -134,12 +134,22 @@ def get_user_details(user_id, mycursor):
     Returns:
         dict: User details (username, email).
     """
-    query = "SELECT user.username, user.email FROM user WHERE user.id=%s OR user.email=%s"
+    # First query to get username and email
+    query = "SELECT username, email FROM user WHERE id = %s OR email = %s"
     params = [user_id, user_id]
     mycursor.execute(query, params)
-    result = mycursor.fetchone()
-    username, email = result[0], result[1]
-    return {"username": username, "email": email}
+    user_result = mycursor.fetchone()
+    username, email = user_result[0], user_result[1]
+
+    # Check if user has an display_name
+    display_name = username
+    image_query = "SELECT display_name FROM user_image WHERE user_id = %s"
+    mycursor.execute(image_query, (user_id,))
+    display_name_result = mycursor.fetchone()
+    if display_name_result:
+        display_name = display_name_result[0]
+
+    return {"username": username, "email": email, "display_name": display_name}
 
 
 def process_specific_workflow_type(workflow_data, mycursor):
@@ -276,12 +286,12 @@ def get_workflows():
         for entry in workflowsLst:
             # Get Start User
             user = get_user_details(entry["startUser"], mycursor)
-            startUser = f'({user["username"]}) {user["email"]}'
+            startUser = f'({user["display_name"]}) {user["email"]}'
             entry["startUser"] = startUser
 
             # Get Assign User
             user = get_user_details(entry["assignEditor"], mycursor)
-            assignEditor = f'({user["username"]}) {user["email"]}'
+            assignEditor = f'({user["display_name"]}) {user["email"]}'
             entry["assignEditor"] = assignEditor
 
             # Check Status Message
