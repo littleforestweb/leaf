@@ -254,7 +254,7 @@ def get_workflows():
     mydb, mycursor = decorators.db_connection()
 
     try:
-        mycursor.execute("SELECT id, title, startUser, assignEditor, dueDate, comments, submittedDate, type, status, tags, attachments, priority, listName FROM workflow WHERE type != 2 AND assignEditor = session['id'] AND accountId = %s", (session["accountId"],))
+        mycursor.execute("SELECT id, title, startUser, assignEditor, dueDate, comments, submittedDate, type, status, tags, attachments, priority, listName FROM workflow WHERE type != 2 AND assignEditor = %s AND accountId = %s", (session["id"], session["accountId"],))
         workflowsLst = [
             {
                 "id": wf[0],
@@ -298,6 +298,7 @@ def get_workflows():
         return workflowsLst
     except Exception as e:
         # Log the error or handle it as needed
+
         raise e
     finally:
         mydb.close()
