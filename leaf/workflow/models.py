@@ -716,27 +716,42 @@ def send_smtp(subject, email_to_send, from_addr, to_addr):
         server.send_message(message)
 
 
+def get_sendmail_path():
+    try:
+        # Run whereis command to locate sendmail
+        result = subprocess.run(['whereis', 'sendmail'], stdout=subprocess.PIPE)
+        # Extract sendmail path from the output
+        sendmail_path = result.stdout.decode().split(':')[1].strip()
+        return sendmail_path
+    except Exception as e:
+        print("Failed to get sendmail path:", e)
+        return None
+
+
 def send_email(subject, message, from_addr, to_addr):
     """Send email using the sendmail command."""
-    # Construct the email headers and body
-    email_text = f"""
+    sendmail_path = get_sendmail_path()
+    if sendmail_path:
+        email_text = f"""
 From: {from_addr}
 To: {to_addr}
 Subject: {subject}
 
 {message}
 """
-    try:
-        # Start the sendmail process
-        process = subprocess.Popen(["/usr/sbin/sendmail", "-t", "-oi"], stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-        # Send the email
-        process.communicate(email_text.encode())
-        if process.returncode == 0:
-            print("Email sent successfully!")
-        else:
-            print("Failed to send email")
-    except Exception as e:
-        print("Failed to send email:", e)
+        try:
+            # Start the sendmail process
+            process = subprocess.Popen([sendmail_path, "-t", "-oi"], stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+            # Send the email
+            process.communicate(email_text.encode())
+            if process.returncode == 0:
+                print("Email sent successfully!")
+            else:
+                print("Failed to send email")
+        except Exception as e:
+            print("Failed to send email:", e)
+    else:
+        print("Sendmail path not found.")
 
 
 def change_status_workflow(workflow_id, new_status, user_to_notify):
