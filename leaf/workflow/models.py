@@ -1,6 +1,7 @@
 import datetime
 import os
 import smtplib
+import subprocess
 import time
 from email.message import EmailMessage
 from urllib.parse import unquote
@@ -684,20 +685,16 @@ def add_workflow(thisRequest):
         mydb.commit()
         workflow_id = mycursor.lastrowid
 
-        # Send email notification if SMTP_USER is configured
-        if Config.SMTP_USER != "":
-            mycursor.execute(f"SELECT email FROM user WHERE id={assignEditor}")
-            assignEditorEmail = mycursor.fetchone()[0]
-            emailToSend = new_task_email(workflow_id, title, session["username"], priority, submittedDate, dueDate)
-            message = EmailMessage()
-            message['From'] = Config.SMTP_USER
-            message['To'] = assignEditorEmail
-            message['Subject'] = title
-            message.set_content(emailToSend, subtype='html')
-            with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as server:
-                server.starttls()
-                server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
-                server.send_message(message)
+
+        mycursor.execute(f"SELECT email FROM user WHERE id={assignEditor}")
+        assignEditorEmail = mycursor.fetchone()[0]
+        emailToSend = new_task_email(workflow_id, title, session["username"], priority, submittedDate, dueDate)
+
+        if Config.EMAIL_METHOD == "SMTP":
+            send_smtp(title, emailToSend, Config.SMTP_USER, assignEditorEmail)
+
+        if Config.SMTP_METHOD == "sendmail":
+            send_email(title, emailToSend, Config.SMTP_USER, assignEditorEmail)
 
         return {"message": "success", "workflow_id": str(workflow_id)}
 
@@ -707,6 +704,38 @@ def add_workflow(thisRequest):
     finally:
         mydb.close()
 
+def send_smtp(subject, email_to_send, from_addr, to_addr):
+    message = EmailMessage()
+    message['From'] = from_addr
+    message['To'] = to_addr
+    message['Subject'] = subject
+    message.set_content(email_to_send, subtype='html')
+    with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as server:
+        server.starttls()
+        server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
+        server.send_message(message)
+
+def send_email(subject, message, from_addr, to_addr):
+    """Send email using the sendmail command."""
+    # Construct the email headers and body
+    email_text = f"""
+From: {from_addr}
+To: {to_addr}
+Subject: {subject}
+
+{email_to_send}
+"""
+    try:
+        # Start the sendmail process
+        process = subprocess.Popen(["/usr/sbin/sendmail", "-t", "-oi"], stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        # Send the email
+        process.communicate(email_text.encode())
+        if process.returncode == 0:
+            print("Email sent successfully!")
+        else:
+            print("Failed to send email")
+    except Exception as e:
+        print("Failed to send email:", e)
 
 def change_status_workflow(workflow_id, new_status, user_to_notify):
     """
@@ -750,27 +779,17 @@ def change_status_workflow(workflow_id, new_status, user_to_notify):
         # Get email body
         emailToSend = workflow_changed_email(workflow_id, title, session["username"], newStatusString, "status_changed", theEmailMessage)
 
-        # Send Email to ASSIGNED_USER_EMAIL
-        message = EmailMessage()
-        message['From'] = Config.SMTP_USER
-        message['To'] = Config.ASSIGNED_USER_EMAIL
-        message['Subject'] = title
-        message.set_content(emailToSend, subtype='html')
-        with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as server:
-            server.starttls()
-            server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
-            server.send_message(message)
+        if Config.EMAIL_METHOD == "SMTP":
+            # Send Email to ASSIGNED_USER_EMAIL
+            send_smtp(title, emailToSend, Config.SMTP_USER, Config.ASSIGNED_USER_EMAIL)
+            # Send email to user
+            send_smtp(title, emailToSend, Config.SMTP_USER, user_to_notify)
 
-        # Send email to user
-        message2 = EmailMessage()
-        message2['From'] = Config.SMTP_USER
-        message2['To'] = user_to_notify
-        message2['Subject'] = title
-        message2.set_content(emailToSend, subtype='html')
-        with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as server:
-            server.starttls()
-            server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
-            server.send_message(message2)
+        if Config.SMTP_METHOD == "sendmail":
+            # Send Email to ASSIGNED_USER_EMAIL
+            send_email(title, emailToSend, Config.SMTP_USER, Config.ASSIGNED_USER_EMAIL)
+            # Send email to user
+            send_email(title, emailToSend, Config.SMTP_USER, user_to_notify)
 
         jsonR = {"message": "success", "workflow_id": str(last_workflow_id)}
         return jsonR

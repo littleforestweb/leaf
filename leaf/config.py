@@ -50,6 +50,7 @@ def checkConfig(loaded_json):
         ],
         "WEBSERVER_FOLDER": "",
         "ASSIGNED_USER_EMAIL": "",
+        "EMAIL_METHOD": "SMTP",
         "SMTP_HOST": "",
         "SMTP_PORT": "",
         "SMTP_USER": "",
@@ -181,6 +182,7 @@ class Config:
     ASSIGNED_USER_EMAIL = config["ASSIGNED_USER_EMAIL"]
 
     # SMTP Details
+    EMAIL_METHOD = config["EMAIL_METHOD"]
     SMTP_HOST = config["SMTP_HOST"]
     SMTP_PORT = config["SMTP_PORT"]
     SMTP_USER = config["SMTP_USER"]
