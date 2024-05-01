@@ -720,12 +720,12 @@ def send_email(subject, message, from_addr, to_addr):
     """Send email using the sendmail command."""
     # Construct the email headers and body
     email_text = f"""
-From: {from_addr}
-To: {to_addr}
-Subject: {subject}
+        From: {from_addr}
+        To: {to_addr}
+        Subject: {subject}
 
-{message}
-"""
+        {message}
+    """
     try:
         # Start the sendmail process
         process = subprocess.Popen(["/usr/sbin/sendmail", "-t", "-oi"], stdin=subprocess.PIPE, stderr=subprocess.PIPE)
