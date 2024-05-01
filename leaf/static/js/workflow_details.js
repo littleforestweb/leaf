@@ -77,15 +77,6 @@ async function setStatus(status, id, type, listName, accountId, files_details) {
             document.getElementById("workflowNotification").classList.add("bg-success");
             document.getElementById("workflowNotificationMsg").innerHTML = "<span>Workflow Completed</span>"
             $('#workflowNotification').toast('show');
-        }, error: function (entry, XMLHttpRequest, textStatus, errorThrown) {
-            console.log(XMLHttpRequest);
-            console.log(textStatus);
-            console.log(errorThrown);
-            document.getElementById("actionContainer").innerHTML = "<span>No Action needed</span>";
-            document.getElementById("statusContainer").innerHTML = "<span>" + entry["action"] + "</span>";
-            document.getElementById("workflowNotification").classList.add("bg-success");
-            document.getElementById("workflowNotificationMsg").innerHTML = "<span>Workflow Completed</span>"
-            $('#workflowNotification').toast('show');
         }
     });
 }
