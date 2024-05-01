@@ -636,6 +636,8 @@ def add_workflow(thisRequest):
 
         # Extract workflow details from the request
         assignEditor = thisRequest.get("assignEditor")
+        if not assignEditor:
+            assignEditor = session["id"]
         dueDate = str(thisRequest.get("dueDate")) if thisRequest.get("dueDate") else str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         comments = str(thisRequest.get("comments")) if thisRequest.get("comments") else ""
         tags = str(thisRequest.get("tags")) if thisRequest.get("tags") else ""
