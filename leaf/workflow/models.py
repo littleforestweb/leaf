@@ -685,7 +685,6 @@ def add_workflow(thisRequest):
         mydb.commit()
         workflow_id = mycursor.lastrowid
 
-
         mycursor.execute(f"SELECT email FROM user WHERE id={assignEditor}")
         assignEditorEmail = mycursor.fetchone()[0]
         emailToSend = new_task_email(workflow_id, title, session["username"], priority, submittedDate, dueDate)
@@ -693,7 +692,7 @@ def add_workflow(thisRequest):
         if Config.EMAIL_METHOD == "SMTP":
             send_smtp(title, emailToSend, Config.SMTP_USER, assignEditorEmail)
 
-        if Config.SMTP_METHOD == "sendmail":
+        if Config.EMAIL_METHOD == "sendmail":
             send_email(title, emailToSend, Config.SMTP_USER, assignEditorEmail)
 
         return {"message": "success", "workflow_id": str(workflow_id)}
@@ -703,6 +702,7 @@ def add_workflow(thisRequest):
         raise e
     finally:
         mydb.close()
+
 
 def send_smtp(subject, email_to_send, from_addr, to_addr):
     message = EmailMessage()
@@ -715,6 +715,7 @@ def send_smtp(subject, email_to_send, from_addr, to_addr):
         server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
         server.send_message(message)
 
+
 def send_email(subject, message, from_addr, to_addr):
     """Send email using the sendmail command."""
     # Construct the email headers and body
@@ -723,7 +724,7 @@ From: {from_addr}
 To: {to_addr}
 Subject: {subject}
 
-{email_to_send}
+{message}
 """
     try:
         # Start the sendmail process
@@ -736,6 +737,7 @@ Subject: {subject}
             print("Failed to send email")
     except Exception as e:
         print("Failed to send email:", e)
+
 
 def change_status_workflow(workflow_id, new_status, user_to_notify):
     """
@@ -785,7 +787,7 @@ def change_status_workflow(workflow_id, new_status, user_to_notify):
             # Send email to user
             send_smtp(title, emailToSend, Config.SMTP_USER, user_to_notify)
 
-        if Config.SMTP_METHOD == "sendmail":
+        if Config.EMAIL_METHOD == "sendmail":
             # Send Email to ASSIGNED_USER_EMAIL
             send_email(title, emailToSend, Config.SMTP_USER, Config.ASSIGNED_USER_EMAIL)
             # Send email to user
