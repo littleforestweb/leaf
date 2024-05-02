@@ -63,18 +63,13 @@ def duplicate_page_route():
     try:
         site_id = int(werkzeug.utils.escape(request.form.get("site_id", type=str)))
         ogPageId = int(werkzeug.utils.escape(request.form.get("ogPageId", type=str)))
-
         ogURL = str(werkzeug.utils.escape(request.form.get("ogURL", type=str)))
-        ogURL = ogURL.lstrip("/") if ogURL.startswith("/") else ogURL
-        print(ogURL)
-
+        newURL = str(werkzeug.utils.escape(request.form.get("newURL", type=str)))
         newTitle = str(werkzeug.utils.escape(request.form.get("newTitle", type=str)))
 
-        newUrl = str(werkzeug.utils.escape(request.form.get("newUrl", type=str)))
-        newUrl = newUrl.lstrip("/") if newUrl.startswith("/") else newUrl
-        print(newUrl)
+        result = duplicate_page(site_id, ogPageId, ogURL, newTitle, newURL)
+        return result
 
-        return duplicate_page(site_id, ogPageId, ogURL, newTitle, newUrl)
     except Exception as e:
         print(traceback.format_exc())
         # Handle exceptions and return an error response with status code 500

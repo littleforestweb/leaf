@@ -86,27 +86,36 @@ async function addNewDuplicatedPage() {
     let ogTitle = escapeHtml($("#originalTitle").val());
     let ogURL = escapeHtml($("#originalUrl").val());
     let newTitle = escapeHtml($("#newTitle").val());
-    let newUrl = escapeHtml($("#newUrl").val());
+    let newURL = escapeHtml($("#newURL").val());
 
     // Check user inputs -> Send alert message
     let alertMessageElem = document.getElementById("alertMessage");
-    if (newUrl === "" || newTitle === "") {
+    if (newURL === "" || newTitle === "") {
         alertMessageElem.children[0].innerText = "New URL/Title is empty";
         alertMessageElem.hidden = false;
         return;
     }
-    if (ogURL === newUrl || ogTitle === newTitle) {
+    if (ogURL === newURL || ogTitle === newTitle) {
         alertMessageElem.children[0].innerText = "New URL/Title is equal to Original URL/Title";
         alertMessageElem.hidden = false;
         return;
     }
-    if (!(newUrl.endsWith(".html") || newUrl.endsWith(".page"))) {
-        alertMessageElem.children[0].innerText = "New URL doesn't end with \".html\" or \".page\"";
+    const validWebpageExtensions = [".html", ".htm", ".php", ".asp", ".aspx", ".jsp", ".jspx", ".cfm", ".cgi", ".pl", ".py", ".rb", ".page"];
+    let isValidExtension = false;
+    for (let i = 0; i < validWebpageExtensions.length; i++) {
+        if (newURL.endsWith(validWebpageExtensions[i])) {
+            isValidExtension = true;
+            break;
+        }
+    }
+    if (!isValidExtension) {
+        alertMessageElem.children[0].innerText = "New URL doesn't end with a valid extension (" + validWebpageExtensions.join(', ') + ")";
         alertMessageElem.hidden = false;
         return;
     }
+
     let regex = /^[a-zA-Z0-9_\/.\- ;=]+$/;
-    if (!regex.test(newUrl)) {
+    if (!regex.test(newURL)) {
         alertMessageElem.children[0].innerText = "New URL has invalid characters. [a-zA-Z0-9_/-;=]";
         alertMessageElem.hidden = false;
         return;
@@ -115,10 +124,16 @@ async function addNewDuplicatedPage() {
 
     $.ajax({
         type: "POST", url: "/api/duplicate_page", data: {
-            "site_id": site_id, "ogPageId": ogPageId, "ogTitle": ogTitle, "ogURL": ogURL, "newTitle": newTitle, "newUrl": newUrl
+            "site_id": site_id, "ogPageId": ogPageId, "ogTitle": ogTitle, "ogURL": ogURL, "newTitle": newTitle, "newURL": newURL
         }, success: function (entry) {
-            $('#renameModal').modal('hide');
-            window.location.reload();
+
+            if (entry["message"] === "file already exists") {
+                alertMessageElem.children[0].innerText = "File path already exists.";
+                alertMessageElem.hidden = false;
+            } else if (entry["message"] === "success") {
+                $('#renameModal').modal('hide');
+                window.location.reload();
+            }
         }, error: function (XMLHttpRequest, textStatus, errorThrown) {
             console.log("ERROR");
             console.log(XMLHttpRequest, textStatus, errorThrown)
@@ -126,7 +141,9 @@ async function addNewDuplicatedPage() {
     });
 }
 
-async function deletePage() {
+async function deletePage(btn) {
+    btn.disabled = true;
+
     // Get all rows that are selected
     let checkedRows = $('#table').DataTable().rows(function (idx, data, node) {
         return $(node).find('.dt-checkboxes:input[type="checkbox"]:checked').val();
@@ -138,27 +155,19 @@ async function deletePage() {
         selectedIdsText += row["id"] + ";";
     });
 
-    let form_data = {
-        "startUser": userId,
-        "entryId": selectedIdsText,
-        "type": 5,
-        "priority": 2
-    }
-    console.log(form_data);
-
     $.ajax({
         type: "POST",
         url: "/workflow/add",
         contentType: 'application/json',
-        data: JSON.stringify(form_data),
+        data: JSON.stringify({"startUser": userId, "entryId": selectedIdsText, "type": 5, "priority": 2}),
         dataType: 'json',
         cache: false,
         processData: false,
         success: function (entry) {
-            console.log(entry);
             $("#viewWorkflow").attr("href", "/workflow_details?id=" + entry["workflow_id"]);
             $("#deleteModal").modal("hide");
             $("#viewWorkflowNotification").toast('show');
+            btn.disabled = false;
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
             console.log("ERROR");
