@@ -100,8 +100,8 @@ async function addNewDuplicatedPage() {
         alertMessageElem.hidden = false;
         return;
     }
-    if (!newUrl.endsWith(".html")) {
-        alertMessageElem.children[0].innerText = "New URL doesn't end with \".html\"";
+    if (!(newUrl.endsWith(".html") || newUrl.endsWith(".page"))) {
+        alertMessageElem.children[0].innerText = "New URL doesn't end with \".html\" or \".page\"";
         alertMessageElem.hidden = false;
         return;
     }
@@ -118,7 +118,7 @@ async function addNewDuplicatedPage() {
             "site_id": site_id, "ogPageId": ogPageId, "ogTitle": ogTitle, "ogURL": ogURL, "newTitle": newTitle, "newUrl": newUrl
         }, success: function (entry) {
             $('#renameModal').modal('hide');
-            $('#table').DataTable().ajax.reload(null, false);
+            window.location.reload();
         }, error: function (XMLHttpRequest, textStatus, errorThrown) {
             console.log("ERROR");
             console.log(XMLHttpRequest, textStatus, errorThrown)

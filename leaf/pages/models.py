@@ -100,12 +100,14 @@ def duplicate_page(site_id, ogPageId, ogURL, newTitle, newUrl):
 
         # Duplicate the local HTML page with subfolder creation if needed
         source_file = os.path.join(Config.WEBSERVER_FOLDER, ogURL)
-        destination_folder = os.path.join(Config.WEBSERVER_FOLDER, newUrl)
+        print(source_file)
+        destination_folder = os.path.dirname(os.path.join(Config.WEBSERVER_FOLDER, newUrl))
+        print(destination_folder)
 
         # Ensure the destination folder exists, creating it if necessary
         os.makedirs(os.path.dirname(destination_folder), exist_ok=True)
 
-        destination_file = os.path.join(os.path.dirname(destination_folder), os.path.basename(source_file))
+        destination_file = os.path.join(destination_folder, os.path.basename(newUrl))
         shutil.copy2(source_file, destination_file)
 
         # Open the new page
