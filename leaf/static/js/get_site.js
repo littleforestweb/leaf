@@ -22,7 +22,8 @@ async function publishSite() {
     $('#publishModal').modal('show');
 }
 
-async function addWorkflow() {
+async function addWorkflow(btn) {
+    btn.disabled = true;
     let siteIds = document.getElementById("selectedIds").value;
     let comments = document.getElementById("publishComments").value
 
@@ -56,10 +57,12 @@ async function addWorkflow() {
             document.getElementById("viewWorkflow").href = "/workflow_details?id=" + entry["workflow_id"];
             $('#publishModal').modal("hide");
             $("#viewWorkflowNotification").toast("show");
+            btn.disabled = false;
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
             console.log("ERROR");
             console.log(XMLHttpRequest, textStatus, errorThrown);
+            btn.disabled = false;
         }
     });
 }
