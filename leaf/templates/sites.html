@@ -204,16 +204,9 @@
                 <h3 class="pull-left">Sites</h3>
                 <div class="header-btns pull-right">
                     {% if is_admin %}
-                        <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                                data-bs-target="#addSiteModal">Add Site
-                        </button>
-                        <button type="button" class="btn btn-blue editButton" data-bs-toggle="modal"
-                                data-bs-target="#editSiteModal" onclick="populateEditSiteDialog();" disabled>Edit Site
-                        </button>
-                        <button type="button" class="btn btn-red deleteButton" onclick="deleteSites();" disabled>Delete
-                            Site
-                        </button>
-                        {#<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#publishSiteModal">Publish Site</button>#}
+                        <button disabled type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addSiteModal">Add Site</button>
+                        <button disabled type="button" class="btn btn-blue editButton" data-bs-toggle="modal" data-bs-target="#editSiteModal" onclick="populateEditSiteDialog();">Edit Site</button>
+                        <button disabled type="button" class="btn btn-red deleteButton" onclick="deleteSites();">Delete Site</button>
                     {% endif %}
                 </div>
             </div>
