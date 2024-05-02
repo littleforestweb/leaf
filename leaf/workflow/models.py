@@ -700,11 +700,7 @@ def add_workflow(thisRequest):
         assignEditorEmail = mycursor.fetchone()[0]
         emailToSend = new_task_email(workflow_id, title, session["username"], priority, submittedDate, dueDate)
 
-        if Config.EMAIL_METHOD == "SMTP":
-            send_smtp(title, emailToSend, Config.SMTP_USER, assignEditorEmail)
-
-        if Config.EMAIL_METHOD == "sendmail":
-            send_email(title, emailToSend, Config.SMTP_USER, assignEditorEmail)
+        send_mail(title, emailToSend, assignEditorEmail)
 
         return {"message": "success", "workflow_id": str(workflow_id)}
 
@@ -713,56 +709,6 @@ def add_workflow(thisRequest):
         raise e
     finally:
         mydb.close()
-
-
-def send_smtp(subject, email_to_send, from_addr, to_addr):
-    message = EmailMessage()
-    message['From'] = from_addr
-    message['To'] = to_addr
-    message['Subject'] = subject
-    message.set_content(email_to_send, subtype='html')
-    with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as server:
-        server.starttls()
-        server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
-        server.send_message(message)
-
-
-def get_sendmail_path():
-    try:
-        # Run whereis command to locate sendmail
-        result = subprocess.run(['whereis', 'sendmail'], stdout=subprocess.PIPE)
-        # Extract sendmail path from the output
-        sendmail_path = result.stdout.decode().split(':')[1].strip()
-        return sendmail_path
-    except Exception as e:
-        print("Failed to get sendmail path:", e)
-        return None
-
-
-def send_email(subject, message, from_addr, to_addr):
-    """Send email using the sendmail command."""
-    sendmail_path = get_sendmail_path()
-    if sendmail_path:
-        email_text = f"""
-From: {from_addr}
-To: {to_addr}
-Subject: {subject}
-
-{message}
-"""
-        try:
-            # Start the sendmail process
-            process = subprocess.Popen([sendmail_path, "-t", "-oi"], stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-            # Send the email
-            process.communicate(email_text.encode())
-            if process.returncode == 0:
-                print("Email sent successfully!")
-            else:
-                print("Failed to send email")
-        except Exception as e:
-            print("Failed to send email:", e)
-    else:
-        print("Sendmail path not found.")
 
 
 def change_status_workflow(workflow_id, new_status, user_to_notify):
@@ -807,17 +753,8 @@ def change_status_workflow(workflow_id, new_status, user_to_notify):
         # Get email body
         emailToSend = workflow_changed_email(workflow_id, title, session["username"], newStatusString, "status_changed", theEmailMessage)
 
-        if Config.EMAIL_METHOD == "SMTP":
-            # Send Email to ASSIGNED_USER_EMAIL
-            send_smtp(title, emailToSend, Config.SMTP_USER, Config.ASSIGNED_USER_EMAIL)
-            # Send email to user
-            send_smtp(title, emailToSend, Config.SMTP_USER, user_to_notify)
-
-        if Config.EMAIL_METHOD == "sendmail":
-            # Send Email to ASSIGNED_USER_EMAIL
-            send_email(title, emailToSend, Config.SMTP_USER, Config.ASSIGNED_USER_EMAIL)
-            # Send email to user
-            send_email(title, emailToSend, Config.SMTP_USER, user_to_notify)
+        send_mail(title, emailToSend, Config.ASSIGNED_USER_EMAIL)
+        send_mail(title, emailToSend, user_to_notify)
 
         jsonR = {"message": "success", "workflow_id": str(last_workflow_id)}
         return jsonR
@@ -826,3 +763,79 @@ def change_status_workflow(workflow_id, new_status, user_to_notify):
         raise e
     finally:
         mydb.close()
+
+
+def send_mail(title, emailToSend, user_to_notify):
+    """
+    Send an email using the configured method.
+
+    Args:
+        title (str): Title of the email.
+        email_to_send (str): Content of the email.
+        user_to_notify (str): Email address of the recipient.
+
+    Returns:
+        None
+    """
+
+    if Config.EMAIL_METHOD == "SMTP":
+        send_smtp(title, emailToSend, Config.SMTP_USER, user_to_notify)
+
+    if Config.EMAIL_METHOD == "sendmail":
+        send_sendmail(title, emailToSend, Config.SMTP_USER, user_to_notify)
+
+
+def send_smtp(subject, email_to_send, from_addr, to_addr):
+    """
+    Send an email using SMTP.
+
+    Args:
+        subject (str): Subject of the email.
+        email_to_send (str): Content of the email.
+        from_addr (str): Sender's email address.
+        to_addr (str): Recipient's email address.
+
+    Returns:
+        None
+    """
+
+    message = EmailMessage()
+    message['From'] = from_addr
+    message['To'] = to_addr
+    message['Subject'] = subject
+    message.set_content(email_to_send, subtype='html')
+    with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as server:
+        if Config.SMTP_PORT != 25:
+            server.starttls()
+        if Config.SMTP_PASSWORD != "":
+            server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
+        server.send_message(message)
+
+
+def send_sendmail(subject, message, from_addr, to_addr):
+    """
+    Send an email using the sendmail method.
+
+    Args:
+        subject (str): Subject of the email.
+        message (str): Content of the email.
+        from_addr (str): Sender's email address.
+        to_addr (str): Recipient's email address.
+
+    Returns:
+        None
+    """
+
+    sendmail_path = subprocess.run(['whereis', 'sendmail'], stdout=subprocess.PIPE).stdout.decode().split(':')[1].strip()
+    if sendmail_path:
+        email_text = f"""
+From: {from_addr}
+To: {to_addr}
+Subject: {subject}
+
+{message}
+"""
+        # Start the sendmail process
+        process = subprocess.Popen([sendmail_path, "-t", "-oi"], stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        # Send the email
+        process.communicate(email_text.encode())
