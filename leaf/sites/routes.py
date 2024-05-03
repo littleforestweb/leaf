@@ -112,8 +112,7 @@ def view_get_site():
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
         error_message = f"An error occurred: {str(e)}"
-        # Render an error template or redirect to an error page
-        return render_template('error.html', error_message=error_message, site_notice=Config.SITE_NOTICE)
+        return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
 
 
 @sites.route('/api/get_site')
