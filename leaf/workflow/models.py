@@ -73,7 +73,7 @@ def get_workflow_details(workflow_id):
             query = "SELECT sm.HTMLPath FROM site_meta sm WHERE sm.id=%s"
             params = (workflow_data["siteIds"],)
             mycursor.execute(query, params)
-            workflow_folder_path = f"/{mycursor.fetchone()[0].lstrip("/")}"
+            workflow_folder_path = f"/{mycursor.fetchone()[0].lstrip('/')}"
 
             # Get user Permission Level for the workflow folder
             user_permission_level = get_user_permission_level(session["id"], workflow_folder_path)
