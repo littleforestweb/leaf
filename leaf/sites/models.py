@@ -127,7 +127,7 @@ def get_user_access_folder(mycursor):
     query = "SELECT ua.folder_path FROM leaf.user_access ua JOIN leaf.user_groups ug ON ua.group_id = ug.group_id JOIN leaf.group_member gm ON ug.group_id = gm.group_id WHERE gm.user_id = %s"
     mycursor.execute(query, (session["id"],))
     folder_paths = [folder_path[0] for folder_path in mycursor.fetchall()]
-    return folder_paths
+    return set(folder_paths)
 
 
 def get_site_data(site_id):
@@ -150,7 +150,7 @@ def get_site_data(site_id):
         mydb, mycursor = decorators.db_connection()
 
         # Get User Access folders
-        folder_paths = set(get_user_access_folder(mycursor))
+        folder_paths = get_user_access_folder(mycursor)
 
         # Get pages from the site
         query = "SELECT id, id, title, HTMLPath, modified_date, id FROM site_meta WHERE status <> -1 AND site_id = %s"

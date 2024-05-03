@@ -23,8 +23,8 @@ def get_page_route():
         send_from_directory: Send HTML file from the directory.
     """
     try:
-        pid = werkzeug.utils.escape(request.args.get('id', type=str))
-        return get_page(pid)
+        pageId = int(werkzeug.utils.escape(request.args.get('id', type=str)))
+        return get_page(pageId)
     except Exception as e:
         # Handle exceptions and return an error response with status code 500
         return jsonify({"error": str(e)}), 500
@@ -40,7 +40,7 @@ def get_screenshot_route():
         send_from_directory: Send screenshot file from the directory.
     """
     try:
-        pageId = werkzeug.utils.escape(request.args.get('id', type=str))
+        pageId = int(werkzeug.utils.escape(request.args.get('id', type=str)))
         return get_screenshot(pageId)
     except Exception as e:
         # Handle exceptions and return an error response with status code 500
