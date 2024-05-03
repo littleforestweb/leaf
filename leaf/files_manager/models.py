@@ -29,7 +29,7 @@ def list_all_files(site_id, archive):
         mydb, mycursor = decorators.db_connection()
 
         # Get User Access folders
-        folder_paths = set(get_user_access_folder(mycursor))
+        folder_paths = get_user_access_folder(mycursor)
 
         # Get first admin user
         query = f"SELECT user.id, user.username, user.email FROM user WHERE user.is_admin = 1"
