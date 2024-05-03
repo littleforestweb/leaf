@@ -13,15 +13,7 @@ from requests.auth import HTTPDigestAuth
 from leaf import decorators
 from leaf.config import Config
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
 sites = Blueprint('sites', __name__)
-
-HERITRIX_FOLDER = Config.HERITRIX_FOLDER
-HERITRIX_PORT = Config.HERITRIX_PORT
-HERITRIX_USER = Config.HERITRIX_USER
-HERITRIX_PASS = Config.HERITRIX_PASS
-HERITRIX_HEADERS = {"Accept": "application/xml"}
 
 
 def getSiteFromPageId(pageId):
@@ -182,6 +174,9 @@ def get_site_log(site_id):
     """
     try:
 
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        HERITRIX_HEADERS = {"Accept": "application/xml"}
+
         # Get a database connection using the 'db_connection' decorator
         mydb, mycursor = decorators.db_connection()
 
@@ -231,6 +226,13 @@ def add_new_site(site_data):
     """
 
     try:
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        HERITRIX_FOLDER = Config.HERITRIX_FOLDER
+        HERITRIX_PORT = Config.HERITRIX_PORT
+        HERITRIX_USER = Config.HERITRIX_USER
+        HERITRIX_PASS = Config.HERITRIX_PASS
+        HERITRIX_HEADERS = {"Accept": "application/xml"}
+
         # Rescan
         data = {"action": "rescan"}
         requests.post(url="https://localhost:" + HERITRIX_PORT + "/engine", auth=HTTPDigestAuth(HERITRIX_USER, HERITRIX_PASS), data=data, headers=HERITRIX_HEADERS, verify=False)
@@ -400,7 +402,7 @@ def add_new_site(site_data):
                 elif beanId == "warcWriter":
                     newProperty = ET.Element("property")
                     newProperty.set("name", "directory")
-                    newProperty.set("value", os.path.join(HERITRIX_FOLDER, "jobs", site_data["site_label"]))
+                    newProperty.set("value", str(os.path.join(HERITRIX_FOLDER, "jobs", site_data["site_label"])))
                     entry.append(newProperty)
 
         # Save ConfigFile
@@ -493,6 +495,13 @@ def delete_sites(sites_to_delete):
         dict: A JSON response indicating the success of the delete operation and providing information about the deleted sites.
     """
     try:
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        HERITRIX_FOLDER = Config.HERITRIX_FOLDER
+        HERITRIX_PORT = Config.HERITRIX_PORT
+        HERITRIX_USER = Config.HERITRIX_USER
+        HERITRIX_PASS = Config.HERITRIX_PASS
+        HERITRIX_HEADERS = {"Accept": "application/xml"}
+
         # Get a database connection using the 'db_connection' decorator
         mydb, mycursor = decorators.db_connection()
 
