@@ -69,7 +69,7 @@ def get_workflow_details(workflow_id):
         process_specific_workflow_type(workflow_data, mycursor)
 
         # Get workflow folder
-        if workflow_data["type"] == 1:
+        if workflow_data["type"] in [1, 5, 6, 7]:
             query = "SELECT sm.HTMLPath FROM site_meta sm WHERE sm.id=%s"
             params = (workflow_data["siteIds"],)
             mycursor.execute(query, params)

@@ -13,6 +13,7 @@ from leaf import decorators
 from leaf.config import Config
 from leaf.decorators import limiter
 from leaf.decorators import login_required
+from leaf.users.models import get_user_permission_level
 from .models import uniquify, workflow_changed_email, upload_file_with_retry, add_workflow, is_workflow_owner, get_workflow_details, get_workflows, get_task_requests, change_status_workflow, send_mail
 
 workflow = Blueprint("workflow", __name__)
@@ -290,7 +291,7 @@ def action_workflow():
     action = werkzeug.utils.escape(request.form.get("status"))
 
     # Check if the workflow belongs to the user's account
-    if not is_workflow_owner(int(workflow_id)) or session["is_manager"] == 0:
+    if not is_workflow_owner(int(workflow_id)):
         return jsonify({"error": "Forbidden"}), 403
 
     thisType = 1
@@ -309,7 +310,7 @@ def action_workflow():
 
     # Get a database connection
     mydb, mycursor = decorators.db_connection()
-
+    
     # Run SQL Command
     if action == "Approve":
         action = "Approved"
@@ -319,6 +320,16 @@ def action_workflow():
         mydb.commit()
         jsonR = {"message": "success", "action": action}
         return jsonify(jsonR)
+
+    # Check if the user has permission
+    if thisType in [1, 5, 6, 7]:
+        query = "SELECT site_meta.HTMLPath FROM site_meta JOIN workflow ON site_meta.id = workflow.siteIds WHERE workflow.id = %s"
+        params = (workflow_id,)
+        mycursor.execute(query, params)
+        workflow_folder_path = f"/{mycursor.fetchone()[0].lstrip('/')}"
+        perm_level = get_user_permission_level(session["id"], workflow_folder_path)
+        if perm_level != 4:
+            return jsonify({"error": "Forbidden"}), 403
 
     if not listName and thisType == 1:
         # Get local file path
