@@ -67,8 +67,7 @@ def duplicate_page_route():
         newURL = str(werkzeug.utils.escape(request.form.get("newURL", type=str)))
         newTitle = str(werkzeug.utils.escape(request.form.get("newTitle", type=str)))
 
-        result = duplicate_page(site_id, ogPageId, ogURL, newTitle, newURL)
-        return result
+        return duplicate_page(site_id, ogPageId, ogURL, newTitle, newURL)
 
     except Exception as e:
         print(traceback.format_exc())
