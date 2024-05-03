@@ -12,6 +12,7 @@ from saml2 import config
 from saml2 import metadata
 from saml2.client import Saml2Client
 from signxml import XMLVerifier
+from urllib.parse import urlparse
 
 from leaf import Config
 from leaf.decorators import db_connection, generate_jwt
@@ -22,8 +23,17 @@ saml_route = Blueprint("saml_route", __name__)
 
 @saml_route.route('/saml/login')
 def sp_saml_login():
+    url_to_redirect_after_saml_login = request.args.get('url_to_redirect', '')
+    # Parse the URL to extract components
+    parsed_url = urlparse(url_to_redirect_after_saml_login)
+    # Construct the base URL
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+
+    if (base_url + "/saml" != Config.SP_ASSERTION_CONSUMER_SERVICE_URL):
+        url_to_redirect_after_saml_login = Config.SP_ASSERTION_CONSUMER_SERVICE_URL
+
     if Config.IDP_METADATA != "":
-        saml_client = Saml2Client(config=pysaml2_config())
+        saml_client = Saml2Client(config=pysaml2_config(url_to_redirect_after_saml_login))
         # Prepare the SAML Authentication Request
         _, info = saml_client.prepare_for_authenticate()
         redirect_url = dict(info["headers"])["Location"]
@@ -36,7 +46,7 @@ def sp_saml_login():
 @saml_route.route('/saml/metadata')
 def saml_metadata():
     if Config.SP_ENTITY_ID != "":
-        cfg = pysaml2_config()
+        cfg = pysaml2_config(Config.SP_ASSERTION_CONSUMER_SERVICE_URL)
         # Use the metadata service to get the metadata as a string
         metadata_string = metadata.create_metadata_string(None, cfg, sign=True, valid=365 * 24)  # Generate metadata
         return Response(metadata_string, mimetype='text/xml')
@@ -504,14 +514,14 @@ def process_saml_response(saml_response_from_request):
     return [validate_saml_response, attributes_elements]
 
 
-def pysaml2_config():
+def pysaml2_config(url_to_redirect_after_saml_login):
     cfg = {
         "entityid": Config.SP_ENTITY_ID,
         "service": {
             "sp": {
                 "endpoints": {
                     "assertion_consumer_service": [
-                        (Config.SP_ASSERTION_CONSUMER_SERVICE_URL, BINDING_HTTP_POST),
+                        (url_to_redirect_after_saml_login, BINDING_HTTP_POST),
                     ],
                     "single_logout_service": [
                         (Config.SP_SINGLE_LOGOUT_SERVICE_URL, BINDING_HTTP_REDIRECT),
