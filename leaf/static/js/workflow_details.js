@@ -78,8 +78,13 @@ async function setStatus(status, id, type, listName, accountId, files_details) {
             document.getElementById("workflowNotificationMsg").innerHTML = "<span>Workflow Completed</span>"
             $('#workflowNotification').toast('show');
             window.location.reload();
-        }, error: function (entry, XMLHttpRequest, textStatus, errorThrown) {
-            window.location.reload();
+        }, error: function (xhr, textStatus, errorThrown) {
+            if (xhr.status === 403) {
+                document.getElementById("workflowNotification").classList.add("bg-danger");
+                document.getElementById("workflowNotificationMsg").innerHTML = "<span>Permission Denied</span>"
+                $('#workflowNotification').toast('show');
+            }
+            console.log(xhr, textStatus, errorThrown);
         }
     });
 }
