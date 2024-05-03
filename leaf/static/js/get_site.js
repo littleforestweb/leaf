@@ -103,6 +103,8 @@ async function addNewDuplicatedPage() {
         alertMessageElem.hidden = false;
         return;
     }
+
+    // Check for valid extensions
     const validWebpageExtensions = [".html", ".htm", ".php", ".asp", ".aspx", ".jsp", ".jspx", ".cfm", ".cgi", ".pl", ".py", ".rb", ".page"];
     let isValidExtension = false;
     for (let i = 0; i < validWebpageExtensions.length; i++) {
@@ -117,19 +119,27 @@ async function addNewDuplicatedPage() {
         return;
     }
 
+    // Check for allowed chars
     let regex = /^[a-zA-Z0-9_\/.\- ;=]+$/;
     if (!regex.test(newURL)) {
         alertMessageElem.children[0].innerText = "New URL has invalid characters. [a-zA-Z0-9_/-;=]";
         alertMessageElem.hidden = false;
         return;
     }
-    alertMessageElem.hidden = true;
 
+    // Check for allowed user folder
+    let startsWithFolder = user_access_folder.some(folder => newURL.startsWith(folder));
+    if (!startsWithFolder) {
+        alertMessageElem.children[0].innerText = "Permission Denied - New URL does not belong to any authorized folder";
+        alertMessageElem.hidden = false;
+        return;
+    }
+
+    alertMessageElem.hidden = true;
     $.ajax({
         type: "POST", url: "/api/duplicate_page", data: {
             "site_id": site_id, "ogPageId": ogPageId, "ogTitle": ogTitle, "ogURL": ogURL, "newTitle": newTitle, "newURL": newURL
         }, success: function (entry) {
-
             if (entry["message"] === "file already exists") {
                 alertMessageElem.children[0].innerText = "File path already exists.";
                 alertMessageElem.hidden = false;
@@ -137,12 +147,20 @@ async function addNewDuplicatedPage() {
                 $('#renameModal').modal('hide');
                 window.location.reload();
             }
-        }, error: function (XMLHttpRequest, textStatus, errorThrown) {
-            console.log("ERROR");
-            console.log(XMLHttpRequest, textStatus, errorThrown)
+        }, error: function (xhr, textStatus, errorThrown) {
+            if (xhr.status === 403) {
+                alertMessageElem.children[0].innerText = "Permission Denied - New URL does not belong to any authorized folder";
+                alertMessageElem.hidden = false;
+            }
+            console.log(xhr, textStatus, errorThrown)
         }
     });
 }
+
+document.getElementById("userFolderSelect").addEventListener("change", function () {
+    // Auto update newURL input with folder selected
+    document.getElementById("newURL").value = document.getElementById("userFolderSelect").value;
+});
 
 async function deletePage(btn) {
     btn.disabled = true;

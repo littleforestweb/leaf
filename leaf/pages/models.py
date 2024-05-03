@@ -6,6 +6,7 @@ from flask import send_from_directory, session
 
 from leaf.config import Config
 from leaf.decorators import db_connection
+from leaf.sites.models import get_user_access_folder
 
 
 def get_page(pid):
@@ -86,6 +87,13 @@ def duplicate_page(site_id, ogPageId, ogURL, newTitle, newURL):
         # Parse ogURL and newURL
         ogURL = ogURL.lstrip("/")
         newURL = newURL.lstrip("/")
+
+        # Get Folders that the user has access to
+        user_access_folder = get_user_access_folder()
+
+        # Check if newURL belongs to any of the auth folders
+        if not any(newURL.startswith(folder) for folder in user_access_folder):
+            return {"error": "Forbidden"}, 403
 
         # Set the new Full URL
         mycursor.execute("SELECT url, screenshotPath FROM site_meta WHERE id=%s", (ogPageId,))

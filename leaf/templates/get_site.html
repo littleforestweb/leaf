@@ -9,7 +9,7 @@
         let accountId = {{ accountId }};
         let userId = {{ user_id }};
         let is_admin = {{ is_admin }};
-
+        let user_access_folder = {{ user_access_folder | tojson | safe }};
         $("#nav-link-sites").addClass("active");
     </script>
 
@@ -72,13 +72,22 @@
                         <input class="form-control" id="originalUrl" disabled/>
                     </div>
                     <div class="container mb-3">
+                        <label class="form-label" for="userFolderSelect">Select Folder</label>
+                        <select class="form-select" id="userFolderSelect">
+                            {% for folder in user_access_folder %}
+                                <option value="{{ folder }}">{{ folder }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="container mb-3">
                         <label class="form-label" for="newTitle">New Title</label>
                         <input class="form-control" id="newTitle"/>
                     </div>
                     <div class="container mb-3">
                         <label class="form-label" for="newURL">New URL</label>
-                        <input class="form-control" id="newURL"/>
+                        <input class="form-control" id="newURL" value="{{ user_access_folder[0] }}"/>
                     </div>
+
                     <div hidden id="alertMessage" class="container mb-3">
                         <div class="alert alert-danger" role="alert">This is a danger alert—check it out!</div>
                     </div>
@@ -94,7 +103,7 @@
             </div>
         </div>
     </div>
-    <!-- END RENAME MODAL -->
+    <!-- END DUPLICATE MODAL -->
 
     <!-- DELETE MODAL -->
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="Delete Modal" aria-hidden="true">

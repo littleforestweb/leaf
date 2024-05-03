@@ -104,7 +104,7 @@ def getSitesList():
         raise RuntimeError(f"An error occurred while fetching sites: {str(e)}")
 
 
-def get_user_access_folder(mycursor):
+def get_user_access_folder(mycursor=None):
     """
     Retrieve the folder paths that a user has access to.
 
@@ -115,11 +115,14 @@ def get_user_access_folder(mycursor):
     - List of folder paths (strings) that the user has access to.
     """
 
+    # Get a database connection using the 'db_connection' decorator
+    if mycursor is None:
+        mydb, mycursor = decorators.db_connection()
+
     # Get User Access folders
     query = "SELECT ua.folder_path FROM leaf.user_access ua JOIN leaf.user_groups ug ON ua.group_id = ug.group_id JOIN leaf.group_member gm ON ug.group_id = gm.group_id WHERE gm.user_id = %s"
     mycursor.execute(query, (session["id"],))
-    folder_paths = [folder_path[0] for folder_path in mycursor.fetchall()]
-    return set(folder_paths)
+    return [folder_path[0] for folder_path in mycursor.fetchall()]
 
 
 def get_site_data(site_id):

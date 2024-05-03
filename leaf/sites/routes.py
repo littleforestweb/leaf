@@ -106,8 +106,11 @@ def view_get_site():
         # Retrieve site ID from request arguments
         site_id = werkzeug.utils.escape(request.args.get('id', type=str))
 
+        # Get Folders that the user has access to
+        user_access_folder = models.get_user_access_folder()
+
         # Render the template with user and site information
-        return render_template('get_site.html', user_id=user_id, email=email, username=username, first_name=first_name, last_name=last_name, display_name=display_name, user_image=user_image, accountId=account_id, is_admin=is_admin, is_manager=is_manager, id=site_id, preview_webserver=Config.PREVIEW_SERVER, site_notice=Config.SITE_NOTICE)
+        return render_template('get_site.html', user_id=user_id, email=email, username=username, first_name=first_name, last_name=last_name, display_name=display_name, user_image=user_image, accountId=account_id, is_admin=is_admin, is_manager=is_manager, id=site_id, preview_webserver=Config.PREVIEW_SERVER, site_notice=Config.SITE_NOTICE, user_access_folder=user_access_folder)
 
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
