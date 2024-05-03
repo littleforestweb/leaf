@@ -3,8 +3,6 @@ import datetime
 import json
 import os
 import re
-import smtplib
-from email.message import EmailMessage
 
 import paramiko
 import werkzeug.utils
@@ -15,7 +13,7 @@ from leaf import decorators
 from leaf.config import Config
 from leaf.decorators import limiter
 from leaf.decorators import login_required
-from .models import uniquify, workflow_changed_email, upload_file_with_retry, add_workflow, is_workflow_owner, get_workflow_details, get_workflows, get_task_requests, change_status_workflow
+from .models import uniquify, workflow_changed_email, upload_file_with_retry, add_workflow, is_workflow_owner, get_workflow_details, get_workflows, get_task_requests, change_status_workflow, send_mail
 
 workflow = Blueprint("workflow", __name__)
 
@@ -174,9 +172,6 @@ def api_change_status_workflow():
 @workflow.route("/workflow/change_due_date", methods=["POST"])
 @login_required
 def change_due_date_workflow():
-    emailToSend = ''
-    message = EmailMessage()
-
     workflow_id = werkzeug.utils.escape(request.form.get("id"))
     new_due_date = werkzeug.utils.escape(request.form.get("new_due_date"))
 
@@ -192,28 +187,16 @@ def change_due_date_workflow():
     theEmailMessage = 'This task due date has been changed on Leaf CMS'
 
     emailToSend = workflow_changed_email(workflow_id, title, session["username"], new_due_date, "due_date_changed", theEmailMessage)
-    message = EmailMessage()
-    message['From'] = Config.SMTP_USER
-    message['To'] = Config.ASSIGNED_USER_EMAIL
-    message['Subject'] = title
-    message.set_content(emailToSend, subtype='html')
+
+    send_mail(title, emailToSend, Config.ASSIGNED_USER_EMAIL)
 
     jsonR = {"message": "success", "workflow_id": str(last_workflow_id)}
-
-    with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as server:
-        server.starttls()
-        server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
-        server.send_message(message)
-
     return jsonify(jsonR)
 
 
 @workflow.route("/workflow/change_priority", methods=["POST"])
 @login_required
 def change_priority_workflow():
-    emailToSend = ''
-    message = EmailMessage()
-
     workflow_id = werkzeug.utils.escape(request.form.get("id"))
     new_priority = werkzeug.utils.escape(request.form.get("new_priority"))
 
@@ -233,19 +216,9 @@ def change_priority_workflow():
         newPriorityString = "Urgent"
 
     emailToSend = workflow_changed_email(workflow_id, title, session["username"], newPriorityString, "priority_changed", theEmailMessage)
-    message = EmailMessage()
-    message['From'] = Config.SMTP_USER
-    message['To'] = Config.ASSIGNED_USER_EMAIL
-    message['Subject'] = title
-    message.set_content(emailToSend, subtype='html')
+    send_mail(title, emailToSend, Config.ASSIGNED_USER_EMAIL)
 
     jsonR = {"message": "success", "workflow_id": str(last_workflow_id)}
-
-    with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as server:
-        server.starttls()
-        server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
-        server.send_message(message)
-
     return jsonify(jsonR)
 
 
@@ -253,8 +226,6 @@ def change_priority_workflow():
 @limiter.limit("5/minute")
 @login_required
 def add_new_comment_workflow():
-    emailToSend = ''
-
     workflow_id = werkzeug.utils.escape(request.form.get("id"))
     user_to_notify = werkzeug.utils.escape(request.form.get("user_to_notify"))
     comments = request.form.get("comments")
@@ -282,27 +253,8 @@ def add_new_comment_workflow():
     theEmailMessage = 'You have a new comment on Leaf CMS'
 
     emailToSend = workflow_changed_email(workflow_id, title, session["username"], comments, "new_comment", theEmailMessage)
-    message = EmailMessage()
-    message['From'] = Config.SMTP_USER
-    message['To'] = Config.ASSIGNED_USER_EMAIL
-    message['Subject'] = title
-    message.set_content(emailToSend, subtype='html')
-
-    with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as server:
-        server.starttls()
-        server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
-        server.send_message(message)
-
-    message2 = EmailMessage()
-    message2['From'] = Config.SMTP_USER
-    message2['To'] = user_to_notify
-    message2['Subject'] = title
-    message2.set_content(emailToSend, subtype='html')
-
-    with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as server:
-        server.starttls()
-        server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
-        server.send_message(message2)
+    send_mail(title, emailToSend, Config.ASSIGNED_USER_EMAIL)
+    send_mail(title, emailToSend, user_to_notify)
 
     jsonR = {"message": "success", "workflow_id": str(last_workflow_id)}
 
@@ -313,9 +265,6 @@ def add_new_comment_workflow():
 @workflow.route("/workflow/delete", methods=["POST"])
 @login_required
 def delete_workflow():
-    emailToSend = ''
-    message = EmailMessage()
-
     workflow_id = werkzeug.utils.escape(request.form.get("entries_to_delete"))
 
     # Check if the workflow belongs to the user's account

@@ -221,17 +221,17 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 });
             });
 
-            $('input[type="checkbox"]').on('click', function () {
-                $(".deleteButton").prop('disabled', true);
-                if ($('input[type="checkbox"]:checked').length === 1) {
-                    $(".deleteButton").prop('disabled', false);
-                }
-
-                $(".editButton").prop('disabled', true);
-                if ($('input[type="checkbox"]:checked').length === 1) {
-                    $(".editButton").prop('disabled', false);
-                }
-            })
+            // $('input[type="checkbox"]').on('click', function () {
+            //     $(".deleteButton").prop('disabled', true);
+            //     if ($('input[type="checkbox"]:checked').length === 1) {
+            //         $(".deleteButton").prop('disabled', false);
+            //     }
+            //
+            //     $(".editButton").prop('disabled', true);
+            //     if ($('input[type="checkbox"]:checked').length === 1) {
+            //         $(".editButton").prop('disabled', false);
+            //     }
+            // })
 
             $(".loadingBg").removeClass("show");
         }, "columnDefs": [{

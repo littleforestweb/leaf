@@ -65,7 +65,7 @@ def get_screenshot(pageId):
         raise
 
 
-def duplicate_page(site_id, ogPageId, ogURL, newTitle, newUrl):
+def duplicate_page(site_id, ogPageId, ogURL, newTitle, newURL):
     """
     Duplicate a page.
 
@@ -74,7 +74,7 @@ def duplicate_page(site_id, ogPageId, ogURL, newTitle, newUrl):
         ogPageId (int): The ID of the original page to be duplicated.
         ogURL (str): The original URL of the page to be duplicated.
         newTitle (str): The title for the duplicated page.
-        newUrl (str): The new URL for the duplicated page.
+        newURL (str): The new URL for the duplicated page.
 
     Returns:
         jsonify: JSON response indicating the success of the duplication.
@@ -83,29 +83,36 @@ def duplicate_page(site_id, ogPageId, ogURL, newTitle, newUrl):
         # Connect to DB
         mydb, mycursor = db_connection()
 
-        # Get the full original URL from ogPageId
-        mycursor.execute("SELECT url FROM site_meta WHERE id=%s", (ogPageId,))
-        fullOgURL = mycursor.fetchone()[0]
-        fullOgURL = os.path.splitext(fullOgURL)[0] + ".html" if "." in fullOgURL else fullOgURL + ".html"
+        # Parse ogURL and newURL
+        ogURL = ogURL.lstrip("/")
+        newURL = newURL.lstrip("/")
 
         # Set the new Full URL
-        fullNewURL = fullOgURL.replace(ogURL, newUrl)
+        mycursor.execute("SELECT url, screenshotPath FROM site_meta WHERE id=%s", (ogPageId,))
+        og_record = mycursor.fetchone()
+        fullNewURL = og_record[0].replace(ogURL, newURL)
 
-        # Add the new page to the Database
-        url, status, mimeType, screenshotPath, userId = "", "200", "text/html", "NULL", session["id"]
-        query = "INSERT INTO site_meta (site_id, url, status, title, mimeType, HTMLpath, screenshotPath, add_by) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-        params = (site_id, fullNewURL, status, newTitle, mimeType, newUrl.lstrip("/") if newUrl.startswith("/") else newUrl, screenshotPath, session["id"])
-        mycursor.execute(query, params)
-        mydb.commit()
+        # Get screenshot
+        screenshotPath = og_record[1]
 
         # Duplicate the local HTML page with subfolder creation if needed
         source_file = os.path.join(Config.WEBSERVER_FOLDER, ogURL)
-        destination_folder = os.path.join(Config.WEBSERVER_FOLDER, newUrl)
+        destination_folder = os.path.dirname(os.path.join(Config.WEBSERVER_FOLDER, newURL))
+        destination_file = os.path.join(destination_folder, os.path.basename(newURL))
+
+        # Check if file already exists
+        mycursor.execute("SELECT HTMLpath FROM site_meta WHERE HTMLpath=%s AND status = 200", (newURL,))
+        if mycursor.fetchone():
+            return {"message": "file already exists"}
+
+        # Add the new page to the Database
+        query = "INSERT INTO site_meta (site_id, url, status, title, mimeType, HTMLpath, screenshotPath, add_by) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+        params = (site_id, fullNewURL, "200", newTitle, "text/html", newURL, screenshotPath, session["id"])
+        mycursor.execute(query, params)
+        mydb.commit()
 
         # Ensure the destination folder exists, creating it if necessary
-        os.makedirs(os.path.dirname(destination_folder), exist_ok=True)
-
-        destination_file = os.path.join(os.path.dirname(destination_folder), os.path.basename(source_file))
+        os.makedirs(destination_folder, exist_ok=True)
         shutil.copy2(source_file, destination_file)
 
         # Open the new page

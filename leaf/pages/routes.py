@@ -1,3 +1,5 @@
+import traceback
+
 import werkzeug.utils
 from flask import Blueprint, jsonify, request
 
@@ -59,14 +61,16 @@ def duplicate_page_route():
         jsonify: JSON response indicating the success of the duplication.
     """
     try:
-        site_id = werkzeug.utils.escape(request.form.get("site_id", type=str))
-        ogPageId = werkzeug.utils.escape(request.form.get("ogPageId", type=str))
-        ogURL = werkzeug.utils.escape(request.form.get("ogURL", type=str))
-        ogURL = ogURL.lstrip("/") if ogURL.startswith("/") else ogURL
-        newTitle = werkzeug.utils.escape(request.form.get("newTitle", type=str))
-        newUrl = werkzeug.utils.escape(request.form.get("newUrl", type=str))
-        newUrl = newUrl.lstrip("/") if newUrl.startswith("/") else newUrl
-        return duplicate_page(site_id, ogPageId, ogURL, newTitle, newUrl)
+        site_id = int(werkzeug.utils.escape(request.form.get("site_id", type=str)))
+        ogPageId = int(werkzeug.utils.escape(request.form.get("ogPageId", type=str)))
+        ogURL = str(werkzeug.utils.escape(request.form.get("ogURL", type=str)))
+        newURL = str(werkzeug.utils.escape(request.form.get("newURL", type=str)))
+        newTitle = str(werkzeug.utils.escape(request.form.get("newTitle", type=str)))
+
+        result = duplicate_page(site_id, ogPageId, ogURL, newTitle, newURL)
+        return result
+
     except Exception as e:
+        print(traceback.format_exc())
         # Handle exceptions and return an error response with status code 500
         return jsonify({"error": str(e)}), 500

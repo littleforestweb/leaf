@@ -44,16 +44,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" onclick="addWorkflow()" class="btn btn-success">Send</button>
-                    <div hidden class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text" id="basic-addon1">@</span>
-                        </div>
-                        <input type="text" id="selectedUsers" class="form-control" placeholder="Username"
-                               aria-label="Username"
-                               aria-describedby="basic-addon1">
-                        <button type="button" onclick="addWorkflow()" class="btn btn-success">Send</button>
-                    </div>
+                    <button type="button" onclick="addWorkflow(this)" class="btn btn-success">Send</button>
                 </div>
             </div>
         </div>
@@ -85,8 +76,8 @@
                         <input class="form-control" id="newTitle"/>
                     </div>
                     <div class="container mb-3">
-                        <label class="form-label" for="newUrl">New URL</label>
-                        <input class="form-control" id="newUrl"/>
+                        <label class="form-label" for="newURL">New URL</label>
+                        <input class="form-control" id="newURL"/>
                     </div>
                     <div hidden id="alertMessage" class="container mb-3">
                         <div class="alert alert-danger" role="alert">This is a danger alert—check it out!</div>
@@ -118,7 +109,7 @@
                 <div class="modal-footer">
                     <div class="pull-right">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="button" onclick="deletePage()" class="btn btn-danger">Save</button>
+                        <button type="button" onclick="deletePage(this)" class="btn btn-danger">Save</button>
                     </div>
                 </div>
             </div>
