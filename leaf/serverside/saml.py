@@ -30,10 +30,10 @@ def sp_saml_login():
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
     if (base_url + "/saml" != Config.SP_ASSERTION_CONSUMER_SERVICE_URL):
-        url_to_redirect_after_saml_login = Config.SP_ASSERTION_CONSUMER_SERVICE_URL
+        url_to_redirect_after_saml_login = ""
 
     if Config.IDP_METADATA != "":
-        saml_client = Saml2Client(config=pysaml2_config(url_to_redirect_after_saml_login))
+        saml_client = Saml2Client(config=pysaml2_config(Config.SP_ASSERTION_CONSUMER_SERVICE_URL, url_to_redirect_after_saml_login))
         # Prepare the SAML Authentication Request
         _, info = saml_client.prepare_for_authenticate()
         redirect_url = dict(info["headers"])["Location"]
@@ -46,7 +46,7 @@ def sp_saml_login():
 @saml_route.route('/saml/metadata')
 def saml_metadata():
     if Config.SP_ENTITY_ID != "":
-        cfg = pysaml2_config(Config.SP_ASSERTION_CONSUMER_SERVICE_URL)
+        cfg = pysaml2_config(Config.SP_ASSERTION_CONSUMER_SERVICE_URL, "")
         # Use the metadata service to get the metadata as a string
         metadata_string = metadata.create_metadata_string(None, cfg, sign=True, valid=365 * 24)  # Generate metadata
         return Response(metadata_string, mimetype='text/xml')
@@ -514,14 +514,14 @@ def process_saml_response(saml_response_from_request):
     return [validate_saml_response, attributes_elements]
 
 
-def pysaml2_config(url_to_redirect_after_saml_login):
+def pysaml2_config(SP_ASSERTION_CONSUMER_SERVICE_URL, url_to_redirect_after_saml_login):
     cfg = {
         "entityid": Config.SP_ENTITY_ID,
         "service": {
             "sp": {
                 "endpoints": {
                     "assertion_consumer_service": [
-                        (url_to_redirect_after_saml_login, BINDING_HTTP_POST),
+                        (SP_ASSERTION_CONSUMER_SERVICE_URL + "&RelayState=" + url_to_redirect_after_saml_login, BINDING_HTTP_POST),
                     ],
                     "single_logout_service": [
                         (Config.SP_SINGLE_LOGOUT_SERVICE_URL, BINDING_HTTP_REDIRECT),
