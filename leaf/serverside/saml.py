@@ -78,7 +78,10 @@ def idp_initiated():
 
     if request.method == "POST":
 
-        relayState = werkzeug.utils.escape(request.args.get('RelayState', ''))
+        relay_state_base_url = ""
+        relay_state = werkzeug.utils.escape(request.args.get('RelayState', ''))
+        if relay_state != None:
+            relay_state_base_url = extract_base_url(relay_state)
         # Load the IdP's metadata
         # Fetch the content from the URL
         idp_metadata_response = requests.get(Config.IDP_METADATA)
@@ -140,6 +143,9 @@ def idp_initiated():
         if issuer_elements:
             issuer_text = issuer_elements[0].text
 
+            if relay_state_base_url != Config.SP_ENTITY_ID.lower().strip():
+                return "Access Denied"
+                
             if issuer_text and issuer_text.lower().strip() != Config.IDP_ENTITY_ID.lower().strip():
                 return "Access Denied"
 
@@ -307,8 +313,8 @@ def idp_initiated():
                         msg = 'Logged in successfully!'
                         msgClass = 'alert alert-success'
 
-                        if relayState != None:
-                            return redirect(relayState)
+                        if relay_state != None:
+                            return redirect(relay_state)
                         else:
                             return render_template('sites.html', userId=session['id'], email=session['email'], username=session['username'], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], accountName=session['accountName'], is_admin=session['is_admin'], is_manager=session['is_manager'], msg=msg, msgClass=msgClass, jwt_token=jwt_token, site_notice=Config.SITE_NOTICE)
                     else:
@@ -551,6 +557,16 @@ def pysaml2_config(SP_ASSERTION_CONSUMER_SERVICE_URL, url_to_redirect_after_saml
     sp_config = config.SPConfig()
     sp_config.load(cfg)
     return sp_config
+
+
+def extract_base_url(full_url):
+    # Parse the full URL
+    parsed_url = urlparse(full_url)
+
+    # Combine the scheme and network location to form the base URL
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+
+    return base_url
 
 
 namespaces = {
