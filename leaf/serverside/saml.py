@@ -521,7 +521,7 @@ def pysaml2_config(SP_ASSERTION_CONSUMER_SERVICE_URL, url_to_redirect_after_saml
             "sp": {
                 "endpoints": {
                     "assertion_consumer_service": [
-                        (SP_ASSERTION_CONSUMER_SERVICE_URL + "&RelayState=" + url_to_redirect_after_saml_login, BINDING_HTTP_POST),
+                        (SP_ASSERTION_CONSUMER_SERVICE_URL + "?RelayState=" + url_to_redirect_after_saml_login, BINDING_HTTP_POST),
                     ],
                     "single_logout_service": [
                         (Config.SP_SINGLE_LOGOUT_SERVICE_URL, BINDING_HTTP_REDIRECT),
