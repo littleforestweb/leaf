@@ -1,5 +1,6 @@
 import base64
 import re
+from urllib.parse import urlparse
 
 import requests
 import werkzeug.utils
@@ -12,7 +13,6 @@ from saml2 import config
 from saml2 import metadata
 from saml2.client import Saml2Client
 from signxml import XMLVerifier
-from urllib.parse import urlparse
 
 from leaf import Config
 from leaf.decorators import db_connection, generate_jwt
@@ -85,7 +85,7 @@ def idp_initiated():
             # Parse the XML from the fetched content
             idp_metadata = etree.fromstring(idp_metadata_response.content)
         else:
-            print("Failed to retrieve the IDP Metadata file: HTTP Status", response.status_code)
+            print("Failed to retrieve the IDP Metadata file: HTTP Status", idp_metadata_response.status_code)
             return "Failed to retrieve the IDP Metadata file: HTTP Status", 403
 
         # Find the X509Certificate element (assuming there's only one)
