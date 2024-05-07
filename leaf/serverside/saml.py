@@ -78,6 +78,7 @@ def idp_initiated():
 
     if request.method == "POST":
 
+        relayState = werkzeug.utils.escape(request.args.get('RelayState', ''))
         # Load the IdP's metadata
         # Fetch the content from the URL
         idp_metadata_response = requests.get(Config.IDP_METADATA)
@@ -305,12 +306,11 @@ def idp_initiated():
 
                         msg = 'Logged in successfully!'
                         msgClass = 'alert alert-success'
-                        return render_template('sites.html', userId=session['id'], email=session['email'], username=session['username'],
-                                               first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'],
-                                               user_image=session['user_image'], accountId=session['accountId'],
-                                               accountName=session['accountName'], is_admin=session['is_admin'],
-                                               is_manager=session['is_manager'], msg=msg, msgClass=msgClass,
-                                               jwt_token=jwt_token, site_notice=Config.SITE_NOTICE)
+
+                        if relayState != None:
+                            return redirect(relayState)
+                        else:
+                            return render_template('sites.html', userId=session['id'], email=session['email'], username=session['username'], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], accountName=session['accountName'], is_admin=session['is_admin'], is_manager=session['is_manager'], msg=msg, msgClass=msgClass, jwt_token=jwt_token, site_notice=Config.SITE_NOTICE)
                     else:
                         # Account doesnt exist or username/password incorrect
                         msg = 'Incorrect username/password!'
@@ -515,13 +515,16 @@ def process_saml_response(saml_response_from_request):
 
 
 def pysaml2_config(SP_ASSERTION_CONSUMER_SERVICE_URL, url_to_redirect_after_saml_login):
+
+    if url_to_redirect_after_saml_login != "":
+        SP_ASSERTION_CONSUMER_SERVICE_URL = SP_ASSERTION_CONSUMER_SERVICE_URL + "?RelayState=" + url_to_redirect_after_saml_login
     cfg = {
         "entityid": Config.SP_ENTITY_ID,
         "service": {
             "sp": {
                 "endpoints": {
                     "assertion_consumer_service": [
-                        (SP_ASSERTION_CONSUMER_SERVICE_URL + "?RelayState=" + url_to_redirect_after_saml_login, BINDING_HTTP_POST),
+                        (SP_ASSERTION_CONSUMER_SERVICE_URL, BINDING_HTTP_POST),
                     ],
                     "single_logout_service": [
                         (Config.SP_SINGLE_LOGOUT_SERVICE_URL, BINDING_HTTP_REDIRECT),
