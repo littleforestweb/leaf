@@ -77,7 +77,7 @@ def files_api_upload():
     local_path = os.path.join(folder_path, filename)
     file.save(local_path)
 
-    # SCP to deployment servers
+    # Set Preview URL
     preview_url = Config.PREVIEW_SERVER + "/" if not Config.PREVIEW_SERVER.endswith("/") else Config.PREVIEW_SERVER
     preview_url = preview_url + os.path.join(folder, filename)
 
