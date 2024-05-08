@@ -73,6 +73,7 @@ def insert_file_into_db(accountId, site_id, filename, folder, mime_type, status)
     Returns:
         str: Last row id inserted in the database.
     """
+    accountId = int(accountId)
 
     if not int(accountId) == int(session["accountId"]):
         return jsonify({"error": "Forbidden"}), 403
@@ -81,13 +82,10 @@ def insert_file_into_db(accountId, site_id, filename, folder, mime_type, status)
 
     try:
 
-        if isinstance(int(accountId), int):
-            path = os.path.join(folder, filename)
-            query = f"INSERT INTO site_assets (site_id, filename, path, mimeType, status, modified_by) VALUES (%s, %s, %s, %s, %s, %s)"
-            mycursor.execute(query, (site_id, filename, path, mime_type, status, session['id']))
-            mydb.commit()
-        else:
-            print("Invalid accountId")
+        path = os.path.join(folder, filename)
+        query = f"INSERT INTO site_assets (site_id, filename, path, mimeType, status, modified_by) VALUES (%s, %s, %s, %s, %s, %s)"
+        mycursor.execute(query, (site_id, filename, path, mime_type, status, session['id']))
+        mydb.commit()
 
     except Exception as e:
         print("insert_file_into_db model")
