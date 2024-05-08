@@ -4,7 +4,7 @@ import smtplib
 import subprocess
 import time
 from email.message import EmailMessage
-from urllib.parse import unquote
+from urllib.parse import unquote, urljoin
 
 from flask import session
 
@@ -192,7 +192,8 @@ def process_type_1_or_5(workflow_data, mycursor):
         site_titles = site_titles[0:-1]
         workflow_data["siteTitles"] = unquote(site_titles)
         workflow_data["siteIds"] = workflow_data["siteIds"]
-        workflow_data["siteUrl"] = Config.PREVIEW_SERVER + "/" + result[2]
+        workflow_data["siteUrl"] = urljoin(Config.PREVIEW_SERVER, result[2])
+        workflow_data["liveUrl"] = urljoin(Config.DEPLOYMENTS_SERVERS[0]["webserver_url"], result[2])
 
         workflow_data["siteInfo"] = dict(zip(workflow_data["siteIds"], workflow_data["siteTitles"]))
 

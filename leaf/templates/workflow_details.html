@@ -59,7 +59,7 @@
                                             <div class="col-12">Edit: <span><a class="decoration_none" target="_blank" href="/list/{{ data.listName }}?id={{ data.siteIds }}">{{ data.siteTitles }} <i class="fal fa-external-link small"></i></a></span></div>
                                         {% else %}
                                             <div class="col-4"><img src="/get_screenshot?id={{ data.siteIds }}" width="100%" height="auto" alt="Page Screenshot Image"></div>
-                                            <div class="col-8"><span><a target="_blank" href="{{ data.siteUrl }}">{{ data.siteTitles }}</a></span></div>
+                                            <div class="col-8">Preview - <span><a target="_blank" href="{{ data.siteUrl }}">{{ data.siteTitles }}</a></span><br>Live - <span><a target="_blank" href="{{ data.liveUrl }}">{{ data.siteTitles }}</a></span></div>
                                         {% endif %}
                                     </div>
                                 </div>
