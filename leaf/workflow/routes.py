@@ -14,7 +14,7 @@ from leaf.config import Config
 from leaf.decorators import limiter
 from leaf.decorators import login_required
 from leaf.users.models import get_user_permission_level
-from .models import uniquify, workflow_changed_email, upload_file_with_retry, add_workflow, is_workflow_owner, get_workflow_details, get_workflows, get_task_requests, change_status_workflow, send_mail
+from .models import uniquify, workflow_changed_email, upload_file_with_retry, add_workflow, is_workflow_owner, get_workflow_details, get_workflows, get_task_requests, change_status_workflow, send_mail, gen_sitemap
 
 workflow = Blueprint("workflow", __name__)
 
@@ -310,7 +310,7 @@ def action_workflow():
 
     # Get a database connection
     mydb, mycursor = decorators.db_connection()
-    
+
     # Run SQL Command
     if action == "Approve":
         action = "Approved"
@@ -388,6 +388,12 @@ def action_workflow():
 
             with open(local_path, "w") as outFile:
                 outFile.write(original_content)
+
+        # Regenerate Sitemap
+        query = "SELECT site_id FROM site_meta WHERE HTMLPath = %s"
+        mycursor.execute(query, [HTMLPath])
+        site_id = mycursor.fetchone()[0]
+        gen_sitemap(mycursor, site_id)
 
     elif not listName and thisType == 2:
         # do something with TASK
@@ -580,6 +586,12 @@ def action_workflow():
                     scp.remove(remote_path)
             except Exception as e:
                 pass
+
+        # Regenerate Sitemap
+        query = "SELECT site_id FROM site_meta WHERE HTMLPath = %s"
+        mycursor.execute(query, [HTMLPath])
+        site_id = mycursor.fetchone()[0]
+        gen_sitemap(mycursor, site_id)
 
     if not listName and thisType == 7:
         # Get local file path
