@@ -165,22 +165,15 @@ document.getElementById("userFolderSelect").addEventListener("change", function 
 async function deletePage(btn) {
     btn.disabled = true;
 
-    // Get all rows that are selected
-    let checkedRows = $('#table').DataTable().rows(function (idx, data, node) {
+    let checkedRow = $('#table').DataTable().rows(function (idx, data, node) {
         return $(node).find('.dt-checkboxes:input[type="checkbox"]:checked').val();
-    }).data().toArray();
-
-    // Add ids to textarea inside publishModal
-    let selectedIdsText = "";
-    checkedRows.forEach(function (row) {
-        selectedIdsText += row["id"] + ";";
-    });
+    }).data().toArray()[0];
 
     $.ajax({
         type: "POST",
         url: "/workflow/add",
         contentType: 'application/json',
-        data: JSON.stringify({"startUser": userId, "entryId": selectedIdsText, "type": 5, "priority": 2}),
+        data: JSON.stringify({"startUser": userId, "entryId": checkedRow["id"], "type": 5, "priority": 2}),
         dataType: 'json',
         cache: false,
         processData: false,
