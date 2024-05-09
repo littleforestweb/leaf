@@ -125,7 +125,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             },
         }, {
             "width": "5%", "targets": 7, "render": function (data, type, row) {
-                return "<a class='green-link' onclick='viewLog(\"" + encodeURI(data) + "\")' href='javascript:void(0);'>View</a>";
+                return "<a class='btn btn-sm' onclick='viewLog(\"" + encodeURI(data) + "\")' href='javascript:void(0);'>View</a>";
             },
         }]
     });

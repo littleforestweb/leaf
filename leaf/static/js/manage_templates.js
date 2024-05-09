@@ -162,7 +162,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [7],
                 mData: function (source, type, row) {
-                    return '<a href="/templates/' + source[0] + '">View</a>';
+                    return '<a class="btn btn-sm" href="/templates/' + source[0] + '">View</a>';
                 },
                 width: "20%",
                 orderable: false,

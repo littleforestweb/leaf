@@ -213,7 +213,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             },
         }, {
             "targets": 13, "render": function (data, type, row) {
-                let elem = "<a class='green-link' href='workflow_details?id=" + data[0] + "'>Review</a><br>";
+                let elem = "<a class='btn btn-sm' href='workflow_details?id=" + data[0] + "'>Review</a><br>";
                 // if (data[1] !== "Approved" && data[1] !== "Rejected") {
                 //     elem += "<a class='green-link' href='#' onclick='setStatus(\"Approve\", " + data[0] + ")'>Approve</a><br><a class='green-link' href='#' onclick='setStatus(\"Reject\" ," + data[0] + ")'>Reject</a>";
                 // }
