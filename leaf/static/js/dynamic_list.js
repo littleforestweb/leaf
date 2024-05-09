@@ -1452,7 +1452,7 @@ async function populateDropdowns(accountId, reference, listsDropdown, fields, is
                                 var fieldsDropdown = '<div id="s-' + fieldToReturn + '-assignedFieldRow" class="row"><div class="form-group col-md-6"><label for="s-' + fieldToReturn + '-assignedField" class="col-form-label">Assigned Field:</label><select name="s-' + fieldToReturn + '-assignedField" class="form-select form-select-md" id="s-' + fieldToReturn + '-assignedField"></select></div><div class="form-group col-md-6"><label for="s-' + fieldToReturn + '-assignedFieldLabel" class="col-form-label">Assigned Label:</label><select name="s-' + fieldToReturn + '-assignedFieldLabel" class="form-select form-select-md" id="s-' + fieldToReturn + '-assignedFieldLabel"></select></div></div>';
                                 $('.s-' + fieldToReturn + '-container').append(fieldsDropdown);
                                 for (var h = 0; h < allFieldsResponse.length; h++) {
-                                    console.log(allFieldsResponse[h][0]);
+                                    // console.log(allFieldsResponse[h][0]);
                                     $('select#s-' + fieldToReturn + '-assignedField').append('<option value="' + allFieldsResponse[h][0] + '" ' + (allFieldsResponse[h][0] === 'id' ? "selected" : "") + '>' + allFieldsResponse[h][0] + '</option>');
 
                                     if ((h + 1) === allFieldsResponse.length) {
@@ -1942,6 +1942,7 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
     let jsonColumns = await $.get("/api/get_list_columns/" + accountId + "/" + reference, function (result) {
         return result;
     });
+    console.log(jsonColumns);
 
     let getAccountSettings = await $.get("/api/settings/" + accountId, function (allAccountSettings) {
         var images_webpath = allAccountSettings.images_webpath;
