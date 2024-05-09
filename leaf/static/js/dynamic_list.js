@@ -53,8 +53,6 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
     var values = jsonConfig.columns;
 
     if (values && values[0]) {
-        $("#s-template").val(values[0][2]);
-        $("#s-parameters").val(values[0][3]);
 
         var fields = values[0][4].split(';');
         for (var field in fields) {
@@ -62,8 +60,8 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
         }
 
         var mfields = [];
-        if (values[0][5]) {
-            mfields = values[0][5].split(',');
+        if (values[0][2]) {
+            mfields = values[0][2].split(',');
         }
     }
 
@@ -673,7 +671,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         url: "/publish/account_" + accountId + "_list_" + reference + '/' + accountId + '/' + reference + '/' + env,
         data: JSON.stringify({
             "country_to_update": thisCountry,
-            "file_url_path": fieldsToLink + ".page",
+            "file_url_path": fieldsToLink + "." + pageFormat,
             "list_template_id": listTemplateId,
             "list_item_id": selectedItem
         }),
@@ -1715,29 +1713,22 @@ async function openConfiguration(accountId, reference) {
     }
 
     if (values && values[0]) {
-        $("#s-template").val(escapeHtml(values[0][2]));
-        $("#s-parameters").val(escapeHtml(values[0][3]));
 
-        var fields = values[0][4].split(';');
-        for (var field in fields) {
-            $('#s-fields option[value="' + escapeHtml(fields[field]) + '"]').attr("selected", "selected");
-        }
-
-        if (values[0][5]) {
-            var mfields = values[0][5].split(',');
+        if (values[0][2]) {
+            var mfields = values[0][2].split(',');
             for (var mfield in mfields) {
                 $('#s-mandatory-fields option[value="' + escapeHtml(mfields[mfield]) + '"]').attr("selected", "selected");
             }
         }
 
-        if (values[0][6]) {
-            $('#s-save-by-field').val(escapeHtml(values[0][6]));
+        if (values[0][3]) {
+            $('#s-save-by-field').val(escapeHtml(values[0][3]));
         }
 
-        if (values[0][7]) {
-            var mfields = values[0][7].split(';');
-            for (var mfield in mfields) {
-                $('#s-field-to-save-by option[value="' + escapeHtml(mfields[mfield]) + '"]').attr("selected", "selected");
+        if (values[0][4]) {
+            var sfields = values[0][4].split(';');
+            for (var sfield in sfields) {
+                $('#s-field-to-save-by option[value="' + escapeHtml(sfields[sfield]) + '"]').attr("selected", "selected");
             }
         }
     }

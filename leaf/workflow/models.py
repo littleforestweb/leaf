@@ -6,6 +6,7 @@ import time
 import xml.etree.ElementTree as ET
 from email.message import EmailMessage
 from urllib.parse import unquote, urljoin
+import re
 
 import paramiko
 from flask import session
@@ -13,6 +14,7 @@ from flask import session
 from leaf import Config
 from leaf import decorators
 from leaf.users.models import get_user_permission_level
+import werkzeug.utils
 
 
 def is_workflow_owner(workflow_id):
@@ -237,23 +239,62 @@ def process_type_3(workflow_data, mycursor):
         site_id = workflow_data["siteIds"]
         workflow_data["siteTitles"] = ""
 
-        table_name = f"account_{session['accountId']}_list_configuration"
-        mycursor.execute(f"SELECT * FROM %s WHERE main_table = %s", (table_name, workflow_data["listName"],))
+        query = f"SELECT template_location FROM account_%s_list_template WHERE in_lists=%s"
+        params = (session['accountId'], workflow_data['listName'],)
+        mycursor.execute(query, params)
         result_list = mycursor.fetchone()
 
         if result_list and len(result_list) > 0:
-            lists_config = result_list
-            this_template = lists_config[2]
-            this_parameters = lists_config[3]
-            this_parameters_to_grab = lists_config[4]
+            list_template = result_list[0]
 
-            query = f"SELECT %s FROM account_%s_list_%s WHERE id=%s"
-            params = (this_parameters_to_grab, session['accountId'], workflow_data['listName'], site_id,)
-            mycursor.execute(query, params)
-            fields_to_link = mycursor.fetchone()[0]
+            # Regular expression to find words within curly braces
+            pattern = r'{(.*?)}'
 
-            workflow_data["siteTitles"] = fields_to_link
-            workflow_data["siteUrl"] = Config.PREVIEW_SERVER + Config.DYNAMIC_PATH + f"{this_template}.html?{this_parameters}={fields_to_link}"
+            # Using re.findall() to extract the contents within the braces
+            items = re.findall(pattern, list_template)
+
+            publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
+
+            workflow_list_name = werkzeug.utils.escape(workflow_data['listName'])
+            query_list = f"SELECT * FROM account_{session['accountId']}_list_{workflow_list_name} WHERE id=%s"
+            params_list = (site_id,)
+            mycursor.execute(query_list, params_list)
+            fields_to_link = mycursor.fetchall()
+
+            # Get column headers from the cursor description
+            headers = [description[0] for description in mycursor.description]
+
+            # Combine headers and data
+            results = [dict(zip(headers, row)) for row in fields_to_link]
+
+            publication_date = False
+
+            list_page_url = list_template
+
+            for result in results:
+                for key, value in result.items():
+                    if key.lower() in publication_names:
+                        publication_date = value
+                    else:
+                        list_page_url = list_page_url.replace("{" + key + "}", str(value))
+
+            for field in items:
+                if field == "year" or field == "month" or field == "day":
+                    matching_column = None
+
+                    single_field = extract_month_and_day(publication_date, field)
+                    single_field = str(single_field)
+
+                    list_page_url = list_page_url.replace("{" + field + "}", single_field)
+
+            workflow_data_temporary_url = Config.PREVIEW_SERVER + f"{list_page_url}.page"
+            protocol = "https://" if "https://" in workflow_data_temporary_url else "http://"
+            clean_url = workflow_data_temporary_url.replace(protocol, "").replace("//", "/")
+            
+            workflow_data["siteUrl"] = protocol + clean_url
+            workflow_data["siteTitles"] = workflow_data["siteUrl"]
+
+            workflow_data["siteId"] = f"{list_page_url}.page"
 
 
 def get_workflows():
@@ -844,7 +885,7 @@ Subject: {subject}
         process.communicate(email_text.encode())
 
 
-def gen_sitemap(mycursor, site_id):
+def gen_sitemap(mycursor, site_id, thisType):
     query = "SELECT HTMLPath FROM site_meta WHERE status <> -1 AND site_id = %s"
     mycursor.execute(query, [site_id])
     site_pages = [page[0] for page in mycursor.fetchall()]
@@ -893,3 +934,42 @@ def gen_sitemap(mycursor, site_id):
         loc_elem.text = urljoin(Config.PREVIEW_SERVER, page)
     tree = ET.ElementTree(urlset)
     tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
+
+def add_leading_zero(value):
+    """Ensures that all single-digit numbers are returned with a leading zero."""
+    return f"{value:02d}"
+
+def extract_month_and_day(date_string, field):
+    """Extracts the year, month, or day from a date string based on the provided field."""
+    year, month, day = None, None, None
+    
+    # Detect and parse the date format
+    if "-" in date_string:
+        year_str, month_str, day_str = date_string.split("-")
+    elif "/" in date_string:
+        year_str, month_str, day_str = date_string.split("/")
+    elif date_string.isdigit():  # Check if the string is a valid epoch time
+        date = datetime.fromtimestamp(int(date_string))
+        year, month, day = date.year, date.month, date.day
+    else:  # Assume the format is "Day, DD Month YYYY"
+        parts = date_string.split(" ")
+        day_str = parts[1]
+        month_str = parts[2]
+        year_str = parts[3]
+        month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        month = month_names.index(month_str[:3]) + 1
+
+    # Convert to integers and format if not already done
+    if not year:  # Will only execute these lines if year is None (handles non-epoch cases)
+        year = add_leading_zero(int(year_str))
+        month = add_leading_zero(int(month_str))
+        day = add_leading_zero(int(day_str))
+
+    # Return the requested part
+    field = field.lower()
+    if field == "year":
+        return year
+    elif field == "month":
+        return month
+    elif field == "day":
+        return day

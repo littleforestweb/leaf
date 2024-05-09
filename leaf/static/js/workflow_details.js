@@ -37,7 +37,7 @@ CKEDITOR.plugins.add("anchor", {
     }
 });
 
-async function setStatus(status, id, type, listName, accountId, files_details) {
+async function setStatus(status, id, type, listName, accountId, files_details, site_ids) {
     document.getElementById("actionContainer").innerHTML = "<span>Deploying...</span>"
 
     let jsonConfigSaveByFields = false;
@@ -49,11 +49,11 @@ async function setStatus(status, id, type, listName, accountId, files_details) {
             return result;
         });
 
-        if (jsonConfig.columns[0] && jsonConfig.columns[0][6]) {
-            jsonConfigSaveByFields = jsonConfig.columns[0][6];
+        if (jsonConfig.columns[0] && jsonConfig.columns[0][3]) {
+            jsonConfigSaveByFields = jsonConfig.columns[0][3];
         }
-        if (jsonConfig.columns[0] && jsonConfig.columns[0][7]) {
-            jsonConfigFieldsToSaveBy = jsonConfig.columns[0][7];
+        if (jsonConfig.columns[0] && jsonConfig.columns[0][4]) {
+            jsonConfigFieldsToSaveBy = jsonConfig.columns[0][4];
         }
     }
 
@@ -64,7 +64,8 @@ async function setStatus(status, id, type, listName, accountId, files_details) {
         "listName": listName,
         "saveByFields": jsonConfigSaveByFields,
         "fieldsToSaveBy": jsonConfigFieldsToSaveBy,
-        "files_details": files_details
+        "files_details": files_details,
+        "site_ids": site_ids
     }
 
     $.ajax({

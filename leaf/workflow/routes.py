@@ -393,7 +393,7 @@ def action_workflow():
         query = "SELECT site_id FROM site_meta WHERE HTMLPath = %s"
         mycursor.execute(query, [HTMLPath])
         site_id = mycursor.fetchone()[0]
-        gen_sitemap(mycursor, site_id)
+        gen_sitemap(mycursor, site_id, thisType)
 
     elif not listName and thisType == 2:
         # do something with TASK
@@ -554,6 +554,12 @@ def action_workflow():
                         except Exception as e:
                             pass
 
+            # Regenerate Sitemap
+            # list_page_ids = werkzeug.utils.escape(request.form.get("site_id"))
+            # list_page_ids = list_page_ids.split(",")
+            # for list_page_id in list_page_ids:
+            #   gen_sitemap(mycursor, list_page_id, thisType)
+
     if not listName and thisType == 5:
         # Get local file path
         query = "SELECT site_meta.id, site_meta.HTMLPath FROM site_meta JOIN workflow ON site_meta.id = workflow.siteIds WHERE workflow.id = %s"
@@ -591,7 +597,7 @@ def action_workflow():
         query = "SELECT site_id FROM site_meta WHERE HTMLPath = %s"
         mycursor.execute(query, [HTMLPath])
         site_id = mycursor.fetchone()[0]
-        gen_sitemap(mycursor, site_id)
+        gen_sitemap(mycursor, site_id, thisType)
 
     if not listName and thisType == 7:
         # Get local file path

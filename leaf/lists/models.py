@@ -356,10 +356,6 @@ def set_list_configuration(request, accountId: str, reference: str):
             field_to_save_by = werkzeug.utils.escape(thisRequest.get("s-field-to-save-by"))
             modified_by = session["id"]
 
-            # Convert lists to strings for storage
-            if isinstance(fields, list):
-                fields = ';'.join(fields)
-
             if isinstance(mfields, list):
                 mfields = ';'.join(mfields)
 
@@ -369,8 +365,8 @@ def set_list_configuration(request, accountId: str, reference: str):
             col_to_return = [mfields, save_by_field, field_to_save_by, modified_by]
 
             # Insert new configuration for the specified list
-            insert_config_query = f"INSERT INTO {tableName} (main_table, mandatory_fields, save_by_field, field_to_save_by, modified_by) VALUES (%s, %s, %s, %s, %s)"
-            mycursor.execute(insert_config_query, (reference, mfields, save_by_field, field_to_save_by, modified_by))
+            insert_config_query = f"INSERT INTO {tableName} (main_table, mandatory_fields, save_by_field, field_to_save_by, created_by, modified_by) VALUES (%s, %s, %s, %s, %s, %s)"
+            mycursor.execute(insert_config_query, (reference, mfields, save_by_field, field_to_save_by, modified_by, modified_by))
             mydb.commit()
         else:
             print("Invalid accountId")
