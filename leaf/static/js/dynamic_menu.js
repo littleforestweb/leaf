@@ -3,6 +3,52 @@
     Author     : joao
 */
 
+async function publishList() {
+    await populateUserList();
+}
+
+async function populateUserList() {
+    let listOfUsers = await $.get("/api/get_lfi_admin_users/" + accountId, function (result) {
+        return result;
+    });
+
+    $('.users-with-access-container').html('');
+    for (let x = 0; x < listOfUsers.users.length; x++) {
+        let thisUser = listOfUsers.users[x];
+        let userImage = '<span class="logo_image_container"><img class="logo_image" src="' + thisUser["user_image"] + '" onerror="this.style.display=\'none\'" /></span>';
+        if (thisUser["user_image"].startsWith('#')) {
+            let colorToFillBg = thisUser["user_image"];
+            let usernameInitial = (thisUser["username"] ? thisUser["username"] : "LF").charAt(0);
+            userImage = '<span class="logo_image" style="background-color:' + colorToFillBg + '">' + usernameInitial + '</span>';
+        }
+        $(".users-with-access-container").prepend('<label for="thisUserId_' + thisUser["id"] + '" class="form-control users-with-access users-with-access_' + thisUser["id"] + '">' + userImage + '<span class="userName">' + thisUser["username"] + '</span><input type="checkbox" class="form-check-input pull-right this-user-id" name="thisUserId_' + thisUser["id"] + '" id="thisUserId_' + thisUser["id"] + '" ' + '/></span>');
+    }
+
+    // Disable Enter
+    $('#users-with-access-search').on('keypress', function (e) {
+        if (e.keyCode === 13) {
+            e.preventDefault(); // Prevent default behavior of return key
+            return false; // Stop further execution
+        }
+    });
+
+    $('#users-with-access-search').on('keyup', function (e) {
+        let tagElems = $('.users-with-access');
+        $(tagElems).hide();
+        for (let i = 0; i < tagElems.length; i++) {
+            let tag = $(tagElems).eq(i);
+            if (($(tag).children('span.userName').text().toLowerCase()).indexOf($(this).val().toLowerCase()) !== -1) {
+                $(tag).show();
+            }
+        }
+    });
+
+
+    $('.this-user-id').click(function () {
+        $('.this-user-id').not(this).prop("checked", false);
+    });
+}
+
 async function populateEditDynamicMenuDialog(accountId, reference, type, itemToSelect = false) {
 
     accountId = escapeHtml(accountId);
@@ -1950,6 +1996,15 @@ function createPublishTicket(accountId, reference, type, server, path, button) {
     server = escapeHtml(server);
     path = escapeHtml(path);
     button = escapeHtml(button);
+    let comments = document.getElementById("publishComments").value
+
+    let allSelectedUsers = [];
+    $('.this-user-id:checked').each(function () {
+        let thisId = $(this).attr('id');
+        thisId = thisId.replace('thisUserId_', '');
+        allSelectedUsers.push(thisId);
+    })
+    allSelectedUsers = allSelectedUsers.join(',');
 
     var dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 5);
@@ -1964,7 +2019,9 @@ function createPublishTicket(accountId, reference, type, server, path, button) {
         priority: 1,
         dueDate: formattedDate,
         listName: reference,
-        entryId: entryId
+        entryId: entryId,
+        comments: comments,
+        assignEditor: allSelectedUsers
     }
 
     $.ajax({
