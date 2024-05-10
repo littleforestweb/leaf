@@ -288,7 +288,7 @@ def process_type_3(workflow_data, mycursor):
 
                     list_page_url = list_page_url.replace("{" + field + "}", single_field)
 
-            workflow_data_temporary_url = Config.PREVIEW_SERVER + f"{list_page_url}.page"
+            workflow_data_temporary_url = Config.PREVIEW_SERVER + f"{list_page_url}" + Config.PAGES_EXTENSION
             protocol = "https://" if "https://" in workflow_data_temporary_url else "http://"
             clean_url = workflow_data_temporary_url.replace(protocol, "").replace("//", "/")
             
@@ -296,7 +296,7 @@ def process_type_3(workflow_data, mycursor):
             workflow_data["siteTitles"] = workflow_data["siteUrl"]
             workflow_data["list_feed_path"] = list_feed
 
-            workflow_data["siteId"] = f"{list_page_url}.page"
+            workflow_data["siteId"] = f"{list_page_url}" + Config.PAGES_EXTENSION
 
 
 def get_workflows():
@@ -1028,7 +1028,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                     if is_guid_candidate(key):
                         if isinstance(value, str) and not (value.startswith('http://') or value.startswith('https://')):
                             value = os.path.join(Config.PREVIEW_SERVER, list_page_url)
-                            value = value + '.page'
+                            value = value + Config.PAGES_EXTENSION
 
                         guid_elem = ET.SubElement(item_elem, "guid")
                         guid_elem.text = value
@@ -1144,7 +1144,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                 if is_guid_candidate(key):
                     if isinstance(value, str) and not (value.startswith('http://') or value.startswith('https://')):
                         value = os.path.join(Config.PREVIEW_SERVER, list_page_url)
-                        value = value + '.page'
+                        value = value + Config.PAGES_EXTENSION
 
                     guid_elem = ET.SubElement(item_elem, "guid")
                     guid_elem.text = value

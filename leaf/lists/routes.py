@@ -22,7 +22,7 @@ def view_lists():
     Returns:
         HTML template with user-specific data.
     """
-    return render_template('lists.html', userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE)
+    return render_template('lists.html', userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE, page_extension=Config.PAGES_EXTENSION)
 
 
 # ---------------------------------------------------------------------------------------------------------- #
@@ -37,7 +37,7 @@ def view_manage_templates():
     Returns:
         HTML template with specific data.
     """
-    return render_template('manage_templates.html', userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE)
+    return render_template('manage_templates.html', userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE, page_extension=Config.PAGES_EXTENSION)
 
 
 # ---------------------------------------------------------------------------------------------------------- #
@@ -78,7 +78,7 @@ def view_dynamic_list(reference: str):
     referenceNoUnderscores = reference.replace("_", " ")
     preview_server = Config.PREVIEW_SERVER
     dynamic_path = Config.DYNAMIC_PATH
-    return render_template('dynamic_list.html', preview_server=preview_server, dynamic_path=dynamic_path, reference=reference, referenceNoUnderscores=referenceNoUnderscores, userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE)
+    return render_template('dynamic_list.html', preview_server=preview_server, dynamic_path=dynamic_path, reference=reference, referenceNoUnderscores=referenceNoUnderscores, userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], site_notice=Config.SITE_NOTICE, page_extension=Config.PAGES_EXTENSION)
 
 
 # ---------------------------------------------------------------------------------------------------------- #

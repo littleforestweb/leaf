@@ -657,9 +657,6 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         selectedItem = thisValId;
     }
 
-    // We have to declare the page format as a global variable
-    var pageFormat = "page";
-
     var checkCountryField = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.country pre .hidden');
     if (!thisCountry && checkCountryField.length > 0) {
         thisCountry = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.country pre .hidden').html().trim();
@@ -671,7 +668,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         url: "/publish/account_" + accountId + "_list_" + reference + '/' + accountId + '/' + reference + '/' + env,
         data: JSON.stringify({
             "country_to_update": thisCountry,
-            "file_url_path": fieldsToLink + "." + pageFormat,
+            "file_url_path": fieldsToLink + page_extension,
             "list_template_id": listTemplateId,
             "list_item_id": selectedItem
         }),
@@ -685,7 +682,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
 
             if ((env !== 'saveOnly' && env !== 'save')) {
                 if (thisTemplate !== '') {
-                    openInNewTab(preview_server + fieldsToLink + "." + pageFormat);
+                    openInNewTab(preview_server + fieldsToLink + page_extension);
                 } else {
                     alert("There is no preview setting for this List yet. Please add one to preview this type.")
                 }

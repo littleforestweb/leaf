@@ -78,6 +78,7 @@ def checkConfig(loaded_json):
         "POWER_USER_GROUP": "admin",
         "XMLSEC_BINARY": "",
         "SITE_NOTICE": "This is a site notice that you can control on your config.json file. Keep it empty to remove the notice!"
+        "PAGES_EXTENSION": ".page"
     }
 
     # Update the loaded JSON with the expected structure
@@ -221,6 +222,7 @@ class Config:
     XMLSEC_BINARY = config["XMLSEC_BINARY"]
 
     SITE_NOTICE = config["SITE_NOTICE"]
+    PAGES_EXTENSION = config["PAGES_EXTENSION"]
 
     # Auto Generated
     DYNAMIC_PATH = os.path.join("leaf_content", "lists")
