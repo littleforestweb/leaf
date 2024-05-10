@@ -1211,6 +1211,8 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
                     out_file_by_country.write(json_data_to_write_by_country)
 
     except Exception as e:
+        current_app.logger.info("publish_dynamic_lists model")
+        current_app.logger.info(e)
         print("publish_dynamic_lists model")
         print(e)
     finally:
