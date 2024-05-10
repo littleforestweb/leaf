@@ -978,8 +978,14 @@ def gen_feed(mycursor, account_list, list_feed_path):
                 if isinstance(value, datetime.datetime):
                     value = value.strftime('%Y-%m-%d %H:%M:%S')
 
-                if isinstance(value, str) and not (value.startswith('http://') or value.startswith('https://')):
-                    value = os.path.join(Config.PREVIEW_SERVER, value)
+                # Check if this field can serve as a GUID
+                if is_guid_candidate(key):
+                    if isinstance(value, str) and not (value.startswith('http://') or value.startswith('https://')):
+                        value = os.path.join(Config.PREVIEW_SERVER, value)
+
+                    guid_elem = ET.SubElement(item_elem, "guid")
+                    guid_elem.text = value
+                    guid_found = True
 
                 # Normalize key names to camelCase
                 normalized_key = camel_case_convert(key)
@@ -994,12 +1000,6 @@ def gen_feed(mycursor, account_list, list_feed_path):
                 # Attach captions directly to the image element
                 if image_element and is_caption_key(key):
                     ET.SubElement(image_element, "title").text = value
-
-                # Check if this field can serve as a GUID
-                if is_guid_candidate(key):
-                    guid_elem = ET.SubElement(item_elem, "guid")
-                    guid_elem.text = value
-                    guid_found = True
 
             # Ensure every item has a GUID, falling back to a default message if none is found
             if not guid_found:
@@ -1063,6 +1063,15 @@ def gen_feed(mycursor, account_list, list_feed_path):
             if isinstance(value, datetime.datetime):
                 value = value.strftime('%Y-%m-%d %H:%M:%S')
 
+            # Check if this field can serve as a GUID
+            if is_guid_candidate(key):
+                if isinstance(value, str) and not (value.startswith('http://') or value.startswith('https://')):
+                    value = os.path.join(Config.PREVIEW_SERVER, value)
+
+                guid_elem = ET.SubElement(item_elem, "guid")
+                guid_elem.text = value
+                guid_found = True
+
             # Normalize key names to camelCase
             normalized_key = camel_case_convert(key)
             sub_elem = ET.SubElement(item_elem, normalized_key)
@@ -1076,12 +1085,6 @@ def gen_feed(mycursor, account_list, list_feed_path):
             # Attach captions directly to the image element
             if image_element and is_caption_key(key):
                 ET.SubElement(image_element, "title").text = value
-
-            # Check if this field can serve as a GUID
-            if is_guid_candidate(key):
-                guid_elem = ET.SubElement(item_elem, "guid")
-                guid_elem.text = value
-                guid_found = True
 
         # Ensure every item has a GUID, falling back to a default message if none is found
         if not guid_found:
