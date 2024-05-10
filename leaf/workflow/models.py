@@ -969,7 +969,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
             # Populate the channel with some metadata
             ET.SubElement(channel, "title").text = "News"
             ET.SubElement(channel, "generator").text = "Leaf"
-            ET.SubElement(channel, "link").text = os.path.join(Config.PREVIEW_SERVER, list_feed_path)
+            ET.SubElement(channel, "link").text = os.path.join(srv["webserver_url"], list_feed_path)
             ET.SubElement(channel, "description").text = "Latest news"
 
             # Add each news item to the channel
@@ -1027,7 +1027,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                     # Check if this field can serve as a GUID
                     if is_guid_candidate(key):
                         if isinstance(value, str) and not (value.startswith('http://') or value.startswith('https://')):
-                            value = os.path.join(Config.PREVIEW_SERVER, list_page_url)
+                            value = os.path.join(srv["webserver_url"], list_page_url)
                             value = value + Config.PAGES_EXTENSION
 
                         guid_elem = ET.SubElement(item_elem, "guid")
