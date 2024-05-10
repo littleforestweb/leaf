@@ -1013,7 +1013,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                                 single_field = extract_month_and_day(publication_date, field)
                                 single_field = str(single_field)
 
-                                value = list_page_url.replace("{" + field + "}", single_field)
+                                list_page_url = list_page_url.replace("{" + field + "}", single_field)
 
                     if key.lower() == 'id' or key.lower() == 'modified_by' or key.lower() == 'created_by':
                         continue  # Skip if it's the id key
@@ -1027,6 +1027,8 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                     # Check if this field can serve as a GUID
                     if is_guid_candidate(key):
                         if isinstance(value, str) and not (value.startswith('http://') or value.startswith('https://')):
+                            current_app.logger.info("Test list_page_url:")
+                            current_app.logger.info(list_page_url)
                             value = os.path.join(Config.PREVIEW_SERVER, value)
 
                         guid_elem = ET.SubElement(item_elem, "guid")
@@ -1054,8 +1056,6 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
             # Write the complete RSS feed to a file
             tree = ET.ElementTree(rss)
             sitemap_path = os.path.join(Config.WEBSERVER_FOLDER, list_feed_path)
-            current_app.logger.info("Test sitemap_path:")
-            current_app.logger.info(sitemap_path)
             tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
 
             # SCP Files
@@ -1130,7 +1130,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                             single_field = extract_month_and_day(publication_date, field)
                             single_field = str(single_field)
 
-                            value = list_page_url.replace("{" + field + "}", single_field)
+                            list_page_url = list_page_url.replace("{" + field + "}", single_field)
 
                 if key.lower() == 'id' or key.lower() == 'modified_by' or key.lower() == 'created_by':
                     continue  # Skip if it's the id key
