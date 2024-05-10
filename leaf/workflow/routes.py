@@ -7,7 +7,7 @@ import re
 import paramiko
 import werkzeug.utils
 from bs4 import BeautifulSoup
-from flask import render_template, Blueprint, jsonify, request, session, url_for, send_from_directory
+from flask import render_template, Blueprint, jsonify, request, session, url_for, send_from_directory, current_app
 
 from leaf import decorators
 from leaf.config import Config
@@ -575,6 +575,8 @@ def action_workflow():
                 else:
                     ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
                 with ssh.open_sftp() as scp:
+                    current_app.logger.info(local_path)
+                    current_app.logger.info(remote_path)
                     actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
                     
                     if not actionResult:
