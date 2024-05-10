@@ -389,8 +389,6 @@ def action_workflow():
             with open(local_path, "w") as outFile:
                 outFile.write(original_content)
 
-
-
         # Regenerate Sitemap
         query = "SELECT site_id FROM site_meta WHERE HTMLPath = %s"
         mycursor.execute(query, [HTMLPath])
@@ -556,10 +554,9 @@ def action_workflow():
                         except Exception as e:
                             pass
 
-
             for srv in Config.DEPLOYMENTS_SERVERS:
 
-                HTMLPath = werkzeug.utils.escape(request.form.get("list_item_url_path"))
+                HTMLPath = werkzeug.utils.escape(request.form.get("list_item_url_path").strip("/"))
                 local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
 
                 # SCP Files
@@ -578,7 +575,7 @@ def action_workflow():
                     current_app.logger.info(local_path)
                     current_app.logger.info(remote_path)
                     actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
-                    
+
                     if not actionResult:
                         try:
                             raise Exception("Failed to SCP - " + lp + " - " + rp)
