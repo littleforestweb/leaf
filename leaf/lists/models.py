@@ -1135,41 +1135,43 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
     try:
         # Query to retrieve all data from the specified database table (using parameterized query)
         mycursor.execute(f"SELECT * FROM {account_list}")
-        current_app.logger.info("Testing 1:")
+
         # Fetch column headers
         row_headers = [x[0] for x in mycursor.description]
 
         # Fetch all rows from the database table
         full_list = mycursor.fetchall()
-        current_app.logger.info("Testing 2:")
+
         this_request = request.get_json()
         file_url_path = werkzeug.utils.escape(this_request.get("file_url_path"))
         list_template_id = werkzeug.utils.escape(this_request.get("list_template_id"))
         list_item_id = werkzeug.utils.escape(this_request.get("list_item_id"))
-        current_app.logger.info("Testing 3:")
+
         mycursor.execute(f"SELECT * FROM {account_list} WHERE id = %s", (list_item_id,))
         selected_item_id = mycursor.fetchone()
-        current_app.logger.info("Testing 4:")
+
         # Combine column names with fetched row values
         selected_item_data = dict(zip(row_headers, selected_item_id))
 
         list_template_html = templates_get_template_html(accountId, list_template_id)
-        current_app.logger.info("Testing 5:")
+
         # Replace html_placeholders with actual values from the selected_item_data
         for key, value in selected_item_data.items():
             html_placeholder = '{{' + key + '}}'
             if html_placeholder in list_template_html:
                 list_template_html = list_template_html.replace(html_placeholder, value)
-        current_app.logger.info("Testing 6:")
+
         # Remove any HTML elements that contain html_placeholders that do not exist in the selected_item_data
         html_placeholders = re.findall(r'{{(.*?)}}', list_template_html)
         for placeholder in html_placeholders:
+            current_app.logger.info("Testing 1:")
+            current_app.logger.info(placeholder)
             element_with_placeholder = re.sub(r'{{\w+}}', '', placeholder)  # Remove the placeholder to check for existence
             if not any(placeholder in selected_item_data for placeholder in re.findall(r'{{(\w+)}}', element_with_placeholder)):
                 list_template_html = remove_elements_with_content_or_src(list_template_html, "{{" + placeholder + "}}")
                 # Removed remaining unused tags
                 list_template_html = list_template_html.replace("{{" + placeholder + "}}", '')
-
+        current_app.logger.info("Testing 2:")
         # Save new page in the correct folder based on template
         file_to_save = os.path.join(Config.WEBSERVER_FOLDER, file_url_path.strip("/"))
         folder_to_save_item = os.path.dirname(file_to_save)
