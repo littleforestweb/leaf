@@ -14,7 +14,7 @@ from leaf.config import Config
 from leaf.decorators import limiter
 from leaf.decorators import login_required
 from leaf.users.models import get_user_permission_level
-from .models import uniquify, workflow_changed_email, upload_file_with_retry, add_workflow, is_workflow_owner, get_workflow_details, get_workflows, get_task_requests, change_status_workflow, send_mail, gen_sitemap
+from .models import uniquify, workflow_changed_email, upload_file_with_retry, add_workflow, is_workflow_owner, get_workflow_details, get_workflows, get_task_requests, change_status_workflow, send_mail, gen_sitemap, gen_feed
 
 workflow = Blueprint("workflow", __name__)
 
