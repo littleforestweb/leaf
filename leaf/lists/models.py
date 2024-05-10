@@ -1163,15 +1163,17 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
 
         # Remove any HTML elements that contain html_placeholders that do not exist in the selected_item_data
         html_placeholders = re.findall(r'{{(.*?)}}', list_template_html)
+        current_app.logger.info("Testing 1:")
+        current_app.logger.info(html_placeholders)
         for placeholder in html_placeholders:
-            current_app.logger.info("Testing 1:")
+            current_app.logger.info("Testing 2:")
             current_app.logger.info(placeholder)
             element_with_placeholder = re.sub(r'{{\w+}}', '', placeholder)  # Remove the placeholder to check for existence
             if not any(placeholder in selected_item_data for placeholder in re.findall(r'{{(\w+)}}', element_with_placeholder)):
                 list_template_html = remove_elements_with_content_or_src(list_template_html, "{{" + placeholder + "}}")
                 # Removed remaining unused tags
                 list_template_html = list_template_html.replace("{{" + placeholder + "}}", '')
-        current_app.logger.info("Testing 2:")
+        current_app.logger.info("Testing 3:")
         # Save new page in the correct folder based on template
         file_to_save = os.path.join(Config.WEBSERVER_FOLDER, file_url_path.strip("/"))
         folder_to_save_item = os.path.dirname(file_to_save)
