@@ -960,6 +960,10 @@ def gen_feed(mycursor, account_list, list_feed_path):
 
         # Add each news item to the channel
         for item in news_items:
+
+            if is_empty_item(item):
+                continue  # Skip this item entirely if it's empty or all fields are empty
+
             item_elem = ET.SubElement(channel, "item")
             for key, value in item.items():
                 # Normalize key names to camelCase
@@ -1011,10 +1015,18 @@ def gen_feed(mycursor, account_list, list_feed_path):
 
     # Add each news item to the channel
     for item in news_items:
+
+        if is_empty_item(item):
+            continue  # Skip this item entirely if it's empty or all fields are empty
+
         item_elem = ET.SubElement(channel, "item")
         guid_found = False
         image_element = None  # Track the image element to attach captions
         for key, value in item.items():
+
+            if is_empty_or_whitespace(value):
+                continue  # Skip creating element for empty or whitespace-only values
+
             # Normalize key names to camelCase
             normalized_key = camel_case_convert(key)
             sub_elem = ET.SubElement(item_elem, normalized_key)
@@ -1063,6 +1075,13 @@ def is_caption_key(key):
     """Check if the key likely represents a caption."""
     return 'caption' in key.lower() or 'imgcaption' in key.lower() or 'imagecaption' in key.lower()
 
+def is_empty_item(item):
+    """Check if the news item is empty or contains only empty fields."""
+    return all(not value.strip() if isinstance(value, str) else False for value in item.values())
+
+def is_empty_or_whitespace(value):
+    """Check if the given value is empty or consists only of whitespace."""
+    return isinstance(value, str) and not value.strip()
 
 def add_leading_zero(value):
     """Ensures that all single-digit numbers are returned with a leading zero."""
