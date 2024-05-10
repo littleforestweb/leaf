@@ -1027,9 +1027,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                     # Check if this field can serve as a GUID
                     if is_guid_candidate(key):
                         if isinstance(value, str) and not (value.startswith('http://') or value.startswith('https://')):
-                            current_app.logger.info("Test list_page_url:")
-                            current_app.logger.info(list_page_url)
-                            value = os.path.join(Config.PREVIEW_SERVER, value)
+                            value = os.path.join(Config.PREVIEW_SERVER, list_page_url, '.page')
 
                         guid_elem = ET.SubElement(item_elem, "guid")
                         guid_elem.text = value
@@ -1144,7 +1142,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                 # Check if this field can serve as a GUID
                 if is_guid_candidate(key):
                     if isinstance(value, str) and not (value.startswith('http://') or value.startswith('https://')):
-                        value = os.path.join(Config.PREVIEW_SERVER, value)
+                        value = os.path.join(Config.PREVIEW_SERVER, list_page_url, '.page')
 
                     guid_elem = ET.SubElement(item_elem, "guid")
                     guid_elem.text = value
