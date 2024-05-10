@@ -942,7 +942,7 @@ def gen_feed(mycursor, account_list, list_feed_path):
     mycursor.execute(query)
     list_column_names = [desc[0] for desc in mycursor.description]
     list_results = mycursor.fetchall()
-    list_items = [{column_names[i]: item[i] for i in range(len(list_column_names))} for item in list_results]
+    list_items = [{list_column_names[i]: item[i] for i in range(len(list_column_names))} for item in list_results]
 
     for srv in Config.DEPLOYMENTS_SERVERS:
         # Generate here the feed for this list
