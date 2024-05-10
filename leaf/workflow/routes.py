@@ -584,7 +584,7 @@ def action_workflow():
             # Regenerate Feed
             if not isMenu:
                 # gen_sitemap(mycursor, thisType)
-                gen_feed(mycursor, account_list, list_feed_path)
+                gen_feed(mycursor, account_list, list_feed_path, listName)
 
     if not listName and thisType == 5:
         # Get local file path

@@ -937,7 +937,7 @@ def gen_sitemap(mycursor, site_id, thisType):
     tree = ET.ElementTree(urlset)
     tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
 
-def gen_feed(mycursor, account_list, list_feed_path, in_lists):
+def gen_feed(mycursor, account_list, list_feed_path, list_name):
     query = f"SELECT * FROM {account_list}"
     mycursor.execute(query)
     list_column_names = [desc[0] for desc in mycursor.description]
@@ -945,7 +945,7 @@ def gen_feed(mycursor, account_list, list_feed_path, in_lists):
     list_items = [{list_column_names[i]: item[i] for i in range(len(list_column_names))} for item in list_results]
 
     template_query = f"SELECT template_location FROM account_%s_list_template WHERE in_lists=%s"
-    params = (session['accountId'], in_lists,)
+    params = (session['accountId'], list_name,)
     mycursor.execute(template_query, params)
     result_list = mycursor.fetchone()
 
