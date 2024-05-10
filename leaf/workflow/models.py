@@ -969,6 +969,9 @@ def gen_feed(mycursor, account_list, list_feed_path):
             image_element = None  # Track the image element to attach captions
             for key, value in item.items():
 
+                if key.lower() == 'id':
+                    continue  # Skip if it's the id key
+
                 if is_empty_or_whitespace(value):
                     continue  # Skip creating element for empty or whitespace-only values
 
@@ -1044,6 +1047,9 @@ def gen_feed(mycursor, account_list, list_feed_path):
         guid_found = False
         image_element = None  # Track the image element to attach captions
         for key, value in item.items():
+
+            if key.lower() == 'id':
+                continue  # Skip if it's the id key
 
             if is_empty_or_whitespace(value):
                 continue  # Skip creating element for empty or whitespace-only values
