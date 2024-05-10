@@ -940,11 +940,11 @@ def gen_sitemap(mycursor, site_id, thisType):
 def gen_feed(mycursor, account_list, list_feed_path):
     query = f"SELECT * FROM {account_list}"
     mycursor.execute(query)
-    list_items = [page[0] for page in mycursor.fetchall()]
+    list_items = mycursor.fetchall()
 
     for srv in Config.DEPLOYMENTS_SERVERS:
         # Generate here the feed for this list
-        current_app.logger.info(account_list)
+        current_app.logger.info("Test list_items:")
         current_app.logger.info(list_items)
 
         # Define the RSS feed's root and channel elements
