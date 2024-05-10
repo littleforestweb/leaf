@@ -978,6 +978,9 @@ def gen_feed(mycursor, account_list, list_feed_path):
                 if isinstance(value, datetime.datetime):
                     value = value.strftime('%Y-%m-%d %H:%M:%S')
 
+                if isinstance(value, str) and not (value.startswith('http://') or value.startswith('https://')):
+                    value = os.path.join(Config.PREVIEW_SERVER, value)
+
                 # Normalize key names to camelCase
                 normalized_key = camel_case_convert(key)
                 sub_elem = ET.SubElement(item_elem, normalized_key)
