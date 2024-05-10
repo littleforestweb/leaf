@@ -1172,6 +1172,9 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         # Save new page in the correct folder based on template
         file_to_save = os.path.join(Config.WEBSERVER_FOLDER, file_url_path.strip("/"))
         folder_to_save_item = os.path.dirname(file_to_save)
+        current_app.logger.info(list_template_html)
+        current_app.logger.info(folder_to_save_item)
+        current_app.logger.info(file_to_save)
         os.makedirs(folder_to_save_item, exist_ok=True)
         with open(file_to_save, 'w') as out_file:
             out_file.write(list_template_html)
