@@ -1001,10 +1001,10 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
 
                         for result in item_results:
                             for item_key, item_value in result.items():
-                                if item_.lower() in publication_names:
+                                if item_key.lower() in publication_names:
                                     publication_date = item_value
                                 else:
-                                    list_page_url = list_page_url.replace("{" + item_ + "}", str(item_value))
+                                    list_page_url = list_page_url.replace("{" + item_key + "}", str(item_value))
 
                         for field in items:
                             if field == "year" or field == "month" or field == "day":
@@ -1118,10 +1118,10 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
 
                     for result in item_results:
                         for item_key, item_value in result.items():
-                            if item_.lower() in publication_names:
+                            if item_key.lower() in publication_names:
                                 publication_date = item_value
                             else:
-                                list_page_url = list_page_url.replace("{" + item_ + "}", str(item_value))
+                                list_page_url = list_page_url.replace("{" + item_key + "}", str(item_value))
 
                     for field in items:
                         if field == "year" or field == "month" or field == "day":
