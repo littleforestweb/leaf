@@ -57,7 +57,7 @@ async function setStatus(status, id, type, listName, accountId, files_details, s
         }
     }
 
-    list_item_url_path = new URL(list_item_url_path).pathname.trim("/");
+    list_item_url_path = new URL(list_item_url_path).pathname.trimStart("/");
 
     let dataF = {
         "id": id,
