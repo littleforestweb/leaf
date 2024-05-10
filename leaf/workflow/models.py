@@ -969,7 +969,7 @@ def gen_feed(mycursor, account_list, list_feed_path):
             image_element = None  # Track the image element to attach captions
             for key, value in item.items():
 
-                if key.lower() == 'id':
+                if key.lower() == 'id' or key.lower() == 'modified_by' or key.lower() == 'created_by':
                     continue  # Skip if it's the id key
 
                 if is_empty_or_whitespace(value):
@@ -1048,7 +1048,7 @@ def gen_feed(mycursor, account_list, list_feed_path):
         image_element = None  # Track the image element to attach captions
         for key, value in item.items():
 
-            if key.lower() == 'id':
+            if key.lower() == 'id' or key.lower() == 'modified_by' or key.lower() == 'created_by':
                 continue  # Skip if it's the id key
 
             if is_empty_or_whitespace(value):
