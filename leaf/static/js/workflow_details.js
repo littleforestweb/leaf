@@ -37,7 +37,7 @@ CKEDITOR.plugins.add("anchor", {
     }
 });
 
-async function setStatus(status, id, type, listName, accountId, files_details, site_ids) {
+async function setStatus(status, id, type, listName, accountId, files_details, site_ids, list_item_url_path) {
     document.getElementById("actionContainer").innerHTML = "<span>Deploying...</span>"
 
     let jsonConfigSaveByFields = false;
@@ -57,6 +57,8 @@ async function setStatus(status, id, type, listName, accountId, files_details, s
         }
     }
 
+    list_item_url_path = new URL(list_item_url_path).pathname.lstrip("/");
+
     let dataF = {
         "id": id,
         "status": status,
@@ -65,29 +67,30 @@ async function setStatus(status, id, type, listName, accountId, files_details, s
         "saveByFields": jsonConfigSaveByFields,
         "fieldsToSaveBy": jsonConfigFieldsToSaveBy,
         "files_details": files_details,
-        "site_ids": site_ids
+        "site_ids": site_ids,
+        "list_item_url_path": list_item_url_path
     }
 
-    $.ajax({
-        type: "POST",
-        url: "/workflow/action",
-        data: dataF,
-        success: function (entry) {
-            document.getElementById("actionContainer").innerHTML = "<span>No Action needed</span>";
-            document.getElementById("statusContainer").innerHTML = "<span>" + entry["action"] + "</span>";
-            document.getElementById("workflowNotification").classList.add("bg-success");
-            document.getElementById("workflowNotificationMsg").innerHTML = "<span>Workflow Completed</span>"
-            $('#workflowNotification').toast('show');
-            window.location.reload();
-        }, error: function (xhr, textStatus, errorThrown) {
-            if (xhr.status === 403) {
-                document.getElementById("workflowNotification").classList.add("bg-danger");
-                document.getElementById("workflowNotificationMsg").innerHTML = "<span>Permission Denied</span>"
-                $('#workflowNotification').toast('show');
-            }
-            console.log(xhr, textStatus, errorThrown);
-        }
-    });
+    // $.ajax({
+    //     type: "POST",
+    //     url: "/workflow/action",
+    //     data: dataF,
+    //     success: function (entry) {
+    //         document.getElementById("actionContainer").innerHTML = "<span>No Action needed</span>";
+    //         document.getElementById("statusContainer").innerHTML = "<span>" + entry["action"] + "</span>";
+    //         document.getElementById("workflowNotification").classList.add("bg-success");
+    //         document.getElementById("workflowNotificationMsg").innerHTML = "<span>Workflow Completed</span>"
+    //         $('#workflowNotification').toast('show');
+    //         window.location.reload();
+    //     }, error: function (xhr, textStatus, errorThrown) {
+    //         if (xhr.status === 403) {
+    //             document.getElementById("workflowNotification").classList.add("bg-danger");
+    //             document.getElementById("workflowNotificationMsg").innerHTML = "<span>Permission Denied</span>"
+    //             $('#workflowNotification').toast('show');
+    //         }
+    //         console.log(xhr, textStatus, errorThrown);
+    //     }
+    // });
 }
 
 async function addNewComment(id, user_to_notify) {

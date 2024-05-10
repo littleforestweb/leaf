@@ -389,6 +389,8 @@ def action_workflow():
             with open(local_path, "w") as outFile:
                 outFile.write(original_content)
 
+
+
         # Regenerate Sitemap
         query = "SELECT site_id FROM site_meta WHERE HTMLPath = %s"
         mycursor.execute(query, [HTMLPath])
@@ -548,6 +550,33 @@ def action_workflow():
                     remote_path = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), file_name)
                     with ssh.open_sftp() as scp:
                         actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                    if not actionResult:
+                        try:
+                            raise Exception("Failed to SCP - " + lp + " - " + rp)
+                        except Exception as e:
+                            pass
+
+
+            for srv in Config.DEPLOYMENTS_SERVERS:
+
+                HTMLPath = werkzeug.utils.escape(request.form.get("list_item_url_path"))
+                local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
+
+                # SCP Files
+                remote_path = os.path.join(srv["remote_path"], HTMLPath)
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                if srv["pkey"] != "":
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                    if srv["pw"] == "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                    else:
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                else:
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                with ssh.open_sftp() as scp:
+                    actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                    
                     if not actionResult:
                         try:
                             raise Exception("Failed to SCP - " + lp + " - " + rp)
