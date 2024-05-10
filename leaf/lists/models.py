@@ -415,6 +415,7 @@ def get_all_templates(request, accountId: str):
                                  'in_lists VARCHAR(255) DEFAULT NULL',
                                  'template VARCHAR(255) DEFAULT NULL',
                                  'template_location VARCHAR(255) DEFAULT NULL',
+                                 'feed_location VARCHAR(255) DEFAULT NULL',
                                  'modified_by INT(11) DEFAULT NULL',
                                  'created DATETIME NULL DEFAULT CURRENT_TIMESTAMP',
                                  'modified DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP']
@@ -439,16 +440,19 @@ def get_all_templates(request, accountId: str):
             search_value_2 = request.args.get(f"sSearch_2")
             search_value_3 = request.args.get(f"sSearch_3")
             search_value_4 = request.args.get(f"sSearch_4")
+            search_value_5 = request.args.get(f"sSearch_5")
             if search_value_1:
                 searchColumnsFields.append({"field": "template", "value": search_value_1.replace("((((", "").replace("))))", "")})
             if search_value_2:
                 searchColumnsFields.append({"field": "template_location", "value": search_value_2.replace("((((", "").replace("))))", "")})
             if search_value_3:
-                searchColumnsFields.append({"field": "in_lists", "value": search_value_3.replace("((((", "").replace("))))", "")})
+                searchColumnsFields.append({"field": "feed_location", "value": search_value_3.replace("((((", "").replace("))))", "")})
             if search_value_4:
-                # searchColumnsFields.append({"field": "user.id", "value": search_value_4.replace("((((", "").replace("))))", "")})
-                # searchColumnsFields.append({"field": "user.username", "value": search_value_4.replace("((((", "").replace("))))", "")})
-                searchColumnsFields.append({"field": "user.email", "value": search_value_4.replace("((((", "").replace("))))", "")})
+                searchColumnsFields.append({"field": "in_lists", "value": search_value_4.replace("((((", "").replace("))))", "")})
+            if search_value_5:
+                # searchColumnsFields.append({"field": "user.id", "value": search_value_5.replace("((((", "").replace("))))", "")})
+                # searchColumnsFields.append({"field": "user.username", "value": search_value_5.replace("((((", "").replace("))))", "")})
+                searchColumnsFields.append({"field": "user.email", "value": search_value_5.replace("((((", "").replace("))))", "")})
 
             for searchColumnsField in searchColumnsFields:
                 searchColumnsFieldValue = searchColumnsField['value'].replace('"', "'")
@@ -511,6 +515,7 @@ def get_list_template(accountId: str, reference: str):
                                  'in_lists VARCHAR(255) DEFAULT NULL',
                                  'template VARCHAR(255) DEFAULT NULL',
                                  'template_location VARCHAR(255) DEFAULT NULL',
+                                 'feed_location VARCHAR(255) DEFAULT NULL',
                                  'modified_by INT(11) DEFAULT NULL',
                                  'created DATETIME NULL DEFAULT CURRENT_TIMESTAMP',
                                  'modified DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP']
@@ -557,9 +562,11 @@ def set_list_template(request, accountId: str, reference: str):
     template = werkzeug.utils.escape(template)
 
     template_location = werkzeug.utils.escape(str(thisRequest.get("s-template_location")))
+    feed_location = werkzeug.utils.escape(str(thisRequest.get("s-feed_location")))
 
-    if not template.endswith(".html"):
+    if not template.endswith("_html"):
         template += ".html"
+    template = template.replace("_html", ".html")
 
     if reference == '____no_list_selected____':
         reference = ""
@@ -584,8 +591,8 @@ def set_list_template(request, accountId: str, reference: str):
                 template_file = template_info[0][2]
                 template = template_file
 
-                update_config_query = f"UPDATE {tableName} SET in_lists = '', template_location = %s, modified = CURRENT_TIMESTAMP WHERE in_lists = %s"
-                mycursor.execute(update_config_query, (template_location, reference))
+                update_config_query = f"UPDATE {tableName} SET in_lists = '', template_location = %s, feed_location = %s, modified = CURRENT_TIMESTAMP WHERE in_lists = %s"
+                mycursor.execute(update_config_query, (template_location, feed_location, reference))
                 mydb.commit()
 
             if templates_format and templates_format == "input":
@@ -595,17 +602,17 @@ def set_list_template(request, accountId: str, reference: str):
 
             modified_by = int(session["id"])
 
-            col_to_return = [template, template_location, modified_by]
+            col_to_return = [template, template_location, feed_location, modified_by]
 
             if templates_format and templates_format == "select":
                 # Update template
-                update_config_query = f"UPDATE {tableName} SET in_lists = %s, template_location = %s, modified_by = %s, modified = CURRENT_TIMESTAMP WHERE template = %s"
-                mycursor.execute(update_config_query, (reference, template_location, modified_by, template))
+                update_config_query = f"UPDATE {tableName} SET in_lists = %s, template_location = %s, feed_location = %s, modified_by = %s, modified = CURRENT_TIMESTAMP WHERE template = %s"
+                mycursor.execute(update_config_query, (reference, template_location, feed_location, modified_by, template))
                 mydb.commit()
             else:
                 # Insert new template
-                insert_config_query = f"INSERT INTO {tableName} (in_lists, template, template_location, modified_by) VALUES (%s, %s, %s, %s)"
-                mycursor.execute(insert_config_query, (reference, template, template_location, modified_by))
+                insert_config_query = f"INSERT INTO {tableName} (in_lists, template, template_location, feed_location, modified_by) VALUES (%s, %s, %s, %s)"
+                mycursor.execute(insert_config_query, (reference, template, template_location, feed_location, modified_by))
                 mydb.commit()
 
             if templates_format and templates_format == "input":

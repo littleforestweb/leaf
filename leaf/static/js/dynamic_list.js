@@ -1826,6 +1826,7 @@ async function doTemplatesBehaviour(accountId, reference) {
 
     $('#setTemplateDynamicList #s-templates').empty();
     $('#setTemplateDynamicList #s-template_location').val("");
+    $('#setTemplateDynamicList #s-feed_location').val("");
 
     if (allTemplates) {
 
@@ -1835,6 +1836,7 @@ async function doTemplatesBehaviour(accountId, reference) {
         for (var template in allTemplates) {
             if (availableTemplates && availableTemplates[0] && availableTemplates[0][0] === allTemplates[template][0]) {
                 $('#setTemplateDynamicList #s-template_location').val(allTemplates[template][3]);
+                $('#setTemplateDynamicList #s-feed_location').val(allTemplates[template][4]);
             }
 
             $('#setTemplateDynamicList #s-templates').append('<option value="' + allTemplates[template][0] + '" ' + (availableTemplates && availableTemplates[0] && availableTemplates[0][0] === allTemplates[template][0] ? 'selected' : '') + '>' + allTemplates[template][2] + '</option>');
@@ -1845,12 +1847,14 @@ async function doTemplatesBehaviour(accountId, reference) {
         var thisVal = $(this).val();
         if (thisVal === 'false') {
             $('#setTemplateDynamicList #s-template_location').val("");
+            $('#setTemplateDynamicList #s-feed_location').val("");
             $('#s-remove-template').attr('disabled', true);
         } else {
             if (allTemplates) {
                 for (var template in allTemplates) {
                     if (parseInt(allTemplates[template][0]) === parseInt(thisVal)) {
                         $('#setTemplateDynamicList #s-template_location').val(allTemplates[template][3]);
+                        $('#setTemplateDynamicList #s-feed_location').val(allTemplates[template][4]);
                         $('#s-remove-template').removeAttr('disabled');
                     }
                 }

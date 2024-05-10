@@ -558,6 +558,7 @@ def action_workflow():
 
                 HTMLPath = werkzeug.utils.escape(request.form.get("list_item_url_path").strip("/"))
                 local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
+                list_feed_path = werkzeug.utils.escape(request.form.get("list_feed_path").strip("/"))
 
                 # SCP Files
                 remote_path = os.path.join(srv["remote_path"], HTMLPath)
@@ -572,8 +573,6 @@ def action_workflow():
                 else:
                     ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
                 with ssh.open_sftp() as scp:
-                    current_app.logger.info(local_path)
-                    current_app.logger.info(remote_path)
                     actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
 
                     if not actionResult:
@@ -582,11 +581,10 @@ def action_workflow():
                         except Exception as e:
                             pass
 
-            # Regenerate Sitemap
-            # list_page_ids = werkzeug.utils.escape(request.form.get("site_id"))
-            # list_page_ids = list_page_ids.split(",")
-            # for list_page_id in list_page_ids:
-            #   gen_sitemap(mycursor, list_page_id, thisType)
+            # Regenerate Feed
+            if not isMenu:
+                # gen_sitemap(mycursor, thisType)
+                gen_feed(mycursor, account_list, list_feed_path)
 
     if not listName and thisType == 5:
         # Get local file path

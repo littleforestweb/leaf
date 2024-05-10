@@ -12,7 +12,9 @@ async function save_template() {
         data: {
             "data": sourceCode,
             "template_id": template_id,
-            "template_url_pattern": document.getElementById("s-template_location").value
+            "template_url_pattern": document.getElementById("s-template_location").value,
+            "template_feed_url_pattern": document.getElementById("s-feed_location").value,
+            "template_name": document.getElementById("s-template_name").value
         },
         success: function (entry) {
             $('#savedNotification').toast('show');
@@ -225,4 +227,6 @@ async function get_template_by_id(template_id) {
     jsonAllTemplate = jsonAllTemplate.columns;
 
     document.getElementById("s-template_location").value = jsonAllTemplate[0][3];
+    document.getElementById("s-feed_location").value = jsonAllTemplate[0][4];
+    document.getElementById("s-template_name").value = jsonAllTemplate[0][2];
 }

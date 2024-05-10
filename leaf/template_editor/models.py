@@ -124,6 +124,15 @@ def template_save(request, accountId):
             data = request.form.get("data", type=str)
             template_id = werkzeug.utils.escape(request.form.get("template_id", type=str))
             template_url_pattern = werkzeug.utils.escape(request.form.get("template_url_pattern", type=str))
+            template_feed_url_pattern = werkzeug.utils.escape(request.form.get("template_feed_url_pattern", type=str))
+            template_name = request.form.get("template_name", type=str)
+            template_name = template_name.lower()
+            template_name = ''.join(c if c.isalnum() else '_' for c in template_name)
+            template_name = werkzeug.utils.escape(template_name)
+
+            if not template_name.endswith("_html"):
+                template_name += ".html"
+            template_name = template_name.replace("_html", ".html")
 
             # Remove base href from HTML
             data = remove_base_href_from_template(data)
@@ -133,8 +142,8 @@ def template_save(request, accountId):
             template_info = mycursor.fetchall()
             template_file = template_info[0][2]
 
-            update_templates_query = f"UPDATE {tableName} SET template_location = %s, modified_by = %s, modified = CURRENT_TIMESTAMP WHERE id = %s"
-            mycursor.execute(update_templates_query, (template_url_pattern, session["id"], str(template_id)))
+            update_templates_query = f"UPDATE {tableName} SET template = %s, template_location = %s, feed_location = %s, modified_by = %s, modified = CURRENT_TIMESTAMP WHERE id = %s"
+            mycursor.execute(update_templates_query, (template_name, template_url_pattern, template_feed_url_pattern, session["id"], str(template_id)))
             mydb.commit()
 
             file_to_save = os.path.join(Config.TEMPLATES_FOLDER, str(accountId), template_file)
@@ -197,6 +206,7 @@ def get_template_by_id(accountId: str, template_id: str):
                                  'in_lists VARCHAR(255) DEFAULT NULL',
                                  'template VARCHAR(255) DEFAULT NULL',
                                  'template_location VARCHAR(255) DEFAULT NULL',
+                                 'feed_location VARCHAR(255) DEFAULT NULL',
                                  'modified_by INT(11) DEFAULT NULL',
                                  'created DATETIME NULL DEFAULT CURRENT_TIMESTAMP',
                                  'modified DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP']

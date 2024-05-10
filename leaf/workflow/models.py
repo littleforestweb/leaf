@@ -9,7 +9,7 @@ from urllib.parse import unquote, urljoin
 import re
 
 import paramiko
-from flask import session
+from flask import session, current_app
 
 from leaf import Config
 from leaf import decorators
@@ -239,13 +239,14 @@ def process_type_3(workflow_data, mycursor):
         site_id = workflow_data["siteIds"]
         workflow_data["siteTitles"] = ""
 
-        query = f"SELECT template_location FROM account_%s_list_template WHERE in_lists=%s"
+        query = f"SELECT template_location, feed_location FROM account_%s_list_template WHERE in_lists=%s"
         params = (session['accountId'], workflow_data['listName'],)
         mycursor.execute(query, params)
         result_list = mycursor.fetchone()
 
         if result_list and len(result_list) > 0:
             list_template = result_list[0]
+            list_feed = result_list[1]
 
             # Regular expression to find words within curly braces
             pattern = r'{(.*?)}'
@@ -293,6 +294,7 @@ def process_type_3(workflow_data, mycursor):
             
             workflow_data["siteUrl"] = protocol + clean_url
             workflow_data["siteTitles"] = workflow_data["siteUrl"]
+            workflow_data["list_feed_path"] = list_feed
 
             workflow_data["siteId"] = f"{list_page_url}.page"
 
@@ -934,6 +936,133 @@ def gen_sitemap(mycursor, site_id, thisType):
         loc_elem.text = urljoin(Config.PREVIEW_SERVER, page)
     tree = ET.ElementTree(urlset)
     tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
+
+def gen_feed(mycursor, account_list, list_feed_path):
+    query = "SELECT * FROM %s WHERE id = %s"
+    mycursor.execute(query, [account_list,])
+    list_items = [page[0] for page in mycursor.fetchall()]
+
+    for srv in Config.DEPLOYMENTS_SERVERS:
+        # Generate here the feed for this list
+        current_app.logger.info(account_list)
+        current_app.logger.info(list_items)
+
+        # Define the RSS feed's root and channel elements
+        rss = ET.Element("rss", version="2.0")
+        rss.set("encoding", "UTF-8")
+        channel = ET.SubElement(rss, "channel")
+
+        # Populate the channel with some metadata
+        ET.SubElement(channel, "title").text = "News"
+        ET.SubElement(channel, "generator").text = "Leaf"
+        ET.SubElement(channel, "link").text = os.path.join(Config.WEBSERVER_FOLDER, list_feed_path)
+        ET.SubElement(channel, "description").text = "Latest news"
+
+        # Add each news item to the channel
+        for item in news_items:
+            item_elem = ET.SubElement(channel, "item")
+            for key, value in item.items():
+                # Normalize key names to camelCase
+                normalized_key = camel_case_convert(key)
+                if is_image_url(value):
+                    image_elem = ET.SubElement(item_elem, "image")
+                    ET.SubElement(image_elem, "url").text = value
+                    if 'caption' in key.lower():  # Handle image captions specifically
+                        ET.SubElement(image_elem, "title").text = value
+                else:
+                    sub_elem = ET.SubElement(item_elem, normalized_key)
+                    sub_elem.text = value
+
+        # Write the complete RSS feed to a file
+        tree = ET.ElementTree(rss)
+        sitemap_path = os.path.join(Config.WEBSERVER_FOLDER, list_feed_path)
+        tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
+
+        # SCP Files
+        remote_path = os.path.join(srv["remote_path"], list_feed_path)
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        if srv["pkey"] != "":
+            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+            if srv["pw"] == "":
+                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+            else:
+                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+        else:
+            ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+        with ssh.open_sftp() as scp:
+            actionResult, lp, rp = upload_file_with_retry(sitemap_path, remote_path, scp)
+            if not actionResult:
+                try:
+                    raise Exception("Failed to SCP - " + lp + " - " + rp)
+                except Exception as e:
+                    pass
+
+    # Gen Local RSS Feed File
+    rss = ET.Element("rss", version="2.0")
+    rss.set("encoding", "UTF-8")
+    channel = ET.SubElement(rss, "channel")
+
+    # Populate the channel with some metadata
+    ET.SubElement(channel, "title").text = "News"
+    ET.SubElement(channel, "generator").text = "Leaf"
+    ET.SubElement(channel, "link").text = os.path.join(Config.WEBSERVER_FOLDER, list_feed_path)
+    ET.SubElement(channel, "description").text = "Latest news"
+
+    # Add each news item to the channel
+    for item in news_items:
+        item_elem = ET.SubElement(channel, "item")
+        guid_found = False
+        image_element = None  # Track the image element to attach captions
+        for key, value in item.items():
+            # Normalize key names to camelCase
+            normalized_key = camel_case_convert(key)
+            sub_elem = ET.SubElement(item_elem, normalized_key)
+            sub_elem.text = value
+            
+            # Check for image URLs and create a separate image element
+            if is_image_url(value):
+                image_element = ET.SubElement(sub_elem, "image")
+                ET.SubElement(image_element, "url").text = value
+
+            # Attach captions directly to the image element
+            if image_element and is_caption_key(key):
+                ET.SubElement(image_element, "title").text = value
+
+            # Check if this field can serve as a GUID
+            if is_guid_candidate(key):
+                guid_elem = ET.SubElement(item_elem, "guid")
+                guid_elem.text = value
+                guid_found = True
+
+        # Ensure every item has a GUID, falling back to a default message if none is found
+        if not guid_found:
+            ET.SubElement(item_elem, "guid").text = "Unique identifier not found (link, url, file_url, path, item_path, item_link, file_path, doc_link, doc, doc_path, document_path, document_url)"
+
+    # Write the complete RSS feed to a file
+    tree = ET.ElementTree(rss)
+    sitemap_path = os.path.join(Config.WEBSERVER_FOLDER, list_feed_path)
+    tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
+
+def camel_case_convert(key):
+    """Convert keys from 'pub-date' or 'pub date' to 'pubDate'."""
+    parts = re.split('-| ', key)
+    return parts[0].lower() + ''.join(word.capitalize() for word in parts[1:])
+
+def is_guid_candidate(key):
+    """Determine if the key is a suitable candidate for use as a GUID."""
+    candidates = ['link', 'url', 'file_url', 'path', 'item_path', 'item_link', 'file_path', 'doc_link', 'doc', 'doc_path', 'document_path', 'document_url']
+    key_lower = key.lower().replace('_', '').replace('-', '')
+    return any(candidate in key_lower for candidate in candidates)
+
+def is_image_url(url):
+    """Check if a URL points to an image based on its extension."""
+    return re.search(r'\.(jpg|jpeg|png|gif)$', url, re.IGNORECASE)
+
+def is_caption_key(key):
+    """Check if the key likely represents a caption."""
+    return 'caption' in key.lower() or 'imgcaption' in key.lower() or 'imagecaption' in key.lower()
+
 
 def add_leading_zero(value):
     """Ensures that all single-digit numbers are returned with a leading zero."""

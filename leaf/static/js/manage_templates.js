@@ -88,7 +88,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
     $('#table').DataTable().destroy();
 
     $('#table thead tr').clone(true).addClass('filters').appendTo('#table thead');
-    let searchColumns = [1, 2, 3, 4];
+    let searchColumns = [1, 2, 3, 4, 5];
 
     $('#table').DataTable({
         bProcessing: false,
@@ -124,7 +124,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [3],
                 mData: function (source, type, row) {
-                    return source[1];
+                    return source[4];
                 },
                 width: "50%",
                 defaultContent: "<i style='color: #CCC;'>No data</i>"
@@ -132,7 +132,15 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [4],
                 mData: function (source, type, row) {
-                    val = source[4].split(', ');
+                    return source[1];
+                },
+                width: "50%",
+                defaultContent: "<i style='color: #CCC;'>No data</i>"
+            },
+            {
+                aTargets: [5],
+                mData: function (source, type, row) {
+                    val = source[5].split(', ');
                     if (val[1] === val[2]) {
                         val = val[1];
                     } else {
@@ -141,14 +149,6 @@ window.addEventListener('DOMContentLoaded', async function main() {
                     return val;
                 },
                 width: "50%",
-                defaultContent: "<i style='color: #CCC;'>No data</i>"
-            },
-            {
-                aTargets: [5],
-                mData: function (source, type, row) {
-                    return '<span class="hidden">' + Date.parse(source[5]) + "</span><span class='toEdit'>" + source[5] + "</span>";
-                },
-                width: "30%",
                 defaultContent: "<i style='color: #CCC;'>No data</i>"
             },
             {
@@ -161,6 +161,14 @@ window.addEventListener('DOMContentLoaded', async function main() {
             },
             {
                 aTargets: [7],
+                mData: function (source, type, row) {
+                    return '<span class="hidden">' + Date.parse(source[7]) + "</span><span class='toEdit'>" + source[7] + "</span>";
+                },
+                width: "30%",
+                defaultContent: "<i style='color: #CCC;'>No data</i>"
+            },
+            {
+                aTargets: [8],
                 mData: function (source, type, row) {
                     return '<a class="btn btn-sm" href="/templates/' + source[0] + '">View</a>';
                 },
