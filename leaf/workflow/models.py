@@ -961,9 +961,6 @@ def gen_feed(mycursor, account_list, list_feed_path):
         # Add each news item to the channel
         for item in list_items:
 
-            current_app.logger.info("Test item:")
-            current_app.logger.info(item)
-
             if is_empty_item(item):
                 continue  # Skip this item entirely if it's empty or all fields are empty
 
@@ -981,7 +978,7 @@ def gen_feed(mycursor, account_list, list_feed_path):
                 sub_elem.text = value
                 
                 # Check for image URLs and create a separate image element
-                if is_image_url(value):
+                if is_image_url(str(value)):
                     image_element = ET.SubElement(sub_elem, "image")
                     ET.SubElement(image_element, "url").text = value
 
@@ -1038,9 +1035,6 @@ def gen_feed(mycursor, account_list, list_feed_path):
     # Add each news item to the channel
     for item in list_items:
 
-        current_app.logger.info("Test item:")
-        current_app.logger.info(item)
-
         if is_empty_item(item):
             continue  # Skip this item entirely if it's empty or all fields are empty
 
@@ -1058,7 +1052,7 @@ def gen_feed(mycursor, account_list, list_feed_path):
             sub_elem.text = value
             
             # Check for image URLs and create a separate image element
-            if is_image_url(value):
+            if is_image_url(str(value)):
                 image_element = ET.SubElement(sub_elem, "image")
                 ET.SubElement(image_element, "url").text = value
 
