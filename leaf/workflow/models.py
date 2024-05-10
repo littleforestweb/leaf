@@ -984,7 +984,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                 for key, value in item.items():
 
                     if key.lower() == 'id':
-                        query_list_item = f"SELECT * FROM account_{session['accountId']}_list_{in_lists} WHERE id=%s"
+                        query_list_item = f"SELECT * FROM account_{session['accountId']}_list_{list_name} WHERE id=%s"
                         params_list_item = (value,)
                         mycursor.execute(query_list_item, params_list_item)
                         fields_to_link = mycursor.fetchall()
@@ -1101,7 +1101,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
             for key, value in item.items():
 
                 if key.lower() == 'id':
-                    query_list_item = f"SELECT * FROM account_{session['accountId']}_list_{in_lists} WHERE id=%s"
+                    query_list_item = f"SELECT * FROM account_{session['accountId']}_list_{list_name} WHERE id=%s"
                     params_list_item = (value,)
                     mycursor.execute(query_list_item, params_list_item)
                     fields_to_link = mycursor.fetchall()
