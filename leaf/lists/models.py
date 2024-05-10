@@ -1126,6 +1126,10 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
     """
     full_list = []
 
+    current_app.logger.info("Testing preview List:")
+    current_app.logger.info(int(accountId))
+    current_app.logger.info(int(session["accountId"]))
+
     if not int(accountId) == int(session["accountId"]):
         return jsonify({"error": "Forbidden"}), 403
 
