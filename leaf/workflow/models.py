@@ -938,7 +938,7 @@ def gen_sitemap(mycursor, site_id, thisType):
     tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
 
 def gen_feed(mycursor, account_list, list_feed_path):
-    query = "SELECT * FROM %s WHERE id = %s"
+    query = "SELECT * FROM %s"
     mycursor.execute(query, [account_list,])
     list_items = [page[0] for page in mycursor.fetchall()]
 
