@@ -959,7 +959,7 @@ def gen_feed(mycursor, account_list, list_feed_path):
         ET.SubElement(channel, "description").text = "Latest news"
 
         # Add each news item to the channel
-        for item in news_items:
+        for item in list_items:
 
             if is_empty_item(item):
                 continue  # Skip this item entirely if it's empty or all fields are empty
@@ -1014,7 +1014,7 @@ def gen_feed(mycursor, account_list, list_feed_path):
     ET.SubElement(channel, "description").text = "Latest news"
 
     # Add each news item to the channel
-    for item in news_items:
+    for item in list_items:
 
         if is_empty_item(item):
             continue  # Skip this item entirely if it's empty or all fields are empty
