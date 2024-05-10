@@ -999,6 +999,8 @@ def gen_feed(mycursor, account_list, list_feed_path):
         # Write the complete RSS feed to a file
         tree = ET.ElementTree(rss)
         sitemap_path = os.path.join(Config.WEBSERVER_FOLDER, list_feed_path)
+        current_app.logger.info("Test sitemap_path:")
+        current_app.logger.info(sitemap_path)
         tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
 
         # SCP Files
