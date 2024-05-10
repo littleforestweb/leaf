@@ -939,7 +939,7 @@ def gen_sitemap(mycursor, site_id, thisType):
 
 def gen_feed(mycursor, account_list, list_feed_path):
     query = "SELECT * FROM %s"
-    mycursor.execute(query, [account_list,])
+    mycursor.execute(query, (account_list,))
     list_items = [page[0] for page in mycursor.fetchall()]
 
     for srv in Config.DEPLOYMENTS_SERVERS:
