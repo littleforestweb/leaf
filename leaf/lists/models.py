@@ -1127,10 +1127,6 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
     """
     full_list = []
 
-    current_app.logger.info("Testing preview List:")
-    current_app.logger.info(int(accountId))
-    current_app.logger.info(int(session["accountId"]))
-
     if not int(accountId) == int(session["accountId"]):
         return jsonify({"error": "Forbidden"}), 403
 
@@ -1139,32 +1135,32 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
     try:
         # Query to retrieve all data from the specified database table (using parameterized query)
         mycursor.execute(f"SELECT * FROM {account_list}")
-
+        current_app.logger.info("Testing 1:")
         # Fetch column headers
         row_headers = [x[0] for x in mycursor.description]
 
         # Fetch all rows from the database table
         full_list = mycursor.fetchall()
-
+        current_app.logger.info("Testing 2:")
         this_request = request.get_json()
         file_url_path = werkzeug.utils.escape(this_request.get("file_url_path"))
         list_template_id = werkzeug.utils.escape(this_request.get("list_template_id"))
         list_item_id = werkzeug.utils.escape(this_request.get("list_item_id"))
-
+        current_app.logger.info("Testing 3:")
         mycursor.execute(f"SELECT * FROM {account_list} WHERE id = %s", (list_item_id,))
         selected_item_id = mycursor.fetchone()
-
+        current_app.logger.info("Testing 4:")
         # Combine column names with fetched row values
         selected_item_data = dict(zip(row_headers, selected_item_id))
 
         list_template_html = templates_get_template_html(accountId, list_template_id)
-
+        current_app.logger.info("Testing 5:")
         # Replace html_placeholders with actual values from the selected_item_data
         for key, value in selected_item_data.items():
             html_placeholder = '{{' + key + '}}'
             if html_placeholder in list_template_html:
                 list_template_html = list_template_html.replace(html_placeholder, value)
-
+        current_app.logger.info("Testing 6:")
         # Remove any HTML elements that contain html_placeholders that do not exist in the selected_item_data
         html_placeholders = re.findall(r'{{(.*?)}}', list_template_html)
         for placeholder in html_placeholders:
