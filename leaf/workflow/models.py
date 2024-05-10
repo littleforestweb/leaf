@@ -1085,7 +1085,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
         # Populate the channel with some metadata
         ET.SubElement(channel, "title").text = "News"
         ET.SubElement(channel, "generator").text = "Leaf"
-        ET.SubElement(channel, "link").text = os.path.join(Config.WEBSERVER_FOLDER, list_feed_path)
+        ET.SubElement(channel, "link").text = os.path.join(Config.PREVIEW_SERVER, list_feed_path)
         ET.SubElement(channel, "description").text = "Latest news"
 
         # Add each news item to the channel
