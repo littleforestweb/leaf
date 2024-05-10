@@ -975,6 +975,9 @@ def gen_feed(mycursor, account_list, list_feed_path):
                 if is_empty_or_whitespace(value):
                     continue  # Skip creating element for empty or whitespace-only values
 
+                if isinstance(value, datetime.datetime):
+                    value = value.strftime('%Y-%m-%d %H:%M:%S')
+
                 # Normalize key names to camelCase
                 normalized_key = camel_case_convert(key)
                 sub_elem = ET.SubElement(item_elem, normalized_key)
@@ -1053,6 +1056,9 @@ def gen_feed(mycursor, account_list, list_feed_path):
 
             if is_empty_or_whitespace(value):
                 continue  # Skip creating element for empty or whitespace-only values
+
+            if isinstance(value, datetime.datetime):
+                value = value.strftime('%Y-%m-%d %H:%M:%S')
 
             # Normalize key names to camelCase
             normalized_key = camel_case_convert(key)
