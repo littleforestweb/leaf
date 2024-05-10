@@ -140,16 +140,33 @@ def template_save(request, accountId):
             get_templates_query = f"SELECT * FROM {tableName} WHERE id = %s"
             mycursor.execute(get_templates_query, (template_id,))
             template_info = mycursor.fetchall()
-            template_file = template_info[0][2]
+            old_template_file_name = template_info[0][2]
 
             update_templates_query = f"UPDATE {tableName} SET template = %s, template_location = %s, feed_location = %s, modified_by = %s, modified = CURRENT_TIMESTAMP WHERE id = %s"
             mycursor.execute(update_templates_query, (template_name, template_url_pattern, template_feed_url_pattern, session["id"], str(template_id)))
             mydb.commit()
 
-            file_to_save = os.path.join(Config.TEMPLATES_FOLDER, str(accountId), template_file)
+            previous_file_on_disk = os.path.join(Config.TEMPLATES_FOLDER, str(accountId), old_template_file_name)
+            file_to_save = os.path.join(Config.TEMPLATES_FOLDER, str(accountId), template_name)
             folder_to_save_item = os.path.dirname(file_to_save)
 
             os.makedirs(folder_to_save_item, exist_ok=True)
+
+            # Check if the new file name is different from the old one
+            if os.path.normpath(file_to_save) != os.path.normpath(previous_file_on_disk):
+                # If the previous file exists, transfer its content
+                if os.path.exists(previous_file_on_disk):
+                    # Read the old file's content
+                    with open(previous_file_on_disk, 'r') as file:
+                        old_data = file.read()
+
+                    # Write the old data to the new file
+                    with open(file_to_save, 'w') as out_file:
+                        out_file.write(old_data)
+                    
+                    # Delete the old file
+                    os.remove(previous_file_on_disk)
+
             with open(file_to_save, 'w') as out_file:
                 out_file.write(data)
 
