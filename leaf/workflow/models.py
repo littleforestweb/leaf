@@ -940,7 +940,8 @@ def gen_sitemap(mycursor, site_id, thisType):
 def gen_feed(mycursor, account_list, list_feed_path):
     query = f"SELECT * FROM {account_list}"
     mycursor.execute(query)
-    list_items = mycursor.fetchall()
+    list_results = mycursor.fetchall()
+    list_items = [list(item) for item in list_results]
 
     for srv in Config.DEPLOYMENTS_SERVERS:
         # Generate here the feed for this list
