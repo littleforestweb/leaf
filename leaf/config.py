@@ -77,7 +77,7 @@ def checkConfig(loaded_json):
         "SAML_ATTRIBUTES_MAP": {},
         "POWER_USER_GROUP": "admin",
         "XMLSEC_BINARY": "",
-        "SITE_NOTICE": "This is a site notice that you can control on your config.json file. Keep it empty to remove the notice!"
+        "SITE_NOTICE": "This is a site notice that you can control on your config.json file. Keep it empty to remove the notice!",
         "PAGES_EXTENSION": ".page"
     }
 
