@@ -107,7 +107,7 @@ def save_page():
         update_modified_date(page_id)
 
         # Set previewURL
-        previewURL = html_path.replace(Config.WEBSERVER_FOLDER, Config.PREVIEW_SERVER + '/')
+        previewURL = html_path.replace(Config.WEBSERVER_FOLDER.rstrip("/"), Config.PREVIEW_SERVER.rstrip("/"))
 
         # Return info back to view
         json_response = {"message": "success", "previewURL": previewURL}
