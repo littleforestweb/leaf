@@ -123,8 +123,6 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
     // Init CKEditor
     CKEDITOR.replace("htmlCode", {
-        fullPage: true,
-        allowedContent: true,
         toolbar: [
             {name: "clipboard", items: ["Cut", "Copy", "Paste", "PasteText", "PasteFromWord", "-", "Undo", "Redo"]},
             {name: "basicstyles", items: ["Bold", "Italic", "Underline", "Strike"]},
@@ -145,8 +143,6 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
                 // Define element selectors to be blocked from editing
                 let selectorsToBlock = ["head"];
-
-                // Loop through each selector and set contenteditable to false for matching elements
                 selectorsToBlock.forEach(function (selector) {
                     let elements = editor.editable().$.querySelectorAll(selector);
                     elements.forEach(function (element) {
