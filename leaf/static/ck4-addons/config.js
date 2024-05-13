@@ -10,7 +10,7 @@ CKEDITOR.editorConfig = function (config) {
 
     // Allow full-page editing.
     // WARNING: This opens up significant security risks.
-    config.fullPage = true;
+    // config.fullPage = true;
 
     // You can uncomment these lines if you want to remove protection for anchor tags.
     // WARNING: This can expose your application to XSS attacks if not properly handled.
