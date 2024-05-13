@@ -4,7 +4,7 @@
  */
 
 CKEDITOR.editorConfig = function (config) {
-    // Define changes to default configuration here. For example:
+    config.allowedContent = true;
     config.pasteImageInline = true;
     config.autoEmbed_widget = 'customEmbed';
     config.iframe_attributes = {
