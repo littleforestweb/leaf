@@ -1016,7 +1016,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                                 list_page_url = list_page_url.replace("{" + field + "}", single_field)
 
                     if key.lower() == 'id' or key.lower() == 'modified_by' or key.lower() == 'created_by':
-                        continue  # Skip if it's the id key
+                        continue  # Skip if it's the id key, modified_by key or created_by key
 
                     if is_empty_or_whitespace(value):
                         continue  # Skip creating element for empty or whitespace-only values
