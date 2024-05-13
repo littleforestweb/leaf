@@ -9,7 +9,7 @@ from leaf.decorators import db_connection
 
 
 # Function to get the HTML path for the specified page
-def get_page_html_path(page_id):
+def get_page_details(page_id):
     """
     Get the HTML path for the specified page.
 
@@ -30,7 +30,7 @@ def get_page_html_path(page_id):
         # Close the database connection
         mydb.close()
         return html_path
-    except (mysql.connector.Error, FileNotFoundError):
+    except Exception as ex:
         raise
 
 
