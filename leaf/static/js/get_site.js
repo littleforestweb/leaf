@@ -68,6 +68,12 @@ async function addWorkflow(btn) {
 }
 
 async function duplicatePage() {
+    // Check if user has access to any folder
+    if (user_access_folder.length === 0) {
+        $(".emptyUserAccessFolderNotification").toast().show();
+        return;
+    }
+
     let checkedRow = $('#table').DataTable().rows(function (idx, data, node) {
         return $(node).find('.dt-checkboxes:input[type="checkbox"]:checked').val();
     }).data().toArray()[0];

@@ -84,16 +84,16 @@ def duplicate_page(site_id, ogPageId, ogURL, newTitle, newURL):
         # Connect to DB
         mydb, mycursor = db_connection()
 
-        # Parse ogURL and newURL
-        ogURL = ogURL.lstrip("/")
-        newURL = newURL.lstrip("/")
-
         # Get Folders that the user has access to
         user_access_folder = get_user_access_folder()
 
         # Check if newURL belongs to any of the auth folders
         if not any(newURL.startswith(folder) for folder in user_access_folder):
             return {"error": "Forbidden"}, 403
+
+        # Parse ogURL and newURL
+        ogURL = ogURL.lstrip("/")
+        newURL = newURL.lstrip("/")
 
         # Set the new Full URL
         mycursor.execute("SELECT url, screenshotPath FROM site_meta WHERE id=%s", (ogPageId,))
