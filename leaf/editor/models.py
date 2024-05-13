@@ -46,7 +46,7 @@ def add_base_href(data):
         str: HTML content with added base href.
     """
     try:
-        soup = BeautifulSoup(data, "html5lib")
+        soup = BeautifulSoup(data, "html.parser")
 
         # Find the head tag and add base tag
         head_tag = soup.find("head")
@@ -73,7 +73,7 @@ def remove_base_href(data):
     """
     try:
         # Parse the HTML content
-        soup = BeautifulSoup(data, "html5lib")
+        soup = BeautifulSoup(data, "html.parser")
 
         # Find and remove the base tag
         base_tag = soup.find("base")
@@ -96,7 +96,7 @@ def save_html_to_disk(html_path, data):
     try:
         # Open the file and write the HTML content
         with open(html_path, "w") as outFile:
-            data = BeautifulSoup(data, "html5lib").prettify()
+            data = BeautifulSoup(data, "html.parser").prettify()
             outFile.write(data)
     except (FileNotFoundError, Exception):
         raise

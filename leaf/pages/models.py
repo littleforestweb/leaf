@@ -126,7 +126,7 @@ def duplicate_page(site_id, ogPageId, ogURL, newTitle, newURL):
         # Open the new page
         with open(destination_file) as inFile:
             data = inFile.read()
-            soup = BeautifulSoup(data, "html5lib")
+            soup = BeautifulSoup(data, "html.parser")
 
         # Find the title tag and change its content
         title_tag = soup.find('title')
