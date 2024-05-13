@@ -7,7 +7,7 @@ import re
 import paramiko
 import werkzeug.utils
 from bs4 import BeautifulSoup
-from flask import render_template, Blueprint, jsonify, request, session, url_for, send_from_directory
+from flask import render_template, Blueprint, jsonify, request, session, url_for, send_from_directory, current_app
 
 from leaf import decorators
 from leaf.config import Config
@@ -351,7 +351,7 @@ def action_workflow():
                 outFile.write(data)
 
             # Get all assets on the page
-            soup = BeautifulSoup(original_content, "html.parser")
+            soup = BeautifulSoup(original_content, "html5lib")
             imgAssets = [asset["src"] for asset in soup.find_all("img", {"src": lambda src: src and Config.IMAGES_WEBPATH in src})]
             pdfAssets = [asset["href"] for asset in soup.find_all("a", {"href": lambda href: href and href.endswith(".pdf") and Config.IMAGES_WEBPATH in href})]
             assets = imgAssets + pdfAssets
