@@ -8,6 +8,15 @@ CKEDITOR.editorConfig = function (config) {
     // WARNING: This can expose your application to XSS attacks.
     config.allowedContent = true;
 
+    // Allow full-page editing.
+    // WARNING: This opens up significant security risks.
+    config.fullPage = true;
+
+    // You can uncomment these lines if you want to remove protection for anchor tags.
+    // WARNING: This can expose your application to XSS attacks if not properly handled.
+    config.protectedSource.push(/<a[\s\S]*?\>/g);
+    config.protectedSource.push(/<\/a[\s\S]*?\>/g);
+
     // Allow pasting images as inline images.
     config.pasteImageInline = true;
 
@@ -18,9 +27,4 @@ CKEDITOR.editorConfig = function (config) {
     config.iframe_attributes = {
         sandbox: 'allow-scripts allow-same-origin'
     };
-
-    // You can uncomment these lines if you want to remove protection for anchor tags.
-    // WARNING: This can expose your application to XSS attacks if not properly handled.
-    config.protectedSource.push(/<a[\s\S]*?\>/g);
-    config.protectedSource.push(/<\/a[\s\S]*?\>/g);
 };
