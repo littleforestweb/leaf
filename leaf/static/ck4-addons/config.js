@@ -27,4 +27,7 @@ CKEDITOR.editorConfig = function (config) {
     config.iframe_attributes = {
         sandbox: 'allow-scripts allow-same-origin'
     };
+
+    config.clipboard_handleImages = false;
+    config.removePlugins = "exportpdf";
 };

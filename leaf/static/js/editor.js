@@ -35,16 +35,6 @@ window.addEventListener('DOMContentLoaded', async function main() {
     });
     data = data.data;
 
-    // Find if page has carousel
-    let parser = new DOMParser();
-    let htmlDoc = parser.parseFromString(data, "text/html");
-    let linkElems = htmlDoc.getElementsByTagName("link");
-    for (const linkElem of linkElems) {
-        htmlDoc.getElementsByTagName("head")[0].appendChild(linkElem);
-    }
-    let serializer = new XMLSerializer();
-    data = serializer.serializeToString(htmlDoc);
-
     // Set html code to ckeditor textarea
     document.getElementById("htmlCode").value = data;
 
