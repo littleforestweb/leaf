@@ -52,11 +52,8 @@ def add_base_href(data):
         head_tag = soup.find("head")
         base_tag = soup.new_tag("base", href=Config.PREVIEW_SERVER)
         head_tag.insert(0, base_tag)
-
-        # Prettify the HTML content
-        data = soup.prettify()
-        return data
-    except (FileNotFoundError, Exception):
+        return soup.prettify()
+    except Exception:
         raise
 
 
@@ -73,12 +70,12 @@ def remove_base_href(data):
     """
     try:
         # Parse the HTML content
-        soup = BeautifulSoup(data, "html5lib")
+        soup = BeautifulSoup(data, "html.parser")
 
         # Find and remove the base tag
         base_tag = soup.find("base")
         if base_tag:
-            base_tag.extract()  # Remove the base tag if it exists
+            base_tag.extract()
         return soup.prettify()
     except Exception:
         raise
@@ -93,12 +90,13 @@ def save_html_to_disk(html_path, data):
         html_path (str): Path to save the HTML file.
         data (str): HTML content to be saved.
     """
+
     try:
         # Open the file and write the HTML content
         with open(html_path, "w") as outFile:
             data = BeautifulSoup(data, "html5lib").prettify()
             outFile.write(data)
-    except (FileNotFoundError, Exception):
+    except Exception as ex:
         raise
 
 
