@@ -71,6 +71,7 @@ async function duplicatePage() {
     // Check if user has access to any folder
     if (user_access_folder.length === 0) {
         $(".emptyUserAccessFolderNotification").toast().show();
+        $('#renameModal').modal('hide');
         return;
     }
 
