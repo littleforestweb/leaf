@@ -193,7 +193,8 @@ def lock_unlock_page(page_id, site_id, action):
     action (str): Specifies the action to perform. Expected values are "lock" or "unlock".
 
     Returns:
-    bool: True if the action was successfully executed, False otherwise.
+    is_page_locked: True if the action was successfully executed, False otherwise.
+    page_locked_status: The new page status
 
     Raises:
     ValueError: If 'action' is neither "lock" nor "unlock".
@@ -207,7 +208,6 @@ def lock_unlock_page(page_id, site_id, action):
     try:
         # Get a database connection using the 'db_connection' decorator
         mydb, mycursor = decorators.db_connection()
-        
         # SQL to update the page state
         if action == "lock":
             sql = """
@@ -224,7 +224,7 @@ def lock_unlock_page(page_id, site_id, action):
             """
             mycursor.execute(sql, (page_id, site_id))
 
-            mydb.commit()
+        mydb.commit()
     except Exception as e:
         mydb.rollback()
         raise

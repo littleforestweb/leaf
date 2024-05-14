@@ -14,8 +14,9 @@ CKEDITOR.editorConfig = function (config) {
 
     // You can uncomment these lines if you want to remove protection for anchor tags.
     // WARNING: This can expose your application to XSS attacks if not properly handled.
-    config.protectedSource.push(/<a[\s\S]*?\>/g);
-    config.protectedSource.push(/<\/a[\s\S]*?\>/g);
+
+    config.removeEmptyElements = false;
+    config.extraAllowedContent = '*(*);*{*}';
 
     // Allow pasting images as inline images.
     config.pasteImageInline = true;

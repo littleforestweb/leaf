@@ -4,7 +4,7 @@ import werkzeug.utils
 from flask import Blueprint, jsonify, request
 
 from leaf.decorators import login_required
-from .models import get_page, get_screenshot, duplicate_page
+from .models import get_page, get_screenshot, duplicate_page, get_site_id
 
 # Create a Blueprint for the pages routes
 pages = Blueprint('pages', __name__)
@@ -20,7 +20,7 @@ def get_page_route():
     Route to get a specific page.
 
     Returns:
-        send_from_directory: Send HTML file from the directory.
+        get_page: Send HTML file from the directory.
     """
     try:
         pageId = int(werkzeug.utils.escape(request.args.get('id', type=str)))
@@ -30,6 +30,22 @@ def get_page_route():
         return jsonify({"error": str(e)}), 500
 
 
+@pages.route('/api/get_site_id')
+@login_required
+def api_get_site_id():
+    """
+    Check if the site id related to a page.
+
+    Returns:
+        get_site_id: Send site id based on the page id.
+    """
+    try:
+        pageId = int(werkzeug.utils.escape(request.args.get('page_id', type=str)))
+        return get_site_id(pageId)
+    except Exception as e:
+        # Handle exceptions and return an error response with status code 500
+        return jsonify({"error": str(e)}), 500
+
 @pages.route('/get_screenshot')
 @login_required
 def get_screenshot_route():
@@ -37,7 +53,7 @@ def get_screenshot_route():
     Route to get the screenshot of a specific page.
 
     Returns:
-        send_from_directory: Send screenshot file from the directory.
+        get_screenshot: Send screenshot file from the directory.
     """
     try:
         pageId = int(werkzeug.utils.escape(request.args.get('id', type=str)))

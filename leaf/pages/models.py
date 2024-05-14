@@ -36,6 +36,30 @@ def get_page(pid):
     except Exception as e:
         raise
 
+def get_site_id(page_id):
+    """
+    Get a specific page from the database and serve its site_id.
+
+    Args:
+        page_id (int): The ID of the page to retrieve.
+
+    Returns:
+        site_id: The site id related to that page id.
+
+    Raises:
+        Exception: If there is an error during the retrieval or serving process.
+    """
+    try:
+        # Search DB for local file
+        mydb, mycursor = db_connection()
+        query = "SELECT site_id FROM site_meta WHERE id=%s"
+        params = (page_id,)
+        mycursor.execute(query, params)
+        site_id = mycursor.fetchone()[0]
+        return str(site_id)
+    except Exception as e:
+        raise
+
 
 def get_screenshot(pageId):
     """

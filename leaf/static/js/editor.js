@@ -15,6 +15,12 @@ async function savePage() {
             previewBtn.href = entry.previewURL;
             previewBtn.target = "_blank";
 
+            startInactivityTimer(page_id);
+
+            // Reset the timer on user actions
+            // document.addEventListener('mousemove', function() { startInactivityTimer(page_id); });
+            // document.addEventListener('keypress', function() { startInactivityTimer(page_id); });
+
             $('#savedNotification').toast('show');
         }, error: function (XMLHttpRequest, textStatus, errorThrown) {
             console.log("save error");
@@ -27,8 +33,6 @@ async function publishPage() {
 }
 
 window.addEventListener('DOMContentLoaded', async function main() {
-    console.log("Starting Editor");
-
     // Load page html code
     let data = await $.get("/editor/getPageCode?page_id=" + page_id, function (htmlContent) {
         return htmlContent;
@@ -127,6 +131,11 @@ window.addEventListener('DOMContentLoaded', async function main() {
         filebrowserUploadUrl: "/api/upload?name=fileupload",
         embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}',
         on: {
+            setData: function(event) {
+                // Regex to find empty <a> tags
+                var emptyAnchorRegex = /<a([^>]*?)>\s*<\/a>/g;
+                event.data.dataValue = event.data.dataValue.replace(emptyAnchorRegex, '<a$1>&nbsp;</a>');
+            },
             instanceReady: function (evt) {
                 // Get the CKEditor instance
                 let editor = evt.editor;
@@ -139,6 +148,23 @@ window.addEventListener('DOMContentLoaded', async function main() {
                         element.setAttribute("contenteditable", "false");
                     });
                 });
+
+                editor.on('beforeCommandExec', function(event) {
+                    if (editor.mode === 'wysiwyg') {
+                        // Trying to prevent the undo JUMP that breaks the tabs
+                    }
+                });
+
+                check_if_page_is_locked(page_id);
+
+                var is_locked = false;
+                // Usage with CKEditor change event
+                editor.on('change', debounce(function() {
+                    if (is_locked != true) {
+                        lockPage(page_id, "lock");
+                        is_locked = true;
+                    }
+                }, 250)); // Adjust debounce time as necessary
             }
         }
     });
@@ -147,7 +173,93 @@ window.addEventListener('DOMContentLoaded', async function main() {
     $(".loadingBg").removeClass("show");
 });
 
+function debounce(func, wait, immediate) {
+    var timeout;
+    return function() {
+        var context = this, args = arguments;
+        var later = function() {
+            timeout = null;
+            if (!immediate) func.apply(context, args);
+        };
+        var callNow = immediate && !timeout;
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+        if (callNow) func.apply(context, args);
+    };
+}
 
+var unlockTimeout;
 
+function startInactivityTimer(page_id) {
+    // Clear existing timeout to reset the timer whenever user activity is detected
+    clearTimeout(unlockTimeout);
 
+    // Set a new timeout
+    unlockTimeout = setTimeout(function() {
+        lockPage(page_id, "unlock");
+        console.log("Page unlocked due to inactivity.");
+    }, 300000); // 300000 milliseconds = 5 minutes
+}
 
+window.onbeforeunload = function() {
+    let site_id = await $.get("/api/get_site_id?page_id=" + page_id, function (site_id) {
+        return site_id;
+    });
+    // Attempt to notify the server about the closure
+    navigator.sendBeacon('/api/lock_unlock_page', JSON.stringify({ page_id: page_id, site_id: site_id, action: "unlock" }));
+    return null;
+};
+
+async function lockPage(page_id, action) {
+    let site_id = await $.get("/api/get_site_id?page_id=" + page_id, function (site_id) {
+        return site_id;
+    });
+
+    $.ajax({
+        url: '/api/lock_unlock_page',  // URL of the Flask route
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            page_id: page_id,
+            site_id: site_id,
+            action: action
+        }),
+        success: function(response) {
+            if (response["is_page_locked"] === true) {
+                console.log("Page is now locked!");
+            }
+        },
+        error: function(response) {
+            console.log('Error:', response);
+            alert('Failed to perform the action: ' + response.responseText);
+        }
+    });
+}
+
+async function check_if_page_is_locked(page_id) {
+    let site_id = await $.get("/api/get_site_id?page_id=" + page_id, function (site_id) {
+        return site_id;
+    });
+
+    $.ajax({
+        url: '/api/check_if_page_locked_by_me',  // URL of the Flask route
+        type: 'GET',
+        data: {
+            page_id: page_id,
+            site_id: site_id
+        },
+        success: function(response) {
+            if (response && response["locked_by_me"] === true) {
+                console.log("Page locked by me! Keep editing..");
+            } else if (response && response["user_id"] === false) {
+                lockPage(page_id, "unlock");
+            } else {
+                console.log("Lets make the modal to request to unlock the page");
+            } 
+        },
+        error: function(response) {
+            console.log('Error:', response);
+            alert('Failed to perform the action: ' + response.responseText);
+        }
+    });
+}

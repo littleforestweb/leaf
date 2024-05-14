@@ -310,9 +310,9 @@ function unlockPage(page_id, action, thisBtn) {
         success: function(response) {
             if (response["is_page_locked"] === false) {
                 var jqBtn = $(thisBtn); // Ensure jQuery object
-                var parentTd = jqBtn.closest('td'); // Find the closest TD ancestor
-                jqBtn.remove(); // Remove the button
-                parentTd.find("a.disabled").removeClass("disabled").removeAttr("disabled");
+                var parentTd = jqBtn.closest('td').closest('tr'); // Find the closest TD ancestor
+                jqBtn.closest('td').html("Unlocked") // Remove the button
+                parentTd.find("a.disabled.unlock-btn").removeClass("disabled").removeAttr("disabled");
             }
         },
         error: function(response) {
@@ -393,13 +393,21 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [5],
                 mData: function (source, type, val) {
-                    let buttons = "<a class='" + (source["Locked"] === 0 ? "not_locked" : "disabled") + " btn btn-sm' target='_blank' href='/editor?page_id=" + source["id"] + "' " + (source["Locked"] === 0 ? "" : " disabled") + ">Edit</a>";
+                    let buttons = "Unlocked";
                     if (source["Locked"] === 1) {
-                        buttons = buttons + "<input style='margin-left:5px' type='button' class='btn btn-sm btn-primary' onclick='requestUnlockPage(\"" + source["id"] + "\", \"unlock\", this)' value='Unlock it' />";
+                        buttons = "<input style='margin-left:5px' type='button' class='btn btn-sm btn-primary' onclick='requestUnlockPage(\"" + source["id"] + "\", \"unlock\", this)' value='Unlock it' />";
                     }
                     return buttons;
                 }
+            },
+            {
+                aTargets: [6],
+                mData: function (source, type, val) {
+                    let buttons = "<a class='" + (source["Locked"] === 0 ? "not_locked" : "disabled unlock-btn") + " btn btn-sm' target='_blank' href='/editor?page_id=" + source["id"] + "' " + (source["Locked"] === 0 ? "" : " disabled") + ">Edit</a>";
+                    return buttons;
+                }
             }
+            
         ],
         initComplete: function () {
             // For each column
