@@ -124,6 +124,117 @@ def get_user_access_folder(mycursor=None):
     mycursor.execute(query, (session["id"],))
     return [folder_path[0] for folder_path in mycursor.fetchall()]
 
+def check_if_page_locked_by_me(page_id):
+    """
+    Checks if the specified page is locked by the current session user. It queries the database to find the user 
+    who has locked the page and compares it with the current session user.
+
+    Parameters:
+    - page_id (int or str): The ID of the page whose lock status is being checked. Although typically an integer,
+      it may be passed as a string if not cast beforehand.
+
+    Returns:
+    - dict: A dictionary containing the lock status and details of the user who locked the page. The dictionary 
+      includes:
+        - user_id (int or False): The user ID of the user who locked the page or False if no user found.
+        - username (str or False): The username of the user who locked the page or False if no user found.
+        - email (str or False): The email of the user who locked the page or False if no user found.
+        - locked_by_me (bool): True if the current session user locked the page, False otherwise.
+
+    Raises:
+    - Exception: Propagates any exceptions that occur during database operations, including connection issues
+      or SQL errors. The exception contains a message that can help identify the failure point.
+    """
+    user_id = session["id"]
+
+    result = {
+        'user_id': False,
+        'username': False,
+        'email': False,
+        'locked_by_me': False
+    }
+    try:
+        # Get a database connection using the 'db_connection' decorator
+        mydb, mycursor = decorators.db_connection()
+
+        # Query to check who locked the page
+        mycursor.execute("""
+            SELECT u.id, u.username, u.email
+            FROM site_meta sa
+            JOIN user u ON sa.locked_by = u.id
+            WHERE sa.id = %s
+        """, [page_id])
+
+        row = mycursor.fetchone()
+        if row:
+            result = {
+                'user_id': row[0],
+                'username': row[1],
+                'email': row[2],
+                'locked_by_me': (row[0] == session['id'])
+            }
+
+        mydb.commit()
+    except Exception as e:
+        mydb.rollback()
+        raise
+    finally:
+        mydb.close()
+
+    return result
+
+def lock_unlock_page(page_id, site_id, action):
+    """
+    Locks or unlocks a page in the `site_meta` table based on the given action.
+
+    Parameters:
+    page_id (int): The unique identifier for the page.
+    site_id (int): The identifier of the site where the page is located.
+    action (str): Specifies the action to perform. Expected values are "lock" or "unlock".
+
+    Returns:
+    bool: True if the action was successfully executed, False otherwise.
+
+    Raises:
+    ValueError: If 'action' is neither "lock" nor "unlock".
+    Exception: If database queries fail or connections are problematic.
+    """
+
+    # Validate the action input
+    if action not in ["lock", "unlock"]:
+        raise ValueError("Action must be 'lock' or 'unlock'")
+
+    try:
+        # Get a database connection using the 'db_connection' decorator
+        mydb, mycursor = decorators.db_connection()
+        
+        # SQL to update the page state
+        if action == "lock":
+            sql = """
+            UPDATE site_meta 
+            SET locked = 1, locked_by = %s 
+            WHERE id = %s AND site_id = %s
+            """
+            mycursor.execute(sql, (session["id"], page_id, site_id))
+        elif action == "unlock":
+            sql = """
+            UPDATE site_meta 
+            SET locked = 0, locked_by = NULL 
+            WHERE id = %s AND site_id = %s
+            """
+            mycursor.execute(sql, (page_id, site_id))
+
+            mydb.commit()
+    except Exception as e:
+        mydb.rollback()
+        raise
+    finally:
+        mydb.close()
+
+    if action == "lock":
+        return { "is_page_locked": True, "page_locked_status": action }
+    if action == "unlock":
+        return { "is_page_locked": False, "page_locked_status": action }
 
 def get_site_data(site_id):
     """
@@ -148,15 +259,15 @@ def get_site_data(site_id):
         folder_paths = get_user_access_folder(mycursor)
 
         # Get pages from the site
-        query = "SELECT id, id, title, HTMLPath, modified_date, id FROM site_meta WHERE status <> -1 AND site_id = %s"
+        query = "SELECT id, id, title, HTMLPath, modified_date, id, modified_by, locked, locked_by FROM site_meta WHERE status <> -1 AND site_id = %s"
         mycursor.execute(query, [site_id])
         site_pages = mycursor.fetchall()
 
         # Filter pages based on user access
         if session["is_admin"] == 0:
-            access_pages = [{"id": page[0], "Screenshot": page[1], "Title": page[2], "URL": os.path.join(Config.PREVIEW_SERVER, page[3]), "Modified Date": page[4], "Action": page[5]} for page in site_pages if any(page[3].startswith(path.lstrip("/")) for path in folder_paths)]
+            access_pages = [{"id": page[0], "Screenshot": page[1], "Title": page[2], "URL": os.path.join(Config.PREVIEW_SERVER, page[3]), "Modified Date": page[4], "Action": page[5], "Modified By": page[6], "Locked": page[7], "Locked By": page[8]} for page in site_pages if any(page[3].startswith(path.lstrip("/")) for path in folder_paths)]
         else:
-            access_pages = [{"id": page[0], "Screenshot": page[1], "Title": page[2], "URL": os.path.join(Config.PREVIEW_SERVER, page[3]), "Modified Date": page[4], "Action": page[5]} for page in site_pages]
+            access_pages = [{"id": page[0], "Screenshot": page[1], "Title": page[2], "URL": os.path.join(Config.PREVIEW_SERVER, page[3]), "Modified Date": page[4], "Action": page[5], "Modified By": page[6], "Locked": page[7], "Locked By": page[8]} for page in site_pages]
 
         return access_pages
 

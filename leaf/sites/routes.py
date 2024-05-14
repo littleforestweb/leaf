@@ -117,6 +117,102 @@ def view_get_site():
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
 
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
+@sites.route('/api/check_if_page_locked_by_me')
+@login_required
+def api_check_if_page_locked_by_me():
+    """
+    Checks if a specific page is currently locked by the user making the request. 
+    This endpoint verifies if the specified site associated with the page belongs to the user's account 
+    and checks if the page is locked by this user.
+
+    This function is called via a GET request where `page_id` and `site_id` are required parameters.
+
+    Parameters:
+    - page_id (str): The unique identifier of the page to check. It is expected to be a string parameter 
+      passed in the query string.
+    - site_id (str): The unique identifier of the site that the page belongs to. This is used to 
+      verify that the user has the right to view the lock status of the page.
+
+    Returns:
+    - JSON response:
+        - If successful, returns a JSON object that indicates whether the page is locked by the user,
+          along with additional information if applicable.
+        - If the user does not have permission to access the site, returns a JSON object with an
+          "error" key and "Forbidden" as the message, with a 403 status code.
+        - If an error occurs during processing, returns a JSON object with an "error" key describing 
+          the error, with a 500 status code.
+
+    Raises:
+    - HTTP 403: Returned if the specified site does not belong to the user's account, indicating
+      forbidden access.
+    - HTTP 500: Returned if there is any exception during the processing of the request, indicating 
+      an internal server error.
+    """
+    try:
+        page_id = werkzeug.utils.escape(request.args.get("page_id", type=str))
+        site_id = werkzeug.utils.escape(request.args.get("site_id", type=str))
+
+
+        # Check if the specified site belongs to the user's account
+        if not models.site_belongs_to_account(int(site_id)):
+            return jsonify({"error": "Forbidden"}), 403
+
+        return jsonify(models.check_if_page_locked_by_me(page_id))
+
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
+@sites.route('/api/lock_unlock_page', methods=['POST'])
+@login_required
+def api_lock_unlock_page():
+    """
+    API endpoint to lock or unlock a page on a site. It processes user input from POST data,
+    checks if the site belongs to the user's account, and then performs the lock or unlock action.
+
+    This route expects JSON payload with 'page_id', 'site_id', and 'action'. The 'action' can be
+    either "lock" or "unlock". It ensures that the request comes from an authenticated user and
+    that the site_id is associated with the user's account.
+
+    Payload:
+    - page_id (int): Identifier of the page to be modified.
+    - site_id (int): Identifier of the site where the page resides.
+    - action (str): Specifies the action to perform ("lock" or "unlock").
+
+    Returns:
+    - JSON response with success message or error details.
+    - HTTP status code indicating the outcome (200 for success, 403 for forbidden access, 500 for internal errors).
+
+    Raises:
+    - HTTP 403: If the site does not belong to the user's account.
+    - HTTP 500: If an unexpected error occurs during the process.
+    """
+    try:
+        data = request.json
+        page_id = data['page_id']
+        site_id = data['site_id']
+        action = data['action']
+
+        # Check if the specified site belongs to the user's account
+        if not models.site_belongs_to_account(int(site_id)):
+            return jsonify({"error": "Forbidden"}), 403
+
+        return jsonify(models.lock_unlock_page(page_id, site_id, action))
+
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
 
 @sites.route('/api/get_site')
 @login_required
@@ -156,6 +252,8 @@ def api_get_site():
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
 
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
 
 @sites.route('/api/get_site_log')
 @login_required
@@ -189,7 +287,6 @@ def api_get_site_log():
         # Log the exception or handle it as appropriate for your application
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
-
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -230,7 +327,6 @@ def add_site():
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
 
-
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -249,9 +345,7 @@ def update_site():
 
     Returns:
         JSON response: A JSON response indicating the success of the update and providing information about the updated site.
-
     """
-
     try:
 
         # Get parameters from the post request
@@ -273,7 +367,6 @@ def update_site():
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
 
-
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -292,7 +385,6 @@ def delete_sites():
     Returns:
         JSON response: A JSON response indicating the success of the delete operation and providing information about the deleted sites.
     """
-
     try:
         # Get sites_to_delete from post params
         sites_to_delete = werkzeug.utils.escape(request.form.get("sites_to_delete"))

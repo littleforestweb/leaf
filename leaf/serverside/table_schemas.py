@@ -35,6 +35,21 @@ SERVERSIDE_TABLE_COLUMNS = {
             "column_name": "Action",
             "default": "",
             "order": 7
+        }, {
+            "data_name": "Modified By",
+            "column_name": "Modified By",
+            "default": "",
+            "order": 8
+        }, {
+            "data_name": "Locked",
+            "column_name": "Locked",
+            "default": "",
+            "order": 9
+        }, {
+            "data_name": "Locked By",
+            "column_name": "Locked By",
+            "default": "",
+            "order": 10
         },
     ],
     "get_site_files": [

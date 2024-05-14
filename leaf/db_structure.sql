@@ -152,6 +152,9 @@ CREATE TABLE IF NOT EXISTS `site_meta` (
   `screenshotPath` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
   `modified_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `add_by` int DEFAULT NULL,
+  `modified_by` varchar(45) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `locked_by` INT(11) NULL DEFAULT NULL,
+  `locked` INT(11) NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `FK_site_id` (`site_id`),
   CONSTRAINT `FK_site_id` FOREIGN KEY (`site_id`) REFERENCES `sites` (`id`) ON DELETE CASCADE

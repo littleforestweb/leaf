@@ -275,10 +275,54 @@ function stopPropagation(evt) {
     }
 }
 
-window.addEventListener('DOMContentLoaded', async function main() {
-    console.log("Starting");
-    console.log("Get Site");
+function requestUnlockPage(page_id, action, thisBtn) {
+    $.ajax({
+        url: '/api/check_if_page_locked_by_me',
+        type: 'GET',
+        data: {
+            page_id: page_id,
+            site_id: site_id
+        },
+        success: function(response) {
+            if (response && response["locked_by_me"] === true || response && response["user_id"] === false) {
+                unlockPage(page_id, action, thisBtn);
+            } else {
+                console.log("Lets make the modal to request to unlock the page");
+            } 
+        },
+        error: function(response) {
+            console.log('Error:', response);
+            alert('Failed to perform the action: ' + response.responseText);
+        }
+    });
+}
 
+function unlockPage(page_id, action, thisBtn) {
+    $.ajax({
+        url: '/api/lock_unlock_page',  // URL of the Flask route
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            page_id: page_id,
+            site_id: site_id,
+            action: action
+        }),
+        success: function(response) {
+            if (response["is_page_locked"] === false) {
+                var jqBtn = $(thisBtn); // Ensure jQuery object
+                var parentTd = jqBtn.closest('td'); // Find the closest TD ancestor
+                jqBtn.remove(); // Remove the button
+                parentTd.find("a.disabled").removeClass("disabled").removeAttr("disabled");
+            }
+        },
+        error: function(response) {
+            console.log('Error:', response);
+            alert('Failed to perform the action: ' + response.responseText);
+        }
+    });
+}
+
+window.addEventListener('DOMContentLoaded', async function main() {
     // Reset Table
     $('#table').DataTable().clear().draw();
     $('#table').DataTable().destroy();
@@ -291,20 +335,27 @@ window.addEventListener('DOMContentLoaded', async function main() {
     $("#table").DataTable({
         dom: "Brtip",
         buttons: {
-            buttons: [{text: "Export", extend: "csv", filename: "Site Report", className: "btn-export"}], dom: {
+            buttons: [{
+                text: "Export",
+                extend: "csv", 
+                filename: "Site Report",
+                className: "btn-export"
+            }],
+            dom: {
                 button: {
                     className: "btn"
                 }
             }
         },
         language: {"emptyTable": "No data available in table or invalid permissions"},
-        bProcessing: true,
+        bProcessing: false,
         bServerSide: true,
         sPaginationType: "full_numbers",
         lengthMenu: [[50, 100, 250], [50, 100, 250]],
         sAjaxSource: "/api/get_site?id=" + site_id,
         order: [[0, "asc"]],
-        bAutoWidth: false,
+        autoWidth: true,
+        stateSave: true,
         aoColumnDefs: [
             {
                 aTargets: [0],
@@ -342,17 +393,22 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [5],
                 mData: function (source, type, val) {
-                    return "<a class='btn btn-sm' target='_blank' href='/editor?page_id=" + source["id"] + "'>Edit</a>";
+                    let buttons = "<a class='" + (source["Locked"] === 0 ? "not_locked" : "disabled") + " btn btn-sm' target='_blank' href='/editor?page_id=" + source["id"] + "' " + (source["Locked"] === 0 ? "" : " disabled") + ">Edit</a>";
+                    if (source["Locked"] === 1) {
+                        buttons = buttons + "<input style='margin-left:5px' type='button' class='btn btn-sm btn-primary' onclick='requestUnlockPage(\"" + source["id"] + "\", \"unlock\", this)' value='Unlock it' />";
+                    }
+                    return buttons;
                 }
             }
-        ], initComplete: function () {
+        ],
+        initComplete: function () {
             // For each column
             var api = this.api();
             api.columns().eq(0).each(function (colIdx) {
                 // Set the header cell to contain the input element
                 var cell = $(".filters th").eq($(api.column(colIdx).header()).index());
                 if (searchColumns.includes(colIdx)) {
-                    $(cell).html('<input type="text" oninput="stopPropagation(event)" onclick="stopPropagation(event);" class="form-control form-control-sm" placeholder="Search" />');
+                    $(cell).html('<input id="search_col_index_' + colIdx + '" type="text" oninput="stopPropagation(event)" onclick="stopPropagation(event);" class="form-control form-control-sm" placeholder="Search" />');
                 } else {
                     $(cell).html('<span></span>');
                 }
@@ -371,6 +427,19 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 });
             });
 
+            var api = this.api();
+            var state = api.state.loaded();
+            if (state) {
+                api.columns().eq(0).each(function (colIdx) {
+                    var colSearch = state.columns[colIdx].search;
+
+                    if (colSearch.search) {
+                        $('input', $('.filters th')[colIdx]).val(colSearch.search);
+                    }
+                });
+                api.draw();
+            }
+
             doMainButtons();
             $(".loadingBg").removeClass("show");
         }
@@ -379,5 +448,4 @@ window.addEventListener('DOMContentLoaded', async function main() {
     // Clean-up
     $("#table_wrapper > .dt-buttons").appendTo("div.header-btns");
     $(".loadingBg").removeClass("show");
-})
-;
+});

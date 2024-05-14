@@ -1989,7 +1989,6 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
     let jsonColumns = await $.get("/api/get_list_columns/" + accountId + "/" + reference, function (result) {
         return result;
     });
-    console.log(jsonColumns);
 
     let getAccountSettings = await $.get("/api/settings/" + accountId, function (allAccountSettings) {
         var images_webpath = allAccountSettings.images_webpath;
