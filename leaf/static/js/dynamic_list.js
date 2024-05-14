@@ -2272,32 +2272,32 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
         initComplete: function () {
             // For each column
             var api = this.api();
-            api.columns().eq(0).each(function (colIdx) {
-                // Set the header cell to contain the input element
-                var cell = $('.filters th').eq($(api.column(colIdx).header()).index());
-                if (searchColumns.includes(colIdx)) {
-                    $(cell).html('<input id="search_col_index_' + colIdx + '" type="text" oninput="stopPropagation(event)" onclick="stopPropagation(event);" class="form-control form-control-sm" placeholder="Search" />');
-                } else {
-                    $(cell).html('<span></span>');
-                }
-
-                // On every keypress in this input
-                $('input', $('.filters th').eq($(api.column(colIdx).header()).index())).off('keyup change').on('keyup change', function (e) {
-                    e.stopPropagation();
-                    // Get the search value
-                    $(this).attr('title', $(this).val());
-                    var regexr = '({search})';
-                    var cursorPosition = this.selectionStart;
-
-                    // Search the column for that value
-                    api.column(colIdx).search(this.value != '' ? regexr.replace('{search}', '(((' + this.value + ')))') : '', this.value != '', this.value == '').draw();
-                    $(this).focus()[0].setSelectionRange(cursorPosition, cursorPosition);
-                });
-            });
-
-            var api = this.api();
             var state = api.state.loaded();
+
             if (state) {
+                api.columns().eq(0).each(function (colIdx) {
+                    // Set the header cell to contain the input element
+                    var cell = $('.filters th').eq($(api.column(colIdx).header()).index());
+                    if (searchColumns.includes(colIdx)) {
+                        $(cell).html('<input id="search_col_index_' + colIdx + '" type="text" oninput="stopPropagation(event)" onclick="stopPropagation(event);" class="form-control form-control-sm" placeholder="Search" />');
+                    } else {
+                        $(cell).html('<span></span>');
+                    }
+
+                    // On every keypress in this input
+                    $('input', $('.filters th').eq($(api.column(colIdx).header()).index())).off('keyup change').on('keyup change', function (e) {
+                        e.stopPropagation();
+                        // Get the search value
+                        $(this).attr('title', $(this).val());
+                        var regexr = '({search})';
+                        var cursorPosition = this.selectionStart;
+
+                        // Search the column for that value
+                        api.column(colIdx).search(this.value != '' ? regexr.replace('{search}', '(((' + this.value + ')))') : '', this.value != '', this.value == '').draw();
+                        $(this).focus()[0].setSelectionRange(cursorPosition, cursorPosition);
+                    });
+                });
+
                 api.columns().eq(0).each(function (colIdx) {
                     var colSearch = state.columns[colIdx].search;
 
@@ -2305,6 +2305,7 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
                         $('input', $('.filters th')[colIdx]).val(colSearch.search.replace('((((', '').slice(0, -4));
                     }
                 });
+            } else {
                 api.draw();
             }
 
