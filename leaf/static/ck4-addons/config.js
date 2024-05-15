@@ -31,4 +31,5 @@ CKEDITOR.editorConfig = function (config) {
 
     config.clipboard_handleImages = false;
     config.removePlugins = "exportpdf";
+    config.autoParagraph = false;
 };
