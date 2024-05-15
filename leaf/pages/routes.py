@@ -4,7 +4,7 @@ import werkzeug.utils
 from flask import Blueprint, jsonify, request
 
 from leaf.decorators import login_required
-from .models import get_page, get_screenshot, duplicate_page, get_site_id
+from .models import get_page, get_screenshot, duplicate_page, get_site_id, get_page_details
 
 # Create a Blueprint for the pages routes
 pages = Blueprint('pages', __name__)
@@ -42,6 +42,22 @@ def api_get_site_id():
     try:
         pageId = int(werkzeug.utils.escape(request.args.get('page_id', type=str)))
         return get_site_id(pageId)
+    except Exception as e:
+        # Handle exceptions and return an error response with status code 500
+        return jsonify({"error": str(e)}), 500
+
+@pages.route('/api/get_page_details')
+@login_required
+def api_get_page_details():
+    """
+    Get page details.
+
+    Returns:
+        get_page_details: Get all page details.
+    """
+    try:
+        pageId = int(werkzeug.utils.escape(request.args.get('page_id', type=str)))
+        return get_page_details(pageId)
     except Exception as e:
         # Handle exceptions and return an error response with status code 500
         return jsonify({"error": str(e)}), 500

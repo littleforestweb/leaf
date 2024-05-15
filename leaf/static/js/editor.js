@@ -201,7 +201,7 @@ function startInactivityTimer(page_id) {
     }, 300000); // 300000 milliseconds = 5 minutes
 }
 
-window.onbeforeunload = function() {
+window.onbeforeunload = async function() {
     let site_id = await $.get("/api/get_site_id?page_id=" + page_id, function (site_id) {
         return site_id;
     });
@@ -248,13 +248,58 @@ async function check_if_page_is_locked(page_id) {
             page_id: page_id,
             site_id: site_id
         },
-        success: function(response) {
+        success: async function(response) {
             if (response && response["locked_by_me"] === true) {
                 console.log("Page locked by me! Keep editing..");
+                const queryParams = new URLSearchParams(window.location.search);
+                if (queryParams.get("action") === "request_unlock") {
+                    $('#unlockSelfModal').modal('show');
+
+                    document.getElementById('unlockAndLeave').addEventListener('click', function() {
+                        lockPage(page_id, "unlock");
+                        $('#unlockSelfModal').modal('hide');
+                    })
+                }
             } else if (response && response["user_id"] === false) {
                 lockPage(page_id, "unlock");
             } else {
-                console.log("Lets make the modal to request to unlock the page");
+                // Trigger the modal to open
+                $('#unlockRequestModal').modal('show');
+
+                let locked_by = await $.get("/api/get_single_user_by_value/" + account_id + "/" + response["user_id"], function (locked_by) {
+                    return locked_by;
+                });
+
+                let page_details = await $.get("/api/get_page_details?page_id=" + page_id, function (page_details) {
+                    return page_details;
+                });
+
+                document.getElementById("who_is_locking_this_page").innerHTML = locked_by.user[0]["username"];
+
+                document.getElementById('requestUnlockBtn').addEventListener('click', function() {
+                    $.ajax({
+                        url: '/api/request_unlock',  // URL to your Python route
+                        type: 'POST',
+                        data: JSON.stringify({
+                            page_id: page_id,
+                            site_id: site_id,
+                            to_send_user_id: locked_by.user[0]["id"],
+                            to_send_user_username: locked_by.user[0]["username"],
+                            to_send_user_email: locked_by.user[0]["email"],
+                            page_title: page_details['title'],
+                            page_url: page_details['url']
+                        }),
+                        contentType: 'application/json; charset=utf-8',
+                        success: function(result) {
+                            console.log('Request sent successfully');
+                            $('#unlockRequestModal').modal('hide');
+                            $('#requestSentModal').modal('show');
+                        },
+                        error: function(xhr, status, error) {
+                            console.log('Error sending request:', error);
+                        }
+                    });
+                });
             } 
         },
         error: function(response) {

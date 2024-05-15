@@ -20,6 +20,57 @@
     </div>
     <!-- END NOTIFICATIONS -->
 
+    <!-- LOCKED PAGE -->
+    <div class="modal fade" id="unlockRequestModal" tabindex="-1" aria-labelledby="unlockRequestModalLabel" aria-hidden="true" data-bs-backdrop='static'>
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="unlockRequestModalLabel">Unlock Request</h5>
+          </div>
+          <div class="modal-body">
+            The page is currently locked by <i><strong><span id="who_is_locking_this_page"></span></strong></i>. Please request an unlock to continue editing.
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" id="requestUnlockBtn">Request Unlock</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- END OF LOCKED PAGE -->
+
+    <!-- LOCKED SELF PAGE -->
+    <div class="modal fade" id="unlockSelfModal" tabindex="-1" aria-labelledby="unlockSelfModalLabel" aria-hidden="true" data-bs-backdrop='static'>
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="unlockSelfModalLabel">Unlock Request</h5>
+          </div>
+          <div class="modal-body">
+            The page is currently locked by you.
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" id="unlockAndLeave">Unlock page</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- END OF LOCKED SELF PAGE -->
+
+    <!-- Request Sent Confirmation Modal -->
+    <div class="modal fade" id="requestSentModal" tabindex="-1" aria-labelledby="requestSentModalLabel" aria-hidden="true" data-bs-backdrop='static'>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="requestSentModalLabel">Request Sent</h5>
+                </div>
+                <div class="modal-body">
+                    Your unlock request has been sent. Please wait for the page to be unlocked.
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End of Request Sent Confirmation Modal -->
+
     <!-- CODE IFRAME -->
     <div id="mainCodeDiv">
         <label for="htmlCode"></label>
@@ -33,5 +84,6 @@
     <script src="{{ url_for("static", filename="js/editor.js") }}"></script>
     <script>
         let page_id = '{{ page_id }}';
+        let account_id = '{{ accountId }}';
     </script>
 {% endblock %}

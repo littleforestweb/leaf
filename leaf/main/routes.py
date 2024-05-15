@@ -494,9 +494,6 @@ def api_get_single_user_by_value(accountId, thisUserId):
     # Extract user data and create a list of dictionaries
     users_list = [{"id": user[0], "username": user[1], "email": user[2]} for user in mycursor.fetchall()]
 
-    print("Testing users")
-    print(users_list)
-
     # Create JSON
     jsonR = {"user": users_list}
     mydb.close()
