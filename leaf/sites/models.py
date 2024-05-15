@@ -124,6 +124,7 @@ def get_user_access_folder(mycursor=None):
     mycursor.execute(query, (session["id"],))
     return [folder_path[0] for folder_path in mycursor.fetchall()]
 
+
 def check_if_page_locked_by_me(page_id):
     """
     Checks if the specified page is locked by the current session user. It queries the database to find the user 
@@ -183,6 +184,7 @@ def check_if_page_locked_by_me(page_id):
 
     return result
 
+
 def lock_unlock_page(page_id, site_id, action):
     """
     Locks or unlocks a page in the `site_meta` table based on the given action.
@@ -232,9 +234,10 @@ def lock_unlock_page(page_id, site_id, action):
         mydb.close()
 
     if action == "lock":
-        return { "is_page_locked": True, "page_locked_status": action }
+        return {"is_page_locked": True, "page_locked_status": action}
     if action == "unlock":
-        return { "is_page_locked": False, "page_locked_status": action }
+        return {"is_page_locked": False, "page_locked_status": action}
+
 
 def get_site_data(site_id):
     """

@@ -1,20 +1,20 @@
 import datetime
 import os
+import re
 import smtplib
 import subprocess
 import time
 import xml.etree.ElementTree as ET
 from email.message import EmailMessage
 from urllib.parse import unquote, urljoin
-import re
 
 import paramiko
-from flask import session, current_app
+import werkzeug.utils
+from flask import session
 
 from leaf import Config
 from leaf import decorators
 from leaf.users.models import get_user_permission_level
-import werkzeug.utils
 
 
 def is_workflow_owner(workflow_id):
@@ -291,7 +291,7 @@ def process_type_3(workflow_data, mycursor):
             workflow_data_temporary_url = Config.PREVIEW_SERVER + f"{list_page_url}" + Config.PAGES_EXTENSION
             protocol = "https://" if "https://" in workflow_data_temporary_url else "http://"
             clean_url = workflow_data_temporary_url.replace(protocol, "").replace("//", "/")
-            
+
             workflow_data["siteUrl"] = protocol + clean_url
             workflow_data["siteTitles"] = workflow_data["siteUrl"]
             workflow_data["list_feed_path"] = list_feed
@@ -937,6 +937,7 @@ def gen_sitemap(mycursor, site_id, thisType):
     tree = ET.ElementTree(urlset)
     tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
 
+
 def gen_feed(mycursor, account_list, list_feed_path, list_name):
     query = f"SELECT * FROM {account_list}"
     mycursor.execute(query)
@@ -1038,7 +1039,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                     normalized_key = camel_case_convert(key)
                     sub_elem = ET.SubElement(item_elem, normalized_key)
                     sub_elem.text = value
-                    
+
                     # Check for image URLs and create a separate image element
                     if is_image_url(str(value)):
                         image_element = ET.SubElement(sub_elem, "image")
@@ -1154,7 +1155,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                 normalized_key = camel_case_convert(key)
                 sub_elem = ET.SubElement(item_elem, normalized_key)
                 sub_elem.text = value
-                
+
                 # Check for image URLs and create a separate image element
                 if is_image_url(str(value)):
                     image_element = ET.SubElement(sub_elem, "image")
@@ -1173,10 +1174,12 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
         sitemap_path = os.path.join(Config.WEBSERVER_FOLDER, list_feed_path)
         tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
 
+
 def camel_case_convert(key):
     """Convert keys from 'pub-date' or 'pub date' to 'pubDate'."""
     parts = re.split('-| ', key)
     return parts[0].lower() + ''.join(word.capitalize() for word in parts[1:])
+
 
 def is_guid_candidate(key):
     """Determine if the key is a suitable candidate for use as a GUID."""
@@ -1184,30 +1187,36 @@ def is_guid_candidate(key):
     key_lower = key.lower().replace('_', '').replace('-', '')
     return any(candidate in key_lower for candidate in candidates)
 
+
 def is_image_url(url):
     """Check if a URL points to an image based on its extension."""
     return re.search(r'\.(jpg|jpeg|png|gif)$', url, re.IGNORECASE)
+
 
 def is_caption_key(key):
     """Check if the key likely represents a caption."""
     return 'caption' in key.lower() or 'imgcaption' in key.lower() or 'imagecaption' in key.lower()
 
+
 def is_empty_item(item):
     """Check if the news item is empty or contains only empty fields."""
     return all(not value.strip() if isinstance(value, str) else False for value in item.values())
+
 
 def is_empty_or_whitespace(value):
     """Check if the given value is empty or consists only of whitespace."""
     return isinstance(value, str) and not value.strip()
 
+
 def add_leading_zero(value):
     """Ensures that all single-digit numbers are returned with a leading zero."""
     return f"{value:02d}"
 
+
 def extract_month_and_day(date_string, field):
     """Extracts the year, month, or day from a date string based on the provided field."""
     year, month, day = None, None, None
-    
+
     # Detect and parse the date format
     if "-" in date_string:
         year_str, month_str, day_str = date_string.split("-")

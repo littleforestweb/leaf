@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, request
 
-from leaf import Config
 from leaf.decorators import login_required
 from .models import *
 

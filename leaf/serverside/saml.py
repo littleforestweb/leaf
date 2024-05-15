@@ -145,7 +145,7 @@ def idp_initiated():
 
             if relay_state_base_url != Config.SP_ENTITY_ID.lower().strip():
                 return "Access Denied"
-                
+
             if issuer_text and issuer_text.lower().strip() != Config.IDP_ENTITY_ID.lower().strip():
                 return "Access Denied"
 
@@ -521,7 +521,6 @@ def process_saml_response(saml_response_from_request):
 
 
 def pysaml2_config(SP_ASSERTION_CONSUMER_SERVICE_URL, url_to_redirect_after_saml_login):
-
     if url_to_redirect_after_saml_login != "":
         SP_ASSERTION_CONSUMER_SERVICE_URL = SP_ASSERTION_CONSUMER_SERVICE_URL + "?RelayState=" + url_to_redirect_after_saml_login
     cfg = {

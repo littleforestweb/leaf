@@ -420,6 +420,7 @@
 
 {% block script %}
     <script type="text/javascript">var reference = "{{reference}}";
-    var accountId = "{{accountId}}"; var page_extension = "{{page_extension}}"</script>
+    var accountId = "{{accountId}}";
+    var page_extension = "{{page_extension}}"</script>
     <script src="{{ url_for('static', filename='js/dynamic_list.js') }}"></script>
 {% endblock %}

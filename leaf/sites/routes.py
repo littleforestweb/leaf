@@ -118,6 +118,7 @@ def view_get_site():
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -156,7 +157,6 @@ def api_check_if_page_locked_by_me():
         page_id = werkzeug.utils.escape(request.args.get("page_id", type=str))
         site_id = werkzeug.utils.escape(request.args.get("site_id", type=str))
 
-
         # Check if the specified site belongs to the user's account
         if not models.site_belongs_to_account(int(site_id)):
             return jsonify({"error": "Forbidden"}), 403
@@ -167,6 +167,7 @@ def api_check_if_page_locked_by_me():
         # Log the exception or handle it as appropriate for your application
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -212,6 +213,7 @@ def api_lock_unlock_page():
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -245,6 +247,7 @@ def api_request_unlock():
         # Log the exception or handle it as appropriate for your application
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -287,6 +290,7 @@ def api_get_site():
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -322,6 +326,7 @@ def api_get_site_log():
         # Log the exception or handle it as appropriate for your application
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -362,6 +367,7 @@ def add_site():
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
 
+
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -401,6 +407,7 @@ def update_site():
         # Log the exception or handle it as appropriate for your application
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #

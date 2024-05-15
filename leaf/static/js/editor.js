@@ -131,7 +131,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
         filebrowserUploadUrl: "/api/upload?name=fileupload",
         embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}',
         on: {
-            setData: function(event) {
+            setData: function (event) {
                 // Regex to find empty <a> tags
                 var emptyAnchorRegex = /<a([^>]*?)>\s*<\/a>/g;
                 event.data.dataValue = event.data.dataValue.replace(emptyAnchorRegex, '<a$1>&nbsp;</a>');
@@ -149,7 +149,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                     });
                 });
 
-                editor.on('beforeCommandExec', function(event) {
+                editor.on('beforeCommandExec', function (event) {
                     if (editor.mode === 'wysiwyg') {
                         // Trying to prevent the undo JUMP that breaks the tabs
                     }
@@ -159,7 +159,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
                 var is_locked = false;
                 // Usage with CKEditor change event
-                editor.on('change', debounce(function() {
+                editor.on('change', debounce(function () {
                     if (is_locked != true) {
                         lockPage(page_id, "lock");
                         is_locked = true;
@@ -175,9 +175,9 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
 function debounce(func, wait, immediate) {
     var timeout;
-    return function() {
+    return function () {
         var context = this, args = arguments;
-        var later = function() {
+        var later = function () {
             timeout = null;
             if (!immediate) func.apply(context, args);
         };
@@ -195,18 +195,18 @@ function startInactivityTimer(page_id) {
     clearTimeout(unlockTimeout);
 
     // Set a new timeout
-    unlockTimeout = setTimeout(function() {
+    unlockTimeout = setTimeout(function () {
         lockPage(page_id, "unlock");
         console.log("Page unlocked due to inactivity.");
     }, 300000); // 300000 milliseconds = 5 minutes
 }
 
-window.onbeforeunload = async function() {
+window.onbeforeunload = async function () {
     let site_id = await $.get("/api/get_site_id?page_id=" + page_id, function (site_id) {
         return site_id;
     });
     // Attempt to notify the server about the closure
-    navigator.sendBeacon('/api/lock_unlock_page', JSON.stringify({ page_id: page_id, site_id: site_id, action: "unlock" }));
+    navigator.sendBeacon('/api/lock_unlock_page', JSON.stringify({page_id: page_id, site_id: site_id, action: "unlock"}));
     return null;
 };
 
@@ -224,12 +224,12 @@ async function lockPage(page_id, action) {
             site_id: site_id,
             action: action
         }),
-        success: function(response) {
+        success: function (response) {
             if (response["is_page_locked"] === true) {
                 console.log("Page is now locked!");
             }
         },
-        error: function(response) {
+        error: function (response) {
             console.log('Error:', response);
             alert('Failed to perform the action: ' + response.responseText);
         }
@@ -248,14 +248,14 @@ async function check_if_page_is_locked(page_id) {
             page_id: page_id,
             site_id: site_id
         },
-        success: async function(response) {
+        success: async function (response) {
             if (response && response["locked_by_me"] === true) {
                 console.log("Page locked by me! Keep editing..");
                 const queryParams = new URLSearchParams(window.location.search);
                 if (queryParams.get("action") === "request_unlock") {
                     $('#unlockSelfModal').modal('show');
 
-                    document.getElementById('unlockAndLeave').addEventListener('click', function() {
+                    document.getElementById('unlockAndLeave').addEventListener('click', function () {
                         lockPage(page_id, "unlock");
                         $('#unlockSelfModal').modal('hide');
                     })
@@ -276,7 +276,7 @@ async function check_if_page_is_locked(page_id) {
 
                 document.getElementById("who_is_locking_this_page").innerHTML = locked_by.user[0]["username"];
 
-                document.getElementById('requestUnlockBtn').addEventListener('click', function() {
+                document.getElementById('requestUnlockBtn').addEventListener('click', function () {
                     $.ajax({
                         url: '/api/request_unlock',  // URL to your Python route
                         type: 'POST',
@@ -290,19 +290,19 @@ async function check_if_page_is_locked(page_id) {
                             page_url: page_details['url']
                         }),
                         contentType: 'application/json; charset=utf-8',
-                        success: function(result) {
+                        success: function (result) {
                             console.log('Request sent successfully');
                             $('#unlockRequestModal').modal('hide');
                             $('#requestSentModal').modal('show');
                         },
-                        error: function(xhr, status, error) {
+                        error: function (xhr, status, error) {
                             console.log('Error sending request:', error);
                         }
                     });
                 });
-            } 
+            }
         },
-        error: function(response) {
+        error: function (response) {
             console.log('Error:', response);
             alert('Failed to perform the action: ' + response.responseText);
         }

@@ -46,6 +46,7 @@ def api_get_site_id():
         # Handle exceptions and return an error response with status code 500
         return jsonify({"error": str(e)}), 500
 
+
 @pages.route('/api/get_page_details')
 @login_required
 def api_get_page_details():
@@ -61,6 +62,7 @@ def api_get_page_details():
     except Exception as e:
         # Handle exceptions and return an error response with status code 500
         return jsonify({"error": str(e)}), 500
+
 
 @pages.route('/get_screenshot')
 @login_required

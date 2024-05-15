@@ -6,6 +6,7 @@ from leaf.config import Config
 from leaf.decorators import limiter
 from leaf.deployments.routes import deployments
 from leaf.editor.routes import editor
+from leaf.files_manager.routes import files_manager
 from leaf.groups.routes import groups
 from leaf.lists.routes import lists
 from leaf.main.routes import main
@@ -16,7 +17,6 @@ from leaf.sites.routes import sites
 from leaf.template_editor.routes import template_editor
 from leaf.users.routes import users
 from leaf.workflow.routes import workflow
-from leaf.files_manager.routes import files_manager
 
 
 def check_db():

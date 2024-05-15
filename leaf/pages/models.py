@@ -36,6 +36,7 @@ def get_page(pid):
     except Exception as e:
         raise
 
+
 def get_site_id(page_id):
     """
     Get a specific page from the database and serve its site_id.
@@ -59,6 +60,7 @@ def get_site_id(page_id):
         return str(site_id)
     except Exception as e:
         raise
+
 
 def get_page_details(page_id):
     """
@@ -84,6 +86,7 @@ def get_page_details(page_id):
         return {"page_id": page[0], "url": page[1], "title": page[2]}
     except Exception as e:
         raise
+
 
 def get_screenshot(pageId):
     """

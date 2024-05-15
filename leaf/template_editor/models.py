@@ -163,7 +163,7 @@ def template_save(request, accountId):
                     # Write the old data to the new file
                     with open(file_to_save, 'w') as out_file:
                         out_file.write(old_data)
-                    
+
                     # Delete the old file
                     os.remove(previous_file_on_disk)
 

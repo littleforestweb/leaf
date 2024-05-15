@@ -283,14 +283,14 @@ function requestUnlockPage(page_id, action, thisBtn) {
             page_id: page_id,
             site_id: site_id
         },
-        success: function(response) {
+        success: function (response) {
             if (response && response["locked_by_me"] === true || response && response["user_id"] === false) {
                 unlockPage(page_id, action, thisBtn);
             } else {
                 console.log("Lets make the modal to request to unlock the page");
-            } 
+            }
         },
-        error: function(response) {
+        error: function (response) {
             console.log('Error:', response);
             alert('Failed to perform the action: ' + response.responseText);
         }
@@ -307,7 +307,7 @@ function unlockPage(page_id, action, thisBtn) {
             site_id: site_id,
             action: action
         }),
-        success: function(response) {
+        success: function (response) {
             if (response["is_page_locked"] === false) {
                 var jqBtn = $(thisBtn); // Ensure jQuery object
                 var parentTd = jqBtn.closest('td').closest('tr'); // Find the closest TD ancestor
@@ -315,7 +315,7 @@ function unlockPage(page_id, action, thisBtn) {
                 parentTd.find("a.disabled.unlock-btn").removeClass("disabled").removeAttr("disabled");
             }
         },
-        error: function(response) {
+        error: function (response) {
             console.log('Error:', response);
             alert('Failed to perform the action: ' + response.responseText);
         }
@@ -337,7 +337,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
         buttons: {
             buttons: [{
                 text: "Export",
-                extend: "csv", 
+                extend: "csv",
                 filename: "Site Report",
                 className: "btn-export"
             }],
@@ -407,7 +407,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                     return buttons;
                 }
             }
-            
+
         ],
         initComplete: function () {
             // For each column
