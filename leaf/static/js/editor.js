@@ -175,7 +175,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 window.addEventListener('beforeunload', async function (event) {
                     // Perform any necessary actions before showing the confirmation dialog
                     console.log('User attempted to leave the page.');
-
+                    
                     // Show a confirmation dialog
                     event.preventDefault();
                     event.returnValue = ''; // This triggers the default confirmation dialog in most browsers
@@ -260,6 +260,7 @@ async function lockPage(page_id, action) {
         success: function (response) {
             if (response["is_page_locked"] === true) {
                 console.log("Page is now locked!");
+                page_is_locked_by_me = true;
             }
         },
         error: function (response) {
