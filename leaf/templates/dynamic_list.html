@@ -41,7 +41,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="publishDynamicListLabel">Send {{ referenceNoUnderscores }} to a reviewer</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="doRefreshPage()"></button>
                 </div>
                 <div class="modal-body">
                     <div class="container">
@@ -68,7 +68,7 @@
                     </div>
                 </div>
                 <div class="modal-footer" id="modal-footer-publish">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
                     <button type="button" class="btn btn-success" onclick="createPublishTicket('{{ accountId }}', '{{ reference }}', 'publish', '{{ preview_server }}', '{{ dynamic_path }}', this)">Send</button>
                 </div>
             </div>
