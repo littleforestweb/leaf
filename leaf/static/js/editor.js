@@ -8,7 +8,13 @@ async function savePage() {
     let sourceCode = CKEDITOR.instances.htmlCode.getData();
 
     return $.ajax({
-        type: "POST", url: "/api/editor/save", data: {"data": sourceCode, "page_id": page_id}, success: function (entry) {
+        type: "POST",
+        url: "/api/editor/save",
+        data: {
+            "data": sourceCode,
+            "page_id": page_id
+        },
+        success: function (entry) {
             console.log("save success");
 
             let previewBtn = document.getElementById("previewPage");
@@ -131,12 +137,12 @@ window.addEventListener('DOMContentLoaded', async function main() {
         filebrowserUploadUrl: "/api/upload?name=fileupload",
         embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}',
         on: {
-            setData: function (event) {
+            setData: async function (event) {
                 // Regex to find empty <a> tags
                 var emptyAnchorRegex = /<a([^>]*?)>\s*<\/a>/g;
                 event.data.dataValue = event.data.dataValue.replace(emptyAnchorRegex, '<a$1>&nbsp;</a>');
             },
-            instanceReady: function (evt) {
+            instanceReady: async function (evt) {
                 // Get the CKEditor instance
                 let editor = evt.editor;
 
@@ -155,7 +161,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                     }
                 });
 
-                check_if_page_is_locked(page_id);
+                await check_if_page_is_locked(page_id);
 
                 var is_locked = false;
                 // Usage with CKEditor change event
@@ -165,6 +171,39 @@ window.addEventListener('DOMContentLoaded', async function main() {
                         is_locked = true;
                     }
                 }, 250)); // Adjust debounce time as necessary
+
+                window.addEventListener('beforeunload', async function (event) {
+                    // Perform any necessary actions before showing the confirmation dialog
+                    console.log('User attempted to leave the page.');
+
+                    // Show a confirmation dialog
+                    event.preventDefault();
+                    event.returnValue = ''; // This triggers the default confirmation dialog in most browsers
+
+                    if (page_is_locked_by_me) {
+
+                        let site_id = await $.get("/api/get_site_id?page_id=" + page_id, function (site_id) {
+                            return site_id;
+                        });
+
+                        // Data to be sent to the server
+                        var data = JSON.stringify({
+                            page_id: page_id,
+                            site_id: site_id,
+                            action: "unlock"
+                        });
+
+                        fetch('/api/lock_unlock_page', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: data,
+                            keepalive: true // This is important to allow the request to complete
+                        });
+                        return null;
+                    }
+                });
             }
         }
     });
@@ -201,14 +240,8 @@ function startInactivityTimer(page_id) {
     }, 300000); // 300000 milliseconds = 5 minutes
 }
 
-window.onbeforeunload = async function () {
-    let site_id = await $.get("/api/get_site_id?page_id=" + page_id, function (site_id) {
-        return site_id;
-    });
-    // Attempt to notify the server about the closure
-    navigator.sendBeacon('/api/lock_unlock_page', JSON.stringify({page_id: page_id, site_id: site_id, action: "unlock"}));
-    return null;
-};
+let isLeavingPage = false;
+let page_is_locked_by_me = false;
 
 async function lockPage(page_id, action) {
     let site_id = await $.get("/api/get_site_id?page_id=" + page_id, function (site_id) {
@@ -250,6 +283,7 @@ async function check_if_page_is_locked(page_id) {
         },
         success: async function (response) {
             if (response && response["locked_by_me"] === true) {
+                page_is_locked_by_me = true;
                 console.log("Page locked by me! Keep editing..");
                 const queryParams = new URLSearchParams(window.location.search);
                 if (queryParams.get("action") === "request_unlock") {
