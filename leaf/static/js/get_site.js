@@ -395,7 +395,8 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 mData: function (source, type, val) {
                     let buttons = "Unlocked";
                     if (source["Locked"] === 1) {
-                        buttons = "<input style='margin-left:5px' type='button' class='btn btn-sm btn-primary' onclick='requestUnlockPage(\"" + source["id"] + "\", \"unlock\", this)' value='Unlock it' />";
+                        buttons = '<span style="color:red">Locked</span>';
+                        // buttons = "<input style='margin-left:5px' type='button' class='btn btn-sm btn-primary' onclick='requestUnlockPage(\"" + source["id"] + "\", \"unlock\", this)' value='Unlock it' />";
                     }
                     return buttons;
                 }
@@ -403,7 +404,8 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [6],
                 mData: function (source, type, val) {
-                    let buttons = "<a class='" + (source["Locked"] === 0 ? "not_locked" : "disabled unlock-btn") + " btn btn-sm' target='_blank' href='/editor?page_id=" + source["id"] + "' " + (source["Locked"] === 0 ? "" : " disabled") + ">Edit</a>";
+                    let buttons = "<a class='" + (source["Locked"] === 0 ? "not_locked" : "unlock-btn") + " btn btn-sm' target='_blank' href='/editor?page_id=" + source["id"] + "'>" + (source["Locked"] === 0 ? "Edit" : "View") + "</a>";
+                    // let buttons = "<a class='" + (source["Locked"] === 0 ? "not_locked" : "disabled unlock-btn") + " btn btn-sm' target='_blank' href='/editor?page_id=" + source["id"] + "' " + (source["Locked"] === 0 ? "" : " disabled") + ">Edit</a>";
                     return buttons;
                 }
             }
