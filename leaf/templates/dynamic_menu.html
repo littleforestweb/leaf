@@ -8,17 +8,15 @@
     </script>
 
     <!-- ADD MODAL -->
-    <div class="modal fade" id="addDynamicList" tabindex="-1" aria-labelledby="addDynamicListLabel" aria-hidden="true">
+    <div class="modal fade" id="addDynamicList" tabindex="-1" aria-labelledby="addDynamicListLabel" aria-hidden="true" data-bs-backdrop='static'>
         <div class="modal-dialog large-modal">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addDynamicListLabel">Add {{ referenceNoUnderscores }}</h5>
                     <div class="pull-right" id="buttons_to_add">
                         <div id="link_to_preview_add" class="pull-left"></div>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
                         <button type="button" class="btn btn-success" onclick="addDynamicMenu('{{ accountId }}', '{{ reference }}', 'save', '{{ preview_server }}', '{{ dynamic_path }}')">Save & Close</button>
-                        <!-- <button type="button" class="btn btn-success" onclick="addDynamicMenu('{{accountId}}', '{{reference}}', 'preview', '{{preview_server}}', '{{dynamic_path}}')">Preview</button> -->
-                        <!-- <button type="button" class="btn btn-orange" data-bs-toggle="modal" data-bs-target="#publishDynamicList">Publish</button> -->
                     </div>
                 </div>
                 <div class="modal-body">
@@ -26,22 +24,20 @@
                     </form>
                 </div>
                 <div class="modal-footer" id="modal-footer-add">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
                     <button type="button" class="btn btn-success" onclick="addDynamicMenu('{{ accountId }}', '{{ reference }}', 'save', '{{ preview_server }}', '{{ dynamic_path }}')">Save & Close</button>
-                    <!-- <button type="button" class="btn btn-success" onclick="addDynamicMenu('{{accountId}}', '{{reference}}', 'preview', '{{preview_server}}', '{{dynamic_path}}')">Preview</button> -->
-                    <!-- <button type="button" class="btn btn-orange" data-bs-toggle="modal" data-bs-target="#publishDynamicList">Publish</button> -->
                 </div>
             </div>
         </div>
     </div>
 
     <!-- PUBLISH MODAL -->
-    <div class="modal fade" id="publishDynamicList" tabindex="-1" aria-labelledby="publishDynamicListLabel" aria-hidden="true">
+    <div class="modal fade" id="publishDynamicList" tabindex="-1" aria-labelledby="publishDynamicListLabel" aria-hidden="true" data-bs-backdrop='static'>
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="publishDynamicListLabel">Send {{ referenceNoUnderscores }} to a reviewer</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="doRefreshPage()"></button>
                 </div>
                 <div class="modal-body">
                     <div class="container">
@@ -68,7 +64,7 @@
                     </div>
                 </div>
                 <div class="modal-footer" id="modal-footer-publish">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
                     <button type="button" class="btn btn-success" onclick="createPublishTicket('{{ accountId }}', '{{ reference }}', 'publish', '{{ preview_server }}', '{{ dynamic_path }}', this)">Publish</button>
                 </div>
             </div>
@@ -83,9 +79,8 @@
                     <h5 class="modal-title" id="editDynamicListLabel">Edit {{ referenceNoUnderscores }}</h5>
                     <div class="pull-right" id="buttons_to_edit">
                         <div id="link_to_preview_edit" class="pull-left"></div>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
                         <button type="button" class="btn btn-success" onclick="updateDynamicMenu('{{ accountId }}', '{{ reference }}', 'save', '{{ preview_server }}', '{{ dynamic_path }}', this)">Save</button>
-                        <button type="button" class="btn btn-success" onclick="updateDynamicMenu('{{ accountId }}', '{{ reference }}', 'preview', '{{ preview_server }}', '{{ dynamic_path }}', this)">Preview</button>
                         <button type="button" class="btn btn-orange" data-bs-toggle="modal" data-bs-target="#publishDynamicList" onclick="publishList()">Publish</button>
                     </div>
                 </div>
@@ -94,9 +89,8 @@
                     </form>
                 </div>
                 <div class="modal-footer" id="modal-footer-edit">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
                     <button type="button" class="btn btn-success" onclick="updateDynamicMenu('{{ accountId }}', '{{ reference }}', 'save', '{{ preview_server }}', '{{ dynamic_path }}', this)">Save</button>
-                    <button type="button" class="btn btn-success" onclick="updateDynamicMenu('{{ accountId }}', '{{ reference }}', 'preview', '{{ preview_server }}', '{{ dynamic_path }}', this)">Preview</button>
                     <button type="button" class="btn btn-orange" data-bs-toggle="modal" data-bs-target="#publishDynamicList" onclick="publishList()">Publish</button>
                 </div>
             </div>
@@ -104,31 +98,31 @@
     </div>
 
     <!-- DELETE MODAL -->
-    <div class="modal fade" id="deleteDynamicList" tabindex="-1" aria-labelledby="deleteDynamicListLabel" aria-hidden="true">
+    <div class="modal fade" id="deleteDynamicList" tabindex="-1" aria-labelledby="deleteDynamicListLabel" aria-hidden="true" data-bs-backdrop='static'>
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="deleteDynamicListLabel">Delete {{ referenceNoUnderscores }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="doRefreshPage()"></button>
                 </div>
                 <div class="modal-body">
                     <h4>Are you sure you want to delete this {{ reference }} entry(s)?</h4>
                 </div>
                 <div class="modal-footer" id="modal-footer-delete">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-danger" onclick="deleteDynamicMenuEntries('{{ accountId }}', '{{ reference }}', 'save', '{{ preview_server }}', '{{ dynamic_path }}', this)">Delete</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" onclick="deleteDynamicMenuEntries('{{ accountId }}', '{{ reference }}', 'save', '{{ preview_server }}', '{{ dynamic_path }}', this)">Delete</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- UPLOAD CSV MODAL -->
-    <div class="modal fade" id="uploadDynamicList" tabindex="-1" aria-labelledby="uploadDynamicListLabel" aria-hidden="true">
+    <div class="modal fade" id="uploadDynamicList" tabindex="-1" aria-labelledby="uploadDynamicListLabel" aria-hidden="true" data-bs-backdrop='static'>
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="uploadDynamicListLabel">Upload a CSV file</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="doRefreshPage()"></button>
                 </div>
                 <form id="upload-csv-file" method="post" enctype="multipart/form-data">
                     <fieldset>
@@ -138,7 +132,7 @@
                     </fieldset>
                 </form>
                 <div class="modal-footer" id="modal-footer-upload-csv">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
                     <button type="submit" id="upload-file-btn" class="btn btn-success" onclick="uploadDynamicMenu('{{ accountId }}', '{{ reference }}')">Upload</button>
                 </div>
             </div>
@@ -167,7 +161,7 @@
     </div>
 
     <!-- CONFIG SET FIELDS MODAL -->
-    <div class="modal fade" id="setConfigurationDynamicList" tabindex="-1" aria-labelledby="setConfigurationDynamicListLabel" aria-hidden="true">
+    <div class="modal fade" id="setConfigurationDynamicList" tabindex="-1" aria-labelledby="setConfigurationDynamicListLabel" aria-hidden="true" data-bs-backdrop='static'>
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -178,18 +172,10 @@
                     <form method="post" id="setConfiguration-{{ reference }}">
                         <input type="hidden" class="form-control" id="h-s-{{ reference }}">
                         <div class="row">
-                            <h5 class="col-form-header">Preview Settings:</h5>
+                            <h5 class="col-form-header">Select Mandatory Fields:</h5>
                             <div class="form-group col-md-12">
-                                <label for="s-template" class="col-form-label">Template:</label>
-                                <input type="text" class="form-control" name="s-template" id="s-template" value="" onkeyup="sanitizeInput(event)">
-                            </div>
-                            <div class="form-group col-md-12">
-                                <label for="s-parameters" class="col-form-label">Parameters:</label>
-                                <input type="text" class="form-control" name="s-parameters" id="s-parameters" value="" onkeyup="sanitizeInput(event)">
-                            </div>
-                            <div class="form-group col-md-12">
-                                <label for="s-fields" class="col-form-label">Fields:</label>
-                                <select type="text" class="form-select form-select-md connection" name="s-fields" id="s-fields" multiple></select>
+                                <label for="s-mandatory-fields" class="col-form-label">Fields:</label>
+                                <select type="text" class="form-select form-select-md connection" name="s-mandatory-fields" id="s-mandatory-fields" multiple></select>
                             </div>
                         </div>
                     </form>

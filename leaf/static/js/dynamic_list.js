@@ -1750,6 +1750,8 @@ async function openConfiguration(accountId, reference) {
         $('select#s-fields').append('<option value="' + escapeHtml(headColumns[x][2]) + '">' + escapeHtml(headColumns[x][2]) + '</option>');
     }
 
+    $('select#s-mandatory-fields').empty();
+    $('select#s-field-to-save-by').empty();
     for (var x = 0; x < headColumns.length; x++) {
         $('select#s-mandatory-fields').append('<option value="' + escapeHtml(headColumns[x][2]) + '">' + escapeHtml(headColumns[x][2]) + '</option>');
         $('select#s-field-to-save-by').append('<option value="' + escapeHtml(headColumns[x][2]) + '">' + escapeHtml(headColumns[x][2]) + '</option>');

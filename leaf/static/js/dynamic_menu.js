@@ -99,17 +99,10 @@ async function populateEditDynamicMenuDialog(accountId, reference, type, itemToS
     var values = jsonConfig.columns;
 
     if (values && values[0]) {
-        $("#s-template").val(values[0][2]);
-        $("#s-parameters").val(values[0][3]);
-
-        var fields = values[0][4].split(';');
-        for (var field in fields) {
-            $('#s-fields option[value="' + fields[field] + '"]').attr("selected", "selected");
-        }
 
         var mfields = [];
-        if (values[0][5]) {
-            mfields = values[0][5].split(',');
+        if (values[0][2]) {
+            mfields = values[0][2].split(',');
         }
     }
 
@@ -739,35 +732,6 @@ async function updateDynamicMenu(accountId, reference, env, preview_server, dyna
         });
         var values = jsonConfig.columns;
 
-        var thisTemplate = '';
-        var thisParameters = '';
-        var thisFields = '';
-        if (values && values[0]) {
-            thisTemplate = values[0][2];
-            thisParameters = values[0][3];
-            thisFields = values[0][4].split(';');
-        }
-
-        var fieldsToLink = '';
-        var index = 0;
-        for (var field in thisFields) {
-            var singleField = $('#e-' + thisFields[field]);
-
-            fieldsToLink += singleField.val();
-            if (thisFields.length > 1 && thisFields.length === index) {
-                fieldsToLink += fieldsToLink + '_';
-            }
-
-            index = index + 1;
-        }
-
-        var linkToPreview = '';
-        if (thisTemplate !== '') {
-            linkToPreview = preview_server + dynamic_path + thisTemplate + '.html?' + thisParameters + '=' + fieldsToLink
-            // $("#link_to_preview_add").html('<a href="' + linkToPreview + '">' + linkToPreview + '</a>');
-            // $("#link_to_preview_edit").html('<a href="' + linkToPreview + '">' + linkToPreview + '</a>');
-        }
-
         $.ajax({
             type: "POST",
             url: "/update_menu/" + accountId + "/account_" + accountId + "_menu_" + reference,
@@ -780,29 +744,7 @@ async function updateDynamicMenu(accountId, reference, env, preview_server, dyna
                 $('#editDynamicList').modal('hide');
                 $('#editDynamicListSuccessNotification').toast('show');
 
-                if (env === 'preview' || env === 'save' || env === 'saveOnly') {
-                    publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink);
-                } else {
-                    if (thisTemplate !== '') {
-                        openInNewTab(linkToPreview);
-                    } else {
-                        alert("You must have to setup the template in the configuration menu!")
-                    }
-                    doRedrawTable(true, updated.menus, true);
-
-                    const buttons_to_edit_container = document.getElementById('buttons_to_edit');
-                    const allActionButtons = buttons_to_edit_container.getElementsByTagName('button');
-                    for (let i = 0; i < allActionButtons.length; i++) {
-                        allActionButtons[i].disabled = false;
-                        allActionButtons[i].classList.remove('disabled');
-                    }
-                    const modal_footer_links = document.getElementById('modal-footer-edit');
-                    const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
-                    for (let i = 0; i < allActionButtonsFooter.length; i++) {
-                        allActionButtonsFooter[i].disabled = false;
-                        allActionButtonsFooter[i].classList.remove('disabled');
-                    }
-                }
+                publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink);
 
             },
             error: function (XMLHttpRequest, textStatus, errorThrown) {
@@ -1023,38 +965,9 @@ async function addDynamicMenu(accountId, reference, env, preview_server, dynamic
         });
         var values = jsonConfig.columns;
 
-        var thisTemplate = '';
-        var thisParameters = '';
-        var thisFields = '';
-        if (values && values[0]) {
-            thisTemplate = values[0][2];
-            thisParameters = values[0][3];
-            thisFields = values[0][4].split(';');
-        }
-
-        var fieldsToLink = '';
-        var index = 0;
-        for (var field in thisFields) {
-            var singleField = $('#a-' + thisFields[field]);
-
-            fieldsToLink += singleField.val();
-            if (thisFields.length > 1 && thisFields.length === index) {
-                fieldsToLink += fieldsToLink + '_';
-            }
-
-            index = index + 1;
-        }
-
-        var linkToPreview = '';
-        if (thisTemplate !== '') {
-            linkToPreview = preview_server + dynamic_path + thisTemplate + '.html?' + thisParameters + '=' + fieldsToLink
-            // $("#link_to_preview_add").html('<a href="' + linkToPreview + '">' + linkToPreview + '</a>');
-            // $("#link_to_preview_edit").html('<a href="' + linkToPreview + '">' + linkToPreview + '</a>');
-        }
-
         $.ajax({
             type: "POST",
-            url: "/addnew_menu/account_" + accountId + "_menu_" + reference,
+            url: "/addnew_menu/" + accountId + "/account_" + accountId + "_menu_" + reference,
             contentType: 'application/json',
             data: JSON.stringify(form_data),
             dataType: 'json',
@@ -1064,16 +977,7 @@ async function addDynamicMenu(accountId, reference, env, preview_server, dynamic
                 $('#addDynamicList').modal('hide');
                 $('#addDynamicListSuccessNotification').toast('show');
 
-                if (env === 'preview' || env === 'save' || env === 'saveOnly') {
-                    publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink);
-                } else {
-                    if (thisTemplate !== '') {
-                        openInNewTab(linkToPreview);
-                    } else {
-                        alert("You must have to setup the template in the configuration menu!")
-                    }
-                    doRedrawTable(true, updated.menus, true);
-                }
+                publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink);
 
                 const buttons_to_add_container = document.getElementById('buttons_to_add');
                 const allActionButtons = buttons_to_add_container.getElementsByTagName('button');
@@ -1148,42 +1052,15 @@ async function deleteDynamicMenuEntries(accountId, reference, env, preview_serve
     checked_entries_str = checked_entries_str.slice(0, -1);
 
     // Get list configuration
-    let jsonConfig = await $.get("/api_menus/get_menu_configuration/" + accountId + "/" + reference, function (result) {
+    let jsonConfig = await $.get("/api_menu/get_menu_configuration/" + accountId + "/" + reference, function (result) {
         return result;
     });
     var values = jsonConfig.columns;
 
-    var thisTemplate = '';
-    var thisParameters = '';
-    var thisFields = '';
-    if (values && values[0]) {
-        thisTemplate = values[0][2];
-        thisParameters = values[0][3];
-        thisFields = values[0][4].split(';');
-    }
-
-    var fieldsToLink = '';
-    var index = 0;
-    for (var field in thisFields) {
-        var singleField = $('#a-' + thisFields[field]);
-
-        fieldsToLink += singleField.val();
-        if (thisFields.length > 1 && thisFields.length === index) {
-            fieldsToLink += fieldsToLink + '_';
-        }
-
-        index = index + 1;
-    }
-
-    var linkToPreview = '';
-    if (thisTemplate !== '') {
-        linkToPreview = preview_server + dynamic_path + thisTemplate + '.html?' + thisParameters + '=' + fieldsToLink
-    }
-
     // Post
     $.ajax({
         type: "POST",
-        url: "/delete_menu" + accountId + "/account_" + accountId + "_menu_" + reference,
+        url: "/delete_menu/" + accountId + "/account_" + accountId + "_menu_" + reference,
         data: {
             "entries_to_delete": checked_entries_str
         },
@@ -1478,26 +1355,14 @@ async function openConfiguration(accountId, reference) {
 
     var headColumns = jsonColumns.columns;
 
-    for (var x = 0; x < headColumns.length; x++) {
-        $('select#s-fields').append('<option value="' + escapeHtml(headColumns[x][2]) + '">' + escapeHtml(headColumns[x][2]) + '</option>');
-    }
-
+    $('select#s-mandatory-fields').empty();
     for (var x = 0; x < headColumns.length; x++) {
         $('select#s-mandatory-fields').append('<option value="' + escapeHtml(headColumns[x][2]) + '">' + escapeHtml(headColumns[x][2]) + '</option>');
-        $('select#s-field-to-save-by').append('<option value="' + escapeHtml(headColumns[x][2]) + '">' + escapeHtml(headColumns[x][2]) + '</option>');
     }
 
     if (values && values[0]) {
-        $("#s-template").val(escapeHtml(values[0][2]));
-        $("#s-parameters").val(escapeHtml(values[0][3]));
-
-        var fields = values[0][4].split(';');
-        for (var field in fields) {
-            $('#s-fields option[value="' + escapeHtml(fields[field]) + '"]').attr("selected", "selected");
-        }
-
-        if (values[0][5]) {
-            var mfields = values[0][5].split(',');
+        if (values[0][2]) {
+            var mfields = values[0][2].split(',');
             for (var mfield in mfields) {
                 $('#s-mandatory-fields option[value="' + escapeHtml(mfields[mfield]) + '"]').attr("selected", "selected");
             }

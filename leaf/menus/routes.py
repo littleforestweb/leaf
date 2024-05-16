@@ -324,7 +324,7 @@ def update_dynamic_menu(accountId: str, account_menu: str):
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
 
-@menus.route('/addnew/<accountId>/<account_menu>', methods=['POST'])
+@menus.route('/addnew_menu/<accountId>/<account_menu>', methods=['POST'])
 @login_required
 def addnew_dynamic_menu(accountId: str, account_menu: str):
     """
@@ -344,7 +344,7 @@ def addnew_dynamic_menu(accountId: str, account_menu: str):
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
 
-@menus.route('/delete/<accountId>/<account_menu>', methods=['POST'])
+@menus.route('/delete_menu/<accountId>/<account_menu>', methods=['POST'])
 @login_required
 def delete_dynamic_menu(accountId: str, account_menu: str):
     """

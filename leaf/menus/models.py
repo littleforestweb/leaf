@@ -337,7 +337,6 @@ def set_menu_configuration(request, accountId: str, reference: str):
         tableName = f"account_{accountId}_menu_configuration"
 
         if isinstance(int(accountId), int):
-
             # Delete existing configuration for the specified menu
             delete_config_query = f"DELETE FROM {tableName} WHERE main_table = %s"
             mycursor.execute(delete_config_query, (reference,))
@@ -345,28 +344,17 @@ def set_menu_configuration(request, accountId: str, reference: str):
 
             thisRequest = request.get_json()
 
-            template = werkzeug.utils.escape(str(thisRequest.get("s-template")))
-            parameters = werkzeug.utils.escape(str(thisRequest.get("s-parameters")))
-            fields = werkzeug.utils.escape(thisRequest.get("s-fields"))
             mfields = werkzeug.utils.escape(thisRequest.get("s-mandatory-fields"))
-            save_by_field = werkzeug.utils.escape(thisRequest.get("s-save-by-field"))
-            field_to_save_by = werkzeug.utils.escape(thisRequest.get("s-field-to-save-by"))
-
-            # Convert menus to strings for storage
-            if isinstance(fields, list):
-                fields = ';'.join(fields)
+            modified_by = session["id"]
 
             if isinstance(mfields, list):
                 mfields = ';'.join(mfields)
 
-            if isinstance(field_to_save_by, list):
-                field_to_save_by = ';'.join(field_to_save_by)
-
-            col_to_return = [template, parameters, fields, mfields, save_by_field, field_to_save_by]
+            col_to_return = [mfields, modified_by]
 
             # Insert new configuration for the specified menu
-            insert_config_query = f"INSERT INTO {tableName} (main_table, template, parameters, fields, mandatory_fields, save_by_field, field_to_save_by) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-            mycursor.execute(insert_config_query, (reference, template, parameters, fields, mfields, save_by_field, field_to_save_by))
+            insert_config_query = f"INSERT INTO {tableName} (main_table, mandatory_fields, created_by, modified_by) VALUES (%s, %s, %s, %s)"
+            mycursor.execute(insert_config_query, (reference, mfields, modified_by, modified_by))
             mydb.commit()
         else:
             print("Invalid accountId")
@@ -770,29 +758,6 @@ def publish_dynamic_menus(request, account_menu: str, accountId: str, reference:
         sanitized_reference = ''.join(e for e in reference if e.isalnum())
         with open(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH, sanitized_reference + 'Menu.json'), 'w') as out_file:
             out_file.write(json_data_to_write)
-
-        # Additional logic to save data by country (sanitize user input)
-        this_request = request.get_json()
-        country_to_update = werkzeug.utils.escape(this_request.get("country_to_update"))
-        if country_to_update and isinstance(country_to_update, list):
-            country_to_update = ';'.join(country_to_update)
-
-            single_country_to_update = country_to_update.split(';')
-            for single_country_to_update in single_country_to_update:
-                # Query to retrieve data filtered by country (using parameterized query)
-                mycursor.execute(f"SELECT * FROM {account_menu} WHERE LOWER(`country`) LIKE %s",
-                                 ('%' + single_country_to_update.strip().lower() + '%',))
-                row_headers = [x[0] for x in mycursor.description]
-                full_menu_by_country = mycursor.fetchall()
-
-                # Convert data to a JSON format
-                json_data_by_country = [dict(zip(row_headers, result)) for result in full_menu_by_country]
-                json_data_to_write_by_country = json.dumps(json_data_by_country).replace('__BACKSLASH__TO_REPLACE__', '\\')
-
-                # Write JSON data to a file with the country-specific reference identifier (sanitize reference)
-                sanitized_reference_by_country = ''.join(e for e in sanitized_reference + '_' + single_country_to_update.strip().lower() if e.isalnum())
-                with open(os.path.join(Config.ENV_PATH, 'json_by_country', sanitized_reference_by_country + '_Menu.json'), 'w') as out_file_by_country:
-                    out_file_by_country.write(json_data_to_write_by_country)
 
     except Exception as e:
         print("publish_dynamic_menus model")
