@@ -286,12 +286,13 @@ def get_menu_configuration(accountId: str, reference: str):
 
         field_menu_for_config = ['id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE',
                                  'main_table VARCHAR(255) DEFAULT NULL',
-                                 'template VARCHAR(255) DEFAULT NULL',
-                                 'parameters VARCHAR(255) DEFAULT NULL',
-                                 'fields VARCHAR(255) DEFAULT NULL',
                                  'mandatory_fields VARCHAR(255) DEFAULT NULL',
                                  'save_by_field VARCHAR(11) DEFAULT 0',
-                                 'field_to_save_by VARCHAR(255) DEFAULT NULL']
+                                 'field_to_save_by VARCHAR(255) DEFAULT NULL',
+                                 'created_by INT(11) DEFAULT NULL',
+                                 'modified_by INT(11) DEFAULT NULL',
+                                 'created DATETIME NULL DEFAULT CURRENT_TIMESTAMP',
+                                 'modified DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP']
         field_query_for_config = " (" + ", ".join(field_menu_for_config) + ")"
 
         tableName = f"account_{accountId}_menu_configuration"
@@ -872,7 +873,7 @@ def update_dynamic_menus_database(accountId, account_menu, item_id, this_request
                     # Update the database with the new value (use parameterized query to prevent SQL injection)
                     if final_key != 'id':
                         final_val = val.replace('"', "'")
-                        mycursor.execute(f"UPDATE {account_list} SET {final_key} = %s WHERE id = %s", (final_val, item_id))
+                        mycursor.execute(f"UPDATE {account_menu} SET {final_key} = %s WHERE id = %s", (final_val, item_id))
                         mydb.commit()
 
                     index += 1
