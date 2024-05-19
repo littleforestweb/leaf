@@ -10,6 +10,7 @@ async function populateScrapeSettingsDynamicList() {
     return result;
   });
 
+  console.log(scrapeSettings);
   var jsonScrapeSettings = [];
   if (scrapeSettings["scrape_settings"] && scrapeSettings["scrape_settings"][2]) {
     const unescapedString = unescapeHtml(scrapeSettings["scrape_settings"][2]);
