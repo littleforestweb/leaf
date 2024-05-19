@@ -1859,3 +1859,277 @@ def remove_elements_with_content_or_src(html_content, target):
 
     # Return the modified HTML
     return soup.prettify()
+
+
+def scrape_list_data(request):
+    json_response = {"running": False, "action": "scraping_data"}
+
+    accountId = werkzeug.utils.escape(request.form.get("accountId"))
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    mydb, mycursor = db_connection()
+
+    try:
+
+        list_name = werkzeug.utils.escape(request.form.get("list_name"))
+
+        tableName = f"account_{accountId}_lists_scraping_settings"
+        scraping_query = f"SELECT * FROM {tableName} WHERE list=%s"
+        values = (list_name,)
+        mycursor.execute(scraping_query, values)
+        scraping_details = mycursor.fetchone()
+        print(scraping_details)
+
+        json_response = {"running": True, "action": "scraping_data"}
+
+    except Exception as e:
+        print("crawl_list_data model")
+        print(e)
+    finally:
+        mydb.close()
+        return jsonify(json_response)
+
+def get_list_scrape_settings(accountId: str, reference: str):
+    accountId = werkzeug.utils.escape(accountId)
+    reference = werkzeug.utils.escape(reference)
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    json_response = {"scrape_settings": []}
+
+    mydb, mycursor = db_connection()
+
+    try:
+
+        tableName = f"account_{accountId}_lists_scraping_settings"
+        scraping_query = f"SELECT * FROM {tableName} WHERE list=%s"
+        values = (reference,)
+        mycursor.execute(scraping_query, values)
+        scraping_details = mycursor.fetchone()
+
+        json_response = {"scrape_settings": scraping_details}
+
+    except Exception as e:
+        print("crawl_list_data model")
+        print(e)
+    finally:
+        mydb.close()
+        return jsonify(json_response)
+
+
+def set_list_scrape_settings(request, accountId: str, reference: str):
+    """
+    Set scrape settings for a specific list in the database.
+
+    Args:
+        request (Request): The HTTP request object.
+        accountId (str): The account ID associated with the list.
+        reference (str): The reference code for the specific list.
+
+    Returns:
+        list: A list containing the values that were inserted into the database for scraping.
+    """
+    col_to_return = []
+
+    accountId = werkzeug.utils.escape(accountId)
+    reference = werkzeug.utils.escape(reference)
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    mydb, mycursor = db_connection()
+
+    try:
+        tableName = f"account_{accountId}_lists_scraping_settings"
+
+        if isinstance(int(accountId), int):
+
+            # Create a table if it doesn't exist
+            mycursor.execute(f"CREATE TABLE IF NOT EXISTS {tableName} (id INT AUTO_INCREMENT PRIMARY KEY, list VARCHAR(255) DEFAULT NULL, data JSON, created_by INT(11) DEFAULT NULL, created DATETIME NULL DEFAULT CURRENT_TIMESTAMP, modified DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)")
+
+            # Make sure the list is clean
+            delete_config_query = f"DELETE FROM {tableName} WHERE list = %s"
+            mycursor.execute(delete_config_query, (reference,))
+            mydb.commit()
+
+            thisRequest = request.get_json()
+
+            # Insert the data into the table
+            mycursor.execute(f"INSERT INTO {tableName} (list, data, created_by) VALUES (%s, %s, %s)", (reference, json.dumps(thisRequest), int(session["id"])))
+            mydb.commit()
+        else:
+            print("Invalid accountId")
+
+    except Exception as e:
+        print("set_list_scrape_settings model")
+        print(e)
+    finally:
+        mydb.close()
+        return jsonify(col_to_return)
+
+
+# Main function to scrape pages and save the content in JSON format
+def trigger_new_scrape(request):
+
+    accountId = werkzeug.utils.escape(request.form.get("accountId"))
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    mydb, mycursor = db_connection()
+
+    try:
+        tableName = f"account_{accountId}_lists_scraping_settings"
+
+        if isinstance(int(accountId), int):
+
+            reference = werkzeug.utils.escape(request.form.get("reference"))
+
+            scraping_query = f"SELECT data FROM {tableName} WHERE list=%s"
+            values = (reference,)
+            mycursor.execute(scraping_query, values)
+            scraping_details = mycursor.fetchone()
+            scraping_details = json.loads(unescape_html(scraping_details[0]))
+
+            folders_to_scrape = [folder.strip() for folder in scraping_details.get("s-folders_to_scrape", "").split(",")]
+
+            tableName = f"account_{accountId}_list_{reference}"
+            delete_query = f"DELETE FROM {tableName};"
+            mycursor.execute(delete_query)
+            mydb.commit()
+                
+            for folder in folders_to_scrape:
+                folder_path = os.path.join(Config.WEBSERVER_FOLDER, folder)
+
+                # Check if the folder exists
+                if os.path.exists(folder_path):
+                    print(f"Folder exist: {folder_path}")
+                if not os.path.exists(folder_path):
+                    # print(f"Folder does not exist: {folder_path}")
+                    continue
+
+                for root, dirs, files in os.walk(folder_path):
+                    for file in files:
+                        if file.endswith(Config.PAGES_EXTENSION):
+                            file_path = os.path.join(root, file)
+                            html_content = read_html_file(file_path)
+                            soup = BeautifulSoup(html_content, 'lxml')
+                            page_data = {}
+
+                            for key, selector in scraping_details.items():
+                                if selector == "__found_in_folder__":
+                                    data_key = key.replace("scrape__", "")
+                                    page_data[data_key] = folder
+                                elif key.startswith("scrape__"):
+                                    data_key = key.replace("scrape__", "")
+                                    if selector.strip() != "":
+                                        content = extract_content(soup, selector)
+                                        if content:  # Only add if content is not empty or None
+                                            page_data[data_key] = content
+
+                            page_data["modified_by"] = session['id']
+                            if page_data:  # Only add the file's data if there's at least one key with content
+                                columns = ', '.join(page_data.keys())
+                                placeholders = ', '.join(['%s'] * len(page_data))
+                                add_data = f"INSERT INTO {tableName} ({columns}) VALUES ({placeholders})"
+                                data_tuple = tuple(page_data.values())
+
+                                mycursor.execute(add_data, data_tuple)
+                                mydb.commit()
+
+        else:
+            print("Invalid accountId")
+
+    except Exception as e:
+        print("trigger_new_scrape model")
+        print(e)
+        return jsonify({"task": "Adding pages", "status": False})
+    finally:
+        mydb.close()
+        return jsonify({"task": "Adding pages", "status": True})
+
+
+# Function to read HTML content from a file
+def read_html_file(file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        return file.read()
+
+# Function to extract content based on the given selector
+def extract_content(soup, selector):
+    try:
+        if selector.endswith('["ALL"]'):
+            selector = selector[:-9].strip()  # remove ["ALL"]
+            elements = soup.select(selector)
+            this_element_attr = ""
+            for element in elements:
+                this_element_attr = this_element_attr + str(element)
+            return this_element_attr
+
+        if selector.endswith('[ALL]'):
+            selector = selector[:-7].strip()  # remove [ALL]
+            elements = soup.select(selector)
+            this_element_attr = ""
+            for element in elements:
+                this_element_attr = this_element_attr + str(element)
+            return this_element_attr
+
+        if '>' in selector and '[' in selector and ']' in selector:
+            # Split by the last occurrence of '>'
+            parts = selector.rsplit('>', 1)
+            base_selector = parts[0].strip()
+            attribute_selector = parts[1].strip()
+
+            # Handle cases with attributes
+            if '=' in attribute_selector:
+                attribute_name = attribute_selector.split('[')[-1].split('=')[0].strip()
+                attribute_value = attribute_selector.split('[')[-1].split('=')[1].strip(']').strip('"')
+                elements = soup.select(base_selector)
+                for element in elements:
+                    attr_value = element.get(attribute_name)
+                    if isinstance(attr_value, list):
+                        attr_value = ' '.join(attr_value)
+                    if attr_value == attribute_value:
+                        return element.get('href')
+            else:
+                attribute_name = attribute_selector.split('[')[-1].split(']')[0].strip()
+                elements = soup.select(base_selector)
+                this_element_attr = ""
+                for element in elements:
+                    if element.get(attribute_name):
+                        this_element_attr = element.get(attribute_name)
+                return this_element_attr
+
+        if '>' in selector and ']' in selector:
+            attribute = selector.split('[')[-1].split(']')[0]
+            selector = selector.rsplit('>', 1)[0].strip()
+            elements = soup.select(selector)
+            this_element_attr = ""
+            for element in elements:
+                if element.get(attribute):
+                    this_element_attr = element.get(attribute)
+            return this_element_attr
+
+        else:
+            element = soup.select_one(selector.strip())
+            return element.text.strip() if element and not is_only_linebreaks(element.text) else None
+    except Exception as e:
+        print(f"Error processing selector '{selector}': {e}")
+        return None
+
+def is_only_linebreaks(s):
+    # Strip all whitespace characters including newlines
+    stripped_string = s.strip()
+    # Check if the resulting string is empty
+    return stripped_string == ''
+
+# Function to unescape HTML entities
+def unescape_html(html):
+    return (html.replace('&gt;', '>')
+        .replace('&lt;', '<')
+        .replace('&quot;', '"')
+        .replace('&#39;', "'")
+        .replace('&amp;', '&')
+        .replace('&comma;', ','))

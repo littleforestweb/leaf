@@ -234,14 +234,13 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="setTemplateDynamicListLabel">Templates - {{ referenceNoUnderscores }}</h5>
+                    <h5 class="modal-title" id="setTemplateDynamicListLabel">Templates Settings - {{ referenceNoUnderscores }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="setTemplateDynamicList('{{ accountId }}', '{{ reference }}', 'close')"></button>
                 </div>
                 <div class="modal-body">
                     <form method="post" id="setTemplate-{{ reference }}">
                         <input type="hidden" class="form-control" id="h-s-{{ reference }}">
                         <div class="row">
-                            <h5 class="col-form-header">Templates Settings:</h5>
                             <div class="form-group col-md-12">
                                 <label for="s-templates" class="col-form-label">Templates:</label>
                                 <div class="row">
@@ -269,6 +268,60 @@
                     <a class="btn btn-blue" href="/manage_templates">Manage Templates</a>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="setTemplateDynamicList('{{ accountId }}', '{{ reference }}', 'close')">Close</button>
                     <button type="button" class="btn btn-success" onclick="setTemplateDynamicList('{{ accountId }}', '{{ reference }}', 'save')">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRAPE SETTINGS MODAL MODAL -->
+    <div class="modal fade" id="scrapeSettingsDynamicList" tabindex="-1" aria-labelledby="scrapeSettingsDynamicListLabel" aria-hidden="true" data-bs-backdrop='static'>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="scrapeSettingsDynamicListLabel">Scrape Settings - {{ referenceNoUnderscores }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="scrapeSettingsDynamicList('{{ accountId }}', '{{ reference }}', 'close')"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" id="setScrapeSettings-{{ reference }}">
+                        <div class="row">
+                            <div class="form-group col-md-12" style="margin-bottom: 20px">
+                                <label for="s-folders_to_scrape" class="col-form-label">Folders to scrape:</label>
+                                <div class="row">
+                                    <div class="form-group col-md-12">
+                                        <input type="text" class="form-control" name="s-folders_to_scrape" id="s-folders_to_scrape" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-12">
+                                <label for="s-feed_location" class="col-form-label">Available Fields Mapping:</label>
+                                <div class="form-group col-md-12" id="available_fields_mapping_container"></div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" id="modal-footer-config">
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#triggerNewScrapeModal">Scrape</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="scrapeSettingsDynamicList('{{ accountId }}', '{{ reference }}', 'close')">Close</button>
+                    <button type="button" class="btn btn-success" onclick="scrapeSettingsDynamicList('{{ accountId }}', '{{ reference }}', 'save')">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW SCRAPE WARNING MODAL -->
+    <div class="modal fade" id="triggerNewScrapeModal" tabindex="-1" aria-labelledby="triggerNewScrapeLabel" aria-hidden="true" data-bs-backdrop='static'>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="triggerNewScrapeLabel">Scrape {{ referenceNoUnderscores }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="doRefreshPage()"></button>
+                </div>
+                <div class="modal-body">
+                    <h4>Are you sure you want to scrape for new '{{ reference }}' entry(s)? It will add missing ones based on URLs. You won't lose your data.</h4>
+                </div>
+                <div class="modal-footer" id="modal-footer-delete">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" onclick="triggerNewScrape('{{ accountId }}', '{{ reference }}')">Yes</button>
                 </div>
             </div>
         </div>
@@ -375,6 +428,26 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
             </div>
         </div>
+
+        <div id="scrapeDynamicListSuccessNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                {{ referenceNoUnderscores }} scrape settings saved!
+            </div>
+        </div>
+
+        <div id="scrapeDynamicListSuccessRunningNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                {{ referenceNoUnderscores }} scrape running!
+            </div>
+        </div>
     </div>
 
     <!-- Table -->
@@ -395,6 +468,7 @@
                             <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#setConfigurationDynamicList" onclick="openConfiguration('{{ accountId }}', '{{ reference }}');">Configuration</button>
                             <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#setTemplateDynamicList" onclick="openTemplate('{{ accountId }}', '{{ reference }}');">Templates</button>
                             <button type="button" class="btn btn-export" data-bs-toggle="modal" data-bs-target="#uploadDynamicList" onclick="dropDownActionsToggle();">Upload CSV</button>
+                            <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#scrapeSettingsDynamicList" onclick="populateScrapeSettingsDynamicList();">Scrape Settings</button>
                         </span>
                     </span>
                 </div>
@@ -423,4 +497,5 @@
     var accountId = "{{accountId}}";
     var page_extension = "{{page_extension}}"</script>
     <script src="{{ url_for('static', filename='js/dynamic_list.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dynamic_list_scrape_settings.js') }}"></script>
 {% endblock %}
