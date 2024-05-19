@@ -16,6 +16,7 @@ async function populateScrapeSettingsDynamicList() {
     jsonScrapeSettings = JSON.parse(unescapedString);
   }
 
+  console.log(unescapeHtml(jsonScrapeSettings["s-folders_to_scrape"]));
   if (unescapeHtml(jsonScrapeSettings["s-folders_to_scrape"]) !== undefined) {
     $("#s-folders_to_scrape").val(unescapeHtml(jsonScrapeSettings["s-folders_to_scrape"]));
   }
