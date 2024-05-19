@@ -16,7 +16,9 @@ async function populateScrapeSettingsDynamicList() {
     jsonScrapeSettings = JSON.parse(unescapedString);
   }
 
-  $("#s-folders_to_scrape").val(unescapeHtml(jsonScrapeSettings["s-folders_to_scrape"]));
+  if (unescapeHtml(jsonScrapeSettings["s-folders_to_scrape"]) !== undefined) {
+    $("#s-folders_to_scrape").val(unescapeHtml(jsonScrapeSettings["s-folders_to_scrape"]));
+  }
 
   $('#available_fields_mapping_container').html("");
 
