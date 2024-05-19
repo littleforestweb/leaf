@@ -1880,7 +1880,6 @@ def scrape_list_data(request):
         values = (list_name,)
         mycursor.execute(scraping_query, values)
         scraping_details = mycursor.fetchone()
-        print(scraping_details)
 
         json_response = {"running": True, "action": "scraping_data"}
 

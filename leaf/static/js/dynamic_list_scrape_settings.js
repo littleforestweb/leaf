@@ -10,7 +10,6 @@ async function populateScrapeSettingsDynamicList() {
     return result;
   });
 
-  console.log(scrapeSettings);
   var jsonScrapeSettings = [];
   if (scrapeSettings["scrape_settings"] && scrapeSettings["scrape_settings"][2]) {
     const unescapedString = unescapeHtml(scrapeSettings["scrape_settings"][2]);
@@ -30,7 +29,7 @@ async function populateScrapeSettingsDynamicList() {
         const escapedValue = escapeHtmlTags(jsonScrapeSettings[fullKey]);
         $('#available_fields_mapping_container').append(`<div class="mb-3 mb-container s-pub_date-container"><div class="row"><div class="col-auto"><label for="scrape__${key[2]}" class="col-form-label">${key[2]}:</label></div><div class="col"><input type="text" class="form-control" name="scrape__${key[2]}" id="scrape__${key[2]}" value="${escapedValue}" /></div></div></div>`);
       } else {
-        console.log(`${key[2]} not found`);
+        $('#available_fields_mapping_container').append(`<div class="mb-3 mb-container s-pub_date-container"><div class="row"><div class="col-auto"><label for="scrape__${key[2]}" class="col-form-label">${key[2]}:</label></div><div class="col"><input type="text" class="form-control" name="scrape__${key[2]}" id="scrape__${key[2]}" value="" /></div></div></div>`);
       }
     }
   });
