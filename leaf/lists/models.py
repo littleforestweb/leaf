@@ -2049,8 +2049,7 @@ def trigger_new_scrape(request):
         return jsonify({"task": "Adding pages", "status": False})
     finally:
         mydb.close()
-    
-    return jsonify({"task": "Adding pages", "status": True})
+        return jsonify({"task": "Adding pages", "status": True})
 
 
 # Function to read HTML content from a file
