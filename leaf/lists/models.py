@@ -2039,7 +2039,7 @@ def trigger_new_scrape(request):
                             print(f"Error in future: {e}")
 
             # Process files in batches to reduce memory usage
-            batch_size = 10
+            batch_size = 100
             for i in range(0, len(all_files), batch_size):
                 batch = all_files[i:i+batch_size]
                 process_file_batch(batch)
