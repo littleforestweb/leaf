@@ -2005,37 +2005,44 @@ def trigger_new_scrape(request):
             mycursor.execute(delete_query)
             mydb.commit()
             
-            def process_folder_batch(batch):
-                with ThreadPoolExecutor(max_workers=1) as executor:
+    
+            # Collect all files to be processed
+            all_files = []
+
+            for folder in folders_to_scrape:
+                folder_path = os.path.join(Config.WEBSERVER_FOLDER, folder)
+
+                # Check if the folder exists
+                if os.path.exists(folder_path):
+                    print(f"Folder exist: {folder_path}")
+                if not os.path.exists(folder_path):
+                    # print(f"Folder does not exist: {folder_path}")
+                    continue
+                
+                for root, dirs, files in os.walk(folder_path):
+                    for file in files:
+                        if file.endswith(Config.PAGES_EXTENSION):
+                            file_path = os.path.join(root, file)
+                            all_files.append((file_path, folder))
+
+            # Process files in batches
+            def process_file_batch(batch):
+                with ThreadPoolExecutor(max_workers=5) as executor:
                     futures = []
+                    for file_path, folder in batch:
+                        futures.append(executor.submit(scrape_page, file_path, scraping_details, folder, tableName, user_id))
 
-                    for folder in folders_to_scrape:
-                        folder_path = os.path.join(Config.WEBSERVER_FOLDER, folder)
-
-                        # Check if the folder exists
-                        if os.path.exists(folder_path):
-                            print(f"Folder exist: {folder_path}")
-                        if not os.path.exists(folder_path):
-                            # print(f"Folder does not exist: {folder_path}")
-                            continue
-
-                        for root, dirs, files in os.walk(folder_path):
-                            for file in files:
-                                if file.endswith(Config.PAGES_EXTENSION):
-                                    file_path = os.path.join(root, file)
-                                    futures.append(executor.submit(scrape_page, file_path, scraping_details, folder, tableName, user_id))
-                                
                     for future in as_completed(futures):
                         try:
                             future.result()
                         except Exception as e:
                             print(f"Error in future: {e}")
 
-            # Process folders in batches to reduce memory usage
-            batch_size = 1
-            for i in range(0, len(folders_to_scrape), batch_size):
-                batch = folders_to_scrape[i:i+batch_size]
-                process_folder_batch(batch)
+            # Process files in batches to reduce memory usage
+            batch_size = 10
+            for i in range(0, len(all_files), batch_size):
+                batch = all_files[i:i+batch_size]
+                process_file_batch(batch)
 
         else:
             print("Invalid accountId")
