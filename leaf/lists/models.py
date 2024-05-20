@@ -2043,7 +2043,7 @@ def trigger_new_scrape(request):
     return jsonify({"task": "Adding pages", "status": True})
 
 
-@retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(5))
+@retry(wait=wait_exponential(multiplier=1, min=4, max=50), stop=stop_after_attempt(5))
 def execute_query(query, data):
     connection, cursor = db_connection()
     try:
