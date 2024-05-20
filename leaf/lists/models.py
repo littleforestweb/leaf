@@ -2040,7 +2040,7 @@ def trigger_new_scrape(request):
                             print(f"Error in future: {e}")
 
             # Process files in batches to reduce memory usage
-            batch_size = 300  # Adjust batch size if needed
+            batch_size = 10  # Adjust batch size if needed
             total_files = len(all_files)
             current_app.logger.debug(f"Total files to process: {total_files}")
             for i in range(0, total_files, batch_size):
