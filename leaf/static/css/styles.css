@@ -579,7 +579,7 @@ td .toContainSize {
 
 td .toContainSize pre {
     white-space: break-spaces;
-    text-transform: capitalize;
+/*    text-transform: capitalize;*/
 }
 
 .loadingBg {

@@ -2081,9 +2081,25 @@ def extract_content(soup, selector):
             parts = selector.rsplit('>', 1)
             base_selector = parts[0].strip()
             attribute_selector = parts[1].strip()
+            inside_split = False
+            has_split = False
 
             # Handle cases with attributes
             if '=' in attribute_selector:
+                
+                if '.split(' in attribute_selector:
+                    has_split = True
+                    start = attribute_selector.find('split("') + len('split("')
+                    end = attribute_selector.find('")', start)
+                    # Extract the substring
+                    inside_split = attribute_selector[start:end]
+
+                    # Split the input string at ".split("
+                    split_parts = attribute_selector.split('.split(')
+
+                    # The first part is the string before ".split("
+                    attribute_selector = split_parts[0]
+
                 attribute_name = attribute_selector.split('[')[-1].split('=')[0].strip()
                 attribute_value = attribute_selector.split('[')[-1].split('=')[1].strip(']').strip('"')
                 elements = soup.select(base_selector)
@@ -2092,7 +2108,11 @@ def extract_content(soup, selector):
                     if isinstance(attr_value, list):
                         attr_value = ' '.join(attr_value)
                     if attr_value == attribute_value:
-                        return element.get('href')
+                        element_to_return = element.get('href')
+                        if has_split:
+                            return element_to_return.split(inside_split)[-1]
+                        else:
+                            return element_to_return
             else:
                 attribute_name = attribute_selector.split('[')[-1].split(']')[0].strip()
                 elements = soup.select(base_selector)
