@@ -2037,10 +2037,10 @@ def trigger_new_scrape(request):
     except Exception as e:
         print("trigger_new_scrape model")
         print(e)
-        # return jsonify({"task": "Adding pages", "status": False})
+        return jsonify({"task": "Adding pages", "status": False})
     finally:
         mydb.close()
-    return jsonify({"task": "Adding pages", "status": True})
+        return jsonify({"task": "Adding pages", "status": True})
 
 
 @retry(wait=wait_exponential(multiplier=1, min=4, max=50), stop=stop_after_attempt(5))
