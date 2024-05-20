@@ -2039,9 +2039,12 @@ def trigger_new_scrape(request):
                             print(f"Error in future: {e}")
 
             # Process files in batches to reduce memory usage
-            batch_size = 10
-            for i in range(0, len(all_files), batch_size):
+            batch_size = 100  # Adjust batch size if needed
+            total_files = len(all_files)
+            print(f"Total files to process: {total_files}", flush=True)
+            for i in range(0, total_files, batch_size):
                 batch = all_files[i:i+batch_size]
+                print(f"Processing batch {i//batch_size + 1}/{(total_files + batch_size - 1) // batch_size}", flush=True)
                 process_file_batch(batch)
 
         else:
