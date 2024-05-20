@@ -548,7 +548,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                 } else if (allAccountSettings[f][6] && allAccountSettings[f][6] === "pdf" || allAccountSettings[f][6] && allAccountSettings[f][6] === "image") {
                                     if (type === 'edit') {
                                         if (site_dynamic_list) {
-                                            site_dynamic_list = site_dynamic_list.replace('.JPG', '.jpg').replace('.JPEG', '.jpeg').replace('.PNG', '.png').replace('.PDF', '.pdf').replace('.GIF', '.gif');
+                                            site_dynamic_list = replaceExtensions(site_dynamic_list);
                                             var lastIndexOfFileName = site_dynamic_list.substring(site_dynamic_list.lastIndexOf('/') + 1);
                                             if (site_dynamic_list.toLowerCase().includes('static')) {
                                                 var srcVal = site_dynamic_list.toLowerCase();
@@ -2123,7 +2123,7 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
                         fullVal = fullVal.replace(/&amp;comma;/g, ',').replace(/&comma;/g, ',').replace(/&amp,<br>comma,<br>/g, ',');
 
                         if ((isDocument || isImage) && source[xx] && source[xx] !== "nan") {
-                            fullVal = fullVal.replace('.JPG', '.jpg').replace('.JPEG', '.jpeg').replace('.PNG', '.png').replace('.PDF', '.pdf').replace('.GIF', '.gif');
+                            fullVal = replaceExtensions(fullVal);
                             if (fullVal.toLowerCase().includes('static')) {
                                 var fullVal = fullVal; //.toLowerCase()
                             } else {
@@ -2546,6 +2546,25 @@ function extractMonthAndDay(dateString, field) {
     if (field.toLowerCase() === "day") {
         return day;
     }
+}
+
+function replaceExtensions(url) {
+  // Define the replacements for the file extensions
+  const replacements = {
+    '.JPG': '.jpg',
+    '.JPEG': '.jpeg',
+    '.PNG': '.png',
+    '.PDF': '.pdf',
+    '.GIF': '.gif'
+  };
+
+  // Create a regex pattern to match any of the extensions at the end of the string
+  const pattern = /\.(JPG|JPEG|PNG|PDF|GIF)$/i;
+
+  // Function to perform the replacement
+  return url.replace(pattern, (match) => {
+    return replacements[match.toUpperCase()];
+  });
 }
 
 const addLeadingZero = (value) => {
