@@ -4,9 +4,11 @@ import csv
 import html
 import json
 from datetime import datetime
+import time
 
 import pandas as pd
 import werkzeug.utils
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from leaf.template_editor.models import *
 
@@ -2015,32 +2017,13 @@ def trigger_new_scrape(request):
                     for file in files:
                         if file.endswith(Config.PAGES_EXTENSION):
                             file_path = os.path.join(root, file)
-                            html_content = read_html_file(file_path)
-                            soup = BeautifulSoup(html_content, 'lxml')
-                            page_data = {}
-
-                            for key, selector in scraping_details.items():
-                                if selector == "__found_in_folder__":
-                                    data_key = key.replace("scrape__", "")
-                                    page_data[data_key] = folder
-                                elif key.startswith("scrape__"):
-                                    data_key = key.replace("scrape__", "")
-                                    if selector.strip() != "":
-                                        content = extract_content(soup, selector)
-                                        if content:  # Only add if content is not empty or None
-                                            page_data[data_key] = content
-
-                            page_data["modified_by"] = session['id']
-                            if page_data:  # Only add the file's data if there's at least one key with content
-                                columns = ', '.join(page_data.keys())
-                                placeholders = ', '.join(['%s'] * len(page_data))
-                                add_data = f"INSERT INTO {tableName} ({columns}) VALUES ({placeholders})"
-                                data_tuple = tuple(page_data.values())
-
-                                mycursor.execute(add_data, data_tuple)
-                                mydb.commit()
-
-            return jsonify({"task": "Adding pages", "status": True})
+                            futures.append(executor.submit(scrape_page, file_path, scraping_details, folder, tableName, mydb))
+                            
+            for future in as_completed(futures):
+                try:
+                    future.result()
+                except Exception as e:
+                    print(f"Error in future: {e}")
 
         else:
             print("Invalid accountId")
@@ -2051,7 +2034,39 @@ def trigger_new_scrape(request):
         return jsonify({"task": "Adding pages", "status": False})
     finally:
         mydb.close()
+        return jsonify({"task": "Adding pages", "status": True})
 
+
+def scrape_page(file_path, scraping_details, folder, table_name, mydb):
+    try:
+        html_content = read_html_file(file_path)
+        soup = BeautifulSoup(html_content, 'lxml')
+        page_data = {}
+
+        for key, selector in scraping_details.items():
+            if selector == "__found_in_folder__":
+                data_key = key.replace("scrape__", "")
+                page_data[data_key] = folder
+            elif key.startswith("scrape__"):
+                data_key = key.replace("scrape__", "")
+                if selector.strip() != "":
+                    content = extract_content(soup, selector)
+                    if content:
+                        page_data[data_key] = content
+
+        page_data["modified_by"] = session['id']
+        if page_data:
+            columns = ', '.join(page_data.keys())
+            placeholders = ', '.join(['%s'] * len(page_data))
+            add_data = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
+            data_tuple = tuple(page_data.values())
+
+            with mydb.cursor() as mycursor:
+                mycursor.execute(add_data, data_tuple)
+                mydb.commit()
+
+    except Exception as e:
+        print(f"Error processing {file_path}: {e}")
 
 # Function to read HTML content from a file
 def read_html_file(file_path):
