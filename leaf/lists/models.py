@@ -2059,7 +2059,7 @@ def trigger_new_scrape(request):
         mydb.close()
         return jsonify({"task": "Adding pages", "status": True})
 
-
+time.sleep((random.randint(1, 2500)) / 1000.0)
 def execute_query(query, data, max_retries=5):
     retries = 0
     while retries < max_retries:
