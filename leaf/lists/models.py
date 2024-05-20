@@ -2040,6 +2040,8 @@ def trigger_new_scrape(request):
                                 mycursor.execute(add_data, data_tuple)
                                 mydb.commit()
 
+            return jsonify({"task": "Adding pages", "status": True})
+
         else:
             print("Invalid accountId")
 
@@ -2049,7 +2051,6 @@ def trigger_new_scrape(request):
         return jsonify({"task": "Adding pages", "status": False})
     finally:
         mydb.close()
-        return jsonify({"task": "Adding pages", "status": True})
 
 
 # Function to read HTML content from a file
