@@ -119,7 +119,7 @@ def get_list_data(request, accountId: str, reference: str):
             listCount = mycursor.fetchone()[0]
 
             # Create json
-            jsonR = {"data": lists, "recordsTotal": listCount, "recordsFiltered": len(lists)}
+            jsonR = {"data": lists, "recordsTotal": listCount, "recordsFiltered": listCount}
 
         else:
             print("Invalid accountId")
