@@ -700,9 +700,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         singleField = singleField.split('/');
         // Remove empty strings and join with "/"
         singleField = singleField.filter(item => item !== '').join('/');
-        console.log(singleField);
         fieldsToLink = fieldsToLink.replace("{" + matches[field] + "}", singleField);
-        console.log(fieldsToLink);
         selectedItem = thisValId;
     }
 
@@ -712,84 +710,84 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         thisCountry = thisCountry.replace(/,/g, ';');
     }
 
-    // $.ajax({
-    //     type: "POST",
-    //     url: "/publish/account_" + accountId + "_list_" + reference + '/' + accountId + '/' + reference + '/' + env,
-    //     data: JSON.stringify({
-    //         "country_to_update": thisCountry,
-    //         "file_url_path": getFileUrlPath(fieldsToLink, page_extension),
-    //         "list_template_id": listTemplateId,
-    //         "list_item_id": selectedItem
-    //     }),
-    //     contentType: 'application/json',
-    //     dataType: 'json',
-    //     cache: false,
-    //     processData: false,
-    //     success: function (updated) {
+    $.ajax({
+        type: "POST",
+        url: "/publish/account_" + accountId + "_list_" + reference + '/' + accountId + '/' + reference + '/' + env,
+        data: JSON.stringify({
+            "country_to_update": thisCountry,
+            "file_url_path": getFileUrlPath(fieldsToLink, page_extension),
+            "list_template_id": listTemplateId,
+            "list_item_id": selectedItem
+        }),
+        contentType: 'application/json',
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        success: function (updated) {
 
-    //         $('#publishDynamicListSuccessNotification').toast('show');
+            $('#publishDynamicListSuccessNotification').toast('show');
 
-    //         if ((env !== 'saveOnly' && env !== 'save')) {
-    //             if (thisTemplate !== '') {
-    //                 openInNewTab(preview_server + getFileUrlPath(fieldsToLink, page_extension));
-    //             } else {
-    //                 alert("There is no preview setting for this List yet. Please add one to preview this type.")
-    //             }
-    //         }
+            if ((env !== 'saveOnly' && env !== 'save')) {
+                if (thisTemplate !== '') {
+                    openInNewTab(preview_server + getFileUrlPath(fieldsToLink, page_extension));
+                } else {
+                    alert("There is no preview setting for this List yet. Please add one to preview this type.")
+                }
+            }
 
-    //         $('#editDynamicListSuccessNotification').toast('show');
-    //         if (env !== "saveOnly" && env !== "preview" && !justPreview) {
-    //             location.reload(true);
-    //             //doRedrawTable(true, updated.lists, true);
-    //         } else {
-    //             var buttons_to_edit_or_add_container = document.getElementById('buttons_to_edit');
-    //             if (!buttons_to_edit_or_add_container) {
-    //                 buttons_to_edit_or_add_container = document.getElementById('buttons_to_add');
-    //             }
-    //             const allActionButtons = buttons_to_edit_or_add_container.getElementsByTagName('button');
-    //             for (let i = 0; i < allActionButtons.length; i++) {
-    //                 allActionButtons[i].disabled = false;
-    //                 allActionButtons[i].classList.remove('disabled');
-    //             }
-    //             var modal_footer_links = document.getElementById('modal-footer-edit');
-    //             if (!modal_footer_links) {
-    //                 modal_footer_links = document.getElementById('modal-footer-add')
-    //             }
-    //             const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
-    //             for (let i = 0; i < allActionButtonsFooter.length; i++) {
-    //                 allActionButtonsFooter[i].disabled = false;
-    //                 allActionButtonsFooter[i].classList.remove('disabled');
-    //             }
-    //         }
+            $('#editDynamicListSuccessNotification').toast('show');
+            if (env !== "saveOnly" && env !== "preview" && !justPreview) {
+                location.reload(true);
+                //doRedrawTable(true, updated.lists, true);
+            } else {
+                var buttons_to_edit_or_add_container = document.getElementById('buttons_to_edit');
+                if (!buttons_to_edit_or_add_container) {
+                    buttons_to_edit_or_add_container = document.getElementById('buttons_to_add');
+                }
+                const allActionButtons = buttons_to_edit_or_add_container.getElementsByTagName('button');
+                for (let i = 0; i < allActionButtons.length; i++) {
+                    allActionButtons[i].disabled = false;
+                    allActionButtons[i].classList.remove('disabled');
+                }
+                var modal_footer_links = document.getElementById('modal-footer-edit');
+                if (!modal_footer_links) {
+                    modal_footer_links = document.getElementById('modal-footer-add')
+                }
+                const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
+                for (let i = 0; i < allActionButtonsFooter.length; i++) {
+                    allActionButtonsFooter[i].disabled = false;
+                    allActionButtonsFooter[i].classList.remove('disabled');
+                }
+            }
 
-    //         $(".previewButton").prop('disabled', false);
-    //     },
-    //     error: function (XMLHttpRequest, textStatus, errorThrown) {
-    //         $('#publishDynamicList').modal('hide');
-    //         $('#errorModal').modal('show');
+            $(".previewButton").prop('disabled', false);
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+            $('#publishDynamicList').modal('hide');
+            $('#errorModal').modal('show');
 
-    //         var buttons_to_edit_or_add_container = document.getElementById('buttons_to_edit');
-    //         if (!buttons_to_edit_or_add_container) {
-    //             buttons_to_edit_or_add_container = document.getElementById('buttons_to_add');
-    //         }
-    //         const allActionButtons = buttons_to_edit_or_add_container.getElementsByTagName('button');
-    //         for (let i = 0; i < allActionButtons.length; i++) {
-    //             allActionButtons[i].disabled = false;
-    //             allActionButtons[i].classList.remove('disabled');
-    //         }
-    //         var modal_footer_links = document.getElementById('modal-footer-edit');
-    //         if (!modal_footer_links) {
-    //             modal_footer_links = document.getElementById('modal-footer-add')
-    //         }
-    //         const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
-    //         for (let i = 0; i < allActionButtonsFooter.length; i++) {
-    //             allActionButtonsFooter[i].disabled = false;
-    //             allActionButtonsFooter[i].classList.remove('disabled');
-    //         }
+            var buttons_to_edit_or_add_container = document.getElementById('buttons_to_edit');
+            if (!buttons_to_edit_or_add_container) {
+                buttons_to_edit_or_add_container = document.getElementById('buttons_to_add');
+            }
+            const allActionButtons = buttons_to_edit_or_add_container.getElementsByTagName('button');
+            for (let i = 0; i < allActionButtons.length; i++) {
+                allActionButtons[i].disabled = false;
+                allActionButtons[i].classList.remove('disabled');
+            }
+            var modal_footer_links = document.getElementById('modal-footer-edit');
+            if (!modal_footer_links) {
+                modal_footer_links = document.getElementById('modal-footer-add')
+            }
+            const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
+            for (let i = 0; i < allActionButtonsFooter.length; i++) {
+                allActionButtonsFooter[i].disabled = false;
+                allActionButtonsFooter[i].classList.remove('disabled');
+            }
 
-    //         $(".previewButton").prop('disabled', false);
-    //     }
-    // });
+            $(".previewButton").prop('disabled', false);
+        }
+    });
 }
 
 
