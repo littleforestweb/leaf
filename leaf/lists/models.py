@@ -2059,7 +2059,7 @@ def trigger_new_scrape(request):
         mydb.close()
         return jsonify({"task": "Adding pages", "status": True})
 
-def execute_query(query, data, max_retries=50):
+def execute_query(query, data, max_retries=5):
     retries = 0
     while retries < max_retries:
         connection, cursor = db_connection()
@@ -2070,7 +2070,7 @@ def execute_query(query, data, max_retries=50):
         except mysql.connector.Error as ex:
             current_app.logger.debug(f"Error executing query: {ex}")
             retries += 1
-            sleep(2 ** retries)  # Exponential backoff
+            sleep(20 ** retries)  # Exponential backoff
         finally:
             cursor.close()
             connection.close()
