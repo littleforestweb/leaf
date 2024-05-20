@@ -4,11 +4,9 @@ import csv
 import html
 import json
 from datetime import datetime
-from time import sleep
 
 import pandas as pd
 import werkzeug.utils
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import current_app
 
 from leaf.template_editor.models import *
@@ -1982,8 +1980,6 @@ def trigger_new_scrape(request):
     if not int(accountId) == int(session["accountId"]):
         return jsonify({"error": "Forbidden"}), 403
 
-    user_id = session['id']
-
     mydb, mycursor = db_connection()
 
     try:
@@ -2005,11 +2001,9 @@ def trigger_new_scrape(request):
             delete_query = f"DELETE FROM {tableName};"
             mycursor.execute(delete_query)
             mydb.commit()
-            
-    
-            # Collect all files to be processed
-            all_files = []
 
+            count_pages = 0
+                
             for folder in folders_to_scrape:
                 folder_path = os.path.join(Config.WEBSERVER_FOLDER, folder)
 
@@ -2019,91 +2013,48 @@ def trigger_new_scrape(request):
                 if not os.path.exists(folder_path):
                     # print(f"Folder does not exist: {folder_path}")
                     continue
-                
+
                 for root, dirs, files in os.walk(folder_path):
                     for file in files:
                         if file.endswith(Config.PAGES_EXTENSION):
                             file_path = os.path.join(root, file)
-                            all_files.append((file_path, folder))
+                            html_content = read_html_file(file_path)
+                            soup = BeautifulSoup(html_content, 'lxml')
+                            page_data = {}
 
-            # Process files in batches
-            def process_file_batch(batch):
-                with ThreadPoolExecutor(max_workers=5) as executor:
-                    futures = []
-                    for file_path, folder in batch:
-                        futures.append(executor.submit(scrape_page, file_path, scraping_details, folder, tableName, user_id))
+                            for key, selector in scraping_details.items():
+                                if selector == "__found_in_folder__":
+                                    data_key = key.replace("scrape__", "")
+                                    page_data[data_key] = folder
+                                elif key.startswith("scrape__"):
+                                    data_key = key.replace("scrape__", "")
+                                    if selector.strip() != "":
+                                        content = extract_content(soup, selector)
+                                        if content:  # Only add if content is not empty or None
+                                            page_data[data_key] = content
 
-                    for future in as_completed(futures):
-                        try:
-                            future.result()
-                        except Exception as e:
-                            print(f"Error in future: {e}")
-
-            # Process files in batches to reduce memory usage
-            batch_size = 200  # Adjust batch size if needed
-            total_files = len(all_files)
-            current_app.logger.debug(f"Total files to process: {total_files}")
-            for i in range(0, total_files, batch_size):
-                batch = all_files[i:i+batch_size]
-                current_app.logger.debug(f"Processing batch {i//batch_size + 1}/{(total_files + batch_size - 1) // batch_size}")
-                process_file_batch(batch)
+                            page_data["modified_by"] = session['id']
+                            if page_data:  # Only add the file's data if there's at least one key with content
+                                columns = ', '.join(page_data.keys())
+                                placeholders = ', '.join(['%s'] * len(page_data))
+                                add_data = f"INSERT INTO {tableName} ({columns}) VALUES ({placeholders})"
+                                data_tuple = tuple(page_data.values())
+                                count_pages = count_pages + 1
+                                current_app.logger.debug(f"Total files to process: {count_pages}")
+                                mycursor.execute(add_data, data_tuple)
+                                mydb.commit()
 
         else:
             print("Invalid accountId")
 
     except Exception as e:
-        current_app.logger.debug("trigger_new_scrape model")
-        current_app.logger.debug(e)
+        print("trigger_new_scrape model")
+        print(e)
         return jsonify({"task": "Adding pages", "status": False})
     finally:
         mydb.close()
         return jsonify({"task": "Adding pages", "status": True})
 
-def execute_query(query, data, max_retries=5):
-    retries = 0
-    while retries < max_retries:
-        connection, cursor = db_connection()
-        try:
-            cursor.execute(query, data)
-            connection.commit()
-            return
-        except mysql.connector.Error as ex:
-            current_app.logger.debug(f"Error executing query: {ex}")
-            retries += 1
-            sleep(20 ** retries)  # Exponential backoff
-        finally:
-            cursor.close()
-            connection.close()
-    raise Exception("Max retries exceeded")
-
-def scrape_page(file_path, scraping_details, folder, table_name, user_id):
-    try:
-        html_content = read_html_file(file_path)
-        soup = BeautifulSoup(html_content, 'lxml')
-        page_data = {}
-
-        for key, selector in scraping_details.items():
-            if selector == "__found_in_folder__":
-                data_key = key.replace("scrape__", "")
-                page_data[data_key] = folder
-            elif key.startswith("scrape__"):
-                data_key = key.replace("scrape__", "")
-                if selector.strip() != "":
-                    content = extract_content(soup, selector)
-                    if content:  # Only add if content is not empty or None
-                        page_data[data_key] = content
-
-        page_data["modified_by"] = user_id
-        if page_data:  # Only add the file's data if there's at least one key with content
-            columns = ', '.join(page_data.keys())
-            placeholders = ', '.join(['%s'] * len(page_data))
-            add_data = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
-            data_tuple = tuple(page_data.values())
-
-            execute_query(add_data, data_tuple)
-
-    except Exception as e:
-        current_app.logger.debug(f"Error processing {file_path}: {e}")
 
 # Function to read HTML content from a file
 def read_html_file(file_path):
