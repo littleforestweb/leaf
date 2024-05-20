@@ -2006,7 +2006,7 @@ def trigger_new_scrape(request):
             mydb.commit()
             
             def process_folder_batch(batch):
-                with ThreadPoolExecutor(max_workers=50) as executor:
+                with ThreadPoolExecutor(max_workers=1) as executor:
                     futures = []
 
                     for folder in folders_to_scrape:
@@ -2032,7 +2032,7 @@ def trigger_new_scrape(request):
                             print(f"Error in future: {e}")
 
             # Process folders in batches to reduce memory usage
-            batch_size = 10
+            batch_size = 1
             for i in range(0, len(folders_to_scrape), batch_size):
                 batch = folders_to_scrape[i:i+batch_size]
                 process_folder_batch(batch)
