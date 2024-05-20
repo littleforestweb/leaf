@@ -600,16 +600,11 @@ async function populateEditDynamicMenuDialog(accountId, reference, type, itemToS
     });
 }
 
-async function publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink) {
+async function publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path) {
 
     accountId = escapeHtml(accountId);
     reference = escapeHtml(reference);
     env = escapeHtml(env);
-    preview_server = escapeHtml(preview_server);
-    dynamic_path = escapeHtml(dynamic_path);
-    thisTemplate = escapeHtml(thisTemplate);
-    thisParameters = escapeHtml(thisParameters);
-    fieldsToLink = escapeHtml(fieldsToLink);
 
     $.ajax({
         type: "POST",
@@ -620,15 +615,6 @@ async function publishDynamicMenu(accountId, reference, env, preview_server, dyn
         processData: false,
         success: function (updated) {
             $('#publishDynamicListSuccessNotification').toast('show');
-
-            if (env !== 'save') {
-                if (thisTemplate !== '') {
-                    openInNewTab(preview_server + dynamic_path + thisTemplate + '.html?' + thisParameters + '=' + fieldsToLink);
-                } else {
-                    alert("There is no preview setting for this Menu yet. Please add one to preview this type.")
-                }
-            }
-
             doRedrawTable(true, updated.menus, true);
 
             var buttons_to_edit_or_add_container = document.getElementById('buttons_to_edit');
@@ -744,7 +730,7 @@ async function updateDynamicMenu(accountId, reference, env, preview_server, dyna
                 $('#editDynamicList').modal('hide');
                 $('#editDynamicListSuccessNotification').toast('show');
 
-                publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink);
+                publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path);
 
             },
             error: function (XMLHttpRequest, textStatus, errorThrown) {
