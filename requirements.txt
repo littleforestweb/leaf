@@ -18,4 +18,3 @@ werkzeug
 signxml
 defusedxml
 pysaml2
-tenacity

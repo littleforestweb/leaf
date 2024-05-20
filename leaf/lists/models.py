@@ -4,12 +4,11 @@ import csv
 import html
 import json
 from datetime import datetime
-import time
+from time import sleep
 
 import pandas as pd
 import werkzeug.utils
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from tenacity import retry, wait_exponential, stop_after_attempt
 
 from leaf.template_editor.models import *
 
@@ -2006,30 +2005,37 @@ def trigger_new_scrape(request):
             mycursor.execute(delete_query)
             mydb.commit()
             
-            with ThreadPoolExecutor(max_workers=10) as executor:
-                futures = []
+            def process_folder_batch(batch):
+                with ThreadPoolExecutor(max_workers=5) as executor:
+                    futures = []
 
-                for folder in folders_to_scrape:
-                    folder_path = os.path.join(Config.WEBSERVER_FOLDER, folder)
+                    for folder in folders_to_scrape:
+                        folder_path = os.path.join(Config.WEBSERVER_FOLDER, folder)
 
-                    # Check if the folder exists
-                    if os.path.exists(folder_path):
-                        print(f"Folder exist: {folder_path}")
-                    if not os.path.exists(folder_path):
-                        # print(f"Folder does not exist: {folder_path}")
-                        continue
+                        # Check if the folder exists
+                        if os.path.exists(folder_path):
+                            print(f"Folder exist: {folder_path}")
+                        if not os.path.exists(folder_path):
+                            # print(f"Folder does not exist: {folder_path}")
+                            continue
 
-                    for root, dirs, files in os.walk(folder_path):
-                        for file in files:
-                            if file.endswith(Config.PAGES_EXTENSION):
-                                file_path = os.path.join(root, file)
-                                futures.append(executor.submit(scrape_page, file_path, scraping_details, folder, tableName, user_id))
-                            
-                for future in as_completed(futures):
-                    try:
-                        future.result()
-                    except Exception as e:
-                        print(f"Error in future: {e}")
+                        for root, dirs, files in os.walk(folder_path):
+                            for file in files:
+                                if file.endswith(Config.PAGES_EXTENSION):
+                                    file_path = os.path.join(root, file)
+                                    futures.append(executor.submit(scrape_page, file_path, scraping_details, folder, tableName, user_id))
+                                
+                    for future in as_completed(futures):
+                        try:
+                            future.result()
+                        except Exception as e:
+                            print(f"Error in future: {e}")
+
+            # Process folders in batches to reduce memory usage
+            batch_size = 10
+            for i in range(0, len(folders_to_scrape), batch_size):
+                batch = folders_to_scrape[i:i+batch_size]
+                process_folder_batch(batch)
 
         else:
             print("Invalid accountId")
@@ -2043,15 +2049,22 @@ def trigger_new_scrape(request):
         return jsonify({"task": "Adding pages", "status": True})
 
 
-@retry(wait=wait_exponential(multiplier=1, min=4, max=50), stop=stop_after_attempt(5))
-def execute_query(query, data):
-    connection, cursor = db_connection()
-    try:
-        cursor.execute(query, data)
-        connection.commit()
-    finally:
-        cursor.close()
-        connection.close()
+def execute_query(query, data, max_retries=5):
+    retries = 0
+    while retries < max_retries:
+        connection, cursor = db_connection()
+        try:
+            cursor.execute(query, data)
+            connection.commit()
+            return
+        except mysql.connector.Error as ex:
+            print(f"Error executing query: {ex}")
+            retries += 1
+            sleep(2 ** retries)  # Exponential backoff
+        finally:
+            cursor.close()
+            connection.close()
+    raise Exception("Max retries exceeded")
 
 def scrape_page(file_path, scraping_details, folder, table_name, user_id):
     try:

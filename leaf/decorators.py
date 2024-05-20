@@ -144,10 +144,8 @@ def db_connection():
         'database': Config.DB_NAME
     }
 
-    connection_pool = pooling.MySQLConnectionPool(pool_name="mypool", pool_size=10, **db_config)
-
     try:
-        connection = connection_pool.get_connection()
+        connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
     except mysql.connector.Error as ex:
         return f"Error - {ex}"
