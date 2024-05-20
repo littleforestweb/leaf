@@ -2052,14 +2052,14 @@ def trigger_new_scrape(request):
             print("Invalid accountId")
 
     except Exception as e:
-        print("trigger_new_scrape model")
-        print(e)
+        current_app.logger.debug("trigger_new_scrape model")
+        current_app.logger.debug(e)
         return jsonify({"task": "Adding pages", "status": False})
     finally:
         mydb.close()
         return jsonify({"task": "Adding pages", "status": True})
 
-def execute_query(query, data, max_retries=5):
+def execute_query(query, data, max_retries=50):
     retries = 0
     while retries < max_retries:
         connection, cursor = db_connection()
@@ -2068,7 +2068,7 @@ def execute_query(query, data, max_retries=5):
             connection.commit()
             return
         except mysql.connector.Error as ex:
-            print(f"Error executing query: {ex}")
+            current_app.logger.debug(f"Error executing query: {ex}")
             retries += 1
             sleep(2 ** retries)  # Exponential backoff
         finally:
@@ -2103,7 +2103,7 @@ def scrape_page(file_path, scraping_details, folder, table_name, user_id):
             execute_query(add_data, data_tuple)
 
     except Exception as e:
-        print(f"Error processing {file_path}: {e}")
+        current_app.logger.debug(f"Error processing {file_path}: {e}")
 
 # Function to read HTML content from a file
 def read_html_file(file_path):
