@@ -9,6 +9,7 @@ from time import sleep
 import pandas as pd
 import werkzeug.utils
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from flask import current_app
 
 from leaf.template_editor.models import *
 
@@ -2041,10 +2042,10 @@ def trigger_new_scrape(request):
             # Process files in batches to reduce memory usage
             batch_size = 100  # Adjust batch size if needed
             total_files = len(all_files)
-            print(f"Total files to process: {total_files}", flush=True)
+            current_app.logger.debug(f"Total files to process: {total_files}")
             for i in range(0, total_files, batch_size):
                 batch = all_files[i:i+batch_size]
-                print(f"Processing batch {i//batch_size + 1}/{(total_files + batch_size - 1) // batch_size}", flush=True)
+                current_app.logger.debug(f"Processing batch {i//batch_size + 1}/{(total_files + batch_size - 1) // batch_size}")
                 process_file_batch(batch)
 
         else:
