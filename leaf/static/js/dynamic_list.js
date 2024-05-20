@@ -117,6 +117,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
         success: async function (allAccountSettings) {
             var images_webpath = allAccountSettings.images_webpath;
             var original_images_webpath = allAccountSettings.original_images_webpath;
+            var preview_server = allAccountSettings.preview_server;
             allAccountSettings = allAccountSettings.settings;
 
             $("#e-id").val(mainRowId);
@@ -547,7 +548,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                 } else if (allAccountSettings[f][6] && allAccountSettings[f][6] === "pdf" || allAccountSettings[f][6] && allAccountSettings[f][6] === "image") {
                                     if (type === 'edit') {
                                         if (site_dynamic_list) {
-                                            site_dynamic_list = site_dynamic_list.replace('JPG', 'jpg').replace('JPEG', 'jpeg').replace('PNG', 'png').replace('PDF', 'pdf').replace('GIF', 'gif');
+                                            site_dynamic_list = site_dynamic_list.replace('.JPG', '.jpg').replace('.JPEG', '.jpeg').replace('.PNG', '.png').replace('.PDF', '.pdf').replace('.GIF', '.gif');
                                             var lastIndexOfFileName = site_dynamic_list.substring(site_dynamic_list.lastIndexOf('/') + 1);
                                             if (site_dynamic_list.toLowerCase().includes('static')) {
                                                 var srcVal = site_dynamic_list.toLowerCase();
@@ -556,14 +557,14 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                                     if (site_dynamic_list.toLowerCase().includes('http')) {
                                                         var srcVal = site_dynamic_list;
                                                     } else {
-                                                        var srcVal = original_images_webpath + site_dynamic_list;
+                                                        var srcVal = preview_server + site_dynamic_list;
                                                     }
                                                 } else {
 
                                                     if (site_dynamic_list.toLowerCase().includes('http')) {
                                                         var srcVal = site_dynamic_list;
                                                     } else {
-                                                        var srcVal = original_images_webpath + site_dynamic_list;
+                                                        var srcVal = preview_server + site_dynamic_list;
                                                     }
                                                 }
                                             }
@@ -1995,9 +1996,10 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
     let getAccountSettings = await $.get("/api/settings/" + accountId, function (allAccountSettings) {
         var images_webpath = allAccountSettings.images_webpath;
         var original_images_webpath = allAccountSettings.original_images_webpath;
+        var preview_server = allAccountSettings.preview_server;
         settings = allAccountSettings.settings;
 
-        return [settings, images_webpath, original_images_webpath];
+        return [settings, images_webpath, original_images_webpath, preview_server];
     });
 
     let allColumns = [{
@@ -2121,22 +2123,22 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
                         fullVal = fullVal.replace(/&amp;comma;/g, ',').replace(/&comma;/g, ',').replace(/&amp,<br>comma,<br>/g, ',');
 
                         if ((isDocument || isImage) && source[xx] && source[xx] !== "nan") {
-                            fullVal = fullVal.replace('JPG', 'jpg').replace('JPEG', 'jpeg').replace('PNG', 'png').replace('PDF', 'pdf').replace('GIF', 'gif');
+                            fullVal = fullVal.replace('.JPG', '.jpg').replace('.JPEG', '.jpeg').replace('.PNG', '.png').replace('.PDF', '.pdf').replace('.GIF', '.gif');
                             if (fullVal.toLowerCase().includes('static')) {
                                 var fullVal = fullVal; //.toLowerCase()
                             } else {
                                 if (isDocument) {
                                     if (!fullVal.toLowerCase().includes('http')) {
-                                        var fullVal = getAccountSettings.original_images_webpath + fullVal;
+                                        var fullVal = getAccountSettings.preview_server + fullVal;
                                     }
                                 } else if (isImage) {
                                     if (fullVal.toLowerCase().includes('images') && !fullVal.toLowerCase().includes('http')) {
-                                        var fullVal = getAccountSettings.original_images_webpath + fullVal;
+                                        var fullVal = getAccountSettings.preview_server + fullVal;
                                     } else if (!fullVal.toLowerCase().includes('images') && !fullVal.toLowerCase().includes('http')) {
-                                        if (getAccountSettings.original_images_webpath.at(-1) === '/') {
-                                            var fullVal = getAccountSettings.original_images_webpath + fullVal;
+                                        if (getAccountSettings.preview_server.at(-1) === '/') {
+                                            var fullVal = getAccountSettings.preview_server + fullVal;
                                         } else {
-                                            var fullVal = getAccountSettings.original_images_webpath + '/' + fullVal;
+                                            var fullVal = getAccountSettings.preview_server + '/' + fullVal;
                                         }
                                     }
                                 }

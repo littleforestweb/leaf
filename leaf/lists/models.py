@@ -1060,7 +1060,8 @@ def get_settings(accountId: str):
             json_response = {
                 "settings": settings_data,
                 "images_webpath": Config.IMAGES_WEBPATH,
-                "original_images_webpath": Config.ORIGINAL_IMAGES_WEBPATH
+                "original_images_webpath": Config.ORIGINAL_IMAGES_WEBPATH,
+                "preview_server": Config.PREVIEW_SERVER
             }
         else:
             print("Invalid accountId")
