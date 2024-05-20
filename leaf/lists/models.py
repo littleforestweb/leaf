@@ -2032,7 +2032,7 @@ def trigger_new_scrape(request):
                             print(f"Error in future: {e}")
 
             # Process folders in batches to reduce memory usage
-            batch_size = 10
+            batch_size = 2
             for i in range(0, len(folders_to_scrape), batch_size):
                 batch = folders_to_scrape[i:i+batch_size]
                 process_folder_batch(batch)

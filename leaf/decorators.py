@@ -7,7 +7,6 @@ import mysql.connector
 from flask import session, render_template, jsonify
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from mysql.connector import pooling
 
 from leaf.config import Config
 
