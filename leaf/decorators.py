@@ -7,6 +7,7 @@ import mysql.connector
 from flask import session, render_template, jsonify
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from mysql.connector import pooling
 
 from leaf.config import Config
 
@@ -143,8 +144,10 @@ def db_connection():
         'database': Config.DB_NAME
     }
 
+    connection_pool = pooling.MySQLConnectionPool(pool_name="mypool", pool_size=10, **db_config)
+
     try:
-        connection = mysql.connector.connect(**db_config)
+        connection = connection_pool.get_connection()
         cursor = connection.cursor()
     except mysql.connector.Error as ex:
         return f"Error - {ex}"

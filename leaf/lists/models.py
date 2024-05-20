@@ -9,6 +9,7 @@ import time
 import pandas as pd
 import werkzeug.utils
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from tenacity import retry, wait_exponential, stop_after_attempt
 
 from leaf.template_editor.models import *
 
@@ -1981,6 +1982,8 @@ def trigger_new_scrape(request):
     if not int(accountId) == int(session["accountId"]):
         return jsonify({"error": "Forbidden"}), 403
 
+    user_id = session['id']
+
     mydb, mycursor = db_connection()
 
     try:
@@ -2002,28 +2005,31 @@ def trigger_new_scrape(request):
             delete_query = f"DELETE FROM {tableName};"
             mycursor.execute(delete_query)
             mydb.commit()
-                
-            for folder in folders_to_scrape:
-                folder_path = os.path.join(Config.WEBSERVER_FOLDER, folder)
+            
+            with ThreadPoolExecutor(max_workers=10) as executor:
+                futures = []
 
-                # Check if the folder exists
-                if os.path.exists(folder_path):
-                    print(f"Folder exist: {folder_path}")
-                if not os.path.exists(folder_path):
-                    # print(f"Folder does not exist: {folder_path}")
-                    continue
+                for folder in folders_to_scrape:
+                    folder_path = os.path.join(Config.WEBSERVER_FOLDER, folder)
 
-                for root, dirs, files in os.walk(folder_path):
-                    for file in files:
-                        if file.endswith(Config.PAGES_EXTENSION):
-                            file_path = os.path.join(root, file)
-                            futures.append(executor.submit(scrape_page, file_path, scraping_details, folder, tableName, mydb))
+                    # Check if the folder exists
+                    if os.path.exists(folder_path):
+                        print(f"Folder exist: {folder_path}")
+                    if not os.path.exists(folder_path):
+                        # print(f"Folder does not exist: {folder_path}")
+                        continue
+
+                    for root, dirs, files in os.walk(folder_path):
+                        for file in files:
+                            if file.endswith(Config.PAGES_EXTENSION):
+                                file_path = os.path.join(root, file)
+                                futures.append(executor.submit(scrape_page, file_path, scraping_details, folder, tableName, user_id))
                             
-            for future in as_completed(futures):
-                try:
-                    future.result()
-                except Exception as e:
-                    print(f"Error in future: {e}")
+                for future in as_completed(futures):
+                    try:
+                        future.result()
+                    except Exception as e:
+                        print(f"Error in future: {e}")
 
         else:
             print("Invalid accountId")
@@ -2037,7 +2043,17 @@ def trigger_new_scrape(request):
         return jsonify({"task": "Adding pages", "status": True})
 
 
-def scrape_page(file_path, scraping_details, folder, table_name, mydb):
+@retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(5))
+def execute_query(query, data):
+    connection, cursor = db_connection()
+    try:
+        cursor.execute(query, data)
+        connection.commit()
+    finally:
+        cursor.close()
+        connection.close()
+
+def scrape_page(file_path, scraping_details, folder, table_name, user_id):
     try:
         html_content = read_html_file(file_path)
         soup = BeautifulSoup(html_content, 'lxml')
@@ -2051,19 +2067,17 @@ def scrape_page(file_path, scraping_details, folder, table_name, mydb):
                 data_key = key.replace("scrape__", "")
                 if selector.strip() != "":
                     content = extract_content(soup, selector)
-                    if content:
+                    if content:  # Only add if content is not empty or None
                         page_data[data_key] = content
 
-        page_data["modified_by"] = session['id']
-        if page_data:
+        page_data["modified_by"] = user_id
+        if page_data:  # Only add the file's data if there's at least one key with content
             columns = ', '.join(page_data.keys())
             placeholders = ', '.join(['%s'] * len(page_data))
             add_data = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
             data_tuple = tuple(page_data.values())
 
-            with mydb.cursor() as mycursor:
-                mycursor.execute(add_data, data_tuple)
-                mydb.commit()
+            execute_query(add_data, data_tuple)
 
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
