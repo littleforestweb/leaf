@@ -2454,7 +2454,6 @@ function clickIt(thisSpanList, thisValue, thisValueBeautified, type) {
 
 // Function to set file_url_path conditionally
 function getFileUrlPath(fieldsToLink, page_extension) {
-  // Check if fieldsToLink ends with .page
   if (fieldsToLink.endsWith(page_extension)) {
     return fieldsToLink;
   } else {
