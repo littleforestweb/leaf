@@ -1483,6 +1483,7 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
 
                 allColumns.push({
                     aTargets: [xx + 1],
+                    orderable: false,
                     mData: function (source, type, row) {
                         var val = "<i style='color: #CCC;'>No data</i>";
                         var fullVal = (source[xx] ? source[xx] : "").toString();
@@ -1622,7 +1623,7 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
         aoColumns: allColumns,
         dom: 'Brltip',
         language: {"emptyTable": "No data available"},
-        order: [2, "asc"],
+        order: [1, "asc"],
         pageLength: 100,
         aLengthMenu: [[50, 100, 200, 300, 500, 1000], [50, 100, 200, 300, 500, 1000]],
         autoWidth: true,
