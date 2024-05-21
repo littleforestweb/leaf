@@ -254,7 +254,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
         },
         paginate: false,
         language: {"emptyTable": "No data available in table"},
-        order: [[1, "asc"]],
+        order: [[2, "desc"]],
         data: dataset,
         initComplete: function () {
             // For each column
