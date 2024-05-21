@@ -453,7 +453,8 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                         $('#e-' + spanId).parent().find("div.ck-editor").remove();
                                         $('#e-' + spanId).replaceWith($('<textarea name="e-' + spanId + '" class="form-control text-editor ' + mandatoryClass + '" id="e-' + spanId + '"></textarea>'));
 
-                                        document.getElementById('e-' + spanId).innerHTML = site_dynamic_list;
+                                        var base_url_to_add = '<base href="' + preview_server + '" />';
+                                        document.getElementById('e-' + spanId).innerHTML = base_url_to_add + site_dynamic_list;
 
                                         CKEDITOR.replace(document.querySelector('#e-' + spanId), {
                                             fullPage: false,
@@ -863,7 +864,7 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
         }
     })
 
-    var form_data = await getFormData('edit-' + reference, userId);
+    var form_data = await getFormData('edit-' + reference, userId, preview_server);
 
     if (!form_data[0] || (form_data[0] && form_data[0].mandatoryFields != true)) {
 
@@ -999,7 +1000,7 @@ async function getUserDetailsByValue(id, label) {
     return getUserDetails
 }
 
-async function getFormData(formid, userId = false) {
+async function getFormData(formid, userId = false, preview_server) {
     formid = escapeHtml(formid);
     var form = document.getElementById(formid);
 
@@ -1034,6 +1035,9 @@ async function getFormData(formid, userId = false) {
 
         } else if (element.classList.contains('text-editor')) {
             formdata[element.name] = CKEDITOR.instances[element.id].getData().replace(/,/g, '&comma;').replace(/\\/g, "__BACKSLASH__TO_REPLACE_ON_WEB__").replace(/\'/g, "’").replace(/\xA0/g, '');
+            if (preview_server) {
+                formdata[element.name] = formdata[element.name].replace('<base href="' + preview_server + '" />', '');
+            }
             formdata[element.name] = formdata[element.name].replace(/<[^>]+style="[^"]*"[^>]*>/g, function (match) {
                 return match.replace(/style="[^"]*"/g, '');
             });
@@ -1198,7 +1202,7 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
         }
     })
 
-    var form_data = await getFormData('add-' + reference, userId);
+    var form_data = await getFormData('add-' + reference, userId, preview_server);
 
     if (!form_data[0] || (form_data[0] && form_data[0].mandatoryFields != true)) {
 
@@ -1787,7 +1791,7 @@ async function setConfigurationDynamicList(accountId, reference, action) {
     action = escapeHtml(action);
 
     if (action === 'save') {
-        var form_data = await getFormData('setConfiguration-' + reference, false);
+        var form_data = await getFormData('setConfiguration-' + reference, false, false);
 
         $.ajax({
             type: "POST",
@@ -1920,7 +1924,7 @@ async function setTemplateDynamicList(accountId, reference, action) {
     action = escapeHtml(action);
 
     if (action === 'save') {
-        var form_data = await getFormData('setTemplate-' + reference, false);
+        var form_data = await getFormData('setTemplate-' + reference, false, false);
 
         form_data["s-templates_format"] = "select";
 
