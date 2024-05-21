@@ -56,6 +56,46 @@ def get_menus_data(accountId: int, userId: str, isAdmin: str):
         return jsonify(jsonR)
 
 
+def get_menu_details(accountId: str, reference: str):
+    """
+    Retrieve menu details for a specific account and reference.
+
+    Args:
+        accountId (str): The ID of the account requesting the menu details.
+        reference (str): The reference identifier for the specific menu.
+
+    Returns:
+        Response: A Flask JSON response containing either the menu details or an error message.
+        - On success: A JSON object with the following keys:
+            - id: The ID of the menu.
+            - name: The name of the menu.
+            - reference: The reference identifier of the menu.
+            - created: The creation timestamp of the menu.
+            - user_with_access: The user associated with access to the menu.
+        - On failure due to forbidden access: A JSON object with an "error" key and the message "Forbidden", along with a 403 status code.
+    """
+
+    jsonR = {'menu': []}
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    mydb, mycursor = db_connection()
+
+    try:
+        sql = "SELECT * FROM menus WHERE reference = %s AND accountId = %s"
+        queryVal = (reference, accountId,)
+        mycursor.execute(sql, queryVal)
+        menu = mycursor.fetchone()
+        jsonR = {"id": menu[0], "name": menu[1], "reference": menu[3], "created": menu[2], "user_with_access": menu[4]}
+    except Exception as e:
+        print("get_menu_details model")
+        print(e)
+    finally:
+        mydb.close()
+        return jsonify(jsonR)
+
+
 def get_menu_data(request, accountId: str, reference: str):
     """
     Get data for a single menu from the database.

@@ -1400,6 +1400,13 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
     var rootPath = window.location;
     rootPath = rootPath.href.split('/menus/')[0];
 
+    // Get menu details
+    let menuDetails = await $.get("/api_menu/get_menu_details/" + accountId + "/" + reference, function (result) {
+        return result;
+    });
+    window.document.title = menuDetails["name"] + " " + window.document.title;
+    document.querySelector("#TableDiv > div > div.header-1 > h3").innerText = menuDetails["name"];
+
     $('#editDynamicList form .mb-3').html('');
     $('#addDynamicList form .mb-3').html('');
     $('#table.table_' + reference).DataTable().clear().draw();

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ reference.capitalize() }}{% endblock %}
+{% block title %}{% endblock %}
 
 {% block content %}
     <script>
@@ -272,7 +272,7 @@
     <div id="TableDiv" class="card mb-4">
         <div class="card-body">
             <div class="header-1">
-                <h3 class="pull-left">{{ referenceNoUnderscores }}</h3>
+                <h3 class="pull-left"></h3>
                 <div class="header-btns pull-right">
                     <button type="button" class="btn btn-orange" data-bs-toggle="modal" data-bs-target="#publishDynamicList" onclick="publishList()">Publish</button>
                     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addDynamicList" onclick="populateEditDynamicMenuDialog('{{ accountId }}', '{{ reference }}', 'add');">Add</button>
