@@ -698,7 +698,10 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
             singleField = extractMonthAndDay(singleField, matches[field]);
             singleField = singleField.toString();
         }
-        singleField = singleField.split('/');
+        if (singleField) {
+            singleField = singleField.split('/');
+        }
+
         // Remove empty strings and join with "/"
         singleField = singleField.filter(item => item !== '').join('/');
         fieldsToLink = fieldsToLink.replace("{" + matches[field] + "}", singleField);
