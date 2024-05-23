@@ -1422,13 +1422,12 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
 
                         for result in item_results:
                             for item_key, item_value in result.items():
-                                current_app.logger.info(str(item_key) + ": " + str(item_value))
                                 if item_key.lower() in publication_names:
                                     publication_date = item_value
                                 else:
                                     list_page_url = list_page_url.replace("{" + item_key + "}", str(item_value))
 
-                        if publication_date:
+                        if not publication_date or publication_date is not None:
                             for field in items:
                                 if field == "year" or field == "month" or field == "day":
                                     single_field = extract_month_and_day(publication_date, field)
@@ -1436,7 +1435,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
 
                                     list_page_url = list_page_url.replace("{" + field + "}", single_field)
 
-                    if publication_date:
+                    if not publication_date or publication_date is not None:
                         if key.lower() == 'id' or key.lower() == 'modified_by' or key.lower() == 'created_by':
                             continue  # Skip if it's the id key, modified_by key or created_by key
 
