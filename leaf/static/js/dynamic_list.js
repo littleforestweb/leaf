@@ -696,7 +696,10 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
                     break;
                 }
             }
-            singleField = $('span#' + matchingColumn[2].toLowerCase() + '_pos_' + thisValId).html();
+            singleField = $('input#e-' + matchingColumn[2].toLowerCase()).val();
+            if (singleField == "") {
+                singleField = $('span#' + matchingColumn[2].toLowerCase() + '_pos_' + thisValId).html();
+            }
             singleField = extractMonthAndDay(singleField, matches[field]);
             singleField = singleField.toString();
         }
