@@ -1543,46 +1543,48 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                             else:
                                 list_page_url = list_page_url.replace("{" + item_key + "}", str(item_value))
 
-                    for field in items:
-                        if field == "year" or field == "month" or field == "day":
+                    if publication_date:
+                        for field in items:
+                            if field == "year" or field == "month" or field == "day":
 
-                            single_field = extract_month_and_day(publication_date, field)
-                            single_field = str(single_field)
+                                single_field = extract_month_and_day(publication_date, field)
+                                single_field = str(single_field)
 
-                            list_page_url = list_page_url.replace("{" + field + "}", single_field)
+                                list_page_url = list_page_url.replace("{" + field + "}", single_field)
 
-                if key.lower() == 'id' or key.lower() == 'modified_by' or key.lower() == 'created_by':
-                    continue  # Skip if it's the id key
+                if publication_date:
+                    if key.lower() == 'id' or key.lower() == 'modified_by' or key.lower() == 'created_by':
+                        continue  # Skip if it's the id key
 
-                if is_empty_or_whitespace(value):
-                    continue  # Skip creating element for empty or whitespace-only values
+                    if is_empty_or_whitespace(value):
+                        continue  # Skip creating element for empty or whitespace-only values
 
-                if isinstance(value, datetime.datetime):
-                    value = value.strftime('%Y-%m-%d %H:%M:%S')
+                    if isinstance(value, datetime.datetime):
+                        value = value.strftime('%Y-%m-%d %H:%M:%S')
 
-                # Check if this field can serve as a GUID
-                if is_guid_candidate(key):
-                    if isinstance(value, str) and not (value.startswith('http://') or value.startswith('https://')):
-                        value = os.path.join(Config.PREVIEW_SERVER, list_page_url)
-                        value = value + (Config.PAGES_EXTENSION if not value.endswith(Config.PAGES_EXTENSION) else "")
+                    # Check if this field can serve as a GUID
+                    if is_guid_candidate(key):
+                        if isinstance(value, str) and not (value.startswith('http://') or value.startswith('https://')):
+                            value = os.path.join(Config.PREVIEW_SERVER, list_page_url)
+                            value = value + (Config.PAGES_EXTENSION if not value.endswith(Config.PAGES_EXTENSION) else "")
 
-                    guid_elem = ET.SubElement(item_elem, "guid")
-                    guid_elem.text = value
-                    guid_found = True
+                        guid_elem = ET.SubElement(item_elem, "guid")
+                        guid_elem.text = value
+                        guid_found = True
 
-                # Normalize key names to camelCase
-                normalized_key = camel_case_convert(key)
-                sub_elem = ET.SubElement(item_elem, normalized_key)
-                sub_elem.text = value
+                    # Normalize key names to camelCase
+                    normalized_key = camel_case_convert(key)
+                    sub_elem = ET.SubElement(item_elem, normalized_key)
+                    sub_elem.text = value
 
-                # Check for image URLs and create a separate image element
-                if is_image_url(str(value)):
-                    image_element = ET.SubElement(sub_elem, "image")
-                    ET.SubElement(image_element, "url").text = value
+                    # Check for image URLs and create a separate image element
+                    if is_image_url(str(value)):
+                        image_element = ET.SubElement(sub_elem, "image")
+                        ET.SubElement(image_element, "url").text = value
 
-                # Attach captions directly to the image element
-                if image_element and is_caption_key(key):
-                    ET.SubElement(image_element, "title").text = value
+                    # Attach captions directly to the image element
+                    if image_element and is_caption_key(key):
+                        ET.SubElement(image_element, "title").text = value
 
             # Ensure every item has a GUID, falling back to a default message if none is found
             if not guid_found:
