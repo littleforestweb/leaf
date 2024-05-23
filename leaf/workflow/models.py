@@ -1422,6 +1422,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
 
                         for result in item_results:
                             for item_key, item_value in result.items():
+                                current_app.logger.info(item_key)
                                 if item_key.lower() in publication_names:
                                     publication_date = item_value
                                 else:
@@ -1429,7 +1430,6 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
 
                         for field in items:
                             if field == "year" or field == "month" or field == "day":
-                                current_app.logger.info(publication_date)
                                 single_field = extract_month_and_day(publication_date, field)
                                 single_field = str(single_field)
 
