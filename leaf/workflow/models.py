@@ -1473,7 +1473,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                 if not guid_found:
                     rss.remove(item_elem)
                     channel.remove(item_elem)
-                if not guid_found:
+                # if not guid_found:
                     # ET.SubElement(item_elem, "guid").text = "Unique identifier not found"
 
             # Write the complete RSS feed to a file
