@@ -11,7 +11,7 @@ import paramiko
 import werkzeug.utils
 from werkzeug.datastructures import MultiDict
 from werkzeug.wrappers import Request
-from flask import jsonify, session
+from flask import jsonify, session, current_app
 from leaf import Config
 from leaf import decorators
 from leaf.users.models import get_user_permission_level
@@ -1429,7 +1429,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
 
                         for field in items:
                             if field == "year" or field == "month" or field == "day":
-
+                                current_app.logger.info(publication_date)
                                 single_field = extract_month_and_day(publication_date, field)
                                 single_field = str(single_field)
 
