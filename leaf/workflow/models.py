@@ -1734,55 +1734,59 @@ def check_if_should_publish_items():
                             else:
                                 list_page_url = list_page_url.replace("{" + key + "}", str(value))
 
-                    for field in items:
-                        if publication_date and (field == "year" or field == "month" or field == "day"):
+                    if publication_date:
+                        for field in items:
+                            if publication_date and (field == "year" or field == "month" or field == "day"):
 
-                            single_field = extract_month_and_day(publication_date, field)
-                            single_field = str(single_field)
+                                single_field = extract_month_and_day(publication_date, field)
+                                single_field = str(single_field)
 
-                            list_page_url = list_page_url.replace("{" + field + "}", single_field)
+                                list_page_url = list_page_url.replace("{" + field + "}", single_field)
 
-                    workflow_data_temporary_url = Config.PREVIEW_SERVER + f"{list_page_url}" + (Config.PAGES_EXTENSION if not list_page_url.endswith(Config.PAGES_EXTENSION) else "")
-                    protocol = "https://" if "https://" in workflow_data_temporary_url else "http://"
-                    clean_url = workflow_data_temporary_url.replace(protocol, "").replace("//", "/")
+                        workflow_data_temporary_url = Config.PREVIEW_SERVER + f"{list_page_url}" + (Config.PAGES_EXTENSION if not list_page_url.endswith(Config.PAGES_EXTENSION) else "")
+                        protocol = "https://" if "https://" in workflow_data_temporary_url else "http://"
+                        clean_url = workflow_data_temporary_url.replace(protocol, "").replace("//", "/")
 
-                    passed_session = { "accountId": workflow['accountId'] }
+                        passed_session = { "accountId": workflow['accountId'] }
 
-                    jsonConfig = get_list_configuration(workflow['accountId'], workflow['listName'], passed_session)
+                        jsonConfig = get_list_configuration(workflow['accountId'], workflow['listName'], passed_session)
 
-                    # Process the JSON response
-                    jsonConfigSaveByFields = None
-                    jsonConfigFieldsToSaveBy = None
+                        # Process the JSON response
+                        jsonConfigSaveByFields = None
+                        jsonConfigFieldsToSaveBy = None
 
-                    if 'columns' in jsonConfig and len(jsonConfig['columns']) > 0:
-                        if len(jsonConfig['columns'][0]) > 3:
-                            jsonConfigSaveByFields = jsonConfig['columns'][0][3]
-                        if len(jsonConfig['columns'][0]) > 4:
-                            jsonConfigFieldsToSaveBy = jsonConfig['columns'][0][4]
+                        if 'columns' in jsonConfig and len(jsonConfig['columns']) > 0:
+                            if len(jsonConfig['columns'][0]) > 3:
+                                jsonConfigSaveByFields = jsonConfig['columns'][0][3]
+                            if len(jsonConfig['columns'][0]) > 4:
+                                jsonConfigFieldsToSaveBy = jsonConfig['columns'][0][4]
 
-                    new_request_data = {
-                        "id": workflow['id'],
-                        "status": workflow['status'],
-                        "type": workflow['type'],
-                        "listName": workflow['listName'],
-                        "saveByFields": jsonConfigSaveByFields,
-                        "fieldsToSaveBy": jsonConfigFieldsToSaveBy,
-                        "files_details": "",
-                        "site_ids": site_ids,
-                        "list_item_url_path": clean_url,
-                        "list_feed_path": list_feed,
-                        "publication_date": publication_date
-                    }
+                        new_request_data = {
+                            "id": workflow['id'],
+                            "status": workflow['status'],
+                            "type": workflow['type'],
+                            "listName": workflow['listName'],
+                            "saveByFields": jsonConfigSaveByFields,
+                            "fieldsToSaveBy": jsonConfigFieldsToSaveBy,
+                            "files_details": "",
+                            "site_ids": site_ids,
+                            "list_item_url_path": clean_url,
+                            "list_feed_path": list_feed,
+                            "publication_date": publication_date
+                        }
 
-                    # Simulate a request object
-                    class MockRequest:
-                        def __init__(self, form_data):
-                            self.form = MultiDict(form_data)
+                        # Simulate a request object
+                        class MockRequest:
+                            def __init__(self, form_data):
+                                self.form = MultiDict(form_data)
 
-                    # Create a mock request object
-                    mock_request = MockRequest(new_request_data)
+                        # Create a mock request object
+                        mock_request = MockRequest(new_request_data)
 
-                    new_action_workflow = proceed_action_workflow(mock_request, True)
+                        new_action_workflow = proceed_action_workflow(mock_request, True)
+
+                    else:
+                        print(site_ids + " has no publication date defined!")
 
             else:
                 print(workflow['listName'] + " as no template defined!")
