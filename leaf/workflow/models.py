@@ -1471,7 +1471,9 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
 
                 # Ensure every item has a GUID, falling back to a default message if none is found
                 if not guid_found:
-                    ET.SubElement(item_elem, "guid").text = "Unique identifier not found (link, url, file_url, path, item_path, item_link, file_path, doc_link, doc, doc_path, document_path, document_url)"
+                    ET.SubElement.remove(item_elem)
+                if not guid_found:
+                    ET.SubElement(item_elem, "guid").text = "Unique identifier not found"
 
             # Write the complete RSS feed to a file
             tree = ET.ElementTree(rss)
