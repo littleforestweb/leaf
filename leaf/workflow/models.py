@@ -1428,6 +1428,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                                     list_page_url = list_page_url.replace("{" + item_key + "}", str(item_value))
 
                         if not publication_date or publication_date is not None:
+                            current_app.logger.info(str(publication_date))
                             for field in items:
                                 if field == "year" or field == "month" or field == "day":
                                     single_field = extract_month_and_day(publication_date, field)
