@@ -1423,7 +1423,8 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                         for result in item_results:
                             for item_key, item_value in result.items():
                                 current_app.logger.info(item_key)
-                                if item_key.lower() in publication_names:
+                                current_app.logger.info(item_value)
+                                if item_key.lower().trim() in publication_names:
                                     publication_date = item_value
                                 else:
                                     list_page_url = list_page_url.replace("{" + item_key + "}", str(item_value))
