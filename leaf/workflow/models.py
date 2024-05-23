@@ -1427,16 +1427,15 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                                 else:
                                     list_page_url = list_page_url.replace("{" + item_key + "}", str(item_value))
 
-                        if not publication_date or publication_date is not None:
+                        if publication_date:
                             for field in items:
-                                current_app.logger.info(str(publication_date) + ": " + str(field))
                                 if field == "year" or field == "month" or field == "day":
                                     single_field = extract_month_and_day(publication_date, field)
                                     single_field = str(single_field)
 
                                     list_page_url = list_page_url.replace("{" + field + "}", single_field)
 
-                    if not publication_date or publication_date is not None:
+                    if publication_date:
                         if key.lower() == 'id' or key.lower() == 'modified_by' or key.lower() == 'created_by':
                             continue  # Skip if it's the id key, modified_by key or created_by key
 
