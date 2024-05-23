@@ -37,7 +37,7 @@ CKEDITOR.plugins.add("anchor", {
     }
 });
 
-async function setStatus(status, id, type, listName, accountId, files_details, site_ids, list_item_url_path, list_feed_path) {
+async function setStatus(status, id, type, listName, accountId, files_details, site_ids, list_item_url_path, list_feed_path, publication_date) {
     document.getElementById("actionContainer").innerHTML = "<span>Deploying...</span>"
 
     let jsonConfigSaveByFields = false;
@@ -71,7 +71,8 @@ async function setStatus(status, id, type, listName, accountId, files_details, s
         "files_details": files_details,
         "site_ids": site_ids,
         "list_item_url_path": list_item_url_path,
-        "list_feed_path": list_feed_path
+        "list_feed_path": list_feed_path,
+        "publication_date": publication_date
     }
 
     $.ajax({
@@ -79,7 +80,12 @@ async function setStatus(status, id, type, listName, accountId, files_details, s
         url: "/workflow/action",
         data: dataF,
         success: function (entry) {
-            document.getElementById("actionContainer").innerHTML = "<span>No Action needed</span>";
+            if (entry["message"] !== "waiting") {
+                document.getElementById("actionContainer").innerHTML = "<span>No Action needed</span>";
+            } else {
+                document.getElementById("actionContainer").innerHTML = "<span>Will be published on: " + publication_date + "</span>";
+            }
+            
             document.getElementById("statusContainer").innerHTML = "<span>" + entry["action"] + "</span>";
             document.getElementById("workflowNotification").classList.add("bg-success");
             document.getElementById("workflowNotificationMsg").innerHTML = "<span>Workflow Completed</span>"

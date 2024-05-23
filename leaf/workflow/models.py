@@ -7,15 +7,18 @@ import time
 import xml.etree.ElementTree as ET
 from email.message import EmailMessage
 from urllib.parse import unquote, urljoin
-
 import paramiko
 import werkzeug.utils
-from flask import session
-
+from werkzeug.datastructures import MultiDict
+from werkzeug.wrappers import Request
+from flask import jsonify, session
 from leaf import Config
 from leaf import decorators
 from leaf.users.models import get_user_permission_level
-
+from leaf.lists.models import get_list_configuration
+from apscheduler.schedulers.background import BackgroundScheduler
+import atexit
+import time
 
 def is_workflow_owner(workflow_id):
     """
@@ -272,31 +275,37 @@ def process_type_3(workflow_data, mycursor):
 
             list_page_url = list_template
 
-            for result in results:
-                for key, value in result.items():
-                    if key.lower() in publication_names:
-                        publication_date = value
-                    else:
-                        list_page_url = list_page_url.replace("{" + key + "}", str(value))
+            if results and len(results) > 0:
+                for result in results:
+                    for key, value in result.items():
+                        if key.lower() in publication_names:
+                            publication_date = value
+                        else:
+                            list_page_url = list_page_url.replace("{" + key + "}", str(value))
 
-            for field in items:
-                if field == "year" or field == "month" or field == "day":
-                    matching_column = None
+                for field in items:
+                    if publication_date and (field == "year" or field == "month" or field == "day"):
 
-                    single_field = extract_month_and_day(publication_date, field)
-                    single_field = str(single_field)
+                        single_field = extract_month_and_day(publication_date, field)
+                        single_field = str(single_field)
 
-                    list_page_url = list_page_url.replace("{" + field + "}", single_field)
+                        list_page_url = list_page_url.replace("{" + field + "}", single_field)
 
-            workflow_data_temporary_url = Config.PREVIEW_SERVER + f"{list_page_url}" + Config.PAGES_EXTENSION
-            protocol = "https://" if "https://" in workflow_data_temporary_url else "http://"
-            clean_url = workflow_data_temporary_url.replace(protocol, "").replace("//", "/")
+                workflow_data_temporary_url = Config.PREVIEW_SERVER + f"{list_page_url}" + (Config.PAGES_EXTENSION if not list_page_url.endswith(Config.PAGES_EXTENSION) else "")
+                protocol = "https://" if "https://" in workflow_data_temporary_url else "http://"
+                clean_url = workflow_data_temporary_url.replace(protocol, "").replace("//", "/")
 
-            workflow_data["siteUrl"] = protocol + clean_url
+                workflow_data["siteUrl"] = protocol + clean_url
+
+            else:
+                workflow_data["siteUrl"] = False
+
             workflow_data["siteTitles"] = workflow_data["siteUrl"]
             workflow_data["list_feed_path"] = list_feed
 
-            workflow_data["siteId"] = f"{list_page_url}" + Config.PAGES_EXTENSION
+            workflow_data["siteId"] = f"{list_page_url}" + (Config.PAGES_EXTENSION if not list_page_url.endswith(Config.PAGES_EXTENSION) else "")
+
+            workflow_data["publication_date"] = False if not publication_date else publication_date
 
 
 def get_workflows():
@@ -937,6 +946,417 @@ def gen_sitemap(mycursor, site_id, thisType):
     tree = ET.ElementTree(urlset)
     tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
 
+def proceed_action_workflow(request, not_real_request = None):
+    # Get url from post params
+    workflow_id = werkzeug.utils.escape(request.form.get("id"))
+    action = werkzeug.utils.escape(request.form.get("status"))
+    publication_date = werkzeug.utils.escape(request.form.get("publication_date"))
+
+    if not_real_request is None:
+        # Check if the workflow belongs to the user's account
+        if not is_workflow_owner(int(workflow_id)):
+            return {"error": "Forbidden"}
+
+    target_date = False
+    if publication_date:
+        target_date = datetime.datetime.strptime(publication_date, '%Y-%m-%d').date()
+    current_date = datetime.datetime.utcnow().date()
+
+    thisType = 1
+    if werkzeug.utils.escape(request.form.get("type")):
+        thisType = werkzeug.utils.escape(request.form.get("type"))
+    thisType = int(thisType)
+
+    listName = False
+    if werkzeug.utils.escape(request.form.get("listName")) and werkzeug.utils.escape(request.form.get("listName")) != '':
+        listName = werkzeug.utils.escape(request.form.get("listName"))
+
+    isMenu = False
+
+    if thisType == 4:
+        isMenu = True
+
+    # Get a database connection
+    mydb, mycursor = decorators.db_connection()
+
+    # Run SQL Command
+    if action == "Approve":
+        action = "Approved"
+    elif action == "Reject":
+        action = "Rejected"
+        mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", (action, workflow_id,))
+        mydb.commit()
+        jsonR = {"message": "success", "action": action}
+        return jsonR
+
+    # Check if the user has permission
+    if thisType in [1, 5, 6, 7]:
+        query = "SELECT site_meta.HTMLPath FROM site_meta JOIN workflow ON site_meta.id = workflow.siteIds WHERE workflow.id = %s"
+        params = (workflow_id,)
+        mycursor.execute(query, params)
+        workflow_folder_path = f"/{mycursor.fetchone()[0].lstrip('/')}"
+        perm_level = get_user_permission_level(session["id"], workflow_folder_path)
+        if perm_level != 4:
+            return {"error": "Forbidden"}
+
+    if not listName and thisType == 1:
+        # Get local file path
+        query = "SELECT site_meta.HTMLPath FROM site_meta JOIN workflow ON site_meta.id = workflow.siteIds WHERE workflow.id = %s"
+        params = (workflow_id,)
+        mycursor.execute(query, params)
+        HTMLPath = mycursor.fetchone()[0]
+
+        for srv in Config.DEPLOYMENTS_SERVERS:
+            HTMLPath = HTMLPath.strip("/")
+            local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
+
+            # Replace Preview Reference with Live webserver references
+            with open(local_path) as inFile:
+                data = inFile.read()
+                original_content = data
+            data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH)
+            with open(local_path, "w") as outFile:
+                outFile.write(data)
+
+            assets = find_page_assets(original_content)
+
+            # SCP Files
+            remote_path = os.path.join(srv["remote_path"], HTMLPath)
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            if srv["pkey"] != "":
+                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                if srv["pw"] == "":
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                else:
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+            else:
+                ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+            with ssh.open_sftp() as scp:
+                actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                for asset in assets:
+                    assetFilename = asset.split("/")[-1].strip('/')
+                    assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
+                    assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                    actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
+                    if not actionResultAsset:
+                        try:
+                            raise Exception("Failed to SCP - " + lp + " - " + rp)
+                        except Exception as e:
+                            pass
+                if not actionResult:
+                    try:
+                        raise Exception("Failed to SCP - " + lp + " - " + rp)
+                    except Exception as e:
+                        pass
+
+            with open(local_path, "w") as outFile:
+                outFile.write(original_content)
+
+        # Regenerate Sitemap
+        query = "SELECT site_id FROM site_meta WHERE HTMLPath = %s"
+        mycursor.execute(query, [HTMLPath])
+        site_id = mycursor.fetchone()[0]
+        gen_sitemap(mycursor, site_id, thisType)
+
+    elif not listName and thisType == 2:
+        # do something with TASK
+        pass
+
+    elif not listName and thisType == 6:
+
+        # Unescape HTML entities
+        files_details = request.form.get("files_details")
+
+        # Safely convert the string back to a list
+        try:
+            files_details = ast.literal_eval(files_details)
+        except ValueError as e:
+            print("Error evaluating string:", e)
+            files_details = []
+
+        # Loop through each item in the list
+        for file_detail in files_details:
+            file_path, _ = file_detail
+            file_path = werkzeug.utils.escape(file_path)
+            local_path = os.path.join(Config.WEBSERVER_FOLDER, file_path)
+
+            # SCP to deployment servers
+            remote_paths = []
+            live_urls = []
+
+            for srv in Config.DEPLOYMENTS_SERVERS:
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                with ssh.open_sftp() as scp:
+                    remote_path = os.path.join(srv["remote_path"], file_path)
+                    remote_paths.append(remote_path)
+                    webserver_url = srv["webserver_url"] + "/" if not srv["webserver_url"].endswith("/") else srv["webserver_url"]
+                    live_urls.append(webserver_url + os.path.join(file_path))
+                    folder_path = os.path.dirname(remote_path)
+                    ssh.exec_command("if not exist \"" + folder_path + "\" mkdir \"" + folder_path + "\" else mkdir -p " + folder_path)
+                    scp.put(local_path, remote_path)
+
+    elif listName:
+        if target_date <= current_date:
+            accountId = session['accountId']
+            listName = ''.join(e for e in listName if e.isalnum())
+            if isMenu:
+                completeListName = listName + "Menu.json"
+                account_list = "account_" + str(accountId) + "_menu_" + listName
+            else:
+                completeListName = listName + "List.json"
+                account_list = "account_" + str(accountId) + "_list_" + listName
+
+            saveByFields = werkzeug.utils.escape(request.form.get("saveByFields"))
+            fieldsToSaveBy = False
+            if saveByFields == '1':
+                fieldsToSaveBy = werkzeug.utils.escape(request.form.get("fieldsToSaveBy"))
+
+            # do scp for LISTS
+            for srv in Config.DEPLOYMENTS_SERVERS:
+                DYNAMIC_PATH = Config.DYNAMIC_PATH.strip('/')
+                local_path = os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, completeListName)
+                remote_path = os.path.join(srv["remote_path"], DYNAMIC_PATH, completeListName)
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                if srv["pkey"] != "":
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                    if srv["pw"] == "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                    else:
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                else:
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                with ssh.open_sftp() as scp:
+                    actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                    if not actionResult:
+                        try:
+                            raise Exception("Failed to SCP - " + lp + " - " + rp)
+                        except Exception as e:
+                            pass
+
+                # Save list by pre-selected field independently to speed up the front end (on preview and live environment)
+                if fieldsToSaveBy:
+                    fieldsToSaveBy = "".join(fieldsToSaveBy)
+                    fieldsToSaveBy = fieldsToSaveBy.split(';')
+                    for singleFieldToSaveBy in fieldsToSaveBy:
+                        if isMenu:
+                            mycursor.execute("SELECT DISTINCT %s FROM account_%s_menu_%s", (str(singleFieldToSaveBy), str(accountId), listName,))
+                        else:
+                            mycursor.execute("SELECT DISTINCT %s FROM account_%s_list_%s", (str(singleFieldToSaveBy), str(accountId), listName,))
+
+                        listCleanArray = set()
+                        for fullSingleEntry in mycursor.fetchall():
+                            entries = fullSingleEntry[0].split(';')
+                            for singleEntry in entries:
+                                listCleanArray.add(singleEntry.strip().lower())
+
+                        final_list = list(listCleanArray)
+
+                        for singleListItem in final_list:
+                            if isMenu:
+                                mycursor.execute("SELECT * FROM account_%s_menu_%s WHERE LOWER(%s) LIKE '%%s%' ", (str(accountId), listName, singleFieldToSaveBy, singleListItem,))
+                            else:
+                                mycursor.execute("SELECT * FROM account_%s_list_%s WHERE LOWER(%s) LIKE '%%s%' ", (str(accountId), listName, singleFieldToSaveBy, singleListItem,))
+
+                            row_headers = [x[0] for x in mycursor.description]
+                            fullListByCountry = mycursor.fetchall()
+                            json_data_by_country = [dict(zip(row_headers, result)) for result in fullListByCountry]
+                            json_data_to_write_by_country = json.dumps(json_data_by_country).replace('__BACKSLASH__TO_REPLACE__', '\\')
+
+                            if isMenu:
+                                with open(os.path.join(Config.ENV_PATH, "json_by_country", listName + "_" + singleListItem + "_Menu.json"), "w") as outFileByCountry:
+                                    outFileByCountry.write(json_data_to_write_by_country)
+                                completeListNameByCountry = listName + "_" + singleListItem + "_" + "Menu.json"
+                            else:
+                                with open(os.path.join(Config.ENV_PATH, "json_by_country", listName + "_" + singleListItem + "_List.json"), "w") as outFileByCountry:
+                                    outFileByCountry.write(json_data_to_write_by_country)
+                                completeListNameByCountry = listName + "_" + singleListItem + "_" + "List.json"
+
+                            DYNAMIC_PATH = Config.DYNAMIC_PATH.strip('/')
+                            local_path = os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, "json_by_country", completeListNameByCountry)
+                            remote_path = os.path.join(srv["remote_path"], DYNAMIC_PATH, "json_by_country", completeListNameByCountry)
+                            ssh = paramiko.SSHClient()
+                            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                            if srv["pkey"] != "":
+                                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                                if srv["pw"] == "":
+                                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                                else:
+                                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                            else:
+                                ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                            with ssh.open_sftp() as scp:
+                                actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                            if not actionResult:
+                                try:
+                                    raise Exception("Failed to SCP - " + lp + " - " + rp)
+                                except Exception as e:
+                                    pass
+
+                # Send Static Folder
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                if srv["pkey"] != "":
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                    if srv["pw"] == "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                    else:
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                else:
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                
+                for root, dirs, files in os.walk(Config.FILES_UPLOAD_FOLDER):
+                    for file_name in files:
+                        local_path = os.path.join(root, file_name)
+                        remote_path = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), file_name)
+                        with ssh.open_sftp() as scp:
+                            actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                        if not actionResult:
+                            try:
+                                raise Exception("Failed to SCP - " + lp + " - " + rp)
+                            except Exception as e:
+                                pass
+
+                # # Replace Preview Reference with Live webserver references
+                # with open(local_path) as inFile:
+                #     data = inFile.read()
+                #     original_content = data
+                # data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH)
+                # with open(local_path, "w") as outFile:
+                #     outFile.write(data)
+
+                # assets = find_page_assets(original_content)
+
+                for srv in Config.DEPLOYMENTS_SERVERS:
+
+                    HTMLPath = werkzeug.utils.escape(request.form.get("list_item_url_path").strip("/"))
+                    local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
+                    list_feed_path = werkzeug.utils.escape(request.form.get("list_feed_path").strip("/"))
+
+                    # SCP Files
+                    remote_path = os.path.join(srv["remote_path"], HTMLPath)
+                    ssh = paramiko.SSHClient()
+                    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                    if srv["pkey"] != "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                        if srv["pw"] == "":
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                        else:
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                    else:
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                    with ssh.open_sftp() as scp:
+                        actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+
+                        if not actionResult:
+                            try:
+                                raise Exception("Failed to SCP - " + lp + " - " + rp)
+                            except Exception as e:
+                                pass
+
+                # Regenerate Feed
+                if not isMenu:
+                    # gen_sitemap(mycursor, thisType)
+                    gen_feed(mycursor, account_list, list_feed_path, listName)
+        else:
+            print("Publication date in the future: " + str(target_date) + "; current date: " + str(current_date))
+
+    if not listName and thisType == 5:
+        # Get local file path
+        query = "SELECT site_meta.id, site_meta.HTMLPath FROM site_meta JOIN workflow ON site_meta.id = workflow.siteIds WHERE workflow.id = %s"
+        params = (workflow_id,)
+        mycursor.execute(query, params)
+        res = mycursor.fetchone()
+        pageId, HTMLPath = str(res[0]).split(",")[0], res[1]
+
+        # Update page to "deleted" on db
+        query = "UPDATE site_meta SET status = %s WHERE id = %s"
+        params = ("-1", pageId)
+        mycursor.execute(query, params)
+        mydb.commit()
+
+        # Remove from Deployment servers
+        for srv in Config.DEPLOYMENTS_SERVERS:
+            try:
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                if srv["pkey"] != "":
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                    if srv["pw"] == "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                    else:
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                else:
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                with ssh.open_sftp() as scp:
+                    remote_path = os.path.join(srv["remote_path"], HTMLPath)
+                    scp.remove(remote_path)
+            except Exception as e:
+                pass
+
+        # Regenerate Sitemap
+        query = "SELECT site_id FROM site_meta WHERE HTMLPath = %s"
+        mycursor.execute(query, [HTMLPath])
+        site_id = mycursor.fetchone()[0]
+        gen_sitemap(mycursor, site_id, thisType)
+
+    if not listName and thisType == 7:
+        # Get local file path
+        query = "SELECT site_assets.id, site_assets.path FROM site_assets JOIN workflow ON site_assets.id = workflow.siteIds WHERE workflow.id = %s"
+        params = (workflow_id,)
+        mycursor.execute(query, params)
+        res = mycursor.fetchone()
+        assetsId, path = str(res[0]).split(",")[0], res[1]
+
+        # Update asset to "deleted" on db
+        query = "UPDATE site_assets SET status = %s WHERE id = %s"
+        params = ("-1", assetsId)
+        mycursor.execute(query, params)
+        mydb.commit()
+
+        # Remove from Deployment servers
+        for srv in Config.DEPLOYMENTS_SERVERS:
+            try:
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                if srv["pkey"] != "":
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                    if srv["pw"] == "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                    else:
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                else:
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                with ssh.open_sftp() as scp:
+                    remote_path = os.path.join(srv["remote_path"], path)
+                    scp.remove(remote_path)
+            except Exception as e:
+                pass
+
+    else:
+        pass
+
+        if not listName or (listName and target_date <= current_date):
+            # Update on DB
+            mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", (action, workflow_id))
+            mydb.commit()
+
+            jsonR = {"message": "success", "action": action}
+            return jsonR
+        else:
+
+            if not_real_request is None:
+                # Update on DB
+                mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", ("7", workflow_id))
+                mydb.commit()
+            else:
+                print("No need to Set Status as it's already set to 'Waiting'")
+
+            return {"message": "waiting", "action": action}
+
 
 def gen_feed(mycursor, account_list, list_feed_path, list_name):
     query = f"SELECT * FROM {account_list}"
@@ -1009,7 +1429,6 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
 
                         for field in items:
                             if field == "year" or field == "month" or field == "day":
-                                matching_column = None
 
                                 single_field = extract_month_and_day(publication_date, field)
                                 single_field = str(single_field)
@@ -1029,7 +1448,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                     if is_guid_candidate(key):
                         if isinstance(value, str) and not (value.startswith('http://') or value.startswith('https://')):
                             value = os.path.join(srv["webserver_url"], list_page_url)
-                            value = value + Config.PAGES_EXTENSION
+                            value = value + (Config.PAGES_EXTENSION if not value.endswith(Config.PAGES_EXTENSION) else "")
 
                         guid_elem = ET.SubElement(item_elem, "guid")
                         guid_elem.text = value
@@ -1125,7 +1544,6 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
 
                     for field in items:
                         if field == "year" or field == "month" or field == "day":
-                            matching_column = None
 
                             single_field = extract_month_and_day(publication_date, field)
                             single_field = str(single_field)
@@ -1145,7 +1563,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                 if is_guid_candidate(key):
                     if isinstance(value, str) and not (value.startswith('http://') or value.startswith('https://')):
                         value = os.path.join(Config.PREVIEW_SERVER, list_page_url)
-                        value = value + Config.PAGES_EXTENSION
+                        value = value + (Config.PAGES_EXTENSION if not value.endswith(Config.PAGES_EXTENSION) else "")
 
                     guid_elem = ET.SubElement(item_elem, "guid")
                     guid_elem.text = value
@@ -1174,6 +1592,14 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
         sitemap_path = os.path.join(Config.WEBSERVER_FOLDER, list_feed_path)
         tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
 
+def find_page_assets(original_content):
+    # Get all assets on the page
+    soup = BeautifulSoup(original_content, "html5lib")
+    imgAssets = [asset["src"] for asset in soup.find_all("img", {"src": lambda src: src and Config.IMAGES_WEBPATH in src})]
+    pdfAssets = [asset["href"] for asset in soup.find_all("a", {"href": lambda href: href and href.endswith(".pdf") and Config.IMAGES_WEBPATH in href})]
+    assets = imgAssets + pdfAssets
+
+    return assets
 
 def camel_case_convert(key):
     """Convert keys from 'pub-date' or 'pub date' to 'pubDate'."""
@@ -1247,3 +1673,129 @@ def extract_month_and_day(date_string, field):
         return month
     elif field == "day":
         return day
+
+def check_if_should_publish_items():
+    publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
+    
+    mydb, mycursor = decorators.db_connection()
+
+    try:
+        # Query to workflow to get all with status "Waiting" and get the siteIds, and then check if type list or page and query the page/list based on the id to get the publication date
+        mycursor.execute(f"SELECT * FROM workflow WHERE status=7")
+        data = mycursor.fetchall()
+        
+        # Fetch column headers from the cursor
+        column_headers = [i[0] for i in mycursor.description]
+
+        # Convert query result to list of dictionaries
+        waiting_workflows = [dict(zip(column_headers, row)) for row in data]
+
+        for workflow in waiting_workflows:
+
+            template_query = f"SELECT template_location, feed_location FROM account_%s_list_template WHERE in_lists=%s"
+            template_params = (workflow['accountId'], workflow['listName'],)
+            mycursor.execute(template_query, template_params)
+            template_list = mycursor.fetchone()
+
+            if template_list and len(template_list) > 0:
+                list_template = template_list[0]
+                list_feed = template_list[1]
+
+                # Regular expression to find words within curly braces
+                pattern = r'{(.*?)}'
+
+                # Using re.findall() to extract the contents within the braces
+                items = re.findall(pattern, list_template)
+
+                site_ids = workflow['siteIds']
+                query_list = f"SELECT * FROM account_{workflow['accountId']}_list_{workflow['listName']} WHERE id=%s"
+                params_list = (site_ids,)
+                mycursor.execute(query_list, params_list)
+                fields_to_link = mycursor.fetchall()
+
+                # Get column headers from the cursor description
+                headers = [description[0] for description in mycursor.description]
+
+                # Combine headers and data
+                results = [dict(zip(headers, row)) for row in fields_to_link]
+
+                publication_date = False
+
+                list_page_url = list_template
+
+                if results and len(results) > 0:
+                    for result in results:
+                        for key, value in result.items():
+                            if key.lower() in publication_names:
+                                publication_date = value
+                            else:
+                                list_page_url = list_page_url.replace("{" + key + "}", str(value))
+
+                    for field in items:
+                        if publication_date and (field == "year" or field == "month" or field == "day"):
+
+                            single_field = extract_month_and_day(publication_date, field)
+                            single_field = str(single_field)
+
+                            list_page_url = list_page_url.replace("{" + field + "}", single_field)
+
+                    workflow_data_temporary_url = Config.PREVIEW_SERVER + f"{list_page_url}" + (Config.PAGES_EXTENSION if not list_page_url.endswith(Config.PAGES_EXTENSION) else "")
+                    protocol = "https://" if "https://" in workflow_data_temporary_url else "http://"
+                    clean_url = workflow_data_temporary_url.replace(protocol, "").replace("//", "/")
+
+                    passed_session = { "accountId": workflow['accountId'] }
+
+                    jsonConfig = get_list_configuration(workflow['accountId'], workflow['listName'], passed_session)
+
+                    # Process the JSON response
+                    jsonConfigSaveByFields = None
+                    jsonConfigFieldsToSaveBy = None
+
+                    if 'columns' in jsonConfig and len(jsonConfig['columns']) > 0:
+                        if len(jsonConfig['columns'][0]) > 3:
+                            jsonConfigSaveByFields = jsonConfig['columns'][0][3]
+                        if len(jsonConfig['columns'][0]) > 4:
+                            jsonConfigFieldsToSaveBy = jsonConfig['columns'][0][4]
+
+                    new_request_data = {
+                        "id": workflow['id'],
+                        "status": workflow['status'],
+                        "type": workflow['type'],
+                        "listName": workflow['listName'],
+                        "saveByFields": jsonConfigSaveByFields,
+                        "fieldsToSaveBy": jsonConfigFieldsToSaveBy,
+                        "files_details": "",
+                        "site_ids": site_ids,
+                        "list_item_url_path": clean_url,
+                        "list_feed_path": list_feed,
+                        "publication_date": publication_date
+                    }
+
+                    # Simulate a request object
+                    class MockRequest:
+                        def __init__(self, form_data):
+                            self.form = MultiDict(form_data)
+
+                    # Create a mock request object
+                    mock_request = MockRequest(new_request_data)
+
+                    new_action_workflow = proceed_action_workflow(mock_request, True)
+
+            else:
+                print(workflow['listName'] + " as no template defined!")
+
+        # for publication_name in publication_names:
+        #     if publication_name.strip().lower() in col_names_to_generate_fields:
+    except Exception as e:
+        # Log the error or handle it as needed
+
+        raise e
+    finally:
+        mydb.close()
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(func=check_if_should_publish_items, trigger="interval", minutes=60)
+scheduler.start()
+
+# Shut down the scheduler when exiting the app
+atexit.register(lambda: scheduler.shutdown())

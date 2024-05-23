@@ -10,7 +10,6 @@ from leaf.decorators import login_required, limiter, db_connection, generate_jwt
 
 main = Blueprint('main', __name__)
 
-
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -739,7 +738,6 @@ def api_upload():
         "fileName": os.path.basename(file_path),
         "url": url_to_return
     })
-
 
 def uniquify(path):
     """

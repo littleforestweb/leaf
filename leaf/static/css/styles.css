@@ -1120,6 +1120,11 @@ td .partnerPhoto .mb3_img {
     color: #176713;
 }
 
+#action_message.isYellow,
+#status_message.isYellow {
+    color: #bd9b01;
+}
+
 table.dataTable tbody tr.isRed {
     background-color: #da2c2c3d;
 }
@@ -1134,6 +1139,9 @@ table.dataTable tbody tr.isWhite {
 
 table.dataTable tbody tr.isGreen {
     background-color: #14671230;
+}
+table.dataTable tbody tr.isYellow {
+    background-color: #67561230;
 }
 
 .tip {

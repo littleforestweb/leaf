@@ -174,16 +174,22 @@
                             <div class="card">
                                 <h5 class="card-header">Action{% if data.status == "6" or data.status == "Approved" or data.status == "Rejected" %} - <span id="action_message" class="{% if data.status == 'Rejected' %}isRed{% else %}isGreen{% endif %}">{% if data.status == "6" %}Complete{% else %}{{ data.status }}{% endif %}</span>{% endif %}</h5>
                                 <div class="card-body" id="actionContainer">
-                                    {% if (data.status != "6" and data.status != "Approved") and data.status != "Rejected" %}
-                                        <button class='btn btn-success' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}")' {% if data.user_permission_level != 4 %} disabled {% endif %}>Approve</button>
-                                        -
-                                        <button class='btn btn-red' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}")' {% if data.user_permission_level != 4 %} disabled {% endif %}>Reject</button>
-                                    {% elif data.status == "Rejected" %}
-                                        <button class='btn btn-success' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}")' {% if data.user_permission_level != 4 %} disabled {% endif %}>Approve</button>
-                                        -
-                                        <button class='btn btn-red' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}")' {% if data.user_permission_level != 4 %} disabled {% endif %}>Reject</button>
+                                    {% if data.siteUrl %}
+                                        {% if data.status == "7" %}
+                                            <span>No Action needed <br> Will be published on: <strong>{{ data.publication_date }}</strong></span>
+                                        {% elif (data.status != "6" and data.status != "Approved") and data.status != "Rejected" %}
+                                            <button class='btn btn-success' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}")' {% if data.user_permission_level != 4 %} disabled {% endif %}>Approve</button>
+                                            -
+                                            <button class='btn btn-red' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}")' {% if data.user_permission_level != 4 %} disabled {% endif %}>Reject</button>
+                                        {% elif data.status == "Rejected" %}
+                                            <button class='btn btn-success' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}")' {% if data.user_permission_level != 4 %} disabled {% endif %}>Approve</button>
+                                            -
+                                            <button class='btn btn-red' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}")' {% if data.user_permission_level != 4 %} disabled {% endif %}>Reject</button>
+                                        {% else %}
+                                            <span>No Action needed</span>
+                                        {% endif %}
                                     {% else %}
-                                        <span>No Action needed</span>
+                                        <span>This page no longer exists.</span>
                                     {% endif %}
                                 </div>
                             </div>
@@ -208,6 +214,22 @@
                             </div>
                         </div>
                     </div>
+                    {% if data.siteUrl %}
+                        <div class="mb-2 col-sm-12">
+                            <div class="card">
+                                <h5 class="card-header">Publication Date</h5>
+                                <div class="card-body" id="statusContainer">
+                                    {% if data.siteUrl and data.publication_date %}
+                                        <strong>{{ data.publication_date }}</strong>
+                                    {% elif data.siteUrl and not data.publication_date %}
+                                        <strong>Not defined</strong>
+                                    {% else %}
+                                        <strong>As per workflow approval</strong>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
                     <div class="mb-2 col-sm-12">
                         <div class="card">
                             <h5 class="card-header">Status - <span id="status_message" class="{% if data.status != '6' and (data.statusMessage == 'Overdue' or data.statusMessage == 'Rejected') %}isRed{% elif data.status != '6' and data.statusMessage == 'At risk' %}isOrange{% else %}isGreen{% endif %}">{% if data.status != '6' %}{{ data.statusMessage }}{% else %}Complete{% endif %}</span></h5>
@@ -225,6 +247,11 @@
                                         <option value="6" selected>Complete</option>
                                     {% else %}
                                         <option value="6">Complete</option>
+                                    {% endif %}
+                                    {% if data.status == "7" %}
+                                        <option value="7" selected>Waiting</option>
+                                    {% else %}
+                                        <option value="7">Waiting</option>
                                     {% endif %}
                                 </select>
                             </div>

@@ -271,7 +271,7 @@ def get_list_columns_with_properties(accountId: str, reference: str):
         return jsonify(jsonR)
 
 
-def get_list_configuration(accountId: str, reference: str):
+def get_list_configuration(accountId: str, reference: str, passed_session = None):
     """
     Get configuration information for a specific list from the database.
 
@@ -283,8 +283,15 @@ def get_list_configuration(accountId: str, reference: str):
         dict: A JSON response containing configuration information for the specified list.
     """
     jsonR = {'columns': []}
+    
+    if passed_session is None:
+        # Use the actual session variable
+        actual_account_id = session["accountId"]
+    else:
+        # Use the passed session value
+        actual_account_id = passed_session.get("accountId")
 
-    if not int(accountId) == int(session["accountId"]):
+    if not int(accountId) == int(actual_account_id):
         return jsonify({"error": "Forbidden"}), 403
 
     mydb, mycursor = db_connection()
@@ -318,7 +325,10 @@ def get_list_configuration(accountId: str, reference: str):
     else:
         print("Invalid accountId")
 
-    return jsonify(jsonR)
+    if passed_session is None:
+        return jsonify(jsonR)
+    else:
+        return jsonR
 
 
 def set_list_configuration(request, accountId: str, reference: str):

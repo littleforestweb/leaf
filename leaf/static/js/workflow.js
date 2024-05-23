@@ -86,6 +86,9 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 if (mData[12] === "Approved" || mData[12] === '6') {
                     thisStatusActionColor = "isGreen";
                 }
+                if (mData[12] === '7') {
+                    thisStatusActionColor = "isYellow";
+                }
 
                 $(nRow).addClass(thisStatusActionColor);
             }
@@ -205,6 +208,8 @@ window.addEventListener('DOMContentLoaded', async function main() {
                     currentStatus = "Approved and awaiting deployment";
                 } else if (data === "Approved" || data === "6") {
                     currentStatus = "Complete";
+                } else if (data === "7") {
+                    currentStatus = "Waiting to be published";
                 } else if (data === "Rejected") {
                     currentStatus = "Rejected";
                 }

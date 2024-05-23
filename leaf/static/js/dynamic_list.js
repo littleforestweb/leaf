@@ -503,6 +503,8 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                     }
                                 } else if (allAccountSettings[f][6] && allAccountSettings[f][6] === "date") {
                                     var todaysDate = new Date();
+                                    let oneYearFromToday = new Date(todaysDate);
+                                        oneYearFromToday.setFullYear(todaysDate.getFullYear() + 1);
                                     if (type === 'edit') {
                                         var formatFound = getFormat(site_dynamic_list);
                                         // if(formatFound !==null){
@@ -510,10 +512,10 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                         // }
 
                                         $('#e-' + spanId).addClass(mandatoryClass).val(site_dynamic_list);
-                                        $('#e-' + spanId).datepicker({dateFormat: 'yy-mm-dd', endDate: "today", maxDate: todaysDate});
+                                        $('#e-' + spanId).datepicker({dateFormat: 'yy-mm-dd', endDate: "today", maxDate: oneYearFromToday});
                                     } else {
                                         $('#a-' + spanId).addClass(mandatoryClass).val();
-                                        $('#a-' + spanId).datepicker({dateFormat: 'yy-mm-dd', endDate: "today", maxDate: todaysDate});
+                                        $('#a-' + spanId).datepicker({dateFormat: 'yy-mm-dd', endDate: "today", maxDate: oneYearFromToday});
                                     }
                                 } else if (allAccountSettings[f][6] && allAccountSettings[f][6] === "password") {
                                     if (type === 'edit') {
