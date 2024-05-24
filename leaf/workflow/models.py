@@ -1684,7 +1684,6 @@ def extract_month_and_day(date_string, field):
         return day
 
 def check_if_should_publish_items():
-    print(test)
     publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
     
     mydb, mycursor = decorators.db_connection()
