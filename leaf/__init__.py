@@ -118,6 +118,6 @@ def create_app(config_class=Config):
     atexit.register(lambda: scheduler.shutdown())
 
     # Check Database Integrity
-    check_db()
+    check_db(app)
 
     return app
