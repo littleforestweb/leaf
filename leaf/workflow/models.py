@@ -1104,7 +1104,7 @@ def proceed_action_workflow(request, not_real_request = None):
                 accountId = session['accountId']
             else:
                 accountId = werkzeug.utils.escape(request.form.get("accountId"))
-                
+
             listName = ''.join(e for e in listName if e.isalnum())
             if isMenu:
                 completeListName = listName + "Menu.json"
@@ -1689,6 +1689,7 @@ def check_if_should_publish_items():
     publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
     
     mydb, mycursor = decorators.db_connection()
+    print("Starting Scheduler!", flush=True)
 
     try:
         # Query to workflow to get all with status "Waiting" and get the siteIds, and then check if type list or page and query the page/list based on the id to get the publication date
@@ -1793,14 +1794,15 @@ def check_if_should_publish_items():
                         # Create a mock request object
                         mock_request = MockRequest(new_request_data)
                         # current_app.logger.info(site_ids + " ready to be published!")
+                        print(site_ids + " ready to be published!", flush=True)
                         new_action_workflow = proceed_action_workflow(mock_request, True)
 
                     else:
-                        print(site_ids + " has no publication date defined!")
+                        print(site_ids + " has no publication date defined!", flush=True)
                         # current_app.logger.info(site_ids + " has no publication date defined!")
 
             else:
-                print(workflow['listName'] + " as no template defined!")
+                print(workflow['listName'] + " as no template defined!", flush=True)
                 # current_app.logger.info(workflow['listName'] + " as no template defined!")
 
         # for publication_name in publication_names:
