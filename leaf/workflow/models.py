@@ -1690,6 +1690,7 @@ def check_if_should_publish_items():
         # Query to workflow to get all with status "Waiting" and get the siteIds, and then check if type list or page and query the page/list based on the id to get the publication date
         mycursor.execute(f"SELECT * FROM workflow WHERE status=7")
         data = mycursor.fetchall()
+        current_app.logger.info(data)
         
         # Fetch column headers from the cursor
         column_headers = [i[0] for i in mycursor.description]
