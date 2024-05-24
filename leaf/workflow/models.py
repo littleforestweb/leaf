@@ -1787,7 +1787,7 @@ def check_if_should_publish_items():
 
                         # Create a mock request object
                         mock_request = MockRequest(new_request_data)
-                        current_app.logger.info(site_ids + " ready to be published!")
+                        # current_app.logger.info(site_ids + " ready to be published!")
                         new_action_workflow = proceed_action_workflow(mock_request, True)
 
                     else:
