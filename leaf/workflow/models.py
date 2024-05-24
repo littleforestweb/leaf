@@ -1779,7 +1779,7 @@ def check_if_should_publish_items():
                             "fieldsToSaveBy": jsonConfigFieldsToSaveBy,
                             "files_details": "",
                             "site_ids": site_ids,
-                            "list_item_url_path": protocol + clean_url,
+                            "list_item_url_path": clean_url,
                             "list_feed_path": list_feed,
                             "publication_date": publication_date,
                             "accountId": workflow['accountId'],
