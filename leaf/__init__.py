@@ -23,7 +23,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 
 
-def check_db(app):
+def check_db():
     """
     Ensures that the database structure matches the expected schema defined in 'db_structure.sql'.
 
@@ -37,8 +37,6 @@ def check_db(app):
 
     # Get a database connection
     mydb, mycursor = decorators.db_connection()
-
-    app.logger.debug("Initiating Leaf and checking DB!")
 
     # Read SQL File
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "db_structure.sql")) as in_file:
@@ -89,10 +87,6 @@ def create_app(config_class=Config):
     limiter.init_app(app)
     app.config.from_object(Config)
 
-    # Setup logging
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
-    app.logger = logging.getLogger(__name__)
-
     # Register Blueprints
     app.register_blueprint(main)
     app.register_blueprint(sites)
@@ -116,6 +110,6 @@ def create_app(config_class=Config):
     atexit.register(lambda: scheduler.shutdown())
 
     # Check Database Integrity
-    check_db(app)
+    check_db()
 
     return app
