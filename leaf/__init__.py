@@ -48,6 +48,8 @@ def check_db():
         mycursor.execute(sql_statement)
     mydb.commit()
 
+    app.logger.info("Initiating Scheduler! 2")
+
     # Get table names from SQL script
     required_table_names = []
     for idx, line in enumerate(sql_content.split("\n")):
