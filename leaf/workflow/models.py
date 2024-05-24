@@ -16,6 +16,7 @@ from leaf import Config
 from leaf import decorators
 from leaf.users.models import get_user_permission_level
 from leaf.lists.models import get_list_configuration
+from bs4 import BeautifulSoup
 import time
 
 def is_workflow_owner(workflow_id):
@@ -1215,45 +1216,23 @@ def proceed_action_workflow(request, not_real_request = None):
                                 except Exception as e:
                                     pass
 
-                # Send Static Folder
-                ssh = paramiko.SSHClient()
-                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                if srv["pkey"] != "":
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                    if srv["pw"] == "":
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                    else:
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                else:
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-                
-                for root, dirs, files in os.walk(Config.FILES_UPLOAD_FOLDER):
-                    for file_name in files:
-                        local_path = os.path.join(root, file_name)
-                        remote_path = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), file_name)
-                        with ssh.open_sftp() as scp:
-                            actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
-                        if not actionResult:
-                            try:
-                                raise Exception("Failed to SCP - " + lp + " - " + rp)
-                            except Exception as e:
-                                pass
-
-                # # Replace Preview Reference with Live webserver references
-                # with open(local_path) as inFile:
-                #     data = inFile.read()
-                #     original_content = data
-                # data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH)
-                # with open(local_path, "w") as outFile:
-                #     outFile.write(data)
-
-                # assets = find_page_assets(original_content)
-
                 for srv in Config.DEPLOYMENTS_SERVERS:
 
                     HTMLPath = werkzeug.utils.escape(request.form.get("list_item_url_path").strip("/"))
                     local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
                     list_feed_path = werkzeug.utils.escape(request.form.get("list_feed_path").strip("/"))
+
+                    # Replace Preview Reference with Live webserver references
+                    with open(local_path) as inFile:
+                        data = inFile.read()
+                    
+                    original_content = data
+                    original_content_changed = data.replace(Config.LEAFCMS_SERVER, Config.PREVIEW_SERVER + Config.DYNAMIC_PATH.strip('/') + '/leaf')
+                    data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf')
+                    with open(local_path, "w") as outFile:
+                        outFile.write(data)
+
+                    assets = find_page_assets(original_content_changed)
 
                     # SCP Files
                     remote_path = os.path.join(srv["remote_path"], HTMLPath)
@@ -1269,12 +1248,24 @@ def proceed_action_workflow(request, not_real_request = None):
                         ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
                     with ssh.open_sftp() as scp:
                         actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
-
+                        for asset in assets:
+                            assetFilename = asset.split("/")[-1].strip('/')
+                            assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
+                            assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                            actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
+                            if not actionResultAsset:
+                                try:
+                                    raise Exception("Failed to SCP - " + lp + " - " + rp)
+                                except Exception as e:
+                                    pass
                         if not actionResult:
                             try:
                                 raise Exception("Failed to SCP - " + lp + " - " + rp)
                             except Exception as e:
                                 pass
+
+                    with open(local_path, "w") as outFile:
+                        outFile.write(original_content)
 
                 # Regenerate Feed
                 if not isMenu:

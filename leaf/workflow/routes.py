@@ -6,7 +6,6 @@ import re
 
 import paramiko
 import werkzeug.utils
-from bs4 import BeautifulSoup
 from flask import render_template, Blueprint, jsonify, request, session, url_for, send_from_directory
 
 from leaf import decorators
