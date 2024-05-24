@@ -802,6 +802,8 @@ def change_status_workflow(workflow_id, new_status, user_to_notify):
             newStatusString = "Approved and awaiting deployment"
         if new_status == '6':
             newStatusString = "Complete"
+        if new_status == '7':
+            newStatusString = "Waiting"
 
         # Get email body
         emailToSend = workflow_changed_email(workflow_id, title, session["username"], newStatusString, "status_changed", theEmailMessage)
@@ -1106,6 +1108,10 @@ def proceed_action_workflow(request, not_real_request = None):
             else:
                 accountId = werkzeug.utils.escape(request.form.get("accountId"))
 
+            action = "Approved"
+
+            jsonR = {"message": "success", "action": action}
+
             listName = ''.join(e for e in listName if e.isalnum())
             if isMenu:
                 completeListName = listName + "Menu.json"
@@ -1344,23 +1350,23 @@ def proceed_action_workflow(request, not_real_request = None):
     else:
         pass
 
-        if not listName or (listName and target_date <= current_date):
+    if not listName or (listName and target_date <= current_date):
+        # Update on DB
+        mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", (action, workflow_id))
+        mydb.commit()
+
+        jsonR = {"message": "success", "action": action}
+        return jsonR
+    else:
+
+        if not_real_request is None:
             # Update on DB
-            mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", (action, workflow_id))
+            mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", ("7", workflow_id))
             mydb.commit()
-
-            jsonR = {"message": "success", "action": action}
-            return jsonR
         else:
+            print("No need to Set Status as it's already set to 'Waiting'")
 
-            if not_real_request is None:
-                # Update on DB
-                mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", ("7", workflow_id))
-                mydb.commit()
-            else:
-                print("No need to Set Status as it's already set to 'Waiting'")
-
-            return {"message": "waiting", "action": action}
+        return {"message": "waiting", "action": action}
 
 
 def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
