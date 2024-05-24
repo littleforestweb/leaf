@@ -993,7 +993,10 @@ def proceed_action_workflow(request, not_real_request = None):
         params = (workflow_id,)
         mycursor.execute(query, params)
         workflow_folder_path = f"/{mycursor.fetchone()[0].lstrip('/')}"
-        perm_level = get_user_permission_level(session["id"], workflow_folder_path)
+        if not_real_request is None:
+            perm_level = get_user_permission_level(session["id"], workflow_folder_path)
+        else:
+            perm_level = get_user_permission_level(werkzeug.utils.escape(request.form.get("user_id")), workflow_folder_path)
         if perm_level != 4:
             return {"error": "Forbidden"}
 
@@ -1262,7 +1265,7 @@ def proceed_action_workflow(request, not_real_request = None):
                 # Regenerate Feed
                 if not isMenu:
                     # gen_sitemap(mycursor, thisType)
-                    gen_feed(mycursor, account_list, list_feed_path, listName)
+                    gen_feed(mycursor, account_list, list_feed_path, listName, accountId)
         else:
             print("Publication date in the future: " + str(target_date) + "; current date: " + str(current_date))
 
@@ -1360,7 +1363,7 @@ def proceed_action_workflow(request, not_real_request = None):
             return {"message": "waiting", "action": action}
 
 
-def gen_feed(mycursor, account_list, list_feed_path, list_name):
+def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
     query = f"SELECT * FROM {account_list}"
     mycursor.execute(query)
     list_column_names = [desc[0] for desc in mycursor.description]
@@ -1368,7 +1371,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
     list_items = [{list_column_names[i]: item[i] for i in range(len(list_column_names))} for item in list_results]
 
     template_query = f"SELECT template_location FROM account_%s_list_template WHERE in_lists=%s"
-    params = (session['accountId'], list_name,)
+    params = (accountId, list_name,)
     mycursor.execute(template_query, params)
     result_list = mycursor.fetchone()
 
@@ -1407,7 +1410,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
                 for key, value in item.items():
 
                     if key.lower() == 'id':
-                        query_list_item = f"SELECT * FROM account_{session['accountId']}_list_{list_name} WHERE id=%s"
+                        query_list_item = f"SELECT * FROM account_{accountId}_list_{list_name} WHERE id=%s"
                         params_list_item = (value,)
                         mycursor.execute(query_list_item, params_list_item)
                         fields_to_link = mycursor.fetchall()
@@ -1525,7 +1528,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name):
             for key, value in item.items():
 
                 if key.lower() == 'id':
-                    query_list_item = f"SELECT * FROM account_{session['accountId']}_list_{list_name} WHERE id=%s"
+                    query_list_item = f"SELECT * FROM account_{accountId}_list_{list_name} WHERE id=%s"
                     params_list_item = (value,)
                     mycursor.execute(query_list_item, params_list_item)
                     fields_to_link = mycursor.fetchall()
@@ -1779,7 +1782,8 @@ def check_if_should_publish_items():
                             "list_item_url_path": clean_url,
                             "list_feed_path": list_feed,
                             "publication_date": publication_date,
-                            "accountId": workflow['accountId']
+                            "accountId": workflow['accountId'],
+                            "user_id": workflow['assignEditor']
                         }
 
                         # Simulate a request object
