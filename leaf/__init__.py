@@ -109,6 +109,9 @@ def create_app(config_class=Config):
     # Shut down the scheduler when exiting the app
     atexit.register(lambda: scheduler.shutdown())
 
+    # Optional: Force garbage collection
+    atexit.register(lambda: gc.collect())
+
     # Check Database Integrity
     check_db()
 
