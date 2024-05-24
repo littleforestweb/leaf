@@ -1787,14 +1787,14 @@ def check_if_should_publish_items():
                         }
 
                         # Simulate a request object
-                        # class MockRequest:
-                        #     def __init__(self, form_data):
-                        #         self.form = MultiDict(form_data)
+                        class MockRequest:
+                            def __init__(self, form_data):
+                                self.form = MultiDict(form_data)
 
-                        print(new_request_data)
+                        # print(new_request_data)
                         # Create a mock request object
-                        # mock_request = MockRequest(new_request_data)
-                        # new_action_workflow = proceed_action_workflow(mock_request, True)
+                        mock_request = MockRequest(new_request_data)
+                        new_action_workflow = proceed_action_workflow(mock_request, True)
 
                     else:
                         print(site_ids + " has no publication date defined!", flush=True)
