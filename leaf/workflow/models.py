@@ -1815,6 +1815,7 @@ def check_if_should_publish_items():
         mydb.close()
 
 scheduler = BackgroundScheduler()
+current_app.logger.info("TEST")
 scheduler.add_job(func=check_if_should_publish_items, trigger="interval", seconds=10)
 scheduler.start()
 
