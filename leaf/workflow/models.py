@@ -316,6 +316,8 @@ def get_workflows():
     # Get a database connection
     mydb, mycursor = decorators.db_connection()
 
+    current_app.logger.debug("Initiating Leaf and checking DB! 2")
+
     try:
         mycursor.execute("SELECT id, title, startUser, assignEditor, dueDate, comments, submittedDate, type, status, tags, attachments, priority, listName FROM workflow WHERE type != 2 AND assignEditor = %s AND accountId = %s", (session["id"], session["accountId"],))
         workflowsLst = [
