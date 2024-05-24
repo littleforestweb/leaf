@@ -621,7 +621,7 @@ def set_list_template(request, accountId: str, reference: str):
                 mydb.commit()
             else:
                 # Insert new template
-                insert_config_query = f"INSERT INTO {tableName} (in_lists, template, template_location, feed_location, modified_by) VALUES (%s, %s, %s, %s)"
+                insert_config_query = f"INSERT INTO {tableName} (in_lists, template, template_location, feed_location, modified_by) VALUES (%s, %s, %s, %s, %s)"
                 mycursor.execute(insert_config_query, (reference, template, template_location, feed_location, modified_by))
                 mydb.commit()
 
