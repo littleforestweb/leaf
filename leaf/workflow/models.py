@@ -1684,13 +1684,9 @@ def extract_month_and_day(date_string, field):
         return day
 
 def check_if_should_publish_items():
-    from flask import jsonify, session, current_app
-    
     publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
     
     mydb, mycursor = decorators.db_connection()
-
-    current_app.logger.debug("Initiating Scheduler!")
 
     try:
         # Query to workflow to get all with status "Waiting" and get the siteIds, and then check if type list or page and query the page/list based on the id to get the publication date
