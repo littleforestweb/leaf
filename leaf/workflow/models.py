@@ -1100,7 +1100,11 @@ def proceed_action_workflow(request, not_real_request = None):
 
     elif listName:
         if target_date <= current_date:
-            accountId = session['accountId']
+            if not_real_request is None:
+                accountId = session['accountId']
+            else:
+                accountId = werkzeug.utils.escape(request.form.get("accountId"))
+                
             listName = ''.join(e for e in listName if e.isalnum())
             if isMenu:
                 completeListName = listName + "Menu.json"
@@ -1777,7 +1781,8 @@ def check_if_should_publish_items():
                             "site_ids": site_ids,
                             "list_item_url_path": clean_url,
                             "list_feed_path": list_feed,
-                            "publication_date": publication_date
+                            "publication_date": publication_date,
+                            "accountId": workflow['accountId']
                         }
 
                         # Simulate a request object
