@@ -9,4 +9,4 @@ app = create_app()
 CORS(app, origins=Config.CORS_ALLOWED_ORIGINS)
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
