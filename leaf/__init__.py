@@ -17,6 +17,9 @@ from leaf.sites.routes import sites
 from leaf.template_editor.routes import template_editor
 from leaf.users.routes import users
 from leaf.workflow.routes import workflow
+from leaf.workflow.models import check_if_should_publish_items
+from apscheduler.schedulers.background import BackgroundScheduler
+import atexit
 
 
 def check_db():
@@ -97,6 +100,14 @@ def create_app(config_class=Config):
     app.register_blueprint(template_editor)
     app.register_blueprint(saml_route)
     app.register_blueprint(files_manager)
+
+    with app.app_context():
+        scheduler = BackgroundScheduler()
+        scheduler.add_job(func=check_if_should_publish_items, trigger="interval", seconds=10)
+        scheduler.start()
+
+        # Shut down the scheduler when exiting the app
+        atexit.register(lambda: scheduler.shutdown())
 
     # Check Database Integrity
     check_db()
