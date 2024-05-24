@@ -1791,9 +1791,11 @@ def check_if_should_publish_items():
 
                     else:
                         print(site_ids + " has no publication date defined!")
+                        current_app.logger.info(site_ids + " has no publication date defined!")
 
             else:
                 print(workflow['listName'] + " as no template defined!")
+                current_app.logger.info(workflow['listName'] + " as no template defined!")
 
         # for publication_name in publication_names:
         #     if publication_name.strip().lower() in col_names_to_generate_fields:
