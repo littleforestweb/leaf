@@ -102,12 +102,13 @@ def create_app(config_class=Config):
     app.register_blueprint(saml_route)
     app.register_blueprint(files_manager)
 
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(func=check_if_should_publish_items, trigger="interval", seconds=10)
-    scheduler.start()
+    with app.app_context():
+        scheduler = BackgroundScheduler()
+        scheduler.add_job(func=check_if_should_publish_items, trigger="interval", seconds=10)
+        scheduler.start()
 
-    # Shut down the scheduler when exiting the app
-    atexit.register(lambda: scheduler.shutdown())
+        # Shut down the scheduler when exiting the app
+        atexit.register(lambda: scheduler.shutdown())
 
     # Check Database Integrity
     check_db()
