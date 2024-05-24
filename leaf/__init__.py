@@ -1,4 +1,5 @@
 import os
+import logging
 
 from flask import Flask
 
@@ -86,6 +87,10 @@ def create_app(config_class=Config):
     limiter.init_app(app)
     app.config.from_object(Config)
 
+    # Setup logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
+    app.logger = logging.getLogger(__name__)
+
     # Register Blueprints
     app.register_blueprint(main)
     app.register_blueprint(sites)
@@ -102,6 +107,8 @@ def create_app(config_class=Config):
     app.register_blueprint(files_manager)
 
     with app.app_context():
+        logger = logging.getLogger(__name__)
+        logger.info("Initiating Scheduler!")
         scheduler = BackgroundScheduler()
         scheduler.add_job(func=check_if_should_publish_items, trigger="interval", seconds=10)
         scheduler.start()
