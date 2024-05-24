@@ -178,7 +178,7 @@
 
                     {% if is_admin %}
                         <!-- Add List Btn -->
-                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addListModal">Add List</button>
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addListModal" onclick="cleanUpAddList()">Add List</button>
                         <button type="button" class="btn btn-blue editButton" data-bs-toggle="modal" data-bs-target="#editListModal" onclick="populateEditListModal({{ accountId }});" disabled>Edit List</button>
                         {% if is_admin == 1 %}
                             <button type="button" class="btn btn-red deleteButton" data-bs-toggle="modal" data-bs-target="#deleteListModal" disabled>Delete Lists</button>

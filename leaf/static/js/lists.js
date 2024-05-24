@@ -45,6 +45,10 @@ async function addList() {
     });
 }
 
+async function cleanUpAddList() {
+    $("#list-name").val("");
+}
+
 async function populateEditListModal(accountId) {
 
     let checked_items = $("input:checked");

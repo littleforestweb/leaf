@@ -156,7 +156,7 @@ def get_list_columns(accountId: str, reference: str):
             tableName = f"account_{accountId}_list_{reference}"
 
             # Create table if not exists
-            create_table_query = f"CREATE TABLE IF NOT EXISTS {tableName} (id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE, name VARCHAR(255))"
+            create_table_query = f"CREATE TABLE IF NOT EXISTS {tableName} (id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE, name VARCHAR(255), modified_by INT(11) DEFAULT NULL)"
             mycursor.execute(create_table_query, )
             mydb.commit()
 
