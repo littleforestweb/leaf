@@ -1690,7 +1690,7 @@ def check_if_should_publish_items():
         # Query to workflow to get all with status "Waiting" and get the siteIds, and then check if type list or page and query the page/list based on the id to get the publication date
         mycursor.execute(f"SELECT * FROM workflow WHERE status=7")
         data = mycursor.fetchall()
-        current_app.logger.info(data)
+        # current_app.logger.info(data)
         
         # Fetch column headers from the cursor
         column_headers = [i[0] for i in mycursor.description]
@@ -1792,11 +1792,11 @@ def check_if_should_publish_items():
 
                     else:
                         print(site_ids + " has no publication date defined!")
-                        current_app.logger.info(site_ids + " has no publication date defined!")
+                        # current_app.logger.info(site_ids + " has no publication date defined!")
 
             else:
                 print(workflow['listName'] + " as no template defined!")
-                current_app.logger.info(workflow['listName'] + " as no template defined!")
+                # current_app.logger.info(workflow['listName'] + " as no template defined!")
 
         # for publication_name in publication_names:
         #     if publication_name.strip().lower() in col_names_to_generate_fields:
