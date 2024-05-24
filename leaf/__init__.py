@@ -23,7 +23,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 
 
-def check_db():
+def check_db(app):
     """
     Ensures that the database structure matches the expected schema defined in 'db_structure.sql'.
 
