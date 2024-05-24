@@ -21,6 +21,7 @@ from leaf.workflow.routes import workflow
 from leaf.workflow.models import check_if_should_publish_items
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
+import gc
 
 
 def check_db():

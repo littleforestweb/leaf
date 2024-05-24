@@ -1377,7 +1377,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
     list_items = [{list_column_names[i]: item[i] for i in range(len(list_column_names))} for item in list_results]
 
     template_query = f"SELECT template_location FROM account_%s_list_template WHERE in_lists=%s"
-    params = (accountId, list_name,)
+    params = (int(accountId), list_name,)
     mycursor.execute(template_query, params)
     result_list = mycursor.fetchone()
 
@@ -1489,6 +1489,10 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
             # Write the complete RSS feed to a file
             tree = ET.ElementTree(rss)
             sitemap_path = os.path.join(Config.WEBSERVER_FOLDER, list_feed_path)
+            # Ensure the directory exists
+            sitemap_directory = os.path.dirname(sitemap_path)
+            if not os.path.exists(sitemap_directory):
+                os.makedirs(sitemap_directory)
             tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
 
             # SCP Files
@@ -1608,6 +1612,10 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
         # Write the complete RSS feed to a file
         tree = ET.ElementTree(rss)
         sitemap_path = os.path.join(Config.WEBSERVER_FOLDER, list_feed_path)
+        # Ensure the directory exists
+        sitemap_directory = os.path.dirname(sitemap_path)
+        if not os.path.exists(sitemap_directory):
+            os.makedirs(sitemap_directory)
         tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
 
 def find_page_assets(original_content):
@@ -1709,7 +1717,6 @@ def check_if_should_publish_items():
         waiting_workflows = [dict(zip(column_headers, row)) for row in data]
 
         for workflow in waiting_workflows:
-
             template_query = f"SELECT template_location, feed_location FROM account_%s_list_template WHERE in_lists=%s"
             template_params = (workflow['accountId'], workflow['listName'],)
             mycursor.execute(template_query, template_params)
@@ -1757,10 +1764,7 @@ def check_if_should_publish_items():
                                 single_field = str(single_field)
 
                                 list_page_url = list_page_url.replace("{" + field + "}", single_field)
-
-                        workflow_data_temporary_url = Config.PREVIEW_SERVER + f"{list_page_url}" + (Config.PAGES_EXTENSION if not list_page_url.endswith(Config.PAGES_EXTENSION) else "")
-                        protocol = "https://" if "https://" in workflow_data_temporary_url else "http://"
-                        clean_url = workflow_data_temporary_url.replace(protocol, "").replace("//", "/")
+                                list_page_url = f"{list_page_url}" + (Config.PAGES_EXTENSION if not list_page_url.endswith(Config.PAGES_EXTENSION) else "")
 
                         passed_session = { "accountId": workflow['accountId'] }
 
@@ -1785,10 +1789,10 @@ def check_if_should_publish_items():
                             "fieldsToSaveBy": jsonConfigFieldsToSaveBy,
                             "files_details": "",
                             "site_ids": site_ids,
-                            "list_item_url_path": clean_url,
+                            "list_item_url_path": list_page_url,
                             "list_feed_path": list_feed,
                             "publication_date": publication_date,
-                            "accountId": workflow['accountId'],
+                            "accountId": int(workflow['accountId']),
                             "user_id": workflow['assignEditor']
                         }
 
