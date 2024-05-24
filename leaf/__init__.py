@@ -23,7 +23,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 
 
-def check_db(app):
+def check_db():
     """
     Ensures that the database structure matches the expected schema defined in 'db_structure.sql'.
 
@@ -48,7 +48,8 @@ def check_db(app):
         mycursor.execute(sql_statement)
     mydb.commit()
 
-    app.logger.info("Initiating Scheduler! 2")
+    logger = logging.getLogger(__name__)
+    logger.info("Initiating Scheduler! 3")
 
     # Get table names from SQL script
     required_table_names = []
@@ -118,6 +119,6 @@ def create_app(config_class=Config):
     atexit.register(lambda: scheduler.shutdown())
 
     # Check Database Integrity
-    check_db(app)
+    check_db()
 
     return app
