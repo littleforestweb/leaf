@@ -907,6 +907,10 @@ def gen_sitemap(mycursor, site_id, thisType):
         urlset.set("xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9")
         urlset.set("xmlns:image", "http://www.google.com/schemas/sitemap-image/1.1")
         sitemap_path = os.path.join(Config.WEBSERVER_FOLDER, "sitemap.xml")
+        # Ensure the directory exists
+        sitemap_directory = os.path.dirname(sitemap_path)
+        if not os.path.exists(sitemap_directory):
+            os.makedirs(sitemap_directory)
         for page in site_pages:
             url_elem = ET.SubElement(urlset, "url")
             loc_elem = ET.SubElement(url_elem, "loc")
@@ -944,6 +948,10 @@ def gen_sitemap(mycursor, site_id, thisType):
         loc_elem = ET.SubElement(url_elem, "loc")
         loc_elem.text = urljoin(Config.PREVIEW_SERVER, page)
     tree = ET.ElementTree(urlset)
+    # Ensure the directory exists
+    sitemap_directory = os.path.dirname(sitemap_path)
+    if not os.path.exists(sitemap_directory):
+        os.makedirs(sitemap_directory)
     tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
 
 def proceed_action_workflow(request, not_real_request = None):
