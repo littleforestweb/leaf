@@ -2016,7 +2016,7 @@ def trigger_new_scrape(request):
                 
             for folder in folders_to_scrape:
                 folder_path = os.path.join(Config.WEBSERVER_FOLDER, folder)
-
+                current_app.logger.debug(f"Folder: {folder_path}")
                 # Check if the folder exists
                 if os.path.exists(folder_path):
                     print(f"Folder exist: {folder_path}")
@@ -2028,7 +2028,6 @@ def trigger_new_scrape(request):
                     for file in files:
                         if file.endswith(Config.PAGES_EXTENSION):
                             file_path = os.path.join(root, file)
-                            current_app.logger.debug(f"File: {file} - {file_path}")
                             html_content = read_html_file(file_path)
                             soup = BeautifulSoup(html_content, 'lxml')
                             page_data = {}
