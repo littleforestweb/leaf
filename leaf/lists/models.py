@@ -2027,8 +2027,8 @@ def trigger_new_scrape(request):
                 for root, dirs, files in os.walk(folder_path):
                     for file in files:
                         if file.endswith(Config.PAGES_EXTENSION):
-                            current_app.logger.debug(f"File: {file}")
                             file_path = os.path.join(root, file)
+                            current_app.logger.debug(f"File: {file} - {file_path}")
                             html_content = read_html_file(file_path)
                             soup = BeautifulSoup(html_content, 'lxml')
                             page_data = {}
