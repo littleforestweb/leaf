@@ -2013,7 +2013,6 @@ def trigger_new_scrape(request):
             mydb.commit()
 
             count_pages = 0
-            current_app.logger.debug(f"Folders: {folders_to_scrape}")
             for folder in folders_to_scrape:
                 folder_path = os.path.join(Config.WEBSERVER_FOLDER, folder)
                 # Check if the folder exists
