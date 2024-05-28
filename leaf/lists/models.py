@@ -4,6 +4,8 @@ import csv
 import html
 import json
 from datetime import datetime
+import re
+from typing import List, Tuple
 
 import pandas as pd
 import werkzeug.utils
@@ -2071,6 +2073,22 @@ def read_html_file(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
         return file.read()
 
+def extract_and_format(url: str, *pattern_and_format_pairs: Tuple[str, str]) -> str:
+    for pattern, output_format in pattern_and_format_pairs:
+        match = re.search(pattern, url)
+        
+        if match:
+            # Create a dictionary of all matched groups
+            matched_groups = {f'group{i}': match.group(i) for i in range(1, len(match.groups()) + 1)}
+            
+            # Replace format placeholders with the matched group values
+            formatted_output = output_format
+            for group_name, value in matched_groups.items():
+                formatted_output = formatted_output.replace(f'{{{group_name}}}', value)
+            
+            return formatted_output
+    return "No match found."
+
 # Function to extract content based on the given selector
 def extract_content(soup, selector):
     try:
@@ -2089,6 +2107,44 @@ def extract_content(soup, selector):
             for element in elements:
                 this_element_attr = this_element_attr + str(element)
             return this_element_attr
+
+        if '>' in selector and 'regex' in selector:
+            # Split by the last occurrence of '>' to separate base selector and regex part
+            parts = selector.rsplit('>', 1)
+            base_selector = parts[0].strip()
+            regex_part = parts[1].strip()
+            # Replace the placeholder with actual backslash
+            regex_part = regex_part.replace('__BACKSLASH__TO_REPLACE_ON_WEB__', '\\')
+            
+            # Extract the regex pattern and format from the regex part
+            regex_match = re.search(r'regex\(r?"(.+?)",\s*"(.*?)"\)', regex_part)
+            if not regex_match:
+                raise ValueError(f"Invalid regex format in selector: {selector}")
+            
+            pattern = regex_match.group(1)
+            output_format = regex_match.group(2)
+            
+            # Select the element based on the base selector
+            element = soup.select_one(base_selector)
+            if not element:
+                return None
+            
+            # Apply the regex pattern to the element's content
+            content = element.get('href', element.text).strip()
+            match = re.search(pattern, content)
+            
+            if match:
+                # Create a dictionary of all matched groups
+                matched_groups = {f'group{i}': match.group(i) for i in range(1, len(match.groups()) + 1)}
+                
+                # Replace format placeholders with the matched group values
+                formatted_output = output_format
+                for group_name, value in matched_groups.items():
+                    formatted_output = formatted_output.replace(f'{{{group_name}}}', value)
+                
+                return formatted_output
+            
+            return "No match found."
 
         if '>' in selector and '[' in selector and ']' in selector:
             # Split by the last occurrence of '>'
