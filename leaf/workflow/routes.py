@@ -1,10 +1,8 @@
-import ast
 import datetime
-import json
+import datetime
 import os
 import re
 
-import paramiko
 import werkzeug.utils
 from flask import render_template, Blueprint, jsonify, request, session, url_for, send_from_directory
 
@@ -12,8 +10,7 @@ from leaf import decorators
 from leaf.config import Config
 from leaf.decorators import limiter
 from leaf.decorators import login_required
-from leaf.users.models import get_user_permission_level
-from .models import uniquify, workflow_changed_email, upload_file_with_retry, add_workflow, is_workflow_owner, get_workflow_details, get_workflows, get_task_requests, change_status_workflow, send_mail, gen_sitemap, gen_feed, find_page_assets, proceed_action_workflow
+from .models import uniquify, workflow_changed_email, add_workflow, is_workflow_owner, get_workflow_details, get_workflows, get_task_requests, change_status_workflow, send_mail, proceed_action_workflow
 
 workflow = Blueprint("workflow", __name__)
 
@@ -68,7 +65,7 @@ def view_workflow_details():
     """
     try:
         wid = werkzeug.utils.escape(request.args.get("id", type=str))
-        
+
         # Get workflow details from models
         data = get_workflow_details(wid)
 
