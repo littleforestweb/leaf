@@ -2009,6 +2009,7 @@ def trigger_new_scrape(request):
             scraping_details = json.loads(unescape_html(scraping_details[0]))
 
             folders_to_scrape = [folder.strip() for folder in scraping_details.get("s-folders_to_scrape", "").split(",")]
+            regex_rules = [folder.strip() for folder in scraping_details.get("s-regex_rules", "").split(",")]
 
             tableName = f"account_{accountId}_list_{reference}"
             delete_query = f"DELETE FROM {tableName};"
@@ -2022,7 +2023,8 @@ def trigger_new_scrape(request):
                 # current_app.logger.debug(f"Folder: {folder_path}")
                 # Check if the folder exists
                 if os.path.exists(folder_path):
-                    print(f"Folder exist: {folder_path}")
+                    # current_app.logger.debug(f"Folder exist: {folder_path}")
+                    continue
                 if not os.path.exists(folder_path):
                     # print(f"Folder does not exist: {folder_path}")
                     continue
@@ -2031,12 +2033,18 @@ def trigger_new_scrape(request):
                     for file in files:
                         if file.endswith(Config.PAGES_EXTENSION):
                             file_path = os.path.join(root, file)
+                            match_rule = True
+                            if regex_rules and len(regex_rules) > 0:
+                                match_rule = None
+                                for regex_rule in regex_rules:
+                                    if regex_rule != '':
+                                        regex_rule = regex_rule.replace('__BACKSLASH__TO_REPLACE_ON_WEB__', '\\')
+                                        # Search for the pattern in the URL
+                                        match_rule = re.search(regex_rule, file_path)
+                                    else:
+                                        match_rule = True
 
-                            pattern = r'/\d{4}/\d{2}/'
-                            # Search for the pattern in the URL
-                            match = re.search(pattern, file_path)
-
-                            if match is not None:
+                            if match_rule is not None:
                                 html_content = read_html_file(file_path)
                                 soup = BeautifulSoup(html_content, 'lxml')
                                 page_data = {}
@@ -2082,8 +2090,8 @@ def read_html_file(file_path):
         raw_data = file.read()
         result = chardet.detect(raw_data)
         encoding = result['encoding']
-        if encoding.strip() != 'utf-8':
-            current_app.logger.debug(f"Detected encoding in file: {file_path} - {encoding}")
+        # if encoding.strip() != 'utf-8':
+        #     current_app.logger.debug(f"Detected encoding in file: {file_path} - {encoding}")
 
     with open(file_path, 'r', encoding=encoding) as file:
         return file.read()

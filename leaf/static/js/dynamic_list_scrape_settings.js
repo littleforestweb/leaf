@@ -17,7 +17,10 @@ async function populateScrapeSettingsDynamicList() {
   }
 
   if (jsonScrapeSettings["s-folders_to_scrape"] != undefined) {
-    $("#s-folders_to_scrape").val(unescapeHtml(jsonScrapeSettings["s-folders_to_scrape"]));
+    $("#s-folders_to_scrape").val(unescapeHtml(jsonScrapeSettings["s-folders_to_scrape"]).replace(/__BACKSLASH__TO_REPLACE_ON_WEB__/g, "\\").replace(/&amp;comma;/g, ","));
+  }
+  if (jsonScrapeSettings["s-regex_rules"] != undefined) {
+    $("#s-regex_rules").val(unescapeHtml(jsonScrapeSettings["s-regex_rules"]).replace(/__BACKSLASH__TO_REPLACE_ON_WEB__/g, "\\").replace(/&amp;comma;/g, ","));
   }
 
   $('#available_fields_mapping_container').html("");
@@ -54,8 +57,8 @@ async function scrapeSettingsDynamicList(accountId, reference, action) {
       cache: false,
       processData: false,
       success: function (response) {
-        $('#scrapeSettingsDynamicList').modal('hide');
-        $('#scrapeSettingsDynamicList form input').val('');
+        // $('#scrapeSettingsDynamicList').modal('hide');
+        // $('#scrapeSettingsDynamicList form input').val('');
 
         $('#scrapeDynamicListSuccessNotification').toast('show');
 
@@ -75,6 +78,10 @@ async function triggerNewScrape(accountId, reference) {
   accountId = escapeHtml(accountId);
   reference = escapeHtml(reference);
 
+  scrapeSettingsDynamicList(accountId, reference, "close")
+  $('#scrapeDynamicListSuccessRunningNotification').toast('show');
+  doRedrawTable(false, false, true);
+
   $.ajax({
     type: "POST",
     url: "/api/trigger_new_scrape",
@@ -84,11 +91,7 @@ async function triggerNewScrape(accountId, reference) {
     },
     success: function (response) {
       if (response.status) {
-        $('#scrapeSettingsDynamicList').modal('hide');
-        $('#scrapeSettingsDynamicList form input').val('');
-        
-        $('#scrapeDynamicListSuccessRunningNotification').toast('show');
-        doRedrawTable(false, false, true);
+        console.log("Scrape completed!");
       }
     },
     error: function (XMLHttpRequest, textStatus, errorThrown) {

@@ -292,6 +292,14 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="form-group col-md-12" style="margin-bottom: 20px">
+                                <label for="s-regex_rules" class="col-form-label">Regex rules for sub folders:</label>
+                                <div class="row">
+                                    <div class="form-group col-md-12">
+                                        <input type="text" class="form-control" name="s-regex_rules" id="s-regex_rules" />
+                                    </div>
+                                </div>
+                            </div>
                             <div class="form-group col-md-12">
                                 <label for="s-feed_location" class="col-form-label">Available Fields Mapping:</label>
                                 <div class="form-group col-md-12" id="available_fields_mapping_container"></div>
@@ -309,7 +317,7 @@
     </div>
 
     <!-- NEW SCRAPE WARNING MODAL -->
-    <div class="modal fade" id="triggerNewScrapeModal" tabindex="-1" aria-labelledby="triggerNewScrapeLabel" aria-hidden="true" data-bs-backdrop='static'>
+    <div class="modal modal-dialog fade" id="triggerNewScrapeModal" tabindex="-1" aria-labelledby="triggerNewScrapeLabel" aria-hidden="true" data-bs-backdrop='static'>
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -317,7 +325,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="doRefreshPage()"></button>
                 </div>
                 <div class="modal-body">
-                    <h4>Are you sure you want to scrape for new '{{ reference }}' entry(s)? It will add missing ones based on URLs. You won't lose your data.</h4>
+                    <h4>Are you sure you want to scrape for new '{{ reference }}' entry(s)?</h4>
                 </div>
                 <div class="modal-footer" id="modal-footer-delete">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
@@ -445,7 +453,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
             <div class="toast-body">
-                {{ referenceNoUnderscores }} scrape running!
+                {{ referenceNoUnderscores }} scrape is running!
             </div>
         </div>
     </div>
