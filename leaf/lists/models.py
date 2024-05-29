@@ -2116,9 +2116,6 @@ def extract_content(soup, selector):
             
             # Apply the regex pattern to the element's content
             match = re.search(r"/(\d{4})/(\d{2})/", content)
-            print(pattern)
-            print(content)
-            print(match)
             
             if match:
                 # Create a dictionary of all matched groups
