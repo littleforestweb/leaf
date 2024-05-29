@@ -738,6 +738,9 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
 
             if ((env !== 'saveOnly' && env !== 'save')) {
                 if (thisTemplate !== '') {
+                    if (!preview_server.endsWith("/")) {
+                        preview_server += "/";
+                    }
                     openInNewTab(preview_server + getFileUrlPath(fieldsToLink, page_extension));
                 } else {
                     alert("There is no preview setting for this List yet. Please add one to preview this type.")
@@ -906,6 +909,9 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
 
         var linkToPreview = '';
         if (thisTemplate !== '') {
+            if (!preview_server.endsWith("/")) {
+                preview_server += "/";
+            }
             linkToPreview = preview_server + dynamic_path + thisTemplate + '.html?' + thisParameters + '=' + fieldsToLink
         }
 
@@ -1244,6 +1250,9 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
 
         var linkToPreview = '';
         if (thisTemplate !== '') {
+            if (!preview_server.endsWith("/")) {
+                preview_server += "/";
+            }
             linkToPreview = preview_server + dynamic_path + thisTemplate + '.html?' + thisParameters + '=' + fieldsToLink
         }
 
