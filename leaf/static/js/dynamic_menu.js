@@ -49,6 +49,46 @@ async function populateUserList() {
     });
 }
 
+CKEDITOR.plugins.add("anchor", {
+    init: function (editor) {
+        editor.ui.addButton("anchorPluginButton", {
+            label: "Anchor",
+            command: "anchorPluginCommand",
+            icon: "/static/images/anchor-icon.svg",
+            state: function () {
+                if (editor.mode === 'source') {
+                    return CKEDITOR.TRISTATE_DISABLED;
+                }
+                return CKEDITOR.TRISTATE_OFF;
+            }
+        });
+        editor.addCommand("anchorPluginCommand", {
+            exec: function (editor) {
+                var anchorName = prompt('Enter anchor name:'); // Prompt the user for anchor name
+                if (anchorName) {
+                    var selectedText = editor.getSelection().getNative().toString().trim();
+
+                    var newElement = new CKEDITOR.dom.element('a');
+                    newElement.setText(' ');
+                    newElement.setAttribute('name', anchorName);
+                    newElement.setAttribute('class', "anchor-item-inline");
+
+                    var range = editor.getSelection().getRanges()[0];
+                    // if ((range.endOffset - range.startOffset) > 0) {
+                    var newRange = range.clone();
+                    newRange.collapse(true);
+                    newRange.insertNode(newElement);
+                    // range.deleteContents();
+                    // range.insertNode(newElement);
+                    // } else {
+                    //    alert('You have to select some text to be able to create an anchor!');
+                    // }
+                }
+            }
+        });
+    }
+});
+
 async function populateEditDynamicMenuDialog(accountId, reference, type, itemToSelect = false) {
 
     accountId = escapeHtml(accountId);
@@ -119,46 +159,6 @@ async function populateEditDynamicMenuDialog(accountId, reference, type, itemToS
             if (type === 'add') {
                 $("#a-id").prop("disabled", true);
             }
-
-            CKEDITOR.plugins.add("anchor", {
-                init: function (editor) {
-                    editor.ui.addButton("anchorPluginButton", {
-                        label: "Anchor",
-                        command: "anchorPluginCommand",
-                        icon: "/static/images/anchor-icon.svg",
-                        state: function () {
-                            if (editor.mode === 'source') {
-                                return CKEDITOR.TRISTATE_DISABLED;
-                            }
-                            return CKEDITOR.TRISTATE_OFF;
-                        }
-                    });
-                    editor.addCommand("anchorPluginCommand", {
-                        exec: function (editor) {
-                            var anchorName = prompt('Enter anchor name:'); // Prompt the user for anchor name
-                            if (anchorName) {
-                                var selectedText = editor.getSelection().getNative().toString().trim();
-
-                                var newElement = new CKEDITOR.dom.element('a');
-                                newElement.setText(' ');
-                                newElement.setAttribute('name', anchorName);
-                                newElement.setAttribute('class', "anchor-item-inline");
-
-                                var range = editor.getSelection().getRanges()[0];
-                                // if ((range.endOffset - range.startOffset) > 0) {
-                                var newRange = range.clone();
-                                newRange.collapse(true);
-                                newRange.insertNode(newElement);
-                                // range.deleteContents();
-                                // range.insertNode(newElement);
-                                // } else {
-                                //    alert('You have to select some text to be able to create an anchor!');
-                                // }
-                            }
-                        }
-                    });
-                }
-            });
 
             for (x = 0; x < spans.length; x++) {
                 if (allAccountSettings && allAccountSettings.length > 0) {
