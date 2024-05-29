@@ -12,7 +12,7 @@ xmltodict
 pyjwt
 scp
 paramiko
-flask_limiter
+flask-limiter
 warcat
 werkzeug
 signxml

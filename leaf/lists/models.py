@@ -2019,7 +2019,7 @@ def trigger_new_scrape(request):
                 
             for folder in folders_to_scrape:
                 folder_path = os.path.join(Config.WEBSERVER_FOLDER, folder)
-                current_app.logger.debug(f"Folder: {folder_path}")
+                # current_app.logger.debug(f"Folder: {folder_path}")
                 # Check if the folder exists
                 if os.path.exists(folder_path):
                     print(f"Folder exist: {folder_path}")
@@ -2031,31 +2031,37 @@ def trigger_new_scrape(request):
                     for file in files:
                         if file.endswith(Config.PAGES_EXTENSION):
                             file_path = os.path.join(root, file)
-                            html_content = read_html_file(file_path)
-                            soup = BeautifulSoup(html_content, 'lxml')
-                            page_data = {}
 
-                            for key, selector in scraping_details.items():
-                                if selector == "__found_in_folder__":
-                                    data_key = key.replace("scrape__", "")
-                                    page_data[data_key] = folder
-                                elif key.startswith("scrape__"):
-                                    data_key = key.replace("scrape__", "")
-                                    if selector.strip() != "":
-                                        content = extract_content(soup, selector)
-                                        if content:  # Only add if content is not empty or None
-                                            page_data[data_key] = content
+                            pattern = r'/\d{4}/\d{2}/'
+                            # Search for the pattern in the URL
+                            match = re.search(pattern, file_path)
 
-                            page_data["modified_by"] = session['id']
-                            if page_data:  # Only add the file's data if there's at least one key with content
-                                columns = ', '.join(page_data.keys())
-                                placeholders = ', '.join(['%s'] * len(page_data))
-                                add_data = f"INSERT INTO {tableName} ({columns}) VALUES ({placeholders})"
-                                data_tuple = tuple(page_data.values())
-                                count_pages = count_pages + 1
-                                current_app.logger.debug(f"Total files to process: {count_pages}")
-                                mycursor.execute(add_data, data_tuple)
-                                mydb.commit()
+                            if match is not None:
+                                html_content = read_html_file(file_path)
+                                soup = BeautifulSoup(html_content, 'lxml')
+                                page_data = {}
+
+                                for key, selector in scraping_details.items():
+                                    if selector == "__found_in_folder__":
+                                        data_key = key.replace("scrape__", "")
+                                        page_data[data_key] = folder
+                                    elif key.startswith("scrape__"):
+                                        data_key = key.replace("scrape__", "")
+                                        if selector.strip() != "":
+                                            content = extract_content(soup, selector)
+                                            if content:  # Only add if content is not empty or None
+                                                page_data[data_key] = content
+
+                                page_data["modified_by"] = session['id']
+                                if page_data:  # Only add the file's data if there's at least one key with content
+                                    columns = ', '.join(page_data.keys())
+                                    placeholders = ', '.join(['%s'] * len(page_data))
+                                    add_data = f"INSERT INTO {tableName} ({columns}) VALUES ({placeholders})"
+                                    data_tuple = tuple(page_data.values())
+                                    count_pages = count_pages + 1
+                                    # current_app.logger.debug(f"Total files to process: {count_pages}")
+                                    mycursor.execute(add_data, data_tuple)
+                                    mydb.commit()
 
         else:
             print("Invalid accountId")
@@ -2076,6 +2082,8 @@ def read_html_file(file_path):
         raw_data = file.read()
         result = chardet.detect(raw_data)
         encoding = result['encoding']
+        if encoding.strip() != 'utf-8':
+            current_app.logger.debug(f"Detected encoding in file: {file_path} - {encoding}")
 
     with open(file_path, 'r', encoding=encoding) as file:
         return file.read()
