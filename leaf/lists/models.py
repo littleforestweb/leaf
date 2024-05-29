@@ -3,6 +3,7 @@
 import csv
 import html
 import json
+import chardet
 from datetime import datetime
 import re
 from typing import List, Tuple
@@ -2070,7 +2071,13 @@ def trigger_new_scrape(request):
 
 # Function to read HTML content from a file
 def read_html_file(file_path):
-    with open(file_path, 'r', encoding='utf-8') as file:
+    encoding = 'utf-8'
+    with open(file_path, 'rb') as file:
+        raw_data = file.read()
+        result = chardet.detect(raw_data)
+        encoding = result['encoding']
+
+    with open(file_path, 'r', encoding=encoding) as file:
         return file.read()
 
 def extract_and_format(url: str, *pattern_and_format_pairs: Tuple[str, str]) -> str:
