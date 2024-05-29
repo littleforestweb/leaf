@@ -26,7 +26,9 @@ async function populateScrapeSettingsDynamicList() {
     const fullKey = `scrape__${key[2]}`;
     if (key[2] !== "modified_by" && key[2] !== "modified" && key[2] !== "created") {
       if (jsonScrapeSettings.hasOwnProperty(fullKey)) {
-        const escapedValue = escapeHtmlTags(jsonScrapeSettings[fullKey]);
+        let escapedValue = escapeHtmlTags(jsonScrapeSettings[fullKey]);
+        escapedValue = escapedValue.replace(/__BACKSLASH__TO_REPLACE_ON_WEB__/g, "\\");
+        escapedValue = escapedValue.replace(/&amp;comma;/g, ",");
         $('#available_fields_mapping_container').append(`<div class="mb-3 mb-container s-pub_date-container"><div class="row"><div class="col-auto"><label for="scrape__${key[2]}" class="col-form-label">${key[2]}:</label></div><div class="col"><input type="text" class="form-control" name="scrape__${key[2]}" id="scrape__${key[2]}" value="${escapedValue}" /></div></div></div>`);
       } else {
         $('#available_fields_mapping_container').append(`<div class="mb-3 mb-container s-pub_date-container"><div class="row"><div class="col-auto"><label for="scrape__${key[2]}" class="col-form-label">${key[2]}:</label></div><div class="col"><input type="text" class="form-control" name="scrape__${key[2]}" id="scrape__${key[2]}" value="" /></div></div></div>`);

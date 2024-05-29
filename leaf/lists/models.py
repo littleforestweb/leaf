@@ -2092,21 +2092,6 @@ def extract_and_format(url: str, *pattern_and_format_pairs: Tuple[str, str]) -> 
 # Function to extract content based on the given selector
 def extract_content(soup, selector):
     try:
-        if selector.endswith('["ALL"]'):
-            selector = selector[:-9].strip()  # remove ["ALL"]
-            elements = soup.select(selector)
-            this_element_attr = ""
-            for element in elements:
-                this_element_attr = this_element_attr + str(element)
-            return this_element_attr
-
-        if selector.endswith('[ALL]'):
-            selector = selector[:-7].strip()  # remove [ALL]
-            elements = soup.select(selector)
-            this_element_attr = ""
-            for element in elements:
-                this_element_attr = this_element_attr + str(element)
-            return this_element_attr
 
         if '>' in selector and 'regex' in selector:
             # Split by the last occurrence of '>' to separate base selector and regex part
@@ -2124,14 +2109,16 @@ def extract_content(soup, selector):
             pattern = regex_match.group(1)
             output_format = regex_match.group(2)
             
-            # Select the element based on the base selector
-            element = soup.select_one(base_selector)
-            if not element:
+            # Select the content based on the base selector
+            content = extract_content(soup, base_selector)
+            if not content:
                 return None
             
             # Apply the regex pattern to the element's content
-            content = element.get('href', element.text).strip()
-            match = re.search(pattern, content)
+            match = re.search(r"/(\d{4})/(\d{2})/", content)
+            print(pattern)
+            print(content)
+            print(match)
             
             if match:
                 # Create a dictionary of all matched groups
@@ -2145,6 +2132,22 @@ def extract_content(soup, selector):
                 return formatted_output
             
             return "No match found."
+
+        if selector.endswith('["ALL"]'):
+            selector = selector[:-9].strip()  # remove ["ALL"]
+            elements = soup.select(selector)
+            this_element_attr = ""
+            for element in elements:
+                this_element_attr = this_element_attr + str(element)
+            return this_element_attr
+
+        if selector.endswith('[ALL]'):
+            selector = selector[:-7].strip()  # remove [ALL]
+            elements = soup.select(selector)
+            this_element_attr = ""
+            for element in elements:
+                this_element_attr = this_element_attr + str(element)
+            return this_element_attr
 
         if '>' in selector and '[' in selector and ']' in selector:
             # Split by the last occurrence of '>'
