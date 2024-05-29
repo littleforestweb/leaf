@@ -1494,7 +1494,7 @@ async function populateDropdowns(accountId, reference, listsDropdown, fields, is
             $('#typeSelectItem_' + thisField).val(fieldType);
             $('#dsi_' + thisField).val(displaySettingsItem);
 
-            $('select#s-' + thisField).append('<option value="-_leaf_users_-">Leaf Users</option>');
+            $('select#s-' + thisField).append('<option value="-_leaf_users_-" ' + (linkedTable === '-_leaf_users_-' ? "selected" : "") + '>Leaf Users</option>');
             for (var v = 0; v < listsDropdown.length; v++) {
                 if (listsDropdown[v] !== reference && listsDropdown[v] !== 'configuration' && listsDropdown[v] !== 'template') {
                     $('select#s-' + thisField).append('<option value="' + escapeHtml(listsDropdown[v]) + '">' + escapeHtml(listsDropdown[v]) + '</option>');
