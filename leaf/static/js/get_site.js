@@ -362,13 +362,15 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 sClass: "center",
                 mData: function (source, type, val) {
                     return "<input class='dt-checkboxes' id='checkbox_" + source["id"] + "' value='" + source["id"] + "' type='checkbox'>";
-                }
+                },
+                sortable: false
             },
             {
                 aTargets: [1],
                 mData: function (source, type, val) {
                     return "<img class='max100px' src='" + "/get_screenshot?id=" + source["id"] + "' height='auto' alt='Page Screenshot Image'>"
-                }
+                },
+                sortable: false
             },
             {
                 aTargets: [2],
@@ -393,19 +395,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [5],
                 mData: function (source, type, val) {
-                    let buttons = "Unlocked";
-                    if (source["Locked"] === 1) {
-                        buttons = '<span style="color:red">Locked</span>';
-                        // buttons = "<input style='margin-left:5px' type='button' class='btn btn-sm btn-primary' onclick='requestUnlockPage(\"" + source["id"] + "\", \"unlock\", this)' value='Unlock it' />";
-                    }
-                    return buttons;
-                }
-            },
-            {
-                aTargets: [6],
-                mData: function (source, type, val) {
-                    let buttons = "<a class='" + (source["Locked"] === 0 ? "not_locked" : "unlock-btn") + " btn btn-sm' target='_blank' href='/editor?page_id=" + source["id"] + "'>" + (source["Locked"] === 0 ? "Edit" : "View") + "</a>";
-                    // let buttons = "<a class='" + (source["Locked"] === 0 ? "not_locked" : "disabled unlock-btn") + " btn btn-sm' target='_blank' href='/editor?page_id=" + source["id"] + "' " + (source["Locked"] === 0 ? "" : " disabled") + ">Edit</a>";
+                    let buttons = "<a class='" + (source["Locked"] === 0 ? "not_locked" : "unlock-btn") + " btn btn-sm' target='_blank' href='/editor?page_id=" + source["id"] + "'>" + (source["Locked"] === 0 ? "Edit" : "Unlock") + "</a>";
                     return buttons;
                 }
             }

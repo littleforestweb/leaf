@@ -134,6 +134,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {name: "actions", items: ["Source", "Preview", "SaveBtn", "PublishBtn"]}
         ],
         extraPlugins: "anchor, inserthtml4x, embed, saveBtn, pastefromword",
+        codeSnippet_theme: 'prism',
         filebrowserUploadUrl: "/api/upload?name=fileupload",
         embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}',
         on: {
@@ -237,7 +238,7 @@ function startInactivityTimer(page_id) {
     unlockTimeout = setTimeout(function () {
         lockPage(page_id, "unlock");
         console.log("Page unlocked due to inactivity.");
-    }, 300000); // 300000 milliseconds = 5 minutes
+    }, 14400000); // 14400000 milliseconds = 3h
 }
 
 let isLeavingPage = false;
