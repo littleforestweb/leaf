@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 import re
 import smtplib
@@ -7,17 +8,18 @@ import time
 import xml.etree.ElementTree as ET
 from email.message import EmailMessage
 from urllib.parse import unquote, urljoin
+
 import paramiko
 import werkzeug.utils
+from bs4 import BeautifulSoup
+from flask import session
 from werkzeug.datastructures import MultiDict
-from werkzeug.wrappers import Request
-from flask import jsonify, session, current_app
+
 from leaf import Config
 from leaf import decorators
-from leaf.users.models import get_user_permission_level
 from leaf.lists.models import get_list_configuration
-from bs4 import BeautifulSoup
-import time
+from leaf.users.models import get_user_permission_level
+
 
 def is_workflow_owner(workflow_id):
     """
@@ -284,7 +286,6 @@ def process_type_3(workflow_data, mycursor):
 
                 for field in items:
                     if publication_date and (field == "year" or field == "month" or field == "day"):
-
                         single_field = extract_month_and_day(publication_date, field)
                         single_field = str(single_field)
 
@@ -955,7 +956,8 @@ def gen_sitemap(mycursor, site_id, thisType):
         os.makedirs(sitemap_directory)
     tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
 
-def proceed_action_workflow(request, not_real_request = None):
+
+def proceed_action_workflow(request, not_real_request=None):
     # Get url from post params
     workflow_id = werkzeug.utils.escape(request.form.get("id"))
     action = werkzeug.utils.escape(request.form.get("status"))
@@ -1225,7 +1227,7 @@ def proceed_action_workflow(request, not_real_request = None):
                     # Replace Preview Reference with Live webserver references
                     with open(local_path) as inFile:
                         data = inFile.read()
-                    
+
                     original_content = data
                     original_content_changed = data.replace(Config.LEAFCMS_SERVER, Config.PREVIEW_SERVER + Config.DYNAMIC_PATH.strip('/') + '/leaf')
                     data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf')
@@ -1483,7 +1485,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
                 if not guid_found:
                     channel.remove(item_elem)
                 # if not guid_found:
-                    # ET.SubElement(item_elem, "guid").text = "Unique identifier not found"
+                # ET.SubElement(item_elem, "guid").text = "Unique identifier not found"
 
             # Write the complete RSS feed to a file
             tree = ET.ElementTree(rss)
@@ -1562,7 +1564,6 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
                     if publication_date:
                         for field in items:
                             if field == "year" or field == "month" or field == "day":
-
                                 single_field = extract_month_and_day(publication_date, field)
                                 single_field = str(single_field)
 
@@ -1604,9 +1605,9 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
 
             # Ensure every item has a GUID, falling back to a default message if none is found
             if not guid_found:
-                    channel.remove(item_elem)
-                # if not guid_found:
-                    # ET.SubElement(item_elem, "guid").text = "Unique identifier not found"
+                channel.remove(item_elem)
+            # if not guid_found:
+            # ET.SubElement(item_elem, "guid").text = "Unique identifier not found"
 
         # Write the complete RSS feed to a file
         tree = ET.ElementTree(rss)
@@ -1617,6 +1618,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
             os.makedirs(sitemap_directory)
         tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
 
+
 def find_page_assets(original_content):
     # Get all assets on the page
     soup = BeautifulSoup(original_content, "html5lib")
@@ -1625,6 +1627,7 @@ def find_page_assets(original_content):
     assets = imgAssets + pdfAssets
 
     return assets
+
 
 def camel_case_convert(key):
     """Convert keys from 'pub-date' or 'pub date' to 'pubDate'."""
@@ -1699,16 +1702,17 @@ def extract_month_and_day(date_string, field):
     elif field == "day":
         return day
 
+
 def check_if_should_publish_items():
     publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
-    
+
     mydb, mycursor = decorators.db_connection()
 
     try:
         # Query to workflow to get all with status "Waiting" and get the siteIds, and then check if type list or page and query the page/list based on the id to get the publication date
         mycursor.execute(f"SELECT * FROM workflow WHERE status=7")
         data = mycursor.fetchall()
-        
+
         # Fetch column headers from the cursor
         column_headers = [i[0] for i in mycursor.description]
 
@@ -1758,14 +1762,13 @@ def check_if_should_publish_items():
                     if publication_date:
                         for field in items:
                             if publication_date and (field == "year" or field == "month" or field == "day"):
-
                                 single_field = extract_month_and_day(publication_date, field)
                                 single_field = str(single_field)
 
                                 list_page_url = list_page_url.replace("{" + field + "}", single_field)
                                 list_page_url = f"{list_page_url}" + (Config.PAGES_EXTENSION if not list_page_url.endswith(Config.PAGES_EXTENSION) else "")
 
-                        passed_session = { "accountId": workflow['accountId'] }
+                        passed_session = {"accountId": workflow['accountId']}
 
                         jsonConfig = get_list_configuration(workflow['accountId'], workflow['listName'], passed_session)
 
