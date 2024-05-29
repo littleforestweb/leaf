@@ -7,6 +7,12 @@ Configures Gunicorn server settings with default values and returns them as a di
 # Determine the number of worker processes to run, based on CPU count
 workers = multiprocessing.cpu_count() * 2 + 1
 
+# The maximum number of seconds to wait for a worker to handle a request
+timeout = 50000  # Increase this to a higher value if needed
+
+# The number of seconds to wait for a graceful worker restart
+graceful_timeout = 50000
+
 # Set the socket to bind the server to
 bind = "unix:leaf.sock"
 
