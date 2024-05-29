@@ -40,7 +40,7 @@ async function populateScrapeSettingsDynamicList() {
   });
 }
 
-async function scrapeSettingsDynamicList(accountId, reference, action) {
+async function scrapeSettingsDynamicList(accountId, reference, action, trigger_scrape = false) {
 	accountId = escapeHtml(accountId);
   reference = escapeHtml(reference);
   action = escapeHtml(action);
@@ -57,10 +57,32 @@ async function scrapeSettingsDynamicList(accountId, reference, action) {
       cache: false,
       processData: false,
       success: function (response) {
-        // $('#scrapeSettingsDynamicList').modal('hide');
-        // $('#scrapeSettingsDynamicList form input').val('');
 
         $('#scrapeDynamicListSuccessNotification').toast('show');
+
+        if (trigger_scrape) {
+          $('#scrapeDynamicListSuccessRunningNotification').toast('show');
+
+          $('#scrapeSettingsDynamicList').modal('hide');
+          $('#scrapeSettingsDynamicList form input').val('');
+
+          $.ajax({
+            type: "POST",
+            url: "/api/trigger_new_scrape",
+            data: {
+              "accountId": accountId,
+              "reference": reference
+            },
+            success: function (response) {
+              if (response.status) {
+                console.log("Scrape completed!");
+              }
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+              $('#errorModal').modal('show');
+            }
+          });
+        }
 
         doRedrawTable(false, false, true);
       },
@@ -78,24 +100,5 @@ async function triggerNewScrape(accountId, reference) {
   accountId = escapeHtml(accountId);
   reference = escapeHtml(reference);
 
-  scrapeSettingsDynamicList(accountId, reference, "close")
-  $('#scrapeDynamicListSuccessRunningNotification').toast('show');
-  doRedrawTable(false, false, true);
-
-  $.ajax({
-    type: "POST",
-    url: "/api/trigger_new_scrape",
-    data: {
-      "accountId": accountId,
-      "reference": reference
-    },
-    success: function (response) {
-      if (response.status) {
-        console.log("Scrape completed!");
-      }
-    },
-    error: function (XMLHttpRequest, textStatus, errorThrown) {
-      $('#errorModal').modal('show');
-    }
-  });
+  await scrapeSettingsDynamicList(accountId, reference, "save", true)
 }

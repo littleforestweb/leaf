@@ -2023,11 +2023,9 @@ def trigger_new_scrape(request):
                 # current_app.logger.debug(f"Folder: {folder_path}")
                 # Check if the folder exists
                 if os.path.exists(folder_path):
-                    # current_app.logger.debug(f"Folder exist: {folder_path}")
-                    continue
+                    current_app.logger.debug(f"Folder exist: {folder_path}")
                 if not os.path.exists(folder_path):
-                    # print(f"Folder does not exist: {folder_path}")
-                    continue
+                    print(f"Folder does not exist: {folder_path}")
 
                 for root, dirs, files in os.walk(folder_path):
                     for file in files:
@@ -2115,6 +2113,59 @@ def extract_and_format(url: str, *pattern_and_format_pairs: Tuple[str, str]) -> 
 # Function to extract content based on the given selector
 def extract_content(soup, selector):
     try:
+        if '>' in selector and 'ignore' in selector:
+            # Split by the last occurrence of '>' to separate base selector and ignore part
+            parts = selector.rsplit('>', 1)
+            base_selector = parts[0].strip()
+            ignore_parts = parts[1].strip()
+            ignore_parts = re.search(r'ignore\((.+?)\)', ignore_parts)
+            ignore_parts = ignore_parts.group(1)
+
+            # Select the content based on the base selector
+            content = extract_content(soup, base_selector)
+            if not content:
+                return None
+
+            parts = ignore_parts.split(';')
+            tag_part = ""
+            text_part = ""
+
+            for part in parts:
+                if 'tag:' in part:
+                    tag_part = part
+                elif 'text:' in part:
+                    text_part = part
+            
+            # Lists to store text patterns and tag patterns
+            text_patterns = []
+            tag_patterns = []
+
+            # Extract tag patterns
+            if tag_part:
+                tag_patterns = re.findall(r'tag:"(.*?)"', tag_part)
+                additional_tags = re.findall(r'",\s*"(.*?)"', tag_part)
+                tag_patterns.extend(additional_tags)
+
+            # Extract text patterns
+            if text_part:
+                text_patterns = re.findall(r'text:"(.*?)"', text_part)
+                additional_texts = re.findall(r'",\s*"(.*?)"', text_part)
+                text_patterns.extend(additional_texts)
+
+            # Remove text patterns from content
+            if len(text_patterns) > 0:
+                for pattern in text_patterns:
+                    content = content.replace(pattern, "")
+
+            # Remove tag patterns from content
+            if len(tag_patterns) > 0:
+                soup = BeautifulSoup(content, 'html.parser')
+                for tag in tag_patterns:
+                    for t in soup.find_all(tag):
+                        t.extract()
+                content = str(soup)
+
+            return content.strip()
 
         if '>' in selector and 'regex' in selector:
             # Split by the last occurrence of '>' to separate base selector and regex part
@@ -2125,7 +2176,8 @@ def extract_content(soup, selector):
             regex_part = regex_part.replace('__BACKSLASH__TO_REPLACE_ON_WEB__', '\\')
             
             # Extract the regex pattern and format from the regex part
-            regex_match = re.search(r'regex\(r?"(.+?)",\s*"(.*?)"\)', regex_part)
+            regex_match = re.search(r'regex\((.+?),\s*(.*?)\)', regex_part)
+            # regex_match = re.search(r'regex\(r?"(.+?)",\s*"(.*?)"\)', regex_part)
             if not regex_match:
                 raise ValueError(f"Invalid regex format in selector: {selector}")
             
@@ -2138,12 +2190,11 @@ def extract_content(soup, selector):
                 return None
             
             # Apply the regex pattern to the element's content
-            match = re.search(r"/(\d{4})/(\d{2})/", content)
+            match = re.search(pattern, content)
             
             if match:
                 # Create a dictionary of all matched groups
                 matched_groups = {f'group{i}': match.group(i) for i in range(1, len(match.groups()) + 1)}
-                
                 # Replace format placeholders with the matched group values
                 formatted_output = output_format
                 for group_name, value in matched_groups.items():
@@ -2227,7 +2278,8 @@ def extract_content(soup, selector):
 
         else:
             element = soup.select_one(selector.strip())
-            return element.text.strip() if element and not is_only_linebreaks(element.text) else None
+            return element.decode_contents().strip() if element and not is_only_linebreaks(element.text) else None
+            # return element.text.strip() if element and not is_only_linebreaks(element.text) else None
     except Exception as e:
         print(f"Error processing selector '{selector}': {e}")
         return None
