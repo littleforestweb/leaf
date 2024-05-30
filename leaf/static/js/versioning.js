@@ -28,6 +28,15 @@ async function revert_commit(page_id, commit) {
     });
 }
 
+function stopPropagation(evt) {
+    if (evt.stopPropagation !== undefined) {
+        evt.preventDefault();
+        evt.stopPropagation();
+    } else {
+        evt.cancelBubble = true;
+    }
+}
+
 window.addEventListener('DOMContentLoaded', async function main() {
     console.log("Starting");
     console.log("Get Page Versions");
