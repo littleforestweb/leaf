@@ -333,7 +333,7 @@ def api_get_page_diff():
         "cid_2": "commit2"
     }
     """
-    
+
     try:
         request_data = request.get_json()
         page_id = int(werkzeug.utils.escape(request_data['page_id']))
