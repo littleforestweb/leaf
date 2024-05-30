@@ -121,7 +121,30 @@ def duplicate_page_route():
 @pages.route('/page_versions')
 @login_required
 def get_page_versions():
+    """
+    Renders the page versions template.
+
+    This endpoint renders the page versions template, which displays
+    the version history of a specific page. The request must include
+    the page ID as a query parameter. The user must have the necessary
+    permissions to view the page versions.
+
+    Returns:
+        HTML template for displaying page versions.
+
+    Query Parameters:
+        - page_id (int): The ID of the page whose versions are to be displayed.
+
+    Responses:
+        - If the user has access permissions:
+            HTML template with necessary variables for rendering the page.
+        - If the user does not have access permissions:
+            JSON error response with status code 403 (Forbidden).
+
+    """
+
     page_id = int(werkzeug.utils.escape(request.args.get('page_id', type=str)))
+
     # Check for user permissions
     if not user_has_access_page(page_id):
         return jsonify({"error": "Forbidden"}), 403
@@ -139,6 +162,31 @@ def get_page_versions():
 @pages.route("/api/page_versions")
 @login_required
 def page_versions():
+    """
+    Retrieves a list of versions (commits) for a specified page.
+
+    This endpoint returns a list of all commits related to a given page.
+    The request must include the page ID as a query parameter.
+    The user must have the necessary permissions to view the page versions.
+
+    Returns:
+        JSON response containing the list of page versions or an error
+        message with the appropriate HTTP status code.
+
+    Query Parameters:
+        - page_id (int): The ID of the page whose versions are to be retrieved.
+
+    Responses:
+        - 200: JSON object containing the list of versions in a format suitable
+               for server-side processing tables.
+        - 403: {"error": "Forbidden"} if the user does not have access to the page.
+        - 500: {"error": "error_message"} if an internal server error occurs.
+
+    Exceptions:
+        - Handles all exceptions, prints the traceback for debugging, and
+          returns a JSON error response with status code 500.
+    """
+
     try:
         page_id = int(werkzeug.utils.escape(request.args.get('page_id', type=str)))
 
@@ -178,6 +226,31 @@ def page_versions():
 @pages.route("/api/page_revert", methods=["POST"])
 @login_required
 def page_revert():
+    """
+    Reverts a page to a previous commit.
+
+    This endpoint is used to revert the content of a page to a specified
+    commit. The request must include the page ID and the commit hash.
+    The user must have the necessary permissions to revert the page.
+
+    Returns:
+        JSON response indicating success or an error message with
+        the appropriate HTTP status code.
+
+    Request Data:
+        - page_id (int): The ID of the page to revert.
+        - commit (str): The commit hash to revert the page to.
+
+    Responses:
+        - 200: {"message": "success"} if the page is successfully reverted.
+        - 403: {"error": "Forbidden"} if the user does not have access to the page.
+        - 500: {"error": "error_message"} if an internal server error occurs.
+
+    Exceptions:
+        - Handles all exceptions, prints the traceback for debugging, and
+          returns a JSON error response with status code 500.
+    """
+
     try:
         request_data = request.get_json()
         page_id = int(werkzeug.utils.escape(request_data.get("page_id")))
