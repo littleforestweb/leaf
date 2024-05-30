@@ -23,6 +23,7 @@ def list_all_files(site_id, archive):
     Returns:
         list: A list of dictionaries containing files data.
     """
+    access_files = []
 
     try:
         # Get a database connection using the 'db_connection' decorator
@@ -39,10 +40,10 @@ def list_all_files(site_id, archive):
         # Get files from the site
         userUsernameEmail = 'CONCAT(user.id, ", ", user.username, ", ", user.email)'
         if archive != "1":
-            query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, IFNULL({userUsernameEmail}, '{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}') AS modified_by, site_assets.created FROM site_assets LEFT JOIN user ON site_assets.modified_by = user.id WHERE site_id = %s AND site_assets.status <> -1"
+            files_query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, IFNULL({userUsernameEmail}, '{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}') AS modified_by, site_assets.created FROM site_assets LEFT JOIN user ON site_assets.modified_by = user.id WHERE site_id = %s AND site_assets.status <> -1"
         else:
-            query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, IFNULL({userUsernameEmail}, '{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}') AS modified_by, site_assets.created FROM site_assets LEFT JOIN user ON site_assets.modified_by = user.id WHERE site_id = %s AND site_assets.status = -1"
-        mycursor.execute(query, [site_id])
+            files_query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, IFNULL({userUsernameEmail}, '{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}') AS modified_by, site_assets.created FROM site_assets LEFT JOIN user ON site_assets.modified_by = user.id WHERE site_id = %s AND site_assets.status = -1"
+        mycursor.execute(files_query, [site_id])
         site_files = mycursor.fetchall()
 
         # Filter files based on user access
@@ -51,11 +52,12 @@ def list_all_files(site_id, archive):
         else:
             access_files = [{"id": file[0], "Path": os.path.join("/", file[1]), "Filename": file[2], "Mime Type": file[3], "Created By": file[4], "Created": file[5]} for file in site_files]
 
-        return access_files
-
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
         raise RuntimeError(f"An error occurred while fetching files: {str(e)}")
+    finally:
+        mydb.close()
+        return access_files
 
 
 def insert_file_into_db(accountId, site_id, filename, folder, mime_type, status):
