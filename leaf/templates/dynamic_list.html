@@ -172,7 +172,10 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="uploadSetFieldsDynamicListLabel">Set Up {{ referenceNoUnderscores }}</h5>
-                    <button type="button" class="btn-close" aria-label="Close" onclick="uploadSetFieldsDynamicList('{{ accountId }}', '{{ reference }}', 'close')"></button>
+                    <div class="pull-right">
+                        <button type="button" class="btn btn-secondary" onclick="uploadSetFieldsDynamicList('{{ accountId }}', '{{ reference }}', 'close')">Close</button>
+                        <button type="button" class="btn btn-success" onclick="uploadSetFieldsDynamicList('{{ accountId }}', '{{ reference }}', 'save')">Save</button>
+                    </div>
                 </div>
                 <div class="modal-body">
                     <form method="post" id="setField-{{ reference }}">
@@ -279,7 +282,11 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="scrapeSettingsDynamicListLabel">Scrape Settings - {{ referenceNoUnderscores }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="scrapeSettingsDynamicList('{{ accountId }}', '{{ reference }}', 'close')"></button>
+                    <div class="pull-right">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="scrapeSettingsDynamicList('{{ accountId }}', '{{ reference }}', 'close')">Close</button>
+                        <button type="button" class="btn btn-success" onclick="scrapeSettingsDynamicList('{{ accountId }}', '{{ reference }}', 'save')">Save</button>
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#triggerNewScrapeModal">Scrape</button>
+                    </div>
                 </div>
                 <div class="modal-body">
                     <form method="post" id="setScrapeSettings-{{ reference }}">
@@ -308,9 +315,9 @@
                     </form>
                 </div>
                 <div class="modal-footer" id="modal-footer-config">
-                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#triggerNewScrapeModal">Scrape</button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="scrapeSettingsDynamicList('{{ accountId }}', '{{ reference }}', 'close')">Close</button>
                     <button type="button" class="btn btn-success" onclick="scrapeSettingsDynamicList('{{ accountId }}', '{{ reference }}', 'save')">Save</button>
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#triggerNewScrapeModal">Scrape</button>
                 </div>
             </div>
         </div>
