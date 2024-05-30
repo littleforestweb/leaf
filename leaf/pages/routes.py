@@ -10,6 +10,7 @@ from leaf.decorators import login_required
 from leaf.serverside import table_schemas
 from leaf.serverside.serverside_table import ServerSideTable
 from .models import get_page, get_screenshot, duplicate_page, get_site_id, get_page_details
+from ..sites.models import user_has_access_page
 
 # Create a Blueprint for the pages routes
 pages = Blueprint('pages', __name__)
@@ -121,8 +122,13 @@ def duplicate_page_route():
 @login_required
 def get_page_versions():
     page_id = int(werkzeug.utils.escape(request.args.get('page_id', type=str)))
+    # Check for user permissions
+    if not user_has_access_page(page_id):
+        return jsonify({"error": "Forbidden"}), 403
+
     page_details = get_page_details(page_id)
     page_url = page_details["url"]
+
     return render_template("versioning.html", userId=session["id"], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE, preview_webserver=Config.PREVIEW_SERVER, page_id=page_id, page_url=page_url)
 
 
@@ -135,6 +141,11 @@ def get_page_versions():
 def page_versions():
     try:
         page_id = int(werkzeug.utils.escape(request.args.get('page_id', type=str)))
+
+        # Check for user permissions
+        if not user_has_access_page(page_id):
+            return jsonify({"error": "Forbidden"}), 403
+
         page_details = get_page_details(page_id)
         page_HTMLPath = page_details["HTMLPath"]
         commits = list(Config.GIT_REPO.iter_commits(paths=os.path.join(Config.WEBSERVER_FOLDER, page_HTMLPath)))
@@ -170,6 +181,11 @@ def page_revert():
     try:
         request_data = request.get_json()
         page_id = int(werkzeug.utils.escape(request_data.get("page_id")))
+
+        # Check for user permissions
+        if not user_has_access_page(page_id):
+            return jsonify({"error": "Forbidden"}), 403
+
         commit = str(werkzeug.utils.escape(request_data.get("commit")))
         page_HTMLPath = get_page_details(page_id)["HTMLPath"]
         Config.GIT_REPO.git.checkout(commit, os.path.join(Config.WEBSERVER_FOLDER, page_HTMLPath))
