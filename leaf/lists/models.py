@@ -2133,7 +2133,7 @@ def extract_content(soup, selector):
             for part in parts:
                 if 'tag:' in part:
                     tag_part = part
-                elif 'text:' in part:
+                if 'text:' in part:
                     text_part = part
             
             # Lists to store text patterns and tag patterns
