@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Version Diff{% endblock %}
+
+{% block content %}
+    <script>
+        let preview_webserver = '{{ preview_webserver }}';
+        let page_id = '{{ page_id }}';
+        let commit_id_1 = '{{ commit_id_1 }}';
+        let commit_id_2 = '{{ commit_id_2 }}';
+    </script>
+
+    <!-- NOTIFICATIONS -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="versioningNotification" class="toast text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="versioningNotificationMsg"></div>
+        </div>
+    </div>
+
+    <!-- CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"/>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html-ui.min.js"></script>
+    <style>
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="header-1">
+                <h3 style="float: left">Versions Diff</h3>
+                <div class="pull-right header-btns"></div>
+            </div>
+            <div id="diff_text_div"></div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script src="{{ url_for('static', filename='js/versioning_diff.js') }}"></script>
+{% endblock %}

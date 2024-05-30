@@ -24,12 +24,15 @@
         <div class="card-body">
             <div class="header-1">
                 <h3 style="float: left">Page Versions</h3>
-                <div class="pull-right header-btns"></div>
+                <div class="pull-right header-btns">
+                    <button type="button" disabled class="btn btn-blue reviewChangesBtn" onclick="reviewChanges()">Review Changes</button>
+                </div>
             </div>
             <h5 style="float: left">URL: <a class="green-link" href="{{ page_url }}" target="_blank"> {{ page_url }}</a></h5>
             <table class="table" id="table">
                 <thead>
                 <tr>
+                    <th></th>
                     <th>Version</th>
                     <th>Reference</th>
                     <th>Message</th>
@@ -41,6 +44,7 @@
                 <tbody></tbody>
                 <tfoot>
                 <tr>
+                    <th></th>
                     <th>Version</th>
                     <th>Reference</th>
                     <th>Message</th>

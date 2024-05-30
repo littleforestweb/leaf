@@ -267,3 +267,48 @@ def page_revert():
         print(traceback.format_exc())
         # Handle exceptions and return an error response with status code 500
         return jsonify({"error": str(e)}), 500
+
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
+@pages.route('/page_versions_diff')
+@login_required
+def get_page_diff():
+    page_id = int(werkzeug.utils.escape(request.args.get('page_id', type=str)))
+    commit_id_1 = str(werkzeug.utils.escape(request.args.get('cid_1', type=str)))
+    commit_id_2 = str(werkzeug.utils.escape(request.args.get('cid_2', type=str)))
+
+    # Check for user permissions
+    if not user_has_access_page(page_id):
+        return jsonify({"error": "Forbidden"}), 403
+
+    return render_template("versioning_diff.html", userId=session["id"], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE, preview_webserver=Config.PREVIEW_SERVER, page_id=page_id, commit_id_1=commit_id_1, commit_id_2=commit_id_2)
+
+
+@pages.route('/api/page_versions_diff', methods=["POST"])
+@login_required
+def api_get_page_diff():
+    try:
+        request_data = request.get_json()
+        page_id = int(werkzeug.utils.escape(request_data['page_id']))
+        commit_id_1 = str(werkzeug.utils.escape(request_data['cid_1']))
+        commit_id_2 = str(werkzeug.utils.escape(request_data['cid_2']))
+        print(page_id, commit_id_1, commit_id_2)
+
+        # Check for user permissions
+        if not user_has_access_page(page_id):
+            return jsonify({"error": "Forbidden"}), 403
+
+        # Get Page Details
+        page_details = get_page_details(page_id)
+        page_HTMLPath = page_details["HTMLPath"]
+
+        # Get Commit Diff
+        diff_text = Config.GIT_REPO.git.diff(commit_id_1, commit_id_2, '--', os.path.join(Config.WEBSERVER_FOLDER, page_HTMLPath))
+
+        return jsonify({"message": "success", "diff_text": diff_text})
+    except Exception as e:
+        print(traceback.format_exc())
+        # Handle exceptions and return an error response with status code 500
+        return jsonify({"error": str(e)}), 500

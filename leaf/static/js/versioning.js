@@ -28,6 +28,16 @@ async function revert_commit(page_id, commit) {
     });
 }
 
+async function reviewChanges() {
+    let checkboxes = document.querySelectorAll("input[type='checkbox'].dt-checkboxes");
+    let checkedCheckboxes = Array.from(checkboxes).filter(checkbox => checkbox.checked);
+    let commit_ids = [];
+    for (let checkbox of checkedCheckboxes) {
+        commit_ids.push(checkbox.value)
+    }
+    window.location.href = "/page_versions_diff?page_id=" + page_id + "&cid_1=" + commit_ids[0] + "&cid_2=" + commit_ids[1];
+}
+
 function stopPropagation(evt) {
     if (evt.stopPropagation !== undefined) {
         evt.preventDefault();
@@ -35,6 +45,15 @@ function stopPropagation(evt) {
     } else {
         evt.cancelBubble = true;
     }
+}
+
+async function doMainButtons() {
+    $('#table').on('change', 'input[type="checkbox"]', function () {
+        $(".reviewChangesBtn").prop('disabled', true);
+        if ($('input[type="checkbox"]:checked').length === 2) {
+            $(".reviewChangesBtn").prop('disabled', false);
+        }
+    })
 }
 
 window.addEventListener('DOMContentLoaded', async function main() {
@@ -48,7 +67,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
     // Setup - add a text input to each header cell
     $('#table thead tr').clone(true).addClass("filters").appendTo('#table thead');
 
-    let searchColumns = [0, 1, 2, 3, 4, 5];
+    let searchColumns = [1, 2, 3, 4, 5];
 
     $("#table").DataTable({
         dom: "Brtip",
@@ -78,9 +97,8 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [0],
                 mData: function (source, type, val) {
-                    return "<span>" + unescape(source["version"]) + "</span>";
-                },
-                sortable: true
+                    return "<input class='dt-checkboxes' id='checkbox_" + source["commit"] + "' value='" + source["commit"] + "' type='checkbox'>";
+                }
             },
             {
                 aTargets: [1],
@@ -91,23 +109,29 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [2],
                 mData: function (source, type, val) {
-                    return "<span>" + unescape(source["message"]) + "</span>";
+                    return "<span>" + unescape(source["commit"]) + "</span>";
                 }
             },
             {
                 aTargets: [3],
                 mData: function (source, type, val) {
-                    return "<span>" + unescape(source["author"]) + "</span>";
+                    return "<span>" + unescape(source["message"]) + "</span>";
                 }
             },
             {
                 aTargets: [4],
                 mData: function (source, type, val) {
-                    return "<span>" + unescape(source["date"]) + "</span>";
+                    return "<span>" + unescape(source["author"]) + "</span>";
                 }
             },
             {
                 aTargets: [5],
+                mData: function (source, type, val) {
+                    return "<span>" + unescape(source["date"]) + "</span>";
+                }
+            },
+            {
+                aTargets: [6],
                 mData: function (source, type, val) {
                     return "<a onclick='revert_commit(\"" + page_id + "\", \"" + source["commit"] + "\")' class='btn btn-sm btn-red'>Revert</a>";
                 }
@@ -159,6 +183,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
     // Clean-up
     $("#table_wrapper > .dt-buttons").appendTo("div.header-btns");
+    doMainButtons();
     $(".loadingBg").removeClass("show");
 });
 
