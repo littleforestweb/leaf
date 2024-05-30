@@ -100,43 +100,6 @@ def checkConfig(loaded_json):
     return loaded_json
 
 
-def git_repo(webserver_folder):
-    """
-    Initialize a Git repository if it does not already exist, or open an existing repository.
-
-    Parameters:
-    webserver_folder (str): The path to the folder where the Git repository should be initialized or found.
-
-    Returns:
-    Repo: The GitPython Repo object representing the repository.
-    """
-
-    # Initialize the repository (if not already initialized)
-    if not os.path.exists(os.path.join(webserver_folder, '.git')):
-        repo = Repo.init(webserver_folder)
-    else:
-        repo = Repo(webserver_folder)
-
-    # Set the username and email for the repository
-    with repo.config_writer() as git_config:
-        git_config.set_value("user", "name", "support")
-        git_config.set_value("user", "email", "support@littleforest.co.uk")
-
-    # Ensure .gitignore exists and contains .DS_Store
-    gitignore_path = os.path.join(webserver_folder, '.gitignore')
-    if not os.path.exists(gitignore_path):
-        with open(gitignore_path, 'w') as gitignore_file:
-            gitignore_file.write('.DS_Store\n')
-    else:
-        with open(gitignore_path, 'r') as gitignore_file:
-            gitignore_contents = gitignore_file.read()
-        if '.DS_Store' not in gitignore_contents:
-            with open(gitignore_path, 'a') as gitignore_file:
-                gitignore_file.write('\n.DS_Store\n')
-
-    return repo
-
-
 def loadConfig():
     """
     Loads and validates the configuration from the 'config.json' file.
@@ -219,7 +182,10 @@ class Config:
     WEBSERVER_FOLDER = config["WEBSERVER_FOLDER"]
 
     # Initialize the repository (if not already initialized)
-    GIT_REPO = git_repo(WEBSERVER_FOLDER)
+    try:
+        GIT_REPO = Repo(WEBSERVER_FOLDER)
+    except:
+        GIT_REPO = None
 
     # User email assigned
     ASSIGNED_USER_EMAIL = config["ASSIGNED_USER_EMAIL"]
