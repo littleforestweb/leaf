@@ -275,6 +275,26 @@ def page_revert():
 @pages.route('/page_versions_diff')
 @login_required
 def get_page_diff():
+    """
+    Renders a page showing the differences between two versions of a page.
+
+    This endpoint requires the user to be logged in. It retrieves the page ID and the
+    commit IDs of the two versions to be compared from the request arguments. It then
+    checks if the user has access to the specified page. If the user has access, it
+    renders a template displaying the differences between the specified versions. If
+    not, it returns a 403 Forbidden error.
+
+    Parameters:
+    - page_id (int): The ID of the page.
+    - commit_id_1 (str): The ID of the first commit.
+    - commit_id_2 (str): The ID of the second commit.
+
+    Returns:
+    - A rendered template showing the differences between the two versions of the page,
+      or a JSON response with an error message and a 403 status code if the user does
+      not have access.
+    """
+
     page_id = int(werkzeug.utils.escape(request.args.get('page_id', type=str)))
     commit_id_1 = str(werkzeug.utils.escape(request.args.get('cid_1', type=str)))
     commit_id_2 = str(werkzeug.utils.escape(request.args.get('cid_2', type=str)))
@@ -289,12 +309,36 @@ def get_page_diff():
 @pages.route('/api/page_versions_diff', methods=["POST"])
 @login_required
 def api_get_page_diff():
+    """
+    Returns the differences between two versions of a page as a JSON response.
+
+    This endpoint requires the user to be logged in and uses a POST request to retrieve
+    the page ID and the commit IDs of the two versions to be compared from the request
+    JSON data. It then checks if the user has access to the specified page. If the user
+    has access, it retrieves the HTML path of the page, computes the diff between the
+    specified versions using Git, and returns the diff as a JSON response. If the user
+    does not have access, it returns a 403 Forbidden error. In case of an exception, it
+    returns a 500 error with the exception message.
+
+    Returns:
+    - JSON response containing the diff text between the two versions of the page or an
+      error message.
+    - Status code 403 if the user does not have access to the page.
+    - Status code 500 if an exception occurs.
+
+    Example:
+    {
+        "page_id": 123,
+        "cid_1": "commit1",
+        "cid_2": "commit2"
+    }
+    """
+    
     try:
         request_data = request.get_json()
         page_id = int(werkzeug.utils.escape(request_data['page_id']))
         commit_id_1 = str(werkzeug.utils.escape(request_data['cid_1']))
         commit_id_2 = str(werkzeug.utils.escape(request_data['cid_2']))
-        print(page_id, commit_id_1, commit_id_2)
 
         # Check for user permissions
         if not user_has_access_page(page_id):
