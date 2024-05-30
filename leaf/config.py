@@ -117,6 +117,11 @@ def git_repo(webserver_folder):
     else:
         repo = Repo(webserver_folder)
 
+    # Set the username and email for the repository
+    with repo.config_writer() as git_config:
+        git_config.set_value("user", "name", "support")
+        git_config.set_value("user", "email", "support@littleforest.co.uk")
+
     # Ensure .gitignore exists and contains .DS_Store
     gitignore_path = os.path.join(webserver_folder, '.gitignore')
     if not os.path.exists(gitignore_path):
