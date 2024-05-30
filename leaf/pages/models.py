@@ -1,5 +1,6 @@
 import os
 import shutil
+import urllib.parse
 
 from bs4 import BeautifulSoup
 from flask import send_from_directory, session
@@ -78,12 +79,12 @@ def get_page_details(page_id):
     try:
         # Search DB for local file
         mydb, mycursor = db_connection()
-        query = "SELECT id, url, title FROM site_meta WHERE id=%s"
+        query = "SELECT id, title, HTMLPath FROM site_meta WHERE id=%s"
         params = (page_id,)
         mycursor.execute(query, params)
         page = mycursor.fetchone()
 
-        return {"page_id": page[0], "url": page[1], "title": page[2]}
+        return {"page_id": page[0], "url": urllib.parse.urljoin(Config.PREVIEW_SERVER, page[2]), "title": page[1], "HTMLPath": page[2]}
     except Exception as e:
         raise
 

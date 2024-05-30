@@ -19,3 +19,4 @@ signxml
 defusedxml
 pysaml2
 APScheduler
+GitPython

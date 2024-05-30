@@ -13,6 +13,7 @@ import paramiko
 import werkzeug.utils
 from bs4 import BeautifulSoup
 from flask import session
+from git import Actor
 from werkzeug.datastructures import MultiDict
 
 from leaf import Config
@@ -1068,10 +1069,17 @@ def proceed_action_workflow(request, not_real_request=None):
                 outFile.write(original_content)
 
         # Regenerate Sitemap
-        query = "SELECT site_id FROM site_meta WHERE HTMLPath = %s"
+        query = "SELECT id, site_id FROM site_meta WHERE HTMLPath = %s"
         mycursor.execute(query, [HTMLPath])
-        site_id = mycursor.fetchone()[0]
+        page_id, site_id = mycursor.fetchone()
         gen_sitemap(mycursor, site_id, thisType)
+
+        # Git operations
+        query = "SELECT workflow.comments FROM workflow WHERE id = %s"
+        mycursor.execute(query, [workflow_id])
+        workflow_comment = mycursor.fetchone()[0]
+        Config.GIT_REPO.index.add([os.path.join(Config.WEBSERVER_FOLDER, HTMLPath), os.path.join(Config.WEBSERVER_FOLDER, "sitemap.xml")])
+        Config.GIT_REPO.index.commit(workflow_comment, author=Actor(session["username"], session["email"]))
 
     elif not listName and thisType == 2:
         # do something with TASK

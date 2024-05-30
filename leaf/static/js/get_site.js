@@ -395,8 +395,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [5],
                 mData: function (source, type, val) {
-                    let buttons = "<a class='" + (source["Locked"] === 0 ? "not_locked" : "unlock-btn") + " btn btn-sm' target='_blank' href='/editor?page_id=" + source["id"] + "'>" + (source["Locked"] === 0 ? "Edit" : "Unlock") + "</a>";
-                    return buttons;
+                    return "<a class='" + (source["Locked"] === 0 ? "not_locked" : "unlock-btn") + " btn btn-sm' target='_blank' href='/editor?page_id=" + source["id"] + "'>" + (source["Locked"] === 0 ? "Edit" : "Unlock") + "</a><a class='btn btn-sm' href='/page_versions?page_id=" + source["id"] + "'>Versions</a>";
                 }
             }
 

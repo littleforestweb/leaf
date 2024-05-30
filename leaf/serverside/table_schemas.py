@@ -84,5 +84,38 @@ SERVERSIDE_TABLE_COLUMNS = {
             "default": "",
             "order": 6
         }
+    ],
+    "get_page_versions": [
+        {
+            "data_name": "version",
+            "column_name": "version",
+            "default": "",
+            "order": 1
+        }, {
+            "data_name": "commit",
+            "column_name": "commit",
+            "default": "",
+            "order": 2
+        }, {
+            "data_name": "message",
+            "column_name": "message",
+            "default": "",
+            "order": 3
+        }, {
+            "data_name": "author",
+            "column_name": "author",
+            "default": "",
+            "order": 4
+        }, {
+            "data_name": "date",
+            "column_name": "date",
+            "default": "",
+            "order": 5
+        }, {
+            "data_name": "commit",
+            "column_name": "commit",
+            "default": "",
+            "order": 6
+        }
     ]
 }
