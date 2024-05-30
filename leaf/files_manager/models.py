@@ -42,14 +42,36 @@ def list_all_files(site_id, archive):
         userUsernameEmail = 'CONCAT(user.id, ", ", user.username, ", ", user.email)'
 
         if site_id == False:
-            mycursor.execute("SELECT COUNT(*) FROM sites WHERE accountId = %s", (session["accountId"],))
+            # Execute query to get the site IDs associated with the account
+            mycursor.execute("SELECT id FROM sites WHERE accountId = %s", (session["accountId"],))
             sites_result = mycursor.fetchall()
 
+            # Extract site IDs from the result and format them for the IN clause
+            site_ids = [str(site[0]) for site in sites_result]
+            sites_result_placeholder = ','.join(site_ids)
+
+            # Tuple of parameters, where the first_user_admin values are joined into a single string
+            modified_by_default = f"{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}"
+
             if archive != "1":
-                files_query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, IFNULL({userUsernameEmail}, '{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}') AS modified_by, site_assets.created FROM site_assets LEFT JOIN user ON site_assets.modified_by = user.id WHERE site_id IN %s AND site_assets.status <> -1"
+                files_query = f"""
+                SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, 
+                       IFNULL(user.username, %s) AS modified_by, site_assets.created 
+                FROM site_assets 
+                LEFT JOIN user ON site_assets.modified_by = user.id 
+                WHERE site_id IN ({sites_result_placeholder}) AND site_assets.status <> -1
+                """
             else:
-                files_query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, IFNULL({userUsernameEmail}, '{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}') AS modified_by, site_assets.created FROM site_assets LEFT JOIN user ON site_assets.modified_by = user.id WHERE site_id IN %s AND site_assets.status = -1"
-            mycursor.execute(files_query, sites_result)
+                files_query = f"""
+                SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, 
+                       IFNULL(user.username, %s) AS modified_by, site_assets.created 
+                FROM site_assets 
+                LEFT JOIN user ON site_assets.modified_by = user.id 
+                WHERE site_id IN ({sites_result_placeholder}) AND site_assets.status = -1
+                """
+
+            # Execute the query with the modified_by_default parameter
+            mycursor.execute(files_query, (modified_by_default,))
 
         else:
             if archive != "1":
