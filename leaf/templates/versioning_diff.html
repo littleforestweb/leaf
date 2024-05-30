@@ -21,9 +21,10 @@
         </div>
     </div>
 
-    <!-- CSS -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"/>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html-ui.min.js"></script>
+
+    <!-- diff2html -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/diff2html.min.css') }}"/>
+    <script src="{{ url_for('static', filename='js/diff2html-ui.min.js') }}"></script>
     <style>
         pre {
             white-space: pre-wrap;
