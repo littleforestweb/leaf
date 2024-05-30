@@ -474,7 +474,7 @@
                     <button type="button" class="btn btn-blue publish-btn" data-bs-toggle="modal" data-bs-target="#publishDynamicList" onclick="publishList()">Publish</button>
                     <button type="button" class="btn btn-orange previewButton" onclick="publishDynamicList('{{ accountId }}', '{{ reference }}', 'preview', '{{ preview_server }}', '{{ dynamic_path }}', false, false, false, true, false, false, this, '{{ userId }}')" disabled>Preview</button>
                     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addDynamicList" onclick="populateEditDynamicListDialog('{{ accountId }}', '{{ reference }}', 'add', '{{ userId }}');">Add</button>
-                    <button type="button" class="btn btn-blue editButton" data-bs-toggle="modal" data-bs-target="#editDynamicList" onclick="populateEditDynamicListDialog('{{ accountId }}', '{{ reference }}', 'edit', 'false', '{{ userId }}');" disabled>Edit</button>
+                    <!-- <button type="button" class="btn btn-blue editButton" data-bs-toggle="modal" data-bs-target="#editDynamicList" onclick="populateEditDynamicListDialog('{{ accountId }}', '{{ reference }}', 'edit', 'false', '{{ userId }}');" disabled>Edit</button> -->
                     <button type="button" class="btn btn-red deleteButton" data-bs-toggle="modal" data-bs-target="#deleteDynamicList" disabled>Delete</button>
                     <span class="dropdown_actions">
                         <button type="button" id="actions" class="btn btn-blue" onclick="dropDownActionsToggle()">Actions</button>
@@ -508,9 +508,7 @@
 
 
 {% block script %}
-    <script type="text/javascript">var reference = "{{reference}}";
-    var accountId = "{{accountId}}";
-    var page_extension = "{{page_extension}}"</script>
+    <script type="text/javascript">var reference = "{{reference}}", accountId = "{{accountId}}", userId = "{{userId}}", page_extension = "{{page_extension}}"</script>
     <script src="{{ url_for('static', filename='js/dynamic_list.js') }}"></script>
     <script src="{{ url_for('static', filename='js/dynamic_list_scrape_settings.js') }}"></script>
 {% endblock %}

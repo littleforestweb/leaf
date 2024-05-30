@@ -111,7 +111,11 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
         checked_items = $('input[type="checkbox"]:checked');
     }
 
-    if (checked_items.length < 1) {
+    if (itemToSelect) {
+        checked_items = $('input[type="checkbox"][value="' + itemToSelect + '"]');
+    }
+
+    if (checked_items.length < 1 && !itemToSelect) {
         location.reload(true);
     }
 
@@ -119,8 +123,13 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
     let row = checked_items.parent().parent();
 
     let spans = row.find("span pre span.hidden");
+
     let mainRowId = row.find('input[type="checkbox"]');
     mainRowId = escapeHtml(mainRowId.val());
+
+    if (itemToSelect) {
+        mainRowId = itemToSelect;
+    }
 
     $.fn.modal.Constructor.prototype._enforceFocus = function () {
         var $modalElement = this.$element;
@@ -1607,12 +1616,6 @@ async function populateDropdowns(accountId, reference, listsDropdown, fields, is
                     var fieldsDropdownContainer = '<div id="' + thisId + '-assignedFieldRow" class="row"><div class="form-group col-md-6"><label for="' + thisId + '-assignedField" class="col-form-label">Assigned Field:</label><select name="' + thisId + '-assignedField" class="form-select form-select-md" id="' + thisId + '-assignedField"></select></div><div class="form-group col-md-6"><label for="' + thisId + '-assignedFieldLabel" class="col-form-label">Assigned Label:</label><select name="' + thisId + '-assignedFieldLabel" class="form-select form-select-md" id="' + thisId + '-assignedFieldLabel"></select></div></div>';
                     $('.' + thisId + '-container').append(fieldsDropdownContainer);
 
-                    // var fieldsDropdown = '<select name="' + thisId + '-assignedField" class="form-select form-select-md" id="' + thisId + '-assignedField"></select>';
-                    // var fieldsDropdownLabel = '<select name="' + thisId + '-assignedFieldLabel" class="form-select form-select-md" id="' + thisId + '-assignedFieldLabel"></select>';
-
-                    // $('.' + thisId + '-container .row#' + thisId + '-assignedFieldRow .form-group:nth-child(1)').append(fieldsDropdown);
-                    // $('.' + thisId + '-container .row#' + thisId + '-assignedFieldRow .form-group:nth-child(2)').append(fieldsDropdownLabel);
-
                     for (var h = 0; h < allFieldsResponse.length; h++) {
                         $('select#' + thisId + '-assignedField').append('<option value="' + allFieldsResponse[h][0] + '" ' + (allFieldsResponse[h][0] === 'id' ? "selected" : "") + '>' + allFieldsResponse[h][0] + '</option>');
                         $('select#' + thisId + '-assignedFieldLabel').append('<option value="' + allFieldsResponse[h][0] + '" ' + (allFieldsResponse[h][0] === 'id' ? "selected" : "") + '>' + allFieldsResponse[h][0] + '</option>');
@@ -1634,12 +1637,6 @@ async function populateDropdowns(accountId, reference, listsDropdown, fields, is
             var fieldsDropdownContainer = '<div id="' + thisId + '-assignedFieldRow" class="row"><div class="form-group col-md-6"><label for="' + thisId + '-assignedField" class="col-form-label">Assigned Field:</label><select name="' + thisId + '-assignedField" class="form-select form-select-md" id="' + thisId + '-assignedField"></select></div><div class="form-group col-md-6"><label for="' + thisId + '-assignedFieldLabel" class="col-form-label">Assigned Label:</label><select name="' + thisId + '-assignedFieldLabel" class="form-select form-select-md" id="' + thisId + '-assignedFieldLabel"></select></div></div>';
             $('.' + thisId + '-container').append(fieldsDropdownContainer);
 
-            // var fieldsDropdown = '<select name="' + thisId + '-assignedField" class="form-select form-select-md" id="' + thisId + '-assignedField"></select>';
-            // var fieldsDropdownLabel = '<select name="' + thisId + '-assignedFieldLabel" class="form-select form-select-md" id="' + thisId + '-assignedFieldLabel"></select>';
-
-            // $('.' + thisId + '-container .row#' + thisId + '-assignedFieldRow .form-group:nth-child(1)').append(fieldsDropdown);
-            // $('.' + thisId + '-container .row#' + thisId + '-assignedFieldRow .form-group:nth-child(2)').append(fieldsDropdownLabel);
-
             $('select#' + thisId + '-assignedField').append('<option value="id" selected>id</option>');
             $('select#' + thisId + '-assignedFieldLabel').append('<option value="id" selected>id</option>');
 
@@ -1651,8 +1648,6 @@ async function populateDropdowns(accountId, reference, listsDropdown, fields, is
 
         } else {
             $('#typeSelectItem_' + thisIdClean + ' option').removeAttr('disabled');
-            // $('select#' + thisId + '-assignedField').remove();
-            // $('select#' + thisId + '-assignedFieldLabel').remove();
             $('#' + thisId + '-assignedFieldRow').remove();
         }
     })
@@ -2218,6 +2213,17 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
                 $("#add-" + reference + " .mb-3").find("#a-" + checkHeaderClass).parent().append(scriptForFilesAdd);
 
                 if ((xx + 1) === headColumns.length) {
+                    $('#table.table_' + reference + ' thead tr').append('<th class="center not_export_col">Actions</th>');
+                    $('#table.table_' + reference + ' tfoot tr').append('<th class="center not_export_col">Actions</th>');
+
+                    allColumns.push({
+                        aTargets: [headColumns.length + 1],
+                        mData: function (source, type, row) {
+                            return '<button type="button" class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#editDynamicList" onclick="populateEditDynamicListDialog(\'' + accountId + '\', \'' + reference + '\', \'edit\', \'' + escapeHtml(source[0]) + '\', \'' + userId + '\');">Edit</button>';
+                        },
+                        orderable: false,
+                        sClass: "center"
+                    });
                     getResume(allColumns, accountId, doSetUpTable, responseFields, isEditing, columnsToAddToShowHide);
                 }
             }, 1000);
@@ -2232,7 +2238,7 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
 
     let searchColumns = [];
     for (x = 0; x < allColumns.length; x++) {
-        if (x != 0) {
+        if (x != 0 && x != (allColumns.length -1)) {
             searchColumns.push(x);
         }
     }
