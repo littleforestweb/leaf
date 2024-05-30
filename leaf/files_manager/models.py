@@ -36,7 +36,7 @@ def list_all_files(site_id, archive):
         # Get first admin user
         query = f"SELECT user.id, user.username, user.email FROM user WHERE user.is_admin = 1"
         mycursor.execute(query)
-        first_user_admin = mycursor.fetchone()
+        first_user_admin = mycursor.fetchall()[0]
 
         # Get files from the site
         userUsernameEmail = 'CONCAT(user.id, ", ", user.username, ", ", user.email)'
