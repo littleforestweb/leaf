@@ -20,7 +20,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
         success: function (entry) {
             let diff_text = entry["diff_text"];
             let targetElement = document.getElementById("diff_text_div");
-            let configuration = {drawFileList: true, matching: 'lines'};
+            let configuration = {outputFormat: "side-by-side", drawFileList: true, matching: "lines"};
             let diff2htmlUi = new Diff2HtmlUI(targetElement, diff_text, configuration);
             diff2htmlUi.draw();
             $(".loadingBg").removeClass("show");
