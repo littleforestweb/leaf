@@ -105,7 +105,7 @@ def api_versions():
         } for idx, commit in enumerate(commits)]
 
         # Define columns for the ServerSideTable
-        columns = table_schemas.SERVERSIDE_TABLE_COLUMNS["get_page_versions"]
+        columns = table_schemas.SERVERSIDE_TABLE_COLUMNS["get_versions"]
 
         # Generate ServerSideTable data
         data = ServerSideTable(request, versions, columns).output_result()

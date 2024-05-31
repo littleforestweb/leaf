@@ -85,7 +85,7 @@ SERVERSIDE_TABLE_COLUMNS = {
             "order": 6
         }
     ],
-    "get_page_versions": [
+    "get_versions": [
         {
             "data_name": "version",
             "column_name": "version",
