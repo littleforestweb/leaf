@@ -21,7 +21,7 @@ async function doMainButtons() {
     })
 }
 
-async function reviewChanges() {
+async function compareVersions() {
     let checkboxes = document.querySelectorAll("input[type='checkbox'].dt-checkboxes");
     let checkedCheckboxes = Array.from(checkboxes).filter(checkbox => checkbox.checked);
     let commit_ids = [];
