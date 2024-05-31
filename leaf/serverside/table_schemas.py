@@ -107,18 +107,18 @@ SERVERSIDE_TABLE_COLUMNS = {
             "default": "",
             "order": 4
         }, {
-            "data_name": "author",
-            "column_name": "author",
+            "data_name": "author_name",
+            "column_name": "author_name",
             "default": "",
             "order": 5
         }, {
-            "data_name": "date",
-            "column_name": "date",
+            "data_name": "author_email",
+            "column_name": "author_email",
             "default": "",
             "order": 6
         }, {
-            "data_name": "commit",
-            "column_name": "commit",
+            "data_name": "date",
+            "column_name": "date",
             "default": "",
             "order": 7
         }

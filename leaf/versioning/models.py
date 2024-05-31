@@ -47,7 +47,8 @@ def get_versions(file_type, file_id):
         "is_latest": True if idx == total_commits - 1 else False,
         "commit": commit.hexsha,
         "message": commit.message,
-        "author": commit.author.name,
+        "author_name": commit.author.name,
+        "author_email": commit.author.email,
         "date": datetime.datetime.fromtimestamp(commit.authored_date).strftime('%Y/%m/%d %H:%M:%S')
     } for idx, commit in enumerate(commits)]
 

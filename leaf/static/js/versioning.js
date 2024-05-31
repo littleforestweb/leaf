@@ -115,7 +115,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
         sPaginationType: "full_numbers",
         lengthMenu: [[50, 100, 250], [50, 100, 250]],
         sAjaxSource: "/api/versions?file_type=" + file_type + "&file_id=" + file_id,
-        autoWidth: true,
+        autoWidth: false,
         order: [[0, "desc"]],
         stateSave: true,
         aoColumnDefs: [
@@ -146,7 +146,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [4],
                 mData: function (source, type, val) {
-                    return "<span>" + unescape(source["author"]) + "</span>";
+                    return "<span>" + unescape(source["author_name"]) + " (" + unescape(source["author_email"]) + ")" + "</span>";
                 }
             },
             {
