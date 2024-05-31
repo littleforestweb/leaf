@@ -28,10 +28,10 @@ def get_versions(file_id):
         - author (str): The name of the author of the commit.
         - date (str): The date and time when the commit was authored, formatted as 'YYYY/MM/DD HH:MM:SS'.
     """
-    
+
     page_details = get_page_details(file_id)
-    page_HTMLPath = page_details["HTMLPath"]
-    commits = list(Config.GIT_REPO.iter_commits(paths=os.path.join(Config.WEBSERVER_FOLDER, page_HTMLPath)))
+    file_path = page_details["HTMLPath"]
+    commits = list(Config.GIT_REPO.iter_commits(paths=os.path.join(Config.WEBSERVER_FOLDER, file_path)))
     total_commits = len(commits)
     versions = [{
         "version": total_commits - idx,

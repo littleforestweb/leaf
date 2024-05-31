@@ -58,10 +58,10 @@ def get_versions():
         return jsonify({"error": "Forbidden"}), 403
 
     page_details = get_page_details(file_id)
-    page_HTMLPath = page_details["HTMLPath"]
-    page_URL = urllib.parse.urljoin(Config.PREVIEW_SERVER, page_HTMLPath)
+    file_path = page_details["HTMLPath"]
+    page_URL = urllib.parse.urljoin(Config.PREVIEW_SERVER, file_path)
 
-    return render_template("versioning.html", userId=session["id"], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE, preview_webserver=Config.PREVIEW_SERVER, file_type=file_type, file_id=file_id, page_HTMLPath=page_HTMLPath, page_URL=page_URL)
+    return render_template("versioning.html", userId=session["id"], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE, preview_webserver=Config.PREVIEW_SERVER, file_type=file_type, file_id=file_id, file_path=file_path, page_URL=page_URL)
 
 
 @versioning.route("/api/versions")
@@ -171,8 +171,8 @@ def api_version_revert():
         if not user_has_access:
             return jsonify({"error": "Forbidden"}), 403
 
-        page_HTMLPath = get_page_details(file_id)["HTMLPath"]
-        Config.GIT_REPO.git.checkout(commit, os.path.join(Config.WEBSERVER_FOLDER, page_HTMLPath))
+        file_path = get_page_details(file_id)["HTMLPath"]
+        Config.GIT_REPO.git.checkout(commit, os.path.join(Config.WEBSERVER_FOLDER, file_path))
         return jsonify({"message": "success"})
     except Exception as e:
         print(traceback.format_exc())
@@ -266,10 +266,10 @@ def api_versions_diff():
 
         # Get Page Details
         page_details = get_page_details(file_id)
-        page_HTMLPath = page_details["HTMLPath"]
+        file_path = page_details["HTMLPath"]
 
         # Get Commit Diff
-        diff_text = Config.GIT_REPO.git.diff(commit_id_1, commit_id_2, '--', os.path.join(Config.WEBSERVER_FOLDER, page_HTMLPath))
+        diff_text = Config.GIT_REPO.git.diff(commit_id_1, commit_id_2, '--', os.path.join(Config.WEBSERVER_FOLDER, file_path))
 
         return jsonify({"message": "success", "diff_text": diff_text})
     except Exception as e:
@@ -322,10 +322,10 @@ def api_get_file_content_from_commit():
 
         # Get Page Details
         page_details = get_page_details(file_id)
-        page_HTMLPath = page_details["HTMLPath"]
+        file_path = page_details["HTMLPath"]
 
         # Get File Content from Commit
-        file_content = Config.GIT_REPO.git.show(f'{commit_id}:{page_HTMLPath}')
+        file_content = Config.GIT_REPO.git.show(f'{commit_id}:{file_path}')
         file_content = add_base_href(file_content)
         return jsonify({"message": "success", "file_content": file_content})
 

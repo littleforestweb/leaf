@@ -134,7 +134,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [2],
                 mData: function (source, type, val) {
-                    return "<a class='green-link' href='#' onclick='open_file(\"" + file_id + "\", \"" + source["commit"] + "\")'>" + page_HTMLPath + "</a>";
+                    return "<a class='green-link' href='#' onclick='open_file(\"" + file_id + "\", \"" + source["commit"] + "\")'>" + file_path + "</a>";
                 }
             },
             {
