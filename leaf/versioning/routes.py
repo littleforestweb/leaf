@@ -60,28 +60,23 @@ def get_versions():
 @login_required
 def api_versions():
     """
-    Retrieves a list of versions (commits) for a specified page.
+    Endpoint to retrieve versions of a specific page.
 
-    This endpoint returns a list of all commits related to a given page.
-    The request must include the page ID as a query parameter.
-    The user must have the necessary permissions to view the page versions.
+    This endpoint handles GET requests to fetch versions of a page specified by the 'page_id'
+    parameter in the query string. It requires the user to be authenticated and have the necessary
+    permissions to access the page.
 
     Returns:
-        JSON response containing the list of page versions or an error
-        message with the appropriate HTTP status code.
+        JSON response containing the versions of the specified page if successful,
+        or an error message with the appropriate HTTP status code if an error occurs.
 
     Query Parameters:
-        - page_id (int): The ID of the page whose versions are to be retrieved.
+        page_id (str): The ID of the page whose versions are to be retrieved.
 
     Responses:
-        - 200: JSON object containing the list of versions in a format suitable
-               for server-side processing tables.
-        - 403: {"error": "Forbidden"} if the user does not have access to the page.
-        - 500: {"error": "error_message"} if an internal server error occurs.
-
-    Exceptions:
-        - Handles all exceptions, prints the traceback for debugging, and
-          returns a JSON error response with status code 500.
+        200: A JSON object containing the version data of the specified page.
+        403: A JSON object with an error message if the user does not have permission to access the page.
+        500: A JSON object with an error message if an exception occurs during the process.
     """
 
     try:
