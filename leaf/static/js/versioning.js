@@ -3,6 +3,34 @@
     Author     : xhico
 */
 
+function stopPropagation(evt) {
+    if (evt.stopPropagation !== undefined) {
+        evt.preventDefault();
+        evt.stopPropagation();
+    } else {
+        evt.cancelBubble = true;
+    }
+}
+
+async function doMainButtons() {
+    $('#table').on('change', 'input[type="checkbox"]', function () {
+        $(".reviewChangesBtn").prop('disabled', true);
+        if ($('input[type="checkbox"]:checked').length === 2) {
+            $(".reviewChangesBtn").prop('disabled', false);
+        }
+    })
+}
+
+async function reviewChanges() {
+    let checkboxes = document.querySelectorAll("input[type='checkbox'].dt-checkboxes");
+    let checkedCheckboxes = Array.from(checkboxes).filter(checkbox => checkbox.checked);
+    let commit_ids = [];
+    for (let checkbox of checkedCheckboxes) {
+        commit_ids.push(checkbox.value)
+    }
+    window.location.href = "/page_versions_diff?page_id=" + page_id + "&cid_1=" + commit_ids[0] + "&cid_2=" + commit_ids[1];
+}
+
 async function revert_commit(page_id, commit) {
     console.log("revert_commit - " + page_id + " - " + commit);
     $.ajax({
@@ -28,32 +56,30 @@ async function revert_commit(page_id, commit) {
     });
 }
 
-async function reviewChanges() {
-    let checkboxes = document.querySelectorAll("input[type='checkbox'].dt-checkboxes");
-    let checkedCheckboxes = Array.from(checkboxes).filter(checkbox => checkbox.checked);
-    let commit_ids = [];
-    for (let checkbox of checkedCheckboxes) {
-        commit_ids.push(checkbox.value)
-    }
-    window.location.href = "/page_versions_diff?page_id=" + page_id + "&cid_1=" + commit_ids[0] + "&cid_2=" + commit_ids[1];
-}
-
-function stopPropagation(evt) {
-    if (evt.stopPropagation !== undefined) {
-        evt.preventDefault();
-        evt.stopPropagation();
-    } else {
-        evt.cancelBubble = true;
-    }
-}
-
-async function doMainButtons() {
-    $('#table').on('change', 'input[type="checkbox"]', function () {
-        $(".reviewChangesBtn").prop('disabled', true);
-        if ($('input[type="checkbox"]:checked').length === 2) {
-            $(".reviewChangesBtn").prop('disabled', false);
+async function open_file(page_id, commit) {
+    console.log("open_file - " + page_id + " - " + commit);
+    $.ajax({
+        type: "POST",
+        url: "/api/get_file_content_from_commit",
+        contentType: 'application/json',
+        data: JSON.stringify({"page_id": page_id, "commit": commit}),
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        success: function (entry) {
+            let file_content = entry["file_content"];
+            let newWindow = window.open();
+            newWindow.document.open();
+            newWindow.document.write(file_content);
+            newWindow.document.close();
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+            console.log("ERROR");
+            document.getElementById("versioningNotification").classList.add("bg-danger");
+            document.getElementById("versioningNotificationMsg").innerHTML = "<span>Failed to Open Version</span>"
+            $('#versioningNotification').toast('show');
         }
-    })
+    });
 }
 
 window.addEventListener('DOMContentLoaded', async function main() {
@@ -133,7 +159,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [6],
                 mData: function (source, type, val) {
-                    return "<a onclick='revert_commit(\"" + page_id + "\", \"" + source["commit"] + "\")' class='btn btn-sm btn-red'>Revert</a>";
+                    return "<a onclick='revert_commit(\"" + page_id + "\", \"" + source["commit"] + "\")' class='btn btn-sm btn-red'>Revert</a> <a onclick='open_file(\"" + page_id + "\", \"" + source["commit"] + "\")' class='btn btn-sm'>Open File</a>";
                 }
             }
         ],

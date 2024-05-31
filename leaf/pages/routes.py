@@ -10,6 +10,7 @@ from leaf.decorators import login_required
 from leaf.serverside import table_schemas
 from leaf.serverside.serverside_table import ServerSideTable
 from .models import get_page, get_screenshot, duplicate_page, get_site_id, get_page_details
+from ..editor.models import add_base_href
 from ..sites.models import user_has_access_page
 
 # Create a Blueprint for the pages routes
@@ -352,6 +353,45 @@ def api_get_page_diff():
         diff_text = Config.GIT_REPO.git.diff(commit_id_1, commit_id_2, '--', os.path.join(Config.WEBSERVER_FOLDER, page_HTMLPath))
 
         return jsonify({"message": "success", "diff_text": diff_text})
+    except Exception as e:
+        print(traceback.format_exc())
+        # Handle exceptions and return an error response with status code 500
+        return jsonify({"error": str(e)}), 500
+
+
+@pages.route('/api/get_file_content_from_commit', methods=["POST"])
+@login_required
+def api_get_file_content_from_commit():
+    """
+    Retrieve the full content of a file as it was in a specific commit.
+
+    Parameters:
+    - repo_path (str): The path to the Git repository.
+    - commit_id (str): The commit ID.
+    - file_path (str): The path to the file within the repository.
+
+    Returns:
+    - str: The content of the file at the specified commit.
+    """
+
+    try:
+        request_data = request.get_json()
+        page_id = int(werkzeug.utils.escape(request_data['page_id']))
+        commit_id = str(werkzeug.utils.escape(request_data['commit']))
+
+        # Check for user permissions
+        if not user_has_access_page(page_id):
+            return jsonify({"error": "Forbidden"}), 403
+
+        # Get Page Details
+        page_details = get_page_details(page_id)
+        page_HTMLPath = page_details["HTMLPath"]
+
+        # Get File Content from Commit
+        file_content = Config.GIT_REPO.git.show(f'{commit_id}:{page_HTMLPath}')
+        file_content = add_base_href(file_content)
+        return jsonify({"message": "success", "file_content": file_content})
+
     except Exception as e:
         print(traceback.format_exc())
         # Handle exceptions and return an error response with status code 500
