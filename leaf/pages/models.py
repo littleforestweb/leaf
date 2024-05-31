@@ -76,6 +76,7 @@ def get_page_details(page_id):
     Raises:
         Exception: If there is an error during the retrieval or serving process.
     """
+    
     try:
         # Search DB for local file
         mydb, mycursor = db_connection()
@@ -102,6 +103,7 @@ def get_asset_details(asset_id):
     Raises:
         Exception: If there is an error during the retrieval or serving process.
     """
+
     try:
         # Search DB for local file
         mydb, mycursor = db_connection()
