@@ -33,7 +33,7 @@ def get_versions():
         HTML template for displaying page versions.
 
     Query Parameters:
-        - page_id (int): The ID of the page whose versions are to be displayed.
+        - file_id (int): The ID of the page whose versions are to be displayed.
 
     Responses:
         - If the user has access permissions:
@@ -43,17 +43,17 @@ def get_versions():
 
     """
 
-    page_id = int(werkzeug.utils.escape(request.args.get('page_id', type=str)))
+    file_id = int(werkzeug.utils.escape(request.args.get('file_id', type=str)))
 
     # Check for user permissions
-    if not user_has_access_page(page_id):
+    if not user_has_access_page(file_id):
         return jsonify({"error": "Forbidden"}), 403
 
-    page_details = get_page_details(page_id)
+    page_details = get_page_details(file_id)
     page_HTMLPath = page_details["HTMLPath"]
     page_URL = urllib.parse.urljoin(Config.PREVIEW_SERVER, page_HTMLPath)
 
-    return render_template("versioning.html", userId=session["id"], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE, preview_webserver=Config.PREVIEW_SERVER, page_id=page_id, page_HTMLPath=page_HTMLPath, page_URL=page_URL)
+    return render_template("versioning.html", userId=session["id"], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE, preview_webserver=Config.PREVIEW_SERVER, file_id=file_id, page_HTMLPath=page_HTMLPath, page_URL=page_URL)
 
 
 @versioning.route("/api/versions")
@@ -62,7 +62,7 @@ def api_versions():
     """
     Endpoint to retrieve versions of a specific page.
 
-    This endpoint handles GET requests to fetch versions of a page specified by the 'page_id'
+    This endpoint handles GET requests to fetch versions of a page specified by the 'file_id'
     parameter in the query string. It requires the user to be authenticated and have the necessary
     permissions to access the page.
 
@@ -71,7 +71,7 @@ def api_versions():
         or an error message with the appropriate HTTP status code if an error occurs.
 
     Query Parameters:
-        page_id (str): The ID of the page whose versions are to be retrieved.
+        file_id (str): The ID of the page whose versions are to be retrieved.
 
     Responses:
         200: A JSON object containing the version data of the specified page.
@@ -80,14 +80,14 @@ def api_versions():
     """
 
     try:
-        page_id = int(werkzeug.utils.escape(request.args.get('page_id', type=str)))
+        file_id = int(werkzeug.utils.escape(request.args.get('file_id', type=str)))
 
         # Check for user permissions
-        if not user_has_access_page(page_id):
+        if not user_has_access_page(file_id):
             return jsonify({"error": "Forbidden"}), 403
 
         # Get Versions
-        versions = models.get_versions(page_id)
+        versions = models.get_versions(file_id)
 
         # Define columns for the ServerSideTable
         columns = table_schemas.SERVERSIDE_TABLE_COLUMNS["get_versions"]
@@ -117,7 +117,7 @@ def api_version_revert():
         the appropriate HTTP status code.
 
     Request Data:
-        - page_id (int): The ID of the page to revert.
+        - file_id (int): The ID of the page to revert.
         - commit (str): The commit hash to revert the page to.
 
     Responses:
@@ -132,14 +132,14 @@ def api_version_revert():
 
     try:
         request_data = request.get_json()
-        page_id = int(werkzeug.utils.escape(request_data.get("page_id")))
+        file_id = int(werkzeug.utils.escape(request_data.get("file_id")))
         commit = str(werkzeug.utils.escape(request_data.get("commit")))
 
         # Check for user permissions
-        if not user_has_access_page(page_id):
+        if not user_has_access_page(file_id):
             return jsonify({"error": "Forbidden"}), 403
 
-        page_HTMLPath = get_page_details(page_id)["HTMLPath"]
+        page_HTMLPath = get_page_details(file_id)["HTMLPath"]
         Config.GIT_REPO.git.checkout(commit, os.path.join(Config.WEBSERVER_FOLDER, page_HTMLPath))
         return jsonify({"message": "success"})
     except Exception as e:
@@ -161,7 +161,7 @@ def versions_diff():
     not, it returns a 403 Forbidden error.
 
     Parameters:
-    - page_id (int): The ID of the page.
+    - file_id (int): The ID of the page.
     - commit_id_1 (str): The ID of the first commit.
     - commit_id_2 (str): The ID of the second commit.
 
@@ -171,15 +171,15 @@ def versions_diff():
       not have access.
     """
 
-    page_id = int(werkzeug.utils.escape(request.args.get('page_id', type=str)))
+    file_id = int(werkzeug.utils.escape(request.args.get('file_id', type=str)))
     commit_id_1 = str(werkzeug.utils.escape(request.args.get('commit_id_1', type=str)))
     commit_id_2 = str(werkzeug.utils.escape(request.args.get('commit_id_2', type=str)))
 
     # Check for user permissions
-    if not user_has_access_page(page_id):
+    if not user_has_access_page(file_id):
         return jsonify({"error": "Forbidden"}), 403
 
-    return render_template("versioning_diff.html", userId=session["id"], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE, preview_webserver=Config.PREVIEW_SERVER, page_id=page_id, commit_id_1=commit_id_1, commit_id_2=commit_id_2)
+    return render_template("versioning_diff.html", userId=session["id"], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE, preview_webserver=Config.PREVIEW_SERVER, file_id=file_id, commit_id_1=commit_id_1, commit_id_2=commit_id_2)
 
 
 @versioning.route('/api/versions_diff', methods=["POST"])
@@ -204,7 +204,7 @@ def api_versions_diff():
 
     Example:
     {
-        "page_id": 123,
+        "file_id": 123,
         "commit_id_1": "commit1",
         "commit_id_2": "commit2"
     }
@@ -212,16 +212,16 @@ def api_versions_diff():
 
     try:
         request_data = request.get_json()
-        page_id = int(werkzeug.utils.escape(request_data['page_id']))
+        file_id = int(werkzeug.utils.escape(request_data['file_id']))
         commit_id_1 = str(werkzeug.utils.escape(request_data['commit_id_1']))
         commit_id_2 = str(werkzeug.utils.escape(request_data['commit_id_2']))
 
         # Check for user permissions
-        if not user_has_access_page(page_id):
+        if not user_has_access_page(file_id):
             return jsonify({"error": "Forbidden"}), 403
 
         # Get Page Details
-        page_details = get_page_details(page_id)
+        page_details = get_page_details(file_id)
         page_HTMLPath = page_details["HTMLPath"]
 
         # Get Commit Diff
@@ -251,15 +251,15 @@ def api_get_file_content_from_commit():
 
     try:
         request_data = request.get_json()
-        page_id = int(werkzeug.utils.escape(request_data['page_id']))
+        file_id = int(werkzeug.utils.escape(request_data['file_id']))
         commit_id = str(werkzeug.utils.escape(request_data['commit']))
 
         # Check for user permissions
-        if not user_has_access_page(page_id):
+        if not user_has_access_page(file_id):
             return jsonify({"error": "Forbidden"}), 403
 
         # Get Page Details
-        page_details = get_page_details(page_id)
+        page_details = get_page_details(file_id)
         page_HTMLPath = page_details["HTMLPath"]
 
         # Get File Content from Commit

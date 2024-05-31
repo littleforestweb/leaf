@@ -28,16 +28,16 @@ async function reviewChanges() {
     for (let checkbox of checkedCheckboxes) {
         commit_ids.push(checkbox.value)
     }
-    window.location.href = "/versions_diff?page_id=" + page_id + "&commit_id_1=" + commit_ids[0] + "&commit_id_2=" + commit_ids[1];
+    window.location.href = "/versions_diff?file_id=" + file_id + "&commit_id_1=" + commit_ids[0] + "&commit_id_2=" + commit_ids[1];
 }
 
-async function revert_commit(page_id, commit) {
-    console.log("revert_commit - " + page_id + " - " + commit);
+async function revert_commit(file_id, commit) {
+    console.log("revert_commit - " + file_id + " - " + commit);
     $.ajax({
         type: "POST",
         url: "/api/version_revert",
         contentType: 'application/json',
-        data: JSON.stringify({"page_id": page_id, "commit": commit}),
+        data: JSON.stringify({"file_id": file_id, "commit": commit}),
         dataType: 'json',
         cache: false,
         processData: false,
@@ -56,13 +56,13 @@ async function revert_commit(page_id, commit) {
     });
 }
 
-async function open_file(page_id, commit) {
-    console.log("open_file - " + page_id + " - " + commit);
+async function open_file(file_id, commit) {
+    console.log("open_file - " + file_id + " - " + commit);
     $.ajax({
         type: "POST",
         url: "/api/get_file_content_from_commit",
         contentType: 'application/json',
-        data: JSON.stringify({"page_id": page_id, "commit": commit}),
+        data: JSON.stringify({"file_id": file_id, "commit": commit}),
         dataType: 'json',
         cache: false,
         processData: false,
@@ -114,7 +114,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
         bServerSide: true,
         sPaginationType: "full_numbers",
         lengthMenu: [[50, 100, 250], [50, 100, 250]],
-        sAjaxSource: "/api/versions?page_id=" + page_id,
+        sAjaxSource: "/api/versions?file_id=" + file_id,
         autoWidth: true,
         order: [[0, "desc"]],
         stateSave: true,
@@ -134,7 +134,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [2],
                 mData: function (source, type, val) {
-                    return "<a class='green-link' href='#' onclick='open_file(\"" + page_id + "\", \"" + source["commit"] + "\")'>" + page_HTMLPath + "</a>";
+                    return "<a class='green-link' href='#' onclick='open_file(\"" + file_id + "\", \"" + source["commit"] + "\")'>" + page_HTMLPath + "</a>";
                 }
             },
             {
@@ -158,7 +158,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [6],
                 mData: function (source, type, val) {
-                    return "<a onclick='revert_commit(\"" + page_id + "\", \"" + source["commit"] + "\")' class='btn btn-sm btn-red'>Revert</a>";
+                    return "<a onclick='revert_commit(\"" + file_id + "\", \"" + source["commit"] + "\")' class='btn btn-sm btn-red'>Revert</a>";
                 }
             }
         ],

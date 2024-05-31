@@ -5,15 +5,15 @@ from leaf import Config
 from leaf.pages.models import get_page_details
 
 
-def get_versions(page_id):
+def get_versions(file_id):
     """
     Retrieve the version history of a specific page.
 
-    This function fetches the version history of a page identified by `page_id` from a Git repository.
+    This function fetches the version history of a page identified by `file_id` from a Git repository.
     It constructs a list of versions with details about each commit affecting the specified page.
 
     Args:
-        page_id (int): The ID of the page for which the version history is to be retrieved.
+        file_id (int): The ID of the page for which the version history is to be retrieved.
 
     Returns:
         list: A list of dictionaries, each containing information about a version of the page,
@@ -29,7 +29,7 @@ def get_versions(page_id):
         - date (str): The date and time when the commit was authored, formatted as 'YYYY/MM/DD HH:MM:SS'.
     """
     
-    page_details = get_page_details(page_id)
+    page_details = get_page_details(file_id)
     page_HTMLPath = page_details["HTMLPath"]
     commits = list(Config.GIT_REPO.iter_commits(paths=os.path.join(Config.WEBSERVER_FOLDER, page_HTMLPath)))
     total_commits = len(commits)

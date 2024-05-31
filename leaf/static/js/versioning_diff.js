@@ -6,14 +6,14 @@
 window.addEventListener('DOMContentLoaded', async function main() {
     console.log("Starting");
     console.log("Get Page Diff");
-    console.log(page_id, commit_id_1, commit_id_2);
+    console.log(file_id, commit_id_1, commit_id_2);
 
     // Get Diff Text
     $.ajax({
         type: "POST",
         url: "/api/versions_diff",
         contentType: 'application/json',
-        data: JSON.stringify({"page_id": page_id, "commit_id_1": commit_id_1, "commit_id_2": commit_id_2}),
+        data: JSON.stringify({"file_id": file_id, "commit_id_1": commit_id_1, "commit_id_2": commit_id_2}),
         dataType: 'json',
         cache: false,
         processData: false,
