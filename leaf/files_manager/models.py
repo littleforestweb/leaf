@@ -1,7 +1,7 @@
 import os
 
 import werkzeug.utils
-from flask import session, jsonify
+from flask import session, jsonify, current_app
 
 from leaf import decorators
 from leaf.config import Config
@@ -195,6 +195,7 @@ def list_rss_files(site_id, archive):
 def is_rss_feed(file_path):
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
+            current_app.logger.debug(first_line)
             first_line = file.readline().strip()
             return first_line.startswith('<?xml') and '<rss' in file.read()
     except Exception as e:
