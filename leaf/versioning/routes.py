@@ -59,9 +59,9 @@ def get_versions():
 
     page_details = get_page_details(file_id)
     file_path = page_details["HTMLPath"]
-    page_URL = urllib.parse.urljoin(Config.PREVIEW_SERVER, file_path)
+    file_url = urllib.parse.urljoin(Config.PREVIEW_SERVER, file_path)
 
-    return render_template("versioning.html", userId=session["id"], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE, preview_webserver=Config.PREVIEW_SERVER, file_type=file_type, file_id=file_id, file_path=file_path, page_URL=page_URL)
+    return render_template("versioning.html", userId=session["id"], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE, preview_webserver=Config.PREVIEW_SERVER, file_type=file_type, file_id=file_id, file_path=file_path, file_url=file_url)
 
 
 @versioning.route("/api/versions")

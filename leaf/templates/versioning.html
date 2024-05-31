@@ -8,7 +8,7 @@
         let file_id = '{{ file_id }}';
         let preview_webserver = '{{ preview_webserver }}';
         let file_path = '{{ file_path }}';
-        let page_URL = '{{ page_URL }}';
+        let file_url = '{{ file_url }}';
     </script>
 
     <!-- NOTIFICATIONS -->
@@ -31,7 +31,7 @@
                     <button disabled type="button" class="btn btn-blue reviewChangesBtn" onclick="compareVersions()">Compare Versions</button>
                 </div>
             </div>
-            <h5 style="float: left">URL: <a class="green-link" href="{{ page_URL }}" target="_blank">/{{ file_path }}</a></h5>
+            <h5 style="float: left">URL: <a class="green-link" href="{{ file_url }}" target="_blank">/{{ file_path }}</a></h5>
             <table class="table" id="table">
                 <thead>
                 <tr>
