@@ -176,6 +176,7 @@ def list_rss_files(site_id, archive):
             file_path = file[1]  # Assuming the path is in the second column
             if is_rss_feed(file_path):
                 rss_feeds.append(file)
+                current_app.logger.debug(file)
 
         if folder_paths:
             # Filter files based on user access
