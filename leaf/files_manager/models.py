@@ -193,7 +193,7 @@ def list_rss_files(site_id, archive):
 
 # Function to check if a file starts with <rss> tag
 def is_rss_feed(file_path):
-    full_file_path = os.path.join(Config.PREVIEW_SERVER, file_path)
+    full_file_path = os.path.join(Config.WEBSERVER_FOLDER, file_path)
     try:
         with open(full_file_path, 'r', encoding='utf-8') as file:
             current_app.logger.debug(first_line)
