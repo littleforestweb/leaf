@@ -320,7 +320,7 @@ def get_workflows():
     mydb, mycursor = decorators.db_connection()
 
     try:
-        mycursor.execute("SELECT id, title, startUser, assignEditor, dueDate, comments, submittedDate, type, status, tags, attachments, priority, listName FROM workflow WHERE type != 2 AND assignEditor = %s AND accountId = %s", (session["id"], session["accountId"],))
+        mycursor.execute("SELECT id, title, startUser, assignEditor, dueDate, comments, submittedDate, type, status, tags, attachments, priority, listName FROM workflow WHERE type != 2 AND (startUser = %s OR assignEditor = %s) AND accountId = %s", (session["id"], session["id"], session["accountId"],))
         workflowsLst = [
             {
                 "id": wf[0],
