@@ -1,6 +1,8 @@
+import atexit
+import gc
 import os
-import logging
 
+from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
 
 from leaf.config import Config
@@ -17,11 +19,9 @@ from leaf.serverside.saml import saml_route
 from leaf.sites.routes import sites
 from leaf.template_editor.routes import template_editor
 from leaf.users.routes import users
-from leaf.workflow.routes import workflow
+from leaf.versioning.routes import versioning
 from leaf.workflow.models import check_if_should_publish_items
-from apscheduler.schedulers.background import BackgroundScheduler
-import atexit
-import gc
+from leaf.workflow.routes import workflow
 
 
 def check_db():
@@ -102,6 +102,7 @@ def create_app(config_class=Config):
     app.register_blueprint(template_editor)
     app.register_blueprint(saml_route)
     app.register_blueprint(files_manager)
+    app.register_blueprint(versioning)
 
     scheduler = BackgroundScheduler()
     scheduler.add_job(func=check_if_should_publish_items, trigger="interval", minutes=5)
