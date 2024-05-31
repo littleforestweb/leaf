@@ -199,7 +199,7 @@ def is_rss_feed(file_path):
             first_line = file.readline().strip()
             return first_line.startswith('<?xml') and '<rss' in file.read()
     except Exception as e:
-        print(f"Error reading file {file_path}: {e}")
+        current_app.logger.debug(f"Error reading file {file_path}: {e}")
         return False
 
 def insert_file_into_db(accountId, site_id, filename, folder, mime_type, status):
