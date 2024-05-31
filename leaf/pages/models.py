@@ -105,7 +105,6 @@ def get_asset_details(asset_id):
     try:
         # Search DB for local file
         mydb, mycursor = db_connection()
-        print(asset_id)
         query = "SELECT id, path FROM site_assets WHERE id=%s"
         params = (asset_id,)
         mycursor.execute(query, params)
