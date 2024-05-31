@@ -706,3 +706,43 @@ def user_has_access_page(page_id):
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
         raise RuntimeError(f"An error occurred while checking for page access: {str(e)}")
+
+
+def user_has_access_asset(asset_id):
+    """
+    Checks if a user has access to a specific asset based on their permissions.
+
+    Args:
+        asset_id (int): The ID of the asset to check access for.
+
+    Returns:
+        bool: True if the user has access to the asset, False otherwise.
+
+    Raises:
+        RuntimeError: If an error occurs while checking for asset access.
+    """
+
+    try:
+
+        # Check if admin
+        if session["is_admin"] == 1:
+            return True
+
+        # Get a database connection using the 'db_connection' decorator
+        mydb, mycursor = decorators.db_connection()
+
+        # Get User Access folders
+        folder_paths = get_user_access_folder(mycursor)
+
+        # Get URL from PageID
+        mycursor.execute("SELECT path FROM site_assets WHERE id=%s", (asset_id,))
+        asset_path = os.path.join(mycursor.fetchone()[0])
+
+        for path in folder_paths:
+            if asset_path.startswith(path.lstrip("/")):
+                return True
+        mydb.close()
+        return False
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        raise RuntimeError(f"An error occurred while checking for page access: {str(e)}")

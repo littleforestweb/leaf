@@ -89,6 +89,33 @@ def get_page_details(page_id):
         raise
 
 
+def get_asset_details(asset_id):
+    """
+    Get a specific asset from the database and serve its details.
+
+    Args:
+        asset_id (int): The ID of the asset to retrieve.
+
+    Returns:
+        asset_details: The asset details related to this page id.
+
+    Raises:
+        Exception: If there is an error during the retrieval or serving process.
+    """
+    try:
+        # Search DB for local file
+        mydb, mycursor = db_connection()
+        print(asset_id)
+        query = "SELECT id, path FROM site_assets WHERE id=%s"
+        params = (asset_id,)
+        mycursor.execute(query, params)
+        page = mycursor.fetchone()
+
+        return {"asset_id": page[0], "asset_url": urllib.parse.urljoin(Config.PREVIEW_SERVER, page[1])}
+    except Exception as e:
+        raise
+
+
 def get_screenshot(pageId):
     """
     Get the screenshot of a specific page.
