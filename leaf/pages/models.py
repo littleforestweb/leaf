@@ -108,9 +108,9 @@ def get_asset_details(asset_id):
         query = "SELECT id, path FROM site_assets WHERE id=%s"
         params = (asset_id,)
         mycursor.execute(query, params)
-        page = mycursor.fetchone()
+        asset = mycursor.fetchone()
 
-        return {"asset_id": page[0], "asset_url": urllib.parse.urljoin(Config.PREVIEW_SERVER, page[1])}
+        return {"asset_id": asset[0], "path": asset[1], "url": urllib.parse.urljoin(Config.PREVIEW_SERVER, asset[1])}
     except Exception as e:
         raise
 
