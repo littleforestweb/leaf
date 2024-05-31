@@ -151,3 +151,40 @@ def files_list_all_files():
         # Log the exception or handle it as appropriate for your application
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
+
+@files_manager.route("/files/list_rss_files", methods=["GET"])
+@login_required
+def files_list_rss_files():
+    """
+    API endpoint to retrieve site rss files.
+
+    Requires the user to be logged in. Retrieves the 'id' parameter from the request
+    arguments, checks if the specified site belongs to the user's account, and then
+    retrieves files from the site using a parameterized query. Returns the site files
+    in JSON format.
+
+    Returns:
+        flask.Response: JSON response containing site data.
+    """
+    try:
+        # Retrieve the 'id' parameter from the request arguments
+        site_id = False
+        if request.args.get("id"):
+            site_id = werkzeug.utils.escape(request.args.get("id", type=str))
+        # Retrieve the 'archive' parameter from the request arguments
+        archive = werkzeug.utils.escape(request.args.get("archive", type=str))
+
+        if site_id != False:
+            # Check if the specified site belongs to the user's account
+            if not site_models.site_belongs_to_account(int(site_id)):
+                return jsonify({"error": "Forbidden"}), 403
+
+        # Get files from the site using a parameterized query
+        files = models.list_rss_files(site_id, archive)
+
+        return jsonify(files)
+
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
