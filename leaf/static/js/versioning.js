@@ -103,7 +103,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [1],
                 mData: function (source, type, val) {
-                    return "<span>" + unescape(source["commit"]) + "</span>";
+                    return "<span>" + unescape(source["version"]) + "</span>";
                 }
             },
             {
