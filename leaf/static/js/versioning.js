@@ -181,9 +181,11 @@ window.addEventListener('DOMContentLoaded', async function main() {
         }
     });
 
-    // Clean-up
+    // Add Header Btns
     $("#table_wrapper > .dt-buttons").appendTo("div.header-btns");
     doMainButtons();
+
+    // Remove Loading
     $(".loadingBg").removeClass("show");
 });
 
