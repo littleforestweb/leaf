@@ -11,7 +11,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
     // Get Diff Text
     $.ajax({
         type: "POST",
-        url: "/api/page_versions_diff",
+        url: "/api/versions_diff",
         contentType: 'application/json',
         data: JSON.stringify({"page_id": page_id, "cid_1": commit_id_1, "cid_2": commit_id_2}),
         dataType: 'json',

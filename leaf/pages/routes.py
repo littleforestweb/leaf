@@ -120,9 +120,9 @@ def duplicate_page_route():
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
-@pages.route('/page_versions')
+@pages.route('/versions')
 @login_required
-def get_page_versions():
+def get_versions():
     """
     Renders the page versions template.
 
@@ -162,9 +162,9 @@ def get_page_versions():
 # ---------------------------------------------------------------------------------------------------------- #
 
 
-@pages.route("/api/page_versions")
+@pages.route("/api/versions")
 @login_required
-def page_versions():
+def api_versions():
     """
     Retrieves a list of versions (commits) for a specified page.
 
@@ -227,9 +227,9 @@ def page_versions():
 # ---------------------------------------------------------------------------------------------------------- #
 
 
-@pages.route("/api/page_revert", methods=["POST"])
+@pages.route("/api/version_revert", methods=["POST"])
 @login_required
-def page_revert():
+def api_version_revert():
     """
     Reverts a page to a previous commit.
 
@@ -276,9 +276,9 @@ def page_revert():
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
-@pages.route('/page_versions_diff')
+@pages.route('/versions_diff')
 @login_required
-def get_page_diff():
+def versions_diff():
     """
     Renders a page showing the differences between two versions of a page.
 
@@ -310,9 +310,9 @@ def get_page_diff():
     return render_template("versioning_diff.html", userId=session["id"], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE, preview_webserver=Config.PREVIEW_SERVER, page_id=page_id, commit_id_1=commit_id_1, commit_id_2=commit_id_2)
 
 
-@pages.route('/api/page_versions_diff', methods=["POST"])
+@pages.route('/api/versions_diff', methods=["POST"])
 @login_required
-def api_get_page_diff():
+def api_versions_diff():
     """
     Returns the differences between two versions of a page as a JSON response.
 

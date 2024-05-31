@@ -28,14 +28,14 @@ async function reviewChanges() {
     for (let checkbox of checkedCheckboxes) {
         commit_ids.push(checkbox.value)
     }
-    window.location.href = "/page_versions_diff?page_id=" + page_id + "&cid_1=" + commit_ids[0] + "&cid_2=" + commit_ids[1];
+    window.location.href = "/versions_diff?page_id=" + page_id + "&cid_1=" + commit_ids[0] + "&cid_2=" + commit_ids[1];
 }
 
 async function revert_commit(page_id, commit) {
     console.log("revert_commit - " + page_id + " - " + commit);
     $.ajax({
         type: "POST",
-        url: "/api/page_revert",
+        url: "/api/version_revert",
         contentType: 'application/json',
         data: JSON.stringify({"page_id": page_id, "commit": commit}),
         dataType: 'json',
@@ -114,7 +114,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
         bServerSide: true,
         sPaginationType: "full_numbers",
         lengthMenu: [[50, 100, 250], [50, 100, 250]],
-        sAjaxSource: "/api/page_versions?page_id=" + page_id,
+        sAjaxSource: "/api/versions?page_id=" + page_id,
         autoWidth: true,
         order: [[0, "desc"]],
         stateSave: true,
