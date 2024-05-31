@@ -28,7 +28,7 @@ async function reviewChanges() {
     for (let checkbox of checkedCheckboxes) {
         commit_ids.push(checkbox.value)
     }
-    window.location.href = "/versions_diff?page_id=" + page_id + "&cid_1=" + commit_ids[0] + "&cid_2=" + commit_ids[1];
+    window.location.href = "/versions_diff?page_id=" + page_id + "&commit_id_1=" + commit_ids[0] + "&commit_id_2=" + commit_ids[1];
 }
 
 async function revert_commit(page_id, commit) {

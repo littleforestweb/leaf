@@ -13,7 +13,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
         type: "POST",
         url: "/api/versions_diff",
         contentType: 'application/json',
-        data: JSON.stringify({"page_id": page_id, "cid_1": commit_id_1, "cid_2": commit_id_2}),
+        data: JSON.stringify({"page_id": page_id, "commit_id_1": commit_id_1, "commit_id_2": commit_id_2}),
         dataType: 'json',
         cache: false,
         processData: false,

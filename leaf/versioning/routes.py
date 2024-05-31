@@ -172,8 +172,8 @@ def versions_diff():
     """
 
     page_id = int(werkzeug.utils.escape(request.args.get('page_id', type=str)))
-    commit_id_1 = str(werkzeug.utils.escape(request.args.get('cid_1', type=str)))
-    commit_id_2 = str(werkzeug.utils.escape(request.args.get('cid_2', type=str)))
+    commit_id_1 = str(werkzeug.utils.escape(request.args.get('commit_id_1', type=str)))
+    commit_id_2 = str(werkzeug.utils.escape(request.args.get('commit_id_2', type=str)))
 
     # Check for user permissions
     if not user_has_access_page(page_id):
@@ -205,16 +205,16 @@ def api_versions_diff():
     Example:
     {
         "page_id": 123,
-        "cid_1": "commit1",
-        "cid_2": "commit2"
+        "commit_id_1": "commit1",
+        "commit_id_2": "commit2"
     }
     """
 
     try:
         request_data = request.get_json()
         page_id = int(werkzeug.utils.escape(request_data['page_id']))
-        commit_id_1 = str(werkzeug.utils.escape(request_data['cid_1']))
-        commit_id_2 = str(werkzeug.utils.escape(request_data['cid_2']))
+        commit_id_1 = str(werkzeug.utils.escape(request_data['commit_id_1']))
+        commit_id_2 = str(werkzeug.utils.escape(request_data['commit_id_2']))
 
         # Check for user permissions
         if not user_has_access_page(page_id):
