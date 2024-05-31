@@ -163,9 +163,9 @@ def list_rss_files(site_id, archive):
 
         else:
             if archive != "1":
-                files_query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, IFNULL({userUsernameEmail}, '{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}') AS modified_by, site_assets.created FROM site_assets LEFT JOIN user ON site_assets.modified_by = user.id WHERE site_id = %s AND site_assets.status <> -1"
+                files_query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, IFNULL({userUsernameEmail}, '{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}') AS modified_by, site_assets.created FROM site_assets LEFT JOIN user ON site_assets.modified_by = user.id WHERE site_id = %s AND site_assets.mimeType = 'text/xml' AND site_assets.status <> -1"
             else:
-                files_query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, IFNULL({userUsernameEmail}, '{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}') AS modified_by, site_assets.created FROM site_assets LEFT JOIN user ON site_assets.modified_by = user.id WHERE site_id = %s AND site_assets.status = -1"
+                files_query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, IFNULL({userUsernameEmail}, '{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}') AS modified_by, site_assets.created FROM site_assets LEFT JOIN user ON site_assets.modified_by = user.id WHERE site_id = %s AND site_assets.mimeType = 'text/xml' AND site_assets.status = -1"
             mycursor.execute(files_query, [site_id])
 
         site_files = mycursor.fetchall()
