@@ -11,7 +11,7 @@ from leaf.editor.models import add_base_href
 from leaf.pages.models import get_page_details
 from leaf.serverside import table_schemas
 from leaf.serverside.serverside_table import ServerSideTable
-from leaf.sites.models import user_has_access_page
+from leaf.sites.models import user_has_access_page, user_has_access_asset
 from leaf.versioning import models
 
 # Create a Blueprint for the versioning routes
@@ -22,68 +22,89 @@ versioning = Blueprint('versioning', __name__)
 @login_required
 def get_versions():
     """
-    Renders the page versions template.
+    Endpoint to render the page displaying the versions of a specified file.
 
-    This endpoint renders the page versions template, which displays
-    the version history of a specific page. The request must include
-    the page ID as a query parameter. The user must have the necessary
-    permissions to view the page versions.
-
-    Returns:
-        HTML template for displaying page versions.
+    This function handles a GET request to render a template that displays the versions of a
+    specified file (page or asset). It first checks if the necessary parameters are provided
+    and if the user has the required permissions to access the file. If the user has access,
+    it retrieves the file details and constructs the URL for the file preview. It then renders
+    the "versioning.html" template with user and file information. If the user does not have access
+    or if required parameters are missing, it returns an appropriate error message.
 
     Query Parameters:
-        - file_id (int): The ID of the page whose versions are to be displayed.
+        file_type (str): The type of the file ("page" or "asset").
+        file_id (int): The ID of the file.
 
-    Responses:
-        - If the user has access permissions:
-            HTML template with necessary variables for rendering the page.
-        - If the user does not have access permissions:
-            JSON error response with status code 403 (Forbidden).
-
+    If the user does not have access, returns:
+        JSON response containing:
+        - "error": "Forbidden", with HTTP status code 403.
+        - "error": "Bad Request" and "message": "file_type and file_id is required", with HTTP status code 400.
     """
 
+    file_type = str(werkzeug.utils.escape(request.args.get('file_type', type=str)))
     file_id = int(werkzeug.utils.escape(request.args.get('file_id', type=str)))
 
+    # Check for user inputs
+    if file_type is None or file_id is None:
+        return jsonify({"error": "Bad Request", "message": "file_type and file_id is required"}), 400
+
     # Check for user permissions
-    if not user_has_access_page(file_id):
+    user_has_access = False
+    if file_type == "page":
+        user_has_access = user_has_access_page(file_id)
+    elif file_type == "asset":
+        user_has_access = user_has_access_asset(file_id)
+    if not user_has_access:
         return jsonify({"error": "Forbidden"}), 403
 
     page_details = get_page_details(file_id)
     page_HTMLPath = page_details["HTMLPath"]
     page_URL = urllib.parse.urljoin(Config.PREVIEW_SERVER, page_HTMLPath)
 
-    return render_template("versioning.html", userId=session["id"], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE, preview_webserver=Config.PREVIEW_SERVER, file_id=file_id, page_HTMLPath=page_HTMLPath, page_URL=page_URL)
+    return render_template("versioning.html", userId=session["id"], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE, preview_webserver=Config.PREVIEW_SERVER, file_type=file_type, file_id=file_id, page_HTMLPath=page_HTMLPath, page_URL=page_URL)
 
 
 @versioning.route("/api/versions")
 @login_required
 def api_versions():
     """
-    Endpoint to retrieve versions of a specific page.
+    API endpoint to retrieve the versions of a specified file.
 
-    This endpoint handles GET requests to fetch versions of a page specified by the 'file_id'
-    parameter in the query string. It requires the user to be authenticated and have the necessary
-    permissions to access the page.
-
-    Returns:
-        JSON response containing the versions of the specified page if successful,
-        or an error message with the appropriate HTTP status code if an error occurs.
+    This function handles a GET request to fetch the versions of a specified file (page or asset).
+    It first checks if the necessary parameters are provided and if the user has the required
+    permissions to access the file. If the user has access, it retrieves the versions of the file
+    from the database and returns them in a paginated format suitable for DataTables. If the user
+    does not have access or if required parameters are missing, it returns an appropriate error
+    message. In case of any exceptions, it returns a 500 Internal Server Error.
 
     Query Parameters:
-        file_id (str): The ID of the page whose versions are to be retrieved.
+        file_type (str): The type of the file ("page" or "asset").
+        file_id (int): The ID of the file.
 
-    Responses:
-        200: A JSON object containing the version data of the specified page.
-        403: A JSON object with an error message if the user does not have permission to access the page.
-        500: A JSON object with an error message if an exception occurs during the process.
+    Returns:
+        JSON response containing:
+        - Data for DataTables if the operation is successful,
+        - "error": error message and HTTP status code in case of failure:
+            - 400 Bad Request if required parameters are missing,
+            - 403 Forbidden if the user does not have access,
+            - 500 Internal Server Error in case of exceptions.
     """
 
     try:
+        file_type = str(werkzeug.utils.escape(request.args.get('file_type', type=str)))
         file_id = int(werkzeug.utils.escape(request.args.get('file_id', type=str)))
 
+        # Check for user inputs
+        if file_type is None or file_id is None:
+            return jsonify({"error": "Bad Request", "message": "file_type and file_id is required"}), 400
+
         # Check for user permissions
-        if not user_has_access_page(file_id):
+        user_has_access = False
+        if file_type == "page":
+            user_has_access = user_has_access_page(file_id)
+        elif file_type == "asset":
+            user_has_access = user_has_access_asset(file_id)
+        if not user_has_access:
             return jsonify({"error": "Forbidden"}), 403
 
         # Get Versions
@@ -106,37 +127,48 @@ def api_versions():
 @login_required
 def api_version_revert():
     """
-    Reverts a page to a previous commit.
+    API endpoint to revert a file to a specified commit.
 
-    This endpoint is used to revert the content of a page to a specified
-    commit. The request must include the page ID and the commit hash.
-    The user must have the necessary permissions to revert the page.
+    This function handles a POST request to revert a file (page or asset) to a specified commit.
+    It first checks if the necessary parameters are provided and if the user has the required
+    permissions to access and revert the file. If the user has access, it reverts the file to the
+    specified commit in the Git repository and returns a success message. If the user does not have
+    access or if required parameters are missing, it returns an appropriate error message. In case
+    of any exceptions, it returns a 500 Internal Server Error.
+
+    Request JSON structure:
+    {
+        "file_type": "page" or "asset",
+        "file_id": <integer>,
+        "commit": <string>
+    }
 
     Returns:
-        JSON response indicating success or an error message with
-        the appropriate HTTP status code.
-
-    Request Data:
-        - file_id (int): The ID of the page to revert.
-        - commit (str): The commit hash to revert the page to.
-
-    Responses:
-        - 200: {"message": "success"} if the page is successfully reverted.
-        - 403: {"error": "Forbidden"} if the user does not have access to the page.
-        - 500: {"error": "error_message"} if an internal server error occurs.
-
-    Exceptions:
-        - Handles all exceptions, prints the traceback for debugging, and
-          returns a JSON error response with status code 500.
+        JSON response containing:
+        - "message": "success" if the operation is successful,
+        - "error": error message and HTTP status code in case of failure:
+            - 400 Bad Request if required parameters are missing,
+            - 403 Forbidden if the user does not have access,
+            - 500 Internal Server Error in case of exceptions.
     """
 
     try:
         request_data = request.get_json()
-        file_id = int(werkzeug.utils.escape(request_data.get("file_id")))
-        commit = str(werkzeug.utils.escape(request_data.get("commit")))
+        file_type = str(werkzeug.utils.escape(request_data['file_type']))
+        file_id = int(werkzeug.utils.escape(request_data['file_id']))
+        commit = str(werkzeug.utils.escape(request_data['commit']))
+
+        # Check for user inputs
+        if file_type is None or file_id is None or commit is None:
+            return jsonify({"error": "Bad Request", "message": "file_type, file_id and commit are required"}), 400
 
         # Check for user permissions
-        if not user_has_access_page(file_id):
+        user_has_access = False
+        if file_type == "page":
+            user_has_access = user_has_access_page(file_id)
+        elif file_type == "asset":
+            user_has_access = user_has_access_asset(file_id)
+        if not user_has_access:
             return jsonify({"error": "Forbidden"}), 403
 
         page_HTMLPath = get_page_details(file_id)["HTMLPath"]
@@ -152,72 +184,84 @@ def api_version_revert():
 @login_required
 def versions_diff():
     """
-    Renders a page showing the differences between two versions of a page.
+    Endpoint to render the page for viewing differences between two versions of a file.
 
-    This endpoint requires the user to be logged in. It retrieves the page ID and the
-    commit IDs of the two versions to be compared from the request arguments. It then
-    checks if the user has access to the specified page. If the user has access, it
-    renders a template displaying the differences between the specified versions. If
-    not, it returns a 403 Forbidden error.
+    This function handles a GET request to render a template that displays the diff between two
+    specified commit IDs for a given file. It first checks if the user has the necessary permissions
+    to access the requested file type and file ID. If the user has access, it renders the
+    "versioning_diff.html" template with user and file information. If the user does not have access,
+    it returns a 403 Forbidden error.
 
-    Parameters:
-    - file_id (int): The ID of the page.
-    - commit_id_1 (str): The ID of the first commit.
-    - commit_id_2 (str): The ID of the second commit.
+    Query Parameters:
+        file_type (str): The type of the file ("page" or "asset").
+        file_id (int): The ID of the file.
+        commit_id_1 (str): The ID of the first commit.
+        commit_id_2 (str): The ID of the second commit.
 
-    Returns:
-    - A rendered template showing the differences between the two versions of the page,
-      or a JSON response with an error message and a 403 status code if the user does
-      not have access.
+    If the user does not have access, returns:
+        JSON response containing:
+        - "error": "Forbidden", with HTTP status code 403.
     """
 
+    file_type = str(werkzeug.utils.escape(request.args.get('file_type', type=str)))
     file_id = int(werkzeug.utils.escape(request.args.get('file_id', type=str)))
     commit_id_1 = str(werkzeug.utils.escape(request.args.get('commit_id_1', type=str)))
     commit_id_2 = str(werkzeug.utils.escape(request.args.get('commit_id_2', type=str)))
 
     # Check for user permissions
-    if not user_has_access_page(file_id):
+    user_has_access = False
+    if file_type == "page":
+        user_has_access = user_has_access_page(file_id)
+    elif file_type == "asset":
+        user_has_access = user_has_access_asset(file_id)
+    if not user_has_access:
         return jsonify({"error": "Forbidden"}), 403
 
-    return render_template("versioning_diff.html", userId=session["id"], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE, preview_webserver=Config.PREVIEW_SERVER, file_id=file_id, commit_id_1=commit_id_1, commit_id_2=commit_id_2)
+    return render_template("versioning_diff.html", userId=session["id"], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE, preview_webserver=Config.PREVIEW_SERVER, file_type=file_type, file_id=file_id, commit_id_1=commit_id_1, commit_id_2=commit_id_2)
 
 
 @versioning.route('/api/versions_diff', methods=["POST"])
 @login_required
 def api_versions_diff():
     """
-    Returns the differences between two versions of a page as a JSON response.
+    API endpoint to retrieve the differences between two versions of a file.
 
-    This endpoint requires the user to be logged in and uses a POST request to retrieve
-    the page ID and the commit IDs of the two versions to be compared from the request
-    JSON data. It then checks if the user has access to the specified page. If the user
-    has access, it retrieves the HTML path of the page, computes the diff between the
-    specified versions using Git, and returns the diff as a JSON response. If the user
-    does not have access, it returns a 403 Forbidden error. In case of an exception, it
-    returns a 500 error with the exception message.
+    This function handles a POST request to fetch the diff between two specified commit IDs for a
+    given file. It first checks if the user has the necessary permissions to access the requested
+    file type and file ID. If the user has access, it retrieves the diff of the file between the
+    two specified commits from the Git repository and returns it in the response. If the user does
+    not have access, it returns a 403 Forbidden error. In case of any exceptions, it returns a 500
+    Internal Server Error.
+
+    Request JSON structure:
+    {
+        "file_type": "page" or "asset",
+        "file_id": <integer>,
+        "commit_id_1": <string>,
+        "commit_id_2": <string>
+    }
 
     Returns:
-    - JSON response containing the diff text between the two versions of the page or an
-      error message.
-    - Status code 403 if the user does not have access to the page.
-    - Status code 500 if an exception occurs.
-
-    Example:
-    {
-        "file_id": 123,
-        "commit_id_1": "commit1",
-        "commit_id_2": "commit2"
-    }
+        JSON response containing:
+        - "message": "success" if the operation is successful,
+        - "diff_text": diff text of the file between the specified commits,
+        - "error": error message in case of failure.
     """
 
     try:
         request_data = request.get_json()
+        file_type = str(werkzeug.utils.escape(request_data['file_type']))
         file_id = int(werkzeug.utils.escape(request_data['file_id']))
         commit_id_1 = str(werkzeug.utils.escape(request_data['commit_id_1']))
         commit_id_2 = str(werkzeug.utils.escape(request_data['commit_id_2']))
 
         # Check for user permissions
-        if not user_has_access_page(file_id):
+        user_has_access = False
+        if file_type == "page":
+            user_has_access = user_has_access_page(file_id)
+        elif file_type == "asset":
+            user_has_access = user_has_access_asset(file_id)
+        if not user_has_access:
             return jsonify({"error": "Forbidden"}), 403
 
         # Get Page Details
@@ -238,24 +282,42 @@ def api_versions_diff():
 @login_required
 def api_get_file_content_from_commit():
     """
-    Retrieve the full content of a file as it was in a specific commit.
+    API endpoint to retrieve the content of a file from a specific commit.
 
-    Parameters:
-    - repo_path (str): The path to the Git repository.
-    - commit_id (str): The commit ID.
-    - file_path (str): The path to the file within the repository.
+    This function handles a POST request to fetch the content of a file from a given commit ID.
+    It first checks if the user has the necessary permissions to access the requested file type
+    and file ID. If the user has access, it retrieves the content of the file from the specified
+    commit in the Git repository and returns it in the response. If the user does not have access,
+    it returns a 403 Forbidden error. In case of any exceptions, it returns a 500 Internal Server
+    Error.
+
+    Request JSON structure:
+    {
+        "file_type": "page" or "asset",
+        "file_id": <integer>,
+        "commit_id": <string>
+    }
 
     Returns:
-    - str: The content of the file at the specified commit.
+        JSON response containing:
+        - "message": "success" if the operation is successful,
+        - "file_content": content of the file from the specified commit,
+        - "error": error message in case of failure.
     """
 
     try:
         request_data = request.get_json()
+        file_type = str(werkzeug.utils.escape(request_data['file_type']))
         file_id = int(werkzeug.utils.escape(request_data['file_id']))
-        commit_id = str(werkzeug.utils.escape(request_data['commit']))
+        commit_id = str(werkzeug.utils.escape(request_data['commit_id']))
 
         # Check for user permissions
-        if not user_has_access_page(file_id):
+        user_has_access = False
+        if file_type == "page":
+            user_has_access = user_has_access_page(file_id)
+        elif file_type == "asset":
+            user_has_access = user_has_access_asset(file_id)
+        if not user_has_access:
             return jsonify({"error": "Forbidden"}), 403
 
         # Get Page Details

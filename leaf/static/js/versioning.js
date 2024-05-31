@@ -28,7 +28,7 @@ async function reviewChanges() {
     for (let checkbox of checkedCheckboxes) {
         commit_ids.push(checkbox.value)
     }
-    window.location.href = "/versions_diff?file_id=" + file_id + "&commit_id_1=" + commit_ids[0] + "&commit_id_2=" + commit_ids[1];
+    window.location.href = "/versions_diff?file_type=" + file_type + "&file_id=" + file_id + "&commit_id_1=" + commit_ids[0] + "&commit_id_2=" + commit_ids[1];
 }
 
 async function revert_commit(file_id, commit) {
@@ -37,7 +37,7 @@ async function revert_commit(file_id, commit) {
         type: "POST",
         url: "/api/version_revert",
         contentType: 'application/json',
-        data: JSON.stringify({"file_id": file_id, "commit": commit}),
+        data: JSON.stringify({"file_type": file_type, "file_id": file_id, "commit": commit}),
         dataType: 'json',
         cache: false,
         processData: false,
@@ -62,7 +62,7 @@ async function open_file(file_id, commit) {
         type: "POST",
         url: "/api/get_file_content_from_commit",
         contentType: 'application/json',
-        data: JSON.stringify({"file_id": file_id, "commit": commit}),
+        data: JSON.stringify({"file_type": file_type, "file_id": file_id, "commit_id": commit}),
         dataType: 'json',
         cache: false,
         processData: false,
@@ -114,7 +114,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
         bServerSide: true,
         sPaginationType: "full_numbers",
         lengthMenu: [[50, 100, 250], [50, 100, 250]],
-        sAjaxSource: "/api/versions?file_id=" + file_id,
+        sAjaxSource: "/api/versions?file_type=" + file_type + "&file_id=" + file_id,
         autoWidth: true,
         order: [[0, "desc"]],
         stateSave: true,
