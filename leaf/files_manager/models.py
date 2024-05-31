@@ -193,13 +193,14 @@ def list_rss_files(site_id, archive):
 
 # Function to check if a file starts with <rss> tag
 def is_rss_feed(file_path):
+    full_file_path = os.path.join(Config.PREVIEW_SERVER, file_path)
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(full_file_path, 'r', encoding='utf-8') as file:
             current_app.logger.debug(first_line)
             first_line = file.readline().strip()
             return first_line.startswith('<?xml') and '<rss' in file.read()
     except Exception as e:
-        current_app.logger.debug(f"Error reading file {file_path}: {e}")
+        current_app.logger.debug(f"Error reading file {full_file_path}: {e}")
         return False
 
 def insert_file_into_db(accountId, site_id, filename, folder, mime_type, status):
