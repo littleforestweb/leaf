@@ -3,6 +3,15 @@
     Author     : joao
 */
 
+function stopPropagation(evt) {
+    if (evt.stopPropagation !== undefined) {
+        evt.preventDefault();
+        evt.stopPropagation();
+    } else {
+        evt.cancelBubble = true;
+    }
+}
+
 window.addEventListener('DOMContentLoaded', async function main() {
     async function joinPath(...segments) {
         return segments.map(segment => segment.replace(/(^\/|\/$)/g, '')).join('/');
@@ -98,8 +107,13 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 mData: function (source, type, val) {
                     return "<span>" + source["Created"] + "</span>";
                 }
+            },
+            {
+                aTargets: [6],
+                mData: function (source, type, val) {
+                    return "<a class='btn btn-sm' style='margin-left:5px' href='/versions?file_type=asset&file_id=" + source["id"] + "'>Versions</a>";
+                }
             }
-
         ],
         fnDrawCallback: function (oSettings) {
             $('input[type="checkbox"]').on('click', function () {
