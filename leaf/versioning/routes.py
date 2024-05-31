@@ -1,4 +1,3 @@
-import datetime
 import os.path
 import traceback
 import urllib.parse
@@ -13,6 +12,7 @@ from leaf.pages.models import get_page_details
 from leaf.serverside import table_schemas
 from leaf.serverside.serverside_table import ServerSideTable
 from leaf.sites.models import user_has_access_page
+from leaf.versioning import models
 
 # Create a Blueprint for the versioning routes
 versioning = Blueprint('versioning', __name__)
@@ -91,18 +91,8 @@ def api_versions():
         if not user_has_access_page(page_id):
             return jsonify({"error": "Forbidden"}), 403
 
-        page_details = get_page_details(page_id)
-        page_HTMLPath = page_details["HTMLPath"]
-        commits = list(Config.GIT_REPO.iter_commits(paths=os.path.join(Config.WEBSERVER_FOLDER, page_HTMLPath)))
-        total_commits = len(commits)
-        versions = [{
-            "version": total_commits - idx,
-            "is_latest": True if idx == total_commits - 1 else False,
-            "commit": commit.hexsha,
-            "message": commit.message,
-            "author": commit.author.name,
-            "date": datetime.datetime.fromtimestamp(commit.authored_date).strftime('%Y/%m/%d %H:%M:%S')
-        } for idx, commit in enumerate(commits)]
+        # Get Versions
+        versions = models.get_versions(page_id)
 
         # Define columns for the ServerSideTable
         columns = table_schemas.SERVERSIDE_TABLE_COLUMNS["get_versions"]
@@ -148,12 +138,12 @@ def api_version_revert():
     try:
         request_data = request.get_json()
         page_id = int(werkzeug.utils.escape(request_data.get("page_id")))
+        commit = str(werkzeug.utils.escape(request_data.get("commit")))
 
         # Check for user permissions
         if not user_has_access_page(page_id):
             return jsonify({"error": "Forbidden"}), 403
 
-        commit = str(werkzeug.utils.escape(request_data.get("commit")))
         page_HTMLPath = get_page_details(page_id)["HTMLPath"]
         Config.GIT_REPO.git.checkout(commit, os.path.join(Config.WEBSERVER_FOLDER, page_HTMLPath))
         return jsonify({"message": "success"})
