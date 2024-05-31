@@ -8,11 +8,11 @@ from flask import render_template, Blueprint, jsonify, request, session
 from leaf import Config
 from leaf.decorators import login_required
 from leaf.editor.models import add_base_href
-from leaf.pages.models import get_page_details
 from leaf.serverside import table_schemas
 from leaf.serverside.serverside_table import ServerSideTable
 from leaf.sites.models import user_has_access_page, user_has_access_asset
 from leaf.versioning import models
+from leaf.versioning.models import get_file_path
 
 # Create a Blueprint for the versioning routes
 versioning = Blueprint('versioning', __name__)
@@ -57,8 +57,8 @@ def get_versions():
     if not user_has_access:
         return jsonify({"error": "Forbidden"}), 403
 
-    page_details = get_page_details(file_id)
-    file_path = page_details["HTMLPath"]
+    # Get File Path
+    file_path = get_file_path(file_type, file_id)
     file_url = urllib.parse.urljoin(Config.PREVIEW_SERVER, file_path)
 
     return render_template("versioning.html", userId=session["id"], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE, preview_webserver=Config.PREVIEW_SERVER, file_type=file_type, file_id=file_id, file_path=file_path, file_url=file_url)
@@ -108,7 +108,7 @@ def api_versions():
             return jsonify({"error": "Forbidden"}), 403
 
         # Get Versions
-        versions = models.get_versions(file_id)
+        versions = models.get_versions(file_type, file_id)
 
         # Define columns for the ServerSideTable
         columns = table_schemas.SERVERSIDE_TABLE_COLUMNS["get_versions"]
@@ -171,7 +171,9 @@ def api_version_revert():
         if not user_has_access:
             return jsonify({"error": "Forbidden"}), 403
 
-        file_path = get_page_details(file_id)["HTMLPath"]
+        # Get File Path
+        file_path = get_file_path(file_type, file_id)
+
         Config.GIT_REPO.git.checkout(commit, os.path.join(Config.WEBSERVER_FOLDER, file_path))
         return jsonify({"message": "success"})
     except Exception as e:
@@ -264,9 +266,8 @@ def api_versions_diff():
         if not user_has_access:
             return jsonify({"error": "Forbidden"}), 403
 
-        # Get Page Details
-        page_details = get_page_details(file_id)
-        file_path = page_details["HTMLPath"]
+        # Get File Path
+        file_path = get_file_path(file_type, file_id)
 
         # Get Commit Diff
         diff_text = Config.GIT_REPO.git.diff(commit_id_1, commit_id_2, '--', os.path.join(Config.WEBSERVER_FOLDER, file_path))
@@ -320,9 +321,8 @@ def api_get_file_content_from_commit():
         if not user_has_access:
             return jsonify({"error": "Forbidden"}), 403
 
-        # Get Page Details
-        page_details = get_page_details(file_id)
-        file_path = page_details["HTMLPath"]
+        # Get File Path
+        file_path = get_file_path(file_type, file_id)
 
         # Get File Content from Commit
         file_content = Config.GIT_REPO.git.show(f'{commit_id}:{file_path}')

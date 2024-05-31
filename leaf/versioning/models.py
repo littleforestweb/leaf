@@ -2,10 +2,10 @@ import datetime
 import os
 
 from leaf import Config
-from leaf.pages.models import get_page_details
+from leaf.pages.models import get_page_details, get_asset_details
 
 
-def get_versions(file_id):
+def get_versions(file_type, file_id):
     """
     Retrieve the version history of a specific page.
 
@@ -13,6 +13,7 @@ def get_versions(file_id):
     It constructs a list of versions with details about each commit affecting the specified page.
 
     Args:
+        file_type (str): The type of the file ("page" or "asset").
         file_id (int): The ID of the page for which the version history is to be retrieved.
 
     Returns:
@@ -29,8 +30,16 @@ def get_versions(file_id):
         - date (str): The date and time when the commit was authored, formatted as 'YYYY/MM/DD HH:MM:SS'.
     """
 
-    page_details = get_page_details(file_id)
-    file_path = page_details["HTMLPath"]
+    # Get File Path
+    file_path = ""
+    if file_type == "page":
+        file_details = get_page_details(file_id)
+        file_path = file_details["HTMLPath"]
+    elif file_type == "asset":
+        file_details = get_asset_details(file_id)
+        file_path = file_details["path"]
+
+    # Get Commits
     commits = list(Config.GIT_REPO.iter_commits(paths=os.path.join(Config.WEBSERVER_FOLDER, file_path)))
     total_commits = len(commits)
     versions = [{
@@ -43,3 +52,34 @@ def get_versions(file_id):
     } for idx, commit in enumerate(commits)]
 
     return versions
+
+
+def get_file_path(file_type, file_id):
+    """
+    Retrieve the file path for a given file type and file ID.
+
+    This function determines the file path based on the type of the file (either "page" or "asset")
+    and the file ID. It fetches the details of the file from the appropriate function and extracts
+    the file path.
+
+    Parameters:
+        file_type (str): The type of the file ("page" or "asset").
+        file_id (int): The ID of the file.
+
+    Returns:
+        str: The path of the file.
+
+    Raises:
+        KeyError: If the file type is not "page" or "asset" or if the required file details are missing.
+        ValueError: If the file_id is invalid.
+    """
+
+    # Get File Path
+    file_path = ""
+    if file_type == "page":
+        file_details = get_page_details(file_id)
+        file_path = file_details["HTMLPath"]
+    elif file_type == "asset":
+        file_details = get_asset_details(file_id)
+        file_path = file_details["path"]
+    return file_path
