@@ -83,7 +83,7 @@ async function open_file(file_id, commit) {
 
 window.addEventListener('DOMContentLoaded', async function main() {
     console.log("Starting");
-    console.log("Get Page Versions");
+    console.log("Get Versions");
 
     // Reset Table
     $('#table').DataTable().clear().draw();
