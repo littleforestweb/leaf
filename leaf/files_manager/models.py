@@ -176,7 +176,6 @@ def list_rss_files(site_id, archive):
             file_path = file[1]  # Assuming the path is in the second column
             if is_rss_feed(file_path):
                 rss_feeds.append(file)
-                current_app.logger.debug(file)
 
         if folder_paths:
             # Filter files based on user access
@@ -198,6 +197,7 @@ def is_rss_feed(file_path):
     try:
         with open(full_file_path, 'r', encoding='utf-8') as file:
             first_line = file.readline().strip()
+            current_app.logger.debug(first_line)
             return first_line.startswith('<?xml') and '<rss' in file.read()
     except Exception as e:
         current_app.logger.debug(f"Error reading file {full_file_path}: {e}")
