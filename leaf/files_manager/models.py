@@ -174,7 +174,6 @@ def list_rss_files(site_id, archive):
 
         for file in site_files:
             file_path = file[1]  # Assuming the path is in the second column
-            current_app.logger.debug(is_rss_feed(file_path))
             if is_rss_feed(file_path):
                 rss_feeds.append(file)
 
@@ -197,8 +196,8 @@ def is_rss_feed(file_path):
     full_file_path = os.path.join(Config.WEBSERVER_FOLDER, file_path)
     try:
         with open(full_file_path, 'r', encoding='utf-8') as file:
-            first_line = file.readline().strip()
-            return first_line.startswith('<?xml') and '<rss' in file.read()
+            content = file.read().strip()
+            return content.startswith('<?xml') and '<rss' in content
     except Exception as e:
         current_app.logger.debug(f"Error reading file {full_file_path}: {e}")
         return False
