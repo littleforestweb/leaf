@@ -21,6 +21,19 @@ async function doMainButtons() {
     })
 }
 
+function base64Encode(str) {
+    // Convert the string to an array of 8-bit unsigned integers
+    const uint8Array = new TextEncoder().encode(str);
+    // Create a string of bytes
+    let binary = '';
+    const len = uint8Array.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(uint8Array[i]);
+    }
+    // Convert the binary string to base64
+    return btoa(binary);
+}
+
 async function compareVersions() {
     let checkboxes = document.querySelectorAll("input[type='checkbox'].dt-checkboxes");
     let checkedCheckboxes = Array.from(checkboxes).filter(checkbox => checkbox.checked);
@@ -44,13 +57,13 @@ async function revert_commit(file_id, commit) {
         success: function (entry) {
             console.log("success");
             document.getElementById("versioningNotification").classList.add("bg-success");
-            document.getElementById("versioningNotificationMsg").innerHTML = "<span>Page Reverted Successfully</span>"
+            document.getElementById("versioningNotificationMsg").innerHTML = "<span>Version reverted successfully</span>"
             $('#versioningNotification').toast('show');
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
             console.log("ERROR");
             document.getElementById("versioningNotification").classList.add("bg-danger");
-            document.getElementById("versioningNotificationMsg").innerHTML = "<span>Failed to Revert Page</span>"
+            document.getElementById("versioningNotificationMsg").innerHTML = "<span>Failed to revert version</span>"
             $('#versioningNotification').toast('show');
         }
     });
@@ -67,15 +80,23 @@ async function open_file(file_id, commit) {
         cache: false,
         processData: false,
         success: function (entry) {
+            let file_content = entry["file_content"];
+            let file_mime_type = entry["file_mime_type"];
+
+            // Parse Mime Types
+            if (file_mime_type === "application/json") {
+                file_content = "<html><body><pre>" + JSON.stringify(JSON.parse(file_content), null, 2) + "</pre></body></html>"
+            }
+
+            // Open Tab
             let newWindow = window.open();
-            newWindow.document.open();
-            newWindow.document.write(entry["file_content"]);
+            newWindow.document.write(file_content);
             newWindow.document.close();
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
             console.log("ERROR");
             document.getElementById("versioningNotification").classList.add("bg-danger");
-            document.getElementById("versioningNotificationMsg").innerHTML = "<span>Failed to Open Version</span>"
+            document.getElementById("versioningNotificationMsg").innerHTML = "<span>Couldn't open version</span>"
             $('#versioningNotification').toast('show');
         }
     });

@@ -55,11 +55,11 @@ def get_versions(file_type, file_id):
     return versions
 
 
-def get_file_path(file_type, file_id):
+def get_file_details(file_type, file_id):
     """
-    Retrieve the file path for a given file type and file ID.
+    Retrieve the file details for a given file type and file ID.
 
-    This function determines the file path based on the type of the file (either "page" or "asset")
+    This function determines the file details based on the type of the file (either "page" or "asset")
     and the file ID. It fetches the details of the file from the appropriate function and extracts
     the file path.
 
@@ -68,19 +68,22 @@ def get_file_path(file_type, file_id):
         file_id (int): The ID of the file.
 
     Returns:
-        str: The path of the file.
+        dict: The details of the file.
 
     Raises:
         KeyError: If the file type is not "page" or "asset" or if the required file details are missing.
         ValueError: If the file_id is invalid.
     """
 
-    # Get File Path
-    file_path = ""
+    # Get File Details
+    file_path, file_mime_type = "", ""
     if file_type == "page":
         file_details = get_page_details(file_id)
         file_path = file_details["HTMLPath"]
+        file_mime_type = "text/html"
     elif file_type == "asset":
         file_details = get_asset_details(file_id)
         file_path = file_details["path"]
-    return file_path
+        file_mime_type = file_details["mime_type"]
+
+    return {"path": file_path, "mime_type": file_mime_type}

@@ -107,12 +107,12 @@ def get_asset_details(asset_id):
     try:
         # Search DB for local file
         mydb, mycursor = db_connection()
-        query = "SELECT id, path FROM site_assets WHERE id=%s"
+        query = "SELECT id, path, mimeType FROM site_assets WHERE id=%s"
         params = (asset_id,)
         mycursor.execute(query, params)
         asset = mycursor.fetchone()
 
-        return {"asset_id": asset[0], "path": asset[1], "url": urllib.parse.urljoin(Config.PREVIEW_SERVER, asset[1])}
+        return {"asset_id": asset[0], "path": asset[1], "url": urllib.parse.urljoin(Config.PREVIEW_SERVER, asset[1], ), "mime_type": asset[2]}
     except Exception as e:
         raise
 
