@@ -170,12 +170,19 @@ def list_rss_files(site_id, archive):
 
         site_files = mycursor.fetchall()
 
+        rss_feeds = []
+
+        for file in xml_files:
+            file_path = file[1]  # Assuming the path is in the second column
+            if is_rss_feed(file_path):
+                rss_feeds.append(file)
+
         if folder_paths:
             # Filter files based on user access
             if session["is_admin"] == 0:
-                access_files = [{"id": file[0], "Path": os.path.join("/", file[1]), "Filename": file[2], "Mime Type": file[3], "Created By": file[4], "Created": file[5]} for file in site_files if any(file[1].startswith(path.lstrip("/")) for path in folder_paths)]
+                access_files = [{"id": file[0], "Path": os.path.join("/", file[1]), "Filename": file[2], "Mime Type": file[3], "Created By": file[4], "Created": file[5]} for file in rss_feeds if any(file[1].startswith(path.lstrip("/")) for path in folder_paths)]
             else:
-                access_files = [{"id": file[0], "Path": os.path.join("/", file[1]), "Filename": file[2], "Mime Type": file[3], "Created By": file[4], "Created": file[5]} for file in site_files]
+                access_files = [{"id": file[0], "Path": os.path.join("/", file[1]), "Filename": file[2], "Mime Type": file[3], "Created By": file[4], "Created": file[5]} for file in rss_feeds]
 
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
@@ -184,6 +191,15 @@ def list_rss_files(site_id, archive):
         mydb.close()
         return access_files
 
+# Function to check if a file starts with <rss> tag
+def is_rss_feed(file_path):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            first_line = file.readline().strip()
+            return first_line.startswith('<?xml') and '<rss' in file.read()
+    except Exception as e:
+        print(f"Error reading file {file_path}: {e}")
+        return False
 
 def insert_file_into_db(accountId, site_id, filename, folder, mime_type, status):
     """
