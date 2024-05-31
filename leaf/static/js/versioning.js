@@ -67,10 +67,9 @@ async function open_file(page_id, commit) {
         cache: false,
         processData: false,
         success: function (entry) {
-            let file_content = entry["file_content"];
             let newWindow = window.open();
             newWindow.document.open();
-            newWindow.document.write(file_content);
+            newWindow.document.write(entry["file_content"]);
             newWindow.document.close();
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
@@ -93,7 +92,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
     // Setup - add a text input to each header cell
     $('#table thead tr').clone(true).addClass("filters").appendTo('#table thead');
 
-    let searchColumns = [1, 2, 3, 4, 5];
+    let searchColumns = [1, 3, 4, 5];
 
     $("#table").DataTable({
         dom: "Brtip",
@@ -135,7 +134,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [2],
                 mData: function (source, type, val) {
-                    return "<span>" + unescape(source["commit"]) + "</span>";
+                    return "<a class='green-link' href='#' onclick='open_file(\"" + page_id + "\", \"" + source["commit"] + "\")'>" + page_HTMLPath + "</a>";
                 }
             },
             {
@@ -159,7 +158,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [6],
                 mData: function (source, type, val) {
-                    return "<a onclick='revert_commit(\"" + page_id + "\", \"" + source["commit"] + "\")' class='btn btn-sm btn-red'>Revert</a> <a onclick='open_file(\"" + page_id + "\", \"" + source["commit"] + "\")' class='btn btn-sm'>Open File</a>";
+                    return "<a onclick='revert_commit(\"" + page_id + "\", \"" + source["commit"] + "\")' class='btn btn-sm btn-red'>Revert</a>";
                 }
             }
         ],
@@ -199,12 +198,15 @@ window.addEventListener('DOMContentLoaded', async function main() {
                         $('input', $('.filters th')[colIdx]).val(colSearch.search);
                     }
                 });
-
-                // Highlight Latest Version Row
-                document.querySelector("#checkbox_" + api.rows().count()).parentElement.parentElement.classList.add("isGreen");
             } else {
                 api.draw();
             }
+        },
+        drawCallback: function () {
+            // Reapply custom highlighting and modifications here...
+            let latestRow = document.querySelector("#checkbox_" + this.api().rows().count()).parentElement.parentElement;
+            latestRow.classList.add("isGreen");
+            latestRow.children[1].innerText += " (Latest)";
         }
     });
 

@@ -6,6 +6,8 @@
     <script>
         let page_id = '{{ page_id }}';
         let preview_webserver = '{{ preview_webserver }}';
+        let page_HTMLPath = '{{ page_HTMLPath }}';
+        let page_URL = '{{ page_URL }}';
     </script>
 
     <!-- NOTIFICATIONS -->
@@ -28,13 +30,13 @@
                     <button disabled type="button" class="btn btn-blue reviewChangesBtn" onclick="reviewChanges()">Review Changes</button>
                 </div>
             </div>
-            <h5 style="float: left">URL: <a class="green-link" href="{{ page_url }}" target="_blank"> {{ page_url }}</a></h5>
+            <h5 style="float: left">URL: <a class="green-link" href="{{ page_URL }}" target="_blank"> {{ page_HTMLPath }}</a></h5>
             <table class="table" id="table">
                 <thead>
                 <tr>
                     <th></th>
                     <th>Version</th>
-                    <th>Reference</th>
+                    <th>Filename</th>
                     <th>Message</th>
                     <th>Created By</th>
                     <th>Date</th>

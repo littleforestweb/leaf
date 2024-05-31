@@ -92,30 +92,35 @@ SERVERSIDE_TABLE_COLUMNS = {
             "default": "",
             "order": 1
         }, {
+            "data_name": "is_latest",
+            "column_name": "is_latest",
+            "default": "",
+            "order": 2
+        }, {
             "data_name": "commit",
             "column_name": "commit",
             "default": "",
-            "order": 2
+            "order": 3
         }, {
             "data_name": "message",
             "column_name": "message",
             "default": "",
-            "order": 3
+            "order": 4
         }, {
             "data_name": "author",
             "column_name": "author",
             "default": "",
-            "order": 4
+            "order": 5
         }, {
             "data_name": "date",
             "column_name": "date",
             "default": "",
-            "order": 5
+            "order": 6
         }, {
             "data_name": "commit",
             "column_name": "commit",
             "default": "",
-            "order": 6
+            "order": 7
         }
     ]
 }

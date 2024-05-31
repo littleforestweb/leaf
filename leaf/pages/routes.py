@@ -1,6 +1,7 @@
 import datetime
 import os.path
 import traceback
+import urllib.parse
 
 import werkzeug.utils
 from flask import render_template, Blueprint, jsonify, request, session
@@ -151,9 +152,10 @@ def get_page_versions():
         return jsonify({"error": "Forbidden"}), 403
 
     page_details = get_page_details(page_id)
-    page_url = page_details["url"]
+    page_HTMLPath = page_details["HTMLPath"]
+    page_URL = urllib.parse.urljoin(Config.PREVIEW_SERVER, page_HTMLPath)
 
-    return render_template("versioning.html", userId=session["id"], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE, preview_webserver=Config.PREVIEW_SERVER, page_id=page_id, page_url=page_url)
+    return render_template("versioning.html", userId=session["id"], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session["user_image"], accountId=session["accountId"], is_admin=session["is_admin"], is_manager=session["is_manager"], site_notice=Config.SITE_NOTICE, preview_webserver=Config.PREVIEW_SERVER, page_id=page_id, page_HTMLPath=page_HTMLPath, page_URL=page_URL)
 
 
 # ---------------------------------------------------------------------------------------------------------- #
@@ -201,6 +203,7 @@ def page_versions():
         total_commits = len(commits)
         versions = [{
             "version": total_commits - idx,
+            "is_latest": True if idx == total_commits - 1 else False,
             "commit": commit.hexsha,
             "message": commit.message,
             "author": commit.author.name,
