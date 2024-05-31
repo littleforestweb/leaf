@@ -237,6 +237,12 @@ td.center {
     border-color: rgba(var(--lfi-red-rgb));
 }
 
+.btn-red.disabled, .btn-red:disabled {
+    color: #fff;
+    background-color: rgba(var(--lfi-red-rgb));
+    border-color: rgba(var(--lfi-red-rgb));
+}
+
 .btn-red.active {
     background-color: rgba(var(--lfi-red-rgb));
     color: #ffffff;
@@ -259,6 +265,12 @@ td.center {
     border-color: rgba(var(--lfi-blue-rgb));
 }
 
+.btn-blue.disabled, .btn-blue:disabled {
+    color: #fff;
+    background-color: rgba(var(--lfi-blue-rgb));
+    border-color: rgba(var(--lfi-blue-rgb));
+}
+
 .btn-blue.active {
     background-color: rgba(var(--lfi-blue-rgb));
     color: #ffffff;
@@ -276,6 +288,12 @@ td.center {
 }
 
 .btn-orange {
+    color: #fff;
+    background-color: rgba(var(--lfi-orange-rgb));
+    border-color: rgba(var(--lfi-orange-rgb));
+}
+
+.btn-orange.disabled, .btn-orange:disabled {
     color: #fff;
     background-color: rgba(var(--lfi-orange-rgb));
     border-color: rgba(var(--lfi-orange-rgb));
@@ -1125,6 +1143,10 @@ td .partnerPhoto .mb3_img {
 #action_message.isOrange,
 #status_message.isOrange {
     color: #bd9b01;
+}
+
+.table > :not(caption) > * > * {
+    background: transparent;
 }
 
 #action_message.isGreen,

@@ -97,7 +97,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [0],
                 mData: function (source, type, val) {
-                    return "<input class='dt-checkboxes' id='checkbox_" + source["commit"] + "' value='" + source["commit"] + "' type='checkbox'>";
+                    return "<input class='dt-checkboxes' id='checkbox_" + source["version"] + "' value='" + source["commit"] + "' type='checkbox'>";
                 }
             },
             {
@@ -173,11 +173,12 @@ window.addEventListener('DOMContentLoaded', async function main() {
                         $('input', $('.filters th')[colIdx]).val(colSearch.search);
                     }
                 });
+
+                // Highlight Latest Version Row
+                document.querySelector("#checkbox_" + api.rows().count()).parentElement.parentElement.classList.add("isGreen");
             } else {
                 api.draw();
             }
-
-            $(".loadingBg").removeClass("show");
         }
     });
 
