@@ -229,6 +229,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             let latestRow = document.querySelector("#checkbox_" + this.api().rows().count()).parentElement.parentElement;
             latestRow.classList.add("isGreen");
             latestRow.children[1].innerText += " (Latest)";
+            latestRow.children[latestRow.children.length - 1].innerHTML = "<span>No Action</span>";
         }
     });
 
