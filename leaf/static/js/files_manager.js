@@ -72,7 +72,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 aTargets: [1],
                 sClass: "truncate",
                 mData: function (source, type, val) {
-                    return '<a class="green-link" href="' + unescape(preview_webserver + source["Path"]) + '">' + unescape(source["Path"]) + '</a>';
+                    return '<a class="green-link" target="_blank" href="' + unescape(preview_webserver + source["Path"]) + '">' + unescape(source["Path"]) + '</a>';
                 }
             },
             {
