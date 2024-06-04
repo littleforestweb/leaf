@@ -7,6 +7,7 @@ from leaf.decorators import login_required
 from leaf.serverside import table_schemas
 from leaf.serverside.serverside_table import ServerSideTable
 from leaf.sites import models
+from leaf.workflow import models as workflow_models
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -106,15 +107,20 @@ def view_get_site():
         # Retrieve site ID from request arguments
         site_id = werkzeug.utils.escape(request.args.get('id', type=str))
 
+        # Get Folders that the user has access to
+        user_access_folder = models.get_user_access_folder()
+
         # Render the template with user and site information
-        return render_template('get_site.html', user_id=user_id, email=email, username=username, first_name=first_name, last_name=last_name, display_name=display_name, user_image=user_image, accountId=account_id, is_admin=is_admin, is_manager=is_manager, id=site_id, preview_webserver=Config.PREVIEW_SERVER, site_notice=Config.SITE_NOTICE)
+        return render_template('get_site.html', user_id=user_id, email=email, username=username, first_name=first_name, last_name=last_name, display_name=display_name, user_image=user_image, accountId=account_id, is_admin=is_admin, is_manager=is_manager, id=site_id, preview_webserver=Config.PREVIEW_SERVER, site_notice=Config.SITE_NOTICE, user_access_folder=user_access_folder)
 
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
         error_message = f"An error occurred: {str(e)}"
-        # Render an error template or redirect to an error page
-        return render_template('error.html', error_message=error_message, site_notice=Config.SITE_NOTICE)
+        return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
 
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
 
 @sites.route('/api/get_site')
 @login_required
@@ -154,6 +160,9 @@ def api_get_site():
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
 
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
 
 @sites.route('/api/get_site_log')
 @login_required
@@ -247,9 +256,7 @@ def update_site():
 
     Returns:
         JSON response: A JSON response indicating the success of the update and providing information about the updated site.
-
     """
-
     try:
 
         # Get parameters from the post request
@@ -290,7 +297,6 @@ def delete_sites():
     Returns:
         JSON response: A JSON response indicating the success of the delete operation and providing information about the deleted sites.
     """
-
     try:
         # Get sites_to_delete from post params
         sites_to_delete = werkzeug.utils.escape(request.form.get("sites_to_delete"))
@@ -304,6 +310,215 @@ def delete_sites():
         result = models.delete_sites(sites_to_delete)
 
         return jsonify(result)
+
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
+
+
+def send_email_unlock_page_request(title, page_id, site_id, to_send_user_id, to_send_user_username, to_send_user_email, requested_by_id, requested_by_username, requested_by_email, page_title, page_url):
+    email_content = '''<table class="nl-container" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace:0;mso-table-rspace:0;background-color:#fff">
+        <tbody>
+           <tr>
+              <td>
+                 <table class="row row-2" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace:0;mso-table-rspace:0">
+                    <tbody>
+                       <tr>
+                          <td>
+                             <table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace:0;mso-table-rspace:0;color:#000;width:600px" width="600">
+                                <tbody>
+                                   <tr>
+                                      <td class="column column-1" width="100%" style="mso-table-lspace:0;mso-table-rspace:0;font-weight:400;text-align:left;padding-bottom:30px;padding-top:40px;vertical-align:top;border-top:0;border-right:0;border-bottom:0;border-left:0">
+                                         <table class="text_block block-1" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace:0;mso-table-rspace:0;word-break:break-word">
+                                            <tr>
+                                               <td class="pad">
+                                                  <div style="font-family:sans-serif">
+                                                     <div class style="font-size:12px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif;mso-line-height-alt:14.399999999999999px;color:#1f1f1f;line-height:1.2">
+                                                        <p style="margin:0;font-size:14px;mso-line-height-alt:16.8px"><strong><span style="font-size:22px;">''' + title + '''</span></strong></p>
+                                                     </div>
+                                                  </div>
+                                               </td>
+                                            </tr>
+                                         </table>
+                                         <table class="button_block block-2" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace:0;mso-table-rspace:0">
+                                            <tr>
+                                               <td class="pad">
+                                                  <div class="alignment" align="left">
+                                                     <!--[if mso]>
+                                                     <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" style="height:42px;width:108px;v-text-anchor:middle;" arcsize="8%" stroke="false" fillcolor="#198754">
+                                                        <w:anchorlock/>
+                                                        <v:textbox inset="0px,0px,0px,0px">
+                                                           <center style="color:#ffffff; font-family:Arial, sans-serif; font-size:16px">
+                                                              <![endif]-->
+                                                              <a href="''' + Config.LEAFCMS_SERVER + '''/editor?page_id=''' + str(page_id) + '''&action=request_unlock" style="text-decoration:none;display:inline-block;color:#fff;background-color:#198754;border-radius:3px;width:auto;border-top:0 solid transparent;font-weight:undefined;border-right:0 solid transparent;border-bottom:0 solid transparent;border-left:0 solid transparent;padding-top:5px;padding-bottom:5px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif;font-size:16px;text-align:center;mso-border-alt:none;word-break:keep-all">
+                                                                 <span style="padding-left:20px;padding-right:20px;font-size:16px;display:inline-block;letter-spacing:normal;"><span dir="ltr" style="word-break: break-word; line-height: 32px;">Unlock page</span></span>
+                                                              </a>
+                                                              <!--[if mso]>
+                                                           </center>
+                                                        </v:textbox>
+                                                     </v:roundrect>
+                                                     <![endif]-->
+                                                  </div>
+                                               </td>
+                                            </tr>
+                                         </table>
+                                         <table class="text_block block-3" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace:0;mso-table-rspace:0;word-break:break-word">
+                                            <tr>
+                                               <td class="pad">
+                                                  <div style="font-family:sans-serif">
+                                                     <div class style="font-size:12px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif;mso-line-height-alt:18px;color:#1f1f1f;line-height:1.5">
+                                                        <p style="margin:0;mso-line-height-alt:21px"><span style="font-size:14px;">You have a new request to unlock a page on Leaf CMS</span></p>
+                                                        <p style="margin:0;mso-line-height-alt:18px">&nbsp;</p>
+                                                        <p style="margin:0;mso-line-height-alt:21px"><span style="font-size:14px;">Title: ''' + page_title + '''</span></p>
+                                                        <p style="margin:0;mso-line-height-alt:21px"><span style="font-size:14px;">Url: ''' + page_url + '''</span></p>
+                                                        <p style="margin:0;mso-line-height-alt:21px"><span style="font-size:14px;">Requested by: ''' + requested_by_username + '''</span></p>
+                                                        <p style="margin:0;mso-line-height-alt:18px">&nbsp;</p>
+                                                        <p style="margin:0;mso-line-height-alt:21px"><span style="font-size:14px;">To unlock this page, click the "Unlock page" button above.</span></p>
+                                                     </div>
+                                                  </div>
+                                               </td>
+                                            </tr>
+                                         </table>
+                                      </td>
+                                   </tr>
+                                </tbody>
+                             </table>
+                          </td>
+                       </tr>
+                    </tbody>
+                 </table>
+              </td>
+           </tr>
+        </tbody>
+     </table>'''
+
+    return email_content
+
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
+@sites.route('/api/check_if_page_locked_by_me')
+@login_required
+def api_check_if_page_locked_by_me():
+    """
+    Checks if a specific page is currently locked by the user making the request.
+    This endpoint verifies if the specified site associated with the page belongs to the user's account
+    and checks if the page is locked by this user.
+
+    This function is called via a GET request where `page_id` and `site_id` are required parameters.
+
+    Parameters:
+    - page_id (str): The unique identifier of the page to check. It is expected to be a string parameter
+      passed in the query string.
+    - site_id (str): The unique identifier of the site that the page belongs to. This is used to
+      verify that the user has the right to view the lock status of the page.
+
+    Returns:
+    - JSON response:
+        - If successful, returns a JSON object that indicates whether the page is locked by the user,
+          along with additional information if applicable.
+        - If the user does not have permission to access the site, returns a JSON object with an
+          "error" key and "Forbidden" as the message, with a 403 status code.
+        - If an error occurs during processing, returns a JSON object with an "error" key describing
+          the error, with a 500 status code.
+
+    Raises:
+    - HTTP 403: Returned if the specified site does not belong to the user's account, indicating
+      forbidden access.
+    - HTTP 500: Returned if there is any exception during the processing of the request, indicating
+      an internal server error.
+    """
+    try:
+        page_id = werkzeug.utils.escape(request.args.get("page_id", type=str))
+        site_id = werkzeug.utils.escape(request.args.get("site_id", type=str))
+
+        # Check if the specified site belongs to the user's account
+        if not models.site_belongs_to_account(int(site_id)):
+            return jsonify({"error": "Forbidden"}), 403
+
+        return jsonify(models.check_if_page_locked_by_me(page_id))
+
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
+
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
+@sites.route('/api/lock_unlock_page', methods=['POST'])
+@login_required
+def api_lock_unlock_page():
+    """
+    API endpoint to lock or unlock a page on a site. It processes user input from POST data,
+    checks if the site belongs to the user's account, and then performs the lock or unlock action.
+
+    This route expects JSON payload with 'page_id', 'site_id', and 'action'. The 'action' can be
+    either "lock" or "unlock". It ensures that the request comes from an authenticated user and
+    that the site_id is associated with the user's account.
+
+    Payload:
+    - page_id (int): Identifier of the page to be modified.
+    - site_id (int): Identifier of the site where the page resides.
+    - action (str): Specifies the action to perform ("lock" or "unlock").
+
+    Returns:
+    - JSON response with success message or error details.
+    - HTTP status code indicating the outcome (200 for success, 403 for forbidden access, 500 for internal errors).
+
+    Raises:
+    - HTTP 403: If the site does not belong to the user's account.
+    - HTTP 500: If an unexpected error occurs during the process.
+    """
+    try:
+        data = request.json
+        page_id = data['page_id']
+        site_id = data['site_id']
+        action = data['action']
+
+        # Check if the specified site belongs to the user's account
+        if not models.site_belongs_to_account(int(site_id)):
+            return jsonify({"error": "Forbidden"}), 403
+
+        return jsonify(models.lock_unlock_page(page_id, site_id, action))
+
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
+
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
+@sites.route('/api/request_unlock', methods=['POST'])
+@login_required
+def api_request_unlock():
+    try:
+        data = request.json
+        page_id = data['page_id']
+        site_id = data['site_id']
+        to_send_user_id = data['to_send_user_id']
+        to_send_user_username = data['to_send_user_username']
+        to_send_user_email = data['to_send_user_email']
+        page_title = data['page_title']
+        page_url = data['page_url']
+
+        # Check if the specified site belongs to the user's account
+        if not models.site_belongs_to_account(int(site_id)):
+            return jsonify({"error": "Forbidden"}), 403
+
+        title = 'Request to unlock a page'
+
+        # Logic to send email to the user who has the lock
+        emailToSend = send_email_unlock_page_request(title, page_id, site_id, to_send_user_id, to_send_user_username, to_send_user_email, session["id"], session["username"], session["email"], page_title, page_url)
+
+        workflow_models.send_mail(title, emailToSend, to_send_user_email)
+
+        return jsonify({"message": "Email sent successfully"})
 
     except Exception as e:
         # Log the exception or handle it as appropriate for your application

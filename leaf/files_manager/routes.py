@@ -32,7 +32,7 @@ def files_view_upload():
     """
     site_id = werkzeug.utils.escape(request.args.get("siteId", type=str))
     archive = werkzeug.utils.escape(request.args.get("archive", type=str))
-    return render_template("files_manager.html", userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], site_id=site_id, archive=archive, preview_webserver=Config.PREVIEW_SERVER.strip("/"), site_notice=Config.SITE_NOTICE)
+    return render_template("files_manager.html", userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], id=site_id, archive=archive, preview_webserver=Config.PREVIEW_SERVER.strip("/"), site_notice=Config.SITE_NOTICE)
 
 
 @files_manager.route("/files/fileupload_api", methods=["POST"])
@@ -57,7 +57,10 @@ def files_api_upload():
       remote, and live URLs for reference.
     """
     account_id = werkzeug.utils.escape(request.form.get("account_id"))
-    site_id = werkzeug.utils.escape(request.form.get("site_id"))
+    if request.form.get("site_id"):
+        site_id = werkzeug.utils.escape(request.form.get("site_id"))
+    else:
+        site_id = False
     folder = werkzeug.utils.escape(request.form.get("folder"))
     file = request.files["file"]
     filename = file.filename
@@ -77,11 +80,12 @@ def files_api_upload():
     local_path = os.path.join(folder_path, filename)
     file.save(local_path)
 
-    # SCP to deployment servers
+    # Set Preview URL
     preview_url = Config.PREVIEW_SERVER + "/" if not Config.PREVIEW_SERVER.endswith("/") else Config.PREVIEW_SERVER
     preview_url = preview_url + os.path.join(folder, filename)
-
     mime_type = mimetypes.guess_type(preview_url)[0]
+    if not mime_type or mime_type == "":
+        mime_type = file.mimetype
 
     models.insert_file_into_db(account_id, site_id, filename, folder, mime_type, "200")
 
@@ -125,13 +129,16 @@ def files_list_all_files():
     """
     try:
         # Retrieve the 'id' parameter from the request arguments
-        site_id = werkzeug.utils.escape(request.args.get("id", type=str))
+        site_id = False
+        if request.args.get("id"):
+            site_id = werkzeug.utils.escape(request.args.get("id", type=str))
         # Retrieve the 'archive' parameter from the request arguments
         archive = werkzeug.utils.escape(request.args.get("archive", type=str))
 
-        # Check if the specified site belongs to the user's account
-        if not site_models.site_belongs_to_account(int(site_id)):
-            return jsonify({"error": "Forbidden"}), 403
+        if site_id != False:
+            # Check if the specified site belongs to the user's account
+            if not site_models.site_belongs_to_account(int(site_id)):
+                return jsonify({"error": "Forbidden"}), 403
 
         # Get files from the site using a parameterized query
         files = models.list_all_files(site_id, archive)
@@ -143,6 +150,43 @@ def files_list_all_files():
         data = ServerSideTable(request, files, columns).output_result()
 
         return jsonify(data)
+
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
+
+@files_manager.route("/files/list_rss_files", methods=["GET"])
+@login_required
+def files_list_rss_files():
+    """
+    API endpoint to retrieve site rss files.
+
+    Requires the user to be logged in. Retrieves the 'id' parameter from the request
+    arguments, checks if the specified site belongs to the user's account, and then
+    retrieves files from the site using a parameterized query. Returns the site files
+    in JSON format.
+
+    Returns:
+        flask.Response: JSON response containing site data.
+    """
+    try:
+        # Retrieve the 'id' parameter from the request arguments
+        site_id = False
+        if request.args.get("id"):
+            site_id = werkzeug.utils.escape(request.args.get("id", type=str))
+        # Retrieve the 'archive' parameter from the request arguments
+        archive = werkzeug.utils.escape(request.args.get("archive", type=str))
+
+        if site_id != False:
+            # Check if the specified site belongs to the user's account
+            if not site_models.site_belongs_to_account(int(site_id)):
+                return jsonify({"error": "Forbidden"}), 403
+
+        # Get files from the site using a parameterized query
+        files = models.list_rss_files(site_id, archive)
+
+        return jsonify(files)
 
     except Exception as e:
         # Log the exception or handle it as appropriate for your application

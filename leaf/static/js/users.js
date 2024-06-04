@@ -107,7 +107,6 @@ async function editUser() {
     let userId = row.find('td:eq(1)').text().trim();
     let userIsAdmin = escapeHtml($("#edit-user-is-admin").val());
     let userIsManager = escapeHtml($("#edit-user-is-manager").val());
-    console.log(userId, userIsAdmin, userIsManager)
 
     // Post
     $.ajax({

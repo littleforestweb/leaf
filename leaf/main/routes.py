@@ -10,7 +10,6 @@ from leaf.decorators import login_required, limiter, db_connection, generate_jwt
 
 main = Blueprint('main', __name__)
 
-
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
@@ -84,7 +83,7 @@ def login():
         sql = "SELECT user.id, \
                CASE \
                    WHEN image IS NOT NULL AND image <> '' \
-                   THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) \
+                   THEN CONCAT('', image) \
                    WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' \
                    THEN color \
                    ELSE '#176713' \
@@ -273,14 +272,15 @@ def api_get_lfi_users(accountId):
     Returns:
     - Response: JSON response containing a list of LFI users for the specified account.
     """
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
     mydb, mycursor = db_connection()
 
-    if accountId == 1:
-        mycursor.execute("SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE user.is_admin <> 1 AND account.active = 1")
-    else:
-        sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE user.is_admin <> 1 AND account.active = 1 AND account.id = %s"
-        val = (accountId,)
-        mycursor.execute(sql, val)
+    sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE user.is_admin <> 1 AND account.active = 1 AND account.id = %s"
+    val = (accountId,)
+    mycursor.execute(sql, val)
     users = mycursor.fetchall()
 
     usersLst = [{"id": singleUser[0], "user_image": singleUser[1], "username": singleUser[2], "email": singleUser[3],
@@ -358,9 +358,13 @@ def api_get_lfi_admin_users(accountId):
     Returns:
     - Response: JSON response containing a list of LFI admin users for the specified account.
     """
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
     mydb, mycursor = db_connection()
 
-    sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE account.id = %s"
+    sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE account.id = %s"
     val = (accountId,)
     mycursor.execute(sql, val)
     users = mycursor.fetchall()
@@ -394,9 +398,13 @@ def api_get_all_users(accountId):
     Returns:
     - Response: JSON response containing a list of all LFI users for the specified account.
     """
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
     mydb, mycursor = db_connection()
 
-    sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE account.id = %s"
+    sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE account.id = %s"
     val = (accountId,)
     mycursor.execute(sql, val)
     users = mycursor.fetchall()
@@ -432,13 +440,17 @@ def api_get_single_user(accountId, is_admin, thisUserId):
     Returns:
     - Response: JSON response containing details of the specified LFI user.
     """
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
     mydb, mycursor = db_connection()
 
     if is_admin == 1:
-        sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE account.id = %s"
+        sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE account.id = %s"
         val = (accountId,)
     else:
-        sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id AND user.id = %s WHERE account.id = %s"
+        sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id AND user.id = %s WHERE account.id = %s"
         val = (thisUserId, accountId)
     mycursor.execute(sql, val)
     users = mycursor.fetchall()
@@ -474,12 +486,16 @@ def api_get_single_user_by_value(accountId, thisUserId):
     Returns:
     - Response: JSON response containing details of the specified LFI user.
     """
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
     mydb, mycursor = db_connection()
 
     # if accountId == 1:
-    #     mycursor.execute("SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id AND user.id = %s WHERE account.active = 1", (thisUserId,))
+    #     mycursor.execute("SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id AND user.id = %s WHERE account.active = 1", (thisUserId,))
     # else:
-    #     sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('https://lfi.littleforest.co.uk/crawler/', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE account.active = 1 AND user.id = %s AND account.id = %s"
+    #     sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE account.active = 1 AND user.id = %s AND account.id = %s"
     #     val = (thisUserId, accountId)
     #     mycursor.execute(sql, val)
     # users = mycursor.fetchall()
@@ -493,9 +509,6 @@ def api_get_single_user_by_value(accountId, thisUserId):
 
     # Extract user data and create a list of dictionaries
     users_list = [{"id": user[0], "username": user[1], "email": user[2]} for user in mycursor.fetchall()]
-
-    print("Testing users")
-    print(users_list)
 
     # Create JSON
     jsonR = {"user": users_list}
@@ -531,6 +544,9 @@ def api_add_lfi_user():
         is_manager = werkzeug.utils.escape(request.form["is_manager"])
         password = werkzeug.utils.escape(request.form["password"])
         password = hashlib.sha1(password.encode())
+
+        if not int(account_id) == int(session["accountId"]):
+            return jsonify({"error": "Forbidden"}), 403
 
         mydb, mycursor = db_connection()
 
@@ -582,6 +598,10 @@ def api_update_lfi_user():
         new_email = werkzeug.utils.escape(request.form.get("new_email"))
         new_is_admin = werkzeug.utils.escape(request.form.get("new_is_admin"))
         new_is_manager = werkzeug.utils.escape(request.form.get("new_is_manager"))
+        account_id = werkzeug.utils.escape(request.form.get("account_id"))
+
+        if not int(account_id) == int(session["accountId"]):
+            return jsonify({"error": "Forbidden"}), 403
 
         mydb, mycursor = db_connection()
 
@@ -618,6 +638,9 @@ def api_delete_lfi_users():
         # Get post params
         users_to_delete = werkzeug.utils.escape(request.form.get("users_to_delete"))
         account_id = werkzeug.utils.escape(request.form.get("account_id"))
+
+        if not int(account_id) == int(session["accountId"]):
+            return jsonify({"error": "Forbidden"}), 403
 
         if users_to_delete == "":
             jsonR = {"users_to_delete": "None provided", "action": "none"}
@@ -715,7 +738,6 @@ def api_upload():
         "fileName": os.path.basename(file_path),
         "url": url_to_return
     })
-
 
 def uniquify(path):
     """

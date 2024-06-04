@@ -13,15 +13,7 @@ from requests.auth import HTTPDigestAuth
 from leaf import decorators
 from leaf.config import Config
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
 sites = Blueprint('sites', __name__)
-
-HERITRIX_FOLDER = Config.HERITRIX_FOLDER
-HERITRIX_PORT = Config.HERITRIX_PORT
-HERITRIX_USER = Config.HERITRIX_USER
-HERITRIX_PASS = Config.HERITRIX_PASS
-HERITRIX_HEADERS = {"Accept": "application/xml"}
 
 
 def getSiteFromPageId(pageId):
@@ -112,7 +104,7 @@ def getSitesList():
         raise RuntimeError(f"An error occurred while fetching sites: {str(e)}")
 
 
-def get_user_access_folder(mycursor):
+def get_user_access_folder(mycursor=None):
     """
     Retrieve the folder paths that a user has access to.
 
@@ -123,11 +115,128 @@ def get_user_access_folder(mycursor):
     - List of folder paths (strings) that the user has access to.
     """
 
+    # Get a database connection using the 'db_connection' decorator
+    if mycursor is None:
+        mydb, mycursor = decorators.db_connection()
+
     # Get User Access folders
     query = "SELECT ua.folder_path FROM leaf.user_access ua JOIN leaf.user_groups ug ON ua.group_id = ug.group_id JOIN leaf.group_member gm ON ug.group_id = gm.group_id WHERE gm.user_id = %s"
     mycursor.execute(query, (session["id"],))
-    folder_paths = [folder_path[0] for folder_path in mycursor.fetchall()]
-    return folder_paths
+    return [folder_path[0] for folder_path in mycursor.fetchall()]
+
+
+def check_if_page_locked_by_me(page_id):
+    """
+    Checks if the specified page is locked by the current session user. It queries the database to find the user 
+    who has locked the page and compares it with the current session user.
+
+    Parameters:
+    - page_id (int or str): The ID of the page whose lock status is being checked. Although typically an integer,
+      it may be passed as a string if not cast beforehand.
+
+    Returns:
+    - dict: A dictionary containing the lock status and details of the user who locked the page. The dictionary 
+      includes:
+        - user_id (int or False): The user ID of the user who locked the page or False if no user found.
+        - username (str or False): The username of the user who locked the page or False if no user found.
+        - email (str or False): The email of the user who locked the page or False if no user found.
+        - locked_by_me (bool): True if the current session user locked the page, False otherwise.
+
+    Raises:
+    - Exception: Propagates any exceptions that occur during database operations, including connection issues
+      or SQL errors. The exception contains a message that can help identify the failure point.
+    """
+    user_id = session["id"]
+
+    result = {
+        'user_id': False,
+        'username': False,
+        'email': False,
+        'locked_by_me': False
+    }
+    try:
+        # Get a database connection using the 'db_connection' decorator
+        mydb, mycursor = decorators.db_connection()
+
+        # Query to check who locked the page
+        mycursor.execute("""
+            SELECT u.id, u.username, u.email
+            FROM site_meta sa
+            JOIN user u ON sa.locked_by = u.id
+            WHERE sa.id = %s
+        """, [page_id])
+
+        row = mycursor.fetchone()
+        if row:
+            result = {
+                'user_id': row[0],
+                'username': row[1],
+                'email': row[2],
+                'locked_by_me': (row[0] == session['id'])
+            }
+
+        mydb.commit()
+    except Exception as e:
+        mydb.rollback()
+        raise
+    finally:
+        mydb.close()
+
+    return result
+
+
+def lock_unlock_page(page_id, site_id, action):
+    """
+    Locks or unlocks a page in the `site_meta` table based on the given action.
+
+    Parameters:
+    page_id (int): The unique identifier for the page.
+    site_id (int): The identifier of the site where the page is located.
+    action (str): Specifies the action to perform. Expected values are "lock" or "unlock".
+
+    Returns:
+    is_page_locked: True if the action was successfully executed, False otherwise.
+    page_locked_status: The new page status
+
+    Raises:
+    ValueError: If 'action' is neither "lock" nor "unlock".
+    Exception: If database queries fail or connections are problematic.
+    """
+
+    # Validate the action input
+    if action not in ["lock", "unlock"]:
+        raise ValueError("Action must be 'lock' or 'unlock'")
+
+    try:
+        # Get a database connection using the 'db_connection' decorator
+        mydb, mycursor = decorators.db_connection()
+        # SQL to update the page state
+        if action == "lock":
+            sql = """
+            UPDATE site_meta 
+            SET locked = 1, locked_by = %s 
+            WHERE id = %s AND site_id = %s
+            """
+            mycursor.execute(sql, (session["id"], page_id, site_id))
+        elif action == "unlock":
+            sql = """
+            UPDATE site_meta 
+            SET locked = 0, locked_by = NULL 
+            WHERE id = %s AND site_id = %s
+            """
+            mycursor.execute(sql, (page_id, site_id))
+
+        mydb.commit()
+    except Exception as e:
+        mydb.rollback()
+        raise
+    finally:
+        mydb.close()
+
+    if action == "lock":
+        return {"is_page_locked": True, "page_locked_status": action}
+    if action == "unlock":
+        return {"is_page_locked": False, "page_locked_status": action}
 
 
 def get_site_data(site_id):
@@ -150,18 +259,18 @@ def get_site_data(site_id):
         mydb, mycursor = decorators.db_connection()
 
         # Get User Access folders
-        folder_paths = set(get_user_access_folder(mycursor))
+        folder_paths = get_user_access_folder(mycursor)
 
         # Get pages from the site
-        query = "SELECT id, id, title, HTMLPath, modified_date, id FROM site_meta WHERE status <> -1 AND site_id = %s"
+        query = "SELECT id, id, title, HTMLPath, modified_date, id, modified_by, locked, locked_by FROM site_meta WHERE status <> -1 AND site_id = %s"
         mycursor.execute(query, [site_id])
         site_pages = mycursor.fetchall()
 
         # Filter pages based on user access
         if session["is_admin"] == 0:
-            access_pages = [{"id": page[0], "Screenshot": page[1], "Title": page[2], "URL": os.path.join(Config.PREVIEW_SERVER, page[3]), "Modified Date": page[4], "Action": page[5]} for page in site_pages if any(page[3].startswith(path.lstrip("/")) for path in folder_paths)]
+            access_pages = [{"id": page[0], "Screenshot": page[1], "Title": page[2], "URL": os.path.join(Config.PREVIEW_SERVER, page[3]), "Modified Date": page[4], "Action": page[5], "Modified By": page[6], "Locked": page[7], "Locked By": page[8]} for page in site_pages if any(page[3].startswith(path.lstrip("/")) for path in folder_paths)]
         else:
-            access_pages = [{"id": page[0], "Screenshot": page[1], "Title": page[2], "URL": os.path.join(Config.PREVIEW_SERVER, page[3]), "Modified Date": page[4], "Action": page[5]} for page in site_pages]
+            access_pages = [{"id": page[0], "Screenshot": page[1], "Title": page[2], "URL": os.path.join(Config.PREVIEW_SERVER, page[3]), "Modified Date": page[4], "Action": page[5], "Modified By": page[6], "Locked": page[7], "Locked By": page[8]} for page in site_pages]
 
         return access_pages
 
@@ -181,6 +290,9 @@ def get_site_log(site_id):
         str: The crawl log content.
     """
     try:
+
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        HERITRIX_HEADERS = {"Accept": "application/xml"}
 
         # Get a database connection using the 'db_connection' decorator
         mydb, mycursor = decorators.db_connection()
@@ -231,6 +343,13 @@ def add_new_site(site_data):
     """
 
     try:
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        HERITRIX_FOLDER = Config.HERITRIX_FOLDER
+        HERITRIX_PORT = Config.HERITRIX_PORT
+        HERITRIX_USER = Config.HERITRIX_USER
+        HERITRIX_PASS = Config.HERITRIX_PASS
+        HERITRIX_HEADERS = {"Accept": "application/xml"}
+
         # Rescan
         data = {"action": "rescan"}
         requests.post(url="https://localhost:" + HERITRIX_PORT + "/engine", auth=HTTPDigestAuth(HERITRIX_USER, HERITRIX_PASS), data=data, headers=HERITRIX_HEADERS, verify=False)
@@ -400,7 +519,7 @@ def add_new_site(site_data):
                 elif beanId == "warcWriter":
                     newProperty = ET.Element("property")
                     newProperty.set("name", "directory")
-                    newProperty.set("value", os.path.join(HERITRIX_FOLDER, "jobs", site_data["site_label"]))
+                    newProperty.set("value", str(os.path.join(HERITRIX_FOLDER, "jobs", site_data["site_label"])))
                     entry.append(newProperty)
 
         # Save ConfigFile
@@ -493,6 +612,13 @@ def delete_sites(sites_to_delete):
         dict: A JSON response indicating the success of the delete operation and providing information about the deleted sites.
     """
     try:
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        HERITRIX_FOLDER = Config.HERITRIX_FOLDER
+        HERITRIX_PORT = Config.HERITRIX_PORT
+        HERITRIX_USER = Config.HERITRIX_USER
+        HERITRIX_PASS = Config.HERITRIX_PASS
+        HERITRIX_HEADERS = {"Accept": "application/xml"}
+
         # Get a database connection using the 'db_connection' decorator
         mydb, mycursor = decorators.db_connection()
 
@@ -574,6 +700,46 @@ def user_has_access_page(page_id):
 
         for path in folder_paths:
             if HTMLPath.startswith(path.lstrip("/")):
+                return True
+        mydb.close()
+        return False
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        raise RuntimeError(f"An error occurred while checking for page access: {str(e)}")
+
+
+def user_has_access_asset(asset_id):
+    """
+    Checks if a user has access to a specific asset based on their permissions.
+
+    Args:
+        asset_id (int): The ID of the asset to check access for.
+
+    Returns:
+        bool: True if the user has access to the asset, False otherwise.
+
+    Raises:
+        RuntimeError: If an error occurs while checking for asset access.
+    """
+
+    try:
+
+        # Check if admin
+        if session["is_admin"] == 1:
+            return True
+
+        # Get a database connection using the 'db_connection' decorator
+        mydb, mycursor = decorators.db_connection()
+
+        # Get User Access folders
+        folder_paths = get_user_access_folder(mycursor)
+
+        # Get URL from PageID
+        mycursor.execute("SELECT path FROM site_assets WHERE id=%s", (asset_id,))
+        asset_path = os.path.join(mycursor.fetchone()[0])
+
+        for path in folder_paths:
+            if asset_path.startswith(path.lstrip("/")):
                 return True
         mydb.close()
         return False

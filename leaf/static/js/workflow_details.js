@@ -37,7 +37,7 @@ CKEDITOR.plugins.add("anchor", {
     }
 });
 
-async function setStatus(status, id, type, listName, accountId, files_details) {
+async function setStatus(status, id, type, listName, accountId, files_details, site_ids, list_item_url_path, list_feed_path, publication_date, rss_ids) {
     document.getElementById("actionContainer").innerHTML = "<span>Deploying...</span>"
 
     let jsonConfigSaveByFields = false;
@@ -49,12 +49,16 @@ async function setStatus(status, id, type, listName, accountId, files_details) {
             return result;
         });
 
-        if (jsonConfig.columns[0] && jsonConfig.columns[0][6]) {
-            jsonConfigSaveByFields = jsonConfig.columns[0][6];
+        if (jsonConfig.columns[0] && jsonConfig.columns[0][3]) {
+            jsonConfigSaveByFields = jsonConfig.columns[0][3];
         }
-        if (jsonConfig.columns[0] && jsonConfig.columns[0][7]) {
-            jsonConfigFieldsToSaveBy = jsonConfig.columns[0][7];
+        if (jsonConfig.columns[0] && jsonConfig.columns[0][4]) {
+            jsonConfigFieldsToSaveBy = jsonConfig.columns[0][4];
         }
+    }
+
+    if (listName !== "") {
+        list_item_url_path = new URL(list_item_url_path).pathname.trimStart("/");
     }
 
     let dataF = {
@@ -64,7 +68,12 @@ async function setStatus(status, id, type, listName, accountId, files_details) {
         "listName": listName,
         "saveByFields": jsonConfigSaveByFields,
         "fieldsToSaveBy": jsonConfigFieldsToSaveBy,
-        "files_details": files_details
+        "files_details": files_details,
+        "site_ids": site_ids,
+        "list_item_url_path": list_item_url_path,
+        "list_feed_path": list_feed_path,
+        "publication_date": publication_date,
+        "rss_ids": rss_ids
     }
 
     $.ajax({
@@ -72,14 +81,24 @@ async function setStatus(status, id, type, listName, accountId, files_details) {
         url: "/workflow/action",
         data: dataF,
         success: function (entry) {
-            document.getElementById("actionContainer").innerHTML = "<span>No Action needed</span>";
+            if (entry["message"] !== "waiting") {
+                document.getElementById("actionContainer").innerHTML = "<span>No Action needed</span>";
+            } else {
+                document.getElementById("actionContainer").innerHTML = "<span>Will be published on: " + publication_date + "</span>";
+            }
+            
             document.getElementById("statusContainer").innerHTML = "<span>" + entry["action"] + "</span>";
             document.getElementById("workflowNotification").classList.add("bg-success");
             document.getElementById("workflowNotificationMsg").innerHTML = "<span>Workflow Completed</span>"
             $('#workflowNotification').toast('show');
             window.location.reload();
-        }, error: function (entry, XMLHttpRequest, textStatus, errorThrown) {
-            window.location.reload();
+        }, error: function (xhr, textStatus, errorThrown) {
+            if (xhr.status === 403) {
+                document.getElementById("workflowNotification").classList.add("bg-danger");
+                document.getElementById("workflowNotificationMsg").innerHTML = "<span>Permission Denied</span>"
+                $('#workflowNotification').toast('show');
+            }
+            console.log(xhr, textStatus, errorThrown);
         }
     });
 }

@@ -1,11 +1,13 @@
 import os
 import shutil
+import urllib.parse
 
 from bs4 import BeautifulSoup
 from flask import send_from_directory, session
 
 from leaf.config import Config
 from leaf.decorators import db_connection
+from leaf.sites.models import get_user_access_folder
 
 
 def get_page(pid):
@@ -32,6 +34,85 @@ def get_page(pid):
         folderPath = os.path.dirname(HTMLpath)
         filePath = os.path.basename(HTMLpath)
         return send_from_directory(folderPath, filePath)
+    except Exception as e:
+        raise
+
+
+def get_site_id(page_id):
+    """
+    Get a specific page from the database and serve its site_id.
+
+    Args:
+        page_id (int): The ID of the page to retrieve.
+
+    Returns:
+        site_id: The site id related to that page id.
+
+    Raises:
+        Exception: If there is an error during the retrieval or serving process.
+    """
+    try:
+        # Search DB for local file
+        mydb, mycursor = db_connection()
+        query = "SELECT site_id FROM site_meta WHERE id=%s"
+        params = (page_id,)
+        mycursor.execute(query, params)
+        site_id = mycursor.fetchone()[0]
+        return str(site_id)
+    except Exception as e:
+        raise
+
+
+def get_page_details(page_id):
+    """
+    Get a specific page from the database and serve its details.
+
+    Args:
+        page_id (int): The ID of the page to retrieve.
+
+    Returns:
+        page_details: The page details related to this page id.
+
+    Raises:
+        Exception: If there is an error during the retrieval or serving process.
+    """
+
+    try:
+        # Search DB for local file
+        mydb, mycursor = db_connection()
+        query = "SELECT id, title, HTMLPath FROM site_meta WHERE id=%s"
+        params = (page_id,)
+        mycursor.execute(query, params)
+        page = mycursor.fetchone()
+
+        return {"page_id": page[0], "url": urllib.parse.urljoin(Config.PREVIEW_SERVER, page[2]), "title": page[1], "HTMLPath": page[2]}
+    except Exception as e:
+        raise
+
+
+def get_asset_details(asset_id):
+    """
+    Get a specific asset from the database and serve its details.
+
+    Args:
+        asset_id (int): The ID of the asset to retrieve.
+
+    Returns:
+        asset_details: The asset details related to this page id.
+
+    Raises:
+        Exception: If there is an error during the retrieval or serving process.
+    """
+
+    try:
+        # Search DB for local file
+        mydb, mycursor = db_connection()
+        query = "SELECT id, path, mimeType FROM site_assets WHERE id=%s"
+        params = (asset_id,)
+        mycursor.execute(query, params)
+        asset = mycursor.fetchone()
+
+        return {"asset_id": asset[0], "path": asset[1], "url": urllib.parse.urljoin(Config.PREVIEW_SERVER, asset[1], ), "mime_type": asset[2]}
     except Exception as e:
         raise
 
@@ -82,6 +163,13 @@ def duplicate_page(site_id, ogPageId, ogURL, newTitle, newURL):
     try:
         # Connect to DB
         mydb, mycursor = db_connection()
+
+        # Get Folders that the user has access to
+        user_access_folder = get_user_access_folder()
+
+        # Check if newURL belongs to any of the auth folders
+        if not any(newURL.startswith(folder) for folder in user_access_folder):
+            return {"error": "Forbidden"}, 403
 
         # Parse ogURL and newURL
         ogURL = ogURL.lstrip("/")

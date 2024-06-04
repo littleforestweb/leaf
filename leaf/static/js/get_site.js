@@ -68,6 +68,13 @@ async function addWorkflow(btn) {
 }
 
 async function duplicatePage() {
+    // Check if user has access to any folder
+    if (user_access_folder.length === 0) {
+        $(".emptyUserAccessFolderNotification").toast().show();
+        $('#renameModal').modal('hide');
+        return;
+    }
+
     let checkedRow = $('#table').DataTable().rows(function (idx, data, node) {
         return $(node).find('.dt-checkboxes:input[type="checkbox"]:checked').val();
     }).data().toArray()[0];
@@ -103,6 +110,8 @@ async function addNewDuplicatedPage() {
         alertMessageElem.hidden = false;
         return;
     }
+
+    // Check for valid extensions
     const validWebpageExtensions = [".html", ".htm", ".php", ".asp", ".aspx", ".jsp", ".jspx", ".cfm", ".cgi", ".pl", ".py", ".rb", ".page"];
     let isValidExtension = false;
     for (let i = 0; i < validWebpageExtensions.length; i++) {
@@ -117,19 +126,27 @@ async function addNewDuplicatedPage() {
         return;
     }
 
+    // Check for allowed chars
     let regex = /^[a-zA-Z0-9_\/.\- ;=]+$/;
     if (!regex.test(newURL)) {
         alertMessageElem.children[0].innerText = "New URL has invalid characters. [a-zA-Z0-9_/-;=]";
         alertMessageElem.hidden = false;
         return;
     }
-    alertMessageElem.hidden = true;
 
+    // Check for allowed user folder
+    let startsWithFolder = user_access_folder.some(folder => newURL.startsWith(folder));
+    if (!startsWithFolder) {
+        alertMessageElem.children[0].innerText = "Permission Denied - New URL does not belong to any authorized folder";
+        alertMessageElem.hidden = false;
+        return;
+    }
+
+    alertMessageElem.hidden = true;
     $.ajax({
         type: "POST", url: "/api/duplicate_page", data: {
             "site_id": site_id, "ogPageId": ogPageId, "ogTitle": ogTitle, "ogURL": ogURL, "newTitle": newTitle, "newURL": newURL
         }, success: function (entry) {
-
             if (entry["message"] === "file already exists") {
                 alertMessageElem.children[0].innerText = "File path already exists.";
                 alertMessageElem.hidden = false;
@@ -137,32 +154,33 @@ async function addNewDuplicatedPage() {
                 $('#renameModal').modal('hide');
                 window.location.reload();
             }
-        }, error: function (XMLHttpRequest, textStatus, errorThrown) {
-            console.log("ERROR");
-            console.log(XMLHttpRequest, textStatus, errorThrown)
+        }, error: function (xhr, textStatus, errorThrown) {
+            if (xhr.status === 403) {
+                alertMessageElem.children[0].innerText = "Permission Denied - New URL does not belong to any authorized folder";
+                alertMessageElem.hidden = false;
+            }
+            console.log(xhr, textStatus, errorThrown)
         }
     });
 }
 
+document.getElementById("userFolderSelect").addEventListener("change", function () {
+    // Auto update newURL input with folder selected
+    document.getElementById("newURL").value = document.getElementById("userFolderSelect").value;
+});
+
 async function deletePage(btn) {
     btn.disabled = true;
 
-    // Get all rows that are selected
-    let checkedRows = $('#table').DataTable().rows(function (idx, data, node) {
+    let checkedRow = $('#table').DataTable().rows(function (idx, data, node) {
         return $(node).find('.dt-checkboxes:input[type="checkbox"]:checked').val();
-    }).data().toArray();
-
-    // Add ids to textarea inside publishModal
-    let selectedIdsText = "";
-    checkedRows.forEach(function (row) {
-        selectedIdsText += row["id"] + ";";
-    });
+    }).data().toArray()[0];
 
     $.ajax({
         type: "POST",
         url: "/workflow/add",
         contentType: 'application/json',
-        data: JSON.stringify({"startUser": userId, "entryId": selectedIdsText, "type": 5, "priority": 2}),
+        data: JSON.stringify({"startUser": userId, "entryId": checkedRow["id"], "type": 5, "priority": 2}),
         dataType: 'json',
         cache: false,
         processData: false,
@@ -257,10 +275,54 @@ function stopPropagation(evt) {
     }
 }
 
-window.addEventListener('DOMContentLoaded', async function main() {
-    console.log("Starting");
-    console.log("Get Site");
+function requestUnlockPage(page_id, action, thisBtn) {
+    $.ajax({
+        url: '/api/check_if_page_locked_by_me',
+        type: 'GET',
+        data: {
+            page_id: page_id,
+            site_id: site_id
+        },
+        success: function (response) {
+            if (response && response["locked_by_me"] === true || response && response["user_id"] === false) {
+                unlockPage(page_id, action, thisBtn);
+            } else {
+                console.log("Lets make the modal to request to unlock the page");
+            }
+        },
+        error: function (response) {
+            console.log('Error:', response);
+            alert('Failed to perform the action: ' + response.responseText);
+        }
+    });
+}
 
+function unlockPage(page_id, action, thisBtn) {
+    $.ajax({
+        url: '/api/lock_unlock_page',  // URL of the Flask route
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            page_id: page_id,
+            site_id: site_id,
+            action: action
+        }),
+        success: function (response) {
+            if (response["is_page_locked"] === false) {
+                var jqBtn = $(thisBtn); // Ensure jQuery object
+                var parentTd = jqBtn.closest('td').closest('tr'); // Find the closest TD ancestor
+                jqBtn.closest('td').html("Unlocked") // Remove the button
+                parentTd.find("a.disabled.unlock-btn").removeClass("disabled").removeAttr("disabled");
+            }
+        },
+        error: function (response) {
+            console.log('Error:', response);
+            alert('Failed to perform the action: ' + response.responseText);
+        }
+    });
+}
+
+window.addEventListener('DOMContentLoaded', async function main() {
     // Reset Table
     $('#table').DataTable().clear().draw();
     $('#table').DataTable().destroy();
@@ -273,33 +335,42 @@ window.addEventListener('DOMContentLoaded', async function main() {
     $("#table").DataTable({
         dom: "Brtip",
         buttons: {
-            buttons: [{text: "Export", extend: "csv", filename: "Site Report", className: "btn-export"}], dom: {
+            buttons: [{
+                text: "Export",
+                extend: "csv",
+                filename: "Site Report",
+                className: "btn-export"
+            }],
+            dom: {
                 button: {
                     className: "btn"
                 }
             }
         },
         language: {"emptyTable": "No data available in table or invalid permissions"},
-        bProcessing: true,
+        bProcessing: false,
         bServerSide: true,
         sPaginationType: "full_numbers",
         lengthMenu: [[50, 100, 250], [50, 100, 250]],
         sAjaxSource: "/api/get_site?id=" + site_id,
         order: [[0, "asc"]],
-        bAutoWidth: false,
+        autoWidth: true,
+        stateSave: true,
         aoColumnDefs: [
             {
                 aTargets: [0],
                 sClass: "center",
                 mData: function (source, type, val) {
                     return "<input class='dt-checkboxes' id='checkbox_" + source["id"] + "' value='" + source["id"] + "' type='checkbox'>";
-                }
+                },
+                sortable: false
             },
             {
                 aTargets: [1],
                 mData: function (source, type, val) {
                     return "<img class='max100px' src='" + "/get_screenshot?id=" + source["id"] + "' height='auto' alt='Page Screenshot Image'>"
-                }
+                },
+                sortable: false
             },
             {
                 aTargets: [2],
@@ -324,34 +395,50 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [5],
                 mData: function (source, type, val) {
-                    return "<a class='btn btn-sm' target='_blank' href='/editor?page_id=" + source["id"] + "'>Edit</a>";
+                    return "<a class='" + (source["Locked"] === 0 ? "not_locked" : "unlock-btn") + " btn btn-sm' target='_blank' href='/editor?page_id=" + source["id"] + "'>" + (source["Locked"] === 0 ? "Edit" : "Unlock") + "</a><a class='btn btn-sm' style='margin-left:5px' href='/versions?file_type=page&file_id=" + source["id"] + "'>Versions</a>";
                 }
             }
-        ], initComplete: function () {
+
+        ],
+        initComplete: function () {
             // For each column
             var api = this.api();
-            api.columns().eq(0).each(function (colIdx) {
-                // Set the header cell to contain the input element
-                var cell = $(".filters th").eq($(api.column(colIdx).header()).index());
-                if (searchColumns.includes(colIdx)) {
-                    $(cell).html('<input type="text" oninput="stopPropagation(event)" onclick="stopPropagation(event);" class="form-control form-control-sm" placeholder="Search" />');
-                } else {
-                    $(cell).html('<span></span>');
-                }
+            var state = api.state.loaded();
 
-                // On every keypress in this input
-                $("input", $('.filters th').eq($(api.column(colIdx).header()).index())).off("keyup change").on("keyup change", function (e) {
-                    e.stopPropagation();
-                    // Get the search value
-                    $(this).attr("title", $(this).val());
-                    var regexr = "{search}";
-                    var cursorPosition = this.selectionStart;
+            if (state) {
+                api.columns().eq(0).each(function (colIdx) {
+                    // Set the header cell to contain the input element
+                    var cell = $(".filters th").eq($(api.column(colIdx).header()).index());
+                    if (searchColumns.includes(colIdx)) {
+                        $(cell).html('<input id="search_col_index_' + colIdx + '" type="text" oninput="stopPropagation(event)" onclick="stopPropagation(event);" class="form-control form-control-sm" placeholder="Search" />');
+                    } else {
+                        $(cell).html('<span></span>');
+                    }
 
-                    // Search the column for that value
-                    api.column(colIdx).search(this.value != '' ? regexr.replace("{search}", this.value) : "", this.value != "", this.value == "").draw();
-                    $(this).focus()[0].setSelectionRange(cursorPosition, cursorPosition);
+                    // On every keypress in this input
+                    $("input", $('.filters th').eq($(api.column(colIdx).header()).index())).on("keyup", function (e) {
+                        e.stopPropagation();
+                        // Get the search value
+                        $(this).attr("title", $(this).val());
+                        var regexr = "{search}";
+                        var cursorPosition = this.selectionStart;
+
+                        // Search the column for that value
+                        api.column(colIdx).search(this.value != '' ? regexr.replace("{search}", this.value) : "", this.value != "", this.value == "").draw();
+                        $(this).focus()[0].setSelectionRange(cursorPosition, cursorPosition);
+                    });
                 });
-            });
+
+                api.columns().eq(0).each(function (colIdx) {
+                    var colSearch = state.columns[colIdx].search;
+
+                    if (colSearch.search) {
+                        $('input', $('.filters th')[colIdx]).val(colSearch.search);
+                    }
+                });
+            } else {
+                api.draw();
+            }
 
             doMainButtons();
             $(".loadingBg").removeClass("show");
@@ -361,5 +448,4 @@ window.addEventListener('DOMContentLoaded', async function main() {
     // Clean-up
     $("#table_wrapper > .dt-buttons").appendTo("div.header-btns");
     $(".loadingBg").removeClass("show");
-})
-;
+});

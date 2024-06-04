@@ -315,7 +315,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 width: "20%",
                 targets: 3,
                 render: function (data, type, row) {
-                    return '<a href="/menu/' + data + '">View</a><span class="hidden toEdit">' + data + '</span>';
+                    return '<a class="btn btn-sm" href="/menu/' + data + '">View</a><span class="hidden toEdit">' + data + '</span>';
                 },
             }
         ]

@@ -3,20 +3,64 @@
     Author     : joao
 */
 
+function stopPropagation(evt) {
+    if (evt.stopPropagation !== undefined) {
+        evt.preventDefault();
+        evt.stopPropagation();
+    } else {
+        evt.cancelBubble = true;
+    }
+}
+
+function joinPath(...segments) {
+    return segments.map(segment => segment.replace(/(^\/|\/$)/g, '')).join('/');
+}
+
+function sanitizeFilePath(filePath) {
+    return filePath.replace(/[^a-zA-Z0-9\-._\/]/g, '_').toLowerCase();
+}
+
+const validExtensions = ['.xml', '.page', '.html', '.txt', '.jpg', '.png', '.pdf']; // Add more as needed
+
+function getFileNameAndExtension(fileName) {
+    // Split the file name by dots to check each part
+    const parts = fileName.split('.');
+    let name = parts[0];
+    let extension = '';
+
+    for (let i = 1; i < parts.length; i++) {
+        const part = parts[i];
+        const potentialExtension = '.' + part;
+        if (validExtensions.includes(potentialExtension.toLowerCase())) {
+            name = parts.slice(0, i).join('.');
+            extension = parts.slice(i).join('.');
+            extension = '.' + extension; // Reconstruct the extension with dots
+            break;
+        }
+    }
+
+    // If no valid extension is found, treat the entire name as the base name
+    if (!extension) {
+        name = fileName;
+    }
+
+    return { name, extension };
+}
+
+async function setFull_pathSpan() {
+    const folder = sanitizeFilePath(document.getElementById("folder").value);
+    const fullFileName = document.getElementById("file").value.split('\\').pop();
+
+    // Get the file name and extension using the helper function
+    const { name, extension } = getFileNameAndExtension(fullFileName);
+    const final_extension = extension.trim().split(".")[1]
+
+    // Sanitize only the base name part, preserving the original extension
+    const sanitizedFileName = sanitizeFilePath(name) + "." + final_extension;
+    document.getElementById("full_path").value = joinPath(folder, sanitizedFileName);
+}
+
 window.addEventListener('DOMContentLoaded', async function main() {
-    async function joinPath(...segments) {
-        return segments.map(segment => segment.replace(/(^\/|\/$)/g, '')).join('/');
-    }
-
-    function sanitizeFilePath(filePath) {
-        return filePath.replace(/[^a-zA-Z0-9\-._\/]/g, '_');
-    }
-
-    async function setFull_pathSpan() {
-        let folder = await sanitizeFilePath(document.getElementById("folder").value);
-        let filename = await sanitizeFilePath(document.getElementById("file").value.split('\\').pop());
-        document.getElementById("full_path").value = await joinPath(folder, filename);
-    }
 
     document.getElementById("file").addEventListener("change", setFull_pathSpan);
     document.getElementById("folder").addEventListener("keyup", setFull_pathSpan);
@@ -63,7 +107,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 aTargets: [1],
                 sClass: "truncate",
                 mData: function (source, type, val) {
-                    return "<span>" + unescape(source["Path"]) + "</span>";
+                    return '<a class="green-link" target="_blank" href="' + unescape(preview_webserver + source["Path"]) + '">' + unescape(source["Path"]) + '</a>';
                 }
             },
             {
@@ -102,11 +146,9 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [6],
                 mData: function (source, type, val) {
-                    return '<span><a class="btn btn-sm" target="_blank" href="' + unescape(preview_webserver + source["Path"]) + '">Preview</a></span>';
-                },
-                "orderable": false
+                    return "<a class='btn btn-sm' style='margin-left:5px' href='/versions?file_type=asset&file_id=" + source["id"] + "'>Versions</a>";
+                }
             }
-
         ],
         fnDrawCallback: function (oSettings) {
             $('input[type="checkbox"]').on('click', function () {
@@ -165,9 +207,27 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
         // Check if any file is selected or not
         if (fileInput.files.length > 0) {
-            formData.append('file', fileInput.files[0]);
+            const fullFileName = document.getElementById("file").value.split('\\').pop();
+
+            // Get the file name and extension using the helper function
+            const { name, extension } = getFileNameAndExtension(fullFileName);
+            const final_extension = extension.trim().split(".")[1]
+
+            // Sanitize only the base name part, preserving the original extension
+            const sanitizedFileName = sanitizeFilePath(name) + "." + final_extension;
+            const originalFile = fileInput.files[0];
+
+            // Create a new File object with the desired name
+            const newFile = new File([originalFile],sanitizedFileName, {
+                type: originalFile.type,
+                lastModified: originalFile.lastModified
+            });
+
+            formData.append('file', newFile);
             formData.append('folder', folder.value);
-            formData.append('site_id', site_id);
+            if (site_id.trim() === "") {
+                formData.append('site_id', site_id);
+            }
             formData.append('account_id', accountId);
 
             upload_file(formData);

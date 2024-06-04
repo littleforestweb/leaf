@@ -5098,7 +5098,7 @@ For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 
         function v(a, b, c) {
             var d = [], e = b.config.protectedSource, f = b._.dataStore ||
-                (b._.dataStore = {id: 1}), g = new RegExp("\x3c\\!--\\{cke_temp_" + c + "(comment)?\\}(\\d*?)--\x3e", "g"), e = [/<script[\s\S]*?(<\/script>|$)/gi, /<noscript[\s\S]*?<\/noscript>/gi, /<meta[\s\S]*?\/?>/gi].concat(e);
+                (b._.dataStore = {id: 1}), g = new RegExp("\x3c\\!--\\{cke_temp_" + c + "(comment)?\\}(\\d*?)--\x3e", "g"), e = [/<meta[\s\S]*?\/?>/gi].concat(e);
             a = a.replace(/\x3c!--[\s\S]*?--\x3e/g, function (a) {
                 return "\x3c!--{cke_temp_" + c + "comment}" + (d.push(a) - 1) + "--\x3e"
             });

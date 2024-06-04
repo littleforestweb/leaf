@@ -1,5 +1,6 @@
 import base64
 import re
+from urllib.parse import urlparse
 
 import requests
 import werkzeug.utils
@@ -22,8 +23,17 @@ saml_route = Blueprint("saml_route", __name__)
 
 @saml_route.route('/saml/login')
 def sp_saml_login():
+    url_to_redirect_after_saml_login = request.args.get('url_to_redirect', '')
+    # Parse the URL to extract components
+    parsed_url = urlparse(url_to_redirect_after_saml_login)
+    # Construct the base URL
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+
+    if (base_url + "/saml" != Config.SP_ASSERTION_CONSUMER_SERVICE_URL):
+        url_to_redirect_after_saml_login = ""
+
     if Config.IDP_METADATA != "":
-        saml_client = Saml2Client(config=pysaml2_config())
+        saml_client = Saml2Client(config=pysaml2_config(Config.SP_ASSERTION_CONSUMER_SERVICE_URL, url_to_redirect_after_saml_login))
         # Prepare the SAML Authentication Request
         _, info = saml_client.prepare_for_authenticate()
         redirect_url = dict(info["headers"])["Location"]
@@ -36,7 +46,7 @@ def sp_saml_login():
 @saml_route.route('/saml/metadata')
 def saml_metadata():
     if Config.SP_ENTITY_ID != "":
-        cfg = pysaml2_config()
+        cfg = pysaml2_config(Config.SP_ASSERTION_CONSUMER_SERVICE_URL, "")
         # Use the metadata service to get the metadata as a string
         metadata_string = metadata.create_metadata_string(None, cfg, sign=True, valid=365 * 24)  # Generate metadata
         return Response(metadata_string, mimetype='text/xml')
@@ -68,6 +78,10 @@ def idp_initiated():
 
     if request.method == "POST":
 
+        relay_state_base_url = ""
+        relay_state = werkzeug.utils.escape(request.args.get('RelayState', ''))
+        if relay_state != None:
+            relay_state_base_url = extract_base_url(relay_state)
         # Load the IdP's metadata
         # Fetch the content from the URL
         idp_metadata_response = requests.get(Config.IDP_METADATA)
@@ -75,7 +89,7 @@ def idp_initiated():
             # Parse the XML from the fetched content
             idp_metadata = etree.fromstring(idp_metadata_response.content)
         else:
-            print("Failed to retrieve the IDP Metadata file: HTTP Status", response.status_code)
+            print("Failed to retrieve the IDP Metadata file: HTTP Status", idp_metadata_response.status_code)
             return "Failed to retrieve the IDP Metadata file: HTTP Status", 403
 
         # Find the X509Certificate element (assuming there's only one)
@@ -128,6 +142,9 @@ def idp_initiated():
         issuer_elements = saml_response_xml.xpath("//*[local-name() = 'Issuer']")
         if issuer_elements:
             issuer_text = issuer_elements[0].text
+
+            if relay_state_base_url != Config.SP_ENTITY_ID.lower().strip():
+                return "Access Denied"
 
             if issuer_text and issuer_text.lower().strip() != Config.IDP_ENTITY_ID.lower().strip():
                 return "Access Denied"
@@ -295,12 +312,11 @@ def idp_initiated():
 
                         msg = 'Logged in successfully!'
                         msgClass = 'alert alert-success'
-                        return render_template('sites.html', userId=session['id'], email=session['email'], username=session['username'],
-                                               first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'],
-                                               user_image=session['user_image'], accountId=session['accountId'],
-                                               accountName=session['accountName'], is_admin=session['is_admin'],
-                                               is_manager=session['is_manager'], msg=msg, msgClass=msgClass,
-                                               jwt_token=jwt_token, site_notice=Config.SITE_NOTICE)
+
+                        if relay_state != None:
+                            return redirect(relay_state)
+                        else:
+                            return render_template('sites.html', userId=session['id'], email=session['email'], username=session['username'], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], accountName=session['accountName'], is_admin=session['is_admin'], is_manager=session['is_manager'], msg=msg, msgClass=msgClass, jwt_token=jwt_token, site_notice=Config.SITE_NOTICE)
                     else:
                         # Account doesnt exist or username/password incorrect
                         msg = 'Incorrect username/password!'
@@ -504,14 +520,16 @@ def process_saml_response(saml_response_from_request):
     return [validate_saml_response, attributes_elements]
 
 
-def pysaml2_config():
+def pysaml2_config(SP_ASSERTION_CONSUMER_SERVICE_URL, url_to_redirect_after_saml_login):
+    if url_to_redirect_after_saml_login != "":
+        SP_ASSERTION_CONSUMER_SERVICE_URL = SP_ASSERTION_CONSUMER_SERVICE_URL + "?RelayState=" + url_to_redirect_after_saml_login
     cfg = {
         "entityid": Config.SP_ENTITY_ID,
         "service": {
             "sp": {
                 "endpoints": {
                     "assertion_consumer_service": [
-                        (Config.SP_ASSERTION_CONSUMER_SERVICE_URL, BINDING_HTTP_POST),
+                        (SP_ASSERTION_CONSUMER_SERVICE_URL, BINDING_HTTP_POST),
                     ],
                     "single_logout_service": [
                         (Config.SP_SINGLE_LOGOUT_SERVICE_URL, BINDING_HTTP_REDIRECT),
@@ -538,6 +556,16 @@ def pysaml2_config():
     sp_config = config.SPConfig()
     sp_config.load(cfg)
     return sp_config
+
+
+def extract_base_url(full_url):
+    # Parse the full URL
+    parsed_url = urlparse(full_url)
+
+    # Combine the scheme and network location to form the base URL
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+
+    return base_url
 
 
 namespaces = {

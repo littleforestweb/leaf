@@ -3,6 +3,92 @@
     Author     : joao
 */
 
+async function publishList() {
+    await populateUserList();
+}
+
+async function populateUserList() {
+    let listOfUsers = await $.get("/api/get_lfi_admin_users/" + accountId, function (result) {
+        return result;
+    });
+
+    $('.users-with-access-container').html('');
+    for (let x = 0; x < listOfUsers.users.length; x++) {
+        let thisUser = listOfUsers.users[x];
+        let userImage = '<span class="logo_image_container"><img class="logo_image" src="' + thisUser["user_image"] + '" onerror="this.style.display=\'none\'" /></span>';
+        if (thisUser["user_image"].startsWith('#')) {
+            let colorToFillBg = thisUser["user_image"];
+            let usernameInitial = (thisUser["username"] ? thisUser["username"] : "LF").charAt(0);
+            userImage = '<span class="logo_image" style="background-color:' + colorToFillBg + '">' + usernameInitial + '</span>';
+        }
+        $(".users-with-access-container").prepend('<label for="thisUserId_' + thisUser["id"] + '" class="form-control users-with-access users-with-access_' + thisUser["id"] + '">' + userImage + '<span class="userName">' + thisUser["username"] + '</span><input type="checkbox" class="form-check-input pull-right this-user-id" name="thisUserId_' + thisUser["id"] + '" id="thisUserId_' + thisUser["id"] + '" ' + '/></span>');
+    }
+
+    // Disable Enter
+    $('#users-with-access-search').on('keypress', function (e) {
+        if (e.keyCode === 13) {
+            e.preventDefault(); // Prevent default behavior of return key
+            return false; // Stop further execution
+        }
+    });
+
+    $('#users-with-access-search').on('keyup', function (e) {
+        let tagElems = $('.users-with-access');
+        $(tagElems).hide();
+        for (let i = 0; i < tagElems.length; i++) {
+            let tag = $(tagElems).eq(i);
+            if (($(tag).children('span.userName').text().toLowerCase()).indexOf($(this).val().toLowerCase()) !== -1) {
+                $(tag).show();
+            }
+        }
+    });
+
+
+    $('.this-user-id').click(function () {
+        $('.this-user-id').not(this).prop("checked", false);
+    });
+}
+
+CKEDITOR.plugins.add("anchor", {
+    init: function (editor) {
+        editor.ui.addButton("anchorPluginButton", {
+            label: "Anchor",
+            command: "anchorPluginCommand",
+            icon: "/static/images/anchor-icon.svg",
+            state: function () {
+                if (editor.mode === 'source') {
+                    return CKEDITOR.TRISTATE_DISABLED;
+                }
+                return CKEDITOR.TRISTATE_OFF;
+            }
+        });
+        editor.addCommand("anchorPluginCommand", {
+            exec: function (editor) {
+                var anchorName = prompt('Enter anchor name:'); // Prompt the user for anchor name
+                if (anchorName) {
+                    var selectedText = editor.getSelection().getNative().toString().trim();
+
+                    var newElement = new CKEDITOR.dom.element('a');
+                    newElement.setText(' ');
+                    newElement.setAttribute('name', anchorName);
+                    newElement.setAttribute('class', "anchor-item-inline");
+
+                    var range = editor.getSelection().getRanges()[0];
+                    // if ((range.endOffset - range.startOffset) > 0) {
+                    var newRange = range.clone();
+                    newRange.collapse(true);
+                    newRange.insertNode(newElement);
+                    // range.deleteContents();
+                    // range.insertNode(newElement);
+                    // } else {
+                    //    alert('You have to select some text to be able to create an anchor!');
+                    // }
+                }
+            }
+        });
+    }
+});
+
 async function populateEditDynamicMenuDialog(accountId, reference, type, itemToSelect = false) {
 
     accountId = escapeHtml(accountId);
@@ -53,17 +139,10 @@ async function populateEditDynamicMenuDialog(accountId, reference, type, itemToS
     var values = jsonConfig.columns;
 
     if (values && values[0]) {
-        $("#s-template").val(values[0][2]);
-        $("#s-parameters").val(values[0][3]);
-
-        var fields = values[0][4].split(';');
-        for (var field in fields) {
-            $('#s-fields option[value="' + fields[field] + '"]').attr("selected", "selected");
-        }
 
         var mfields = [];
-        if (values[0][5]) {
-            mfields = values[0][5].split(',');
+        if (values[0][2]) {
+            mfields = values[0][2].split(',');
         }
     }
 
@@ -80,46 +159,6 @@ async function populateEditDynamicMenuDialog(accountId, reference, type, itemToS
             if (type === 'add') {
                 $("#a-id").prop("disabled", true);
             }
-
-            CKEDITOR.plugins.add("anchor", {
-                init: function (editor) {
-                    editor.ui.addButton("anchorPluginButton", {
-                        label: "Anchor",
-                        command: "anchorPluginCommand",
-                        icon: "/static/images/anchor-icon.svg",
-                        state: function () {
-                            if (editor.mode === 'source') {
-                                return CKEDITOR.TRISTATE_DISABLED;
-                            }
-                            return CKEDITOR.TRISTATE_OFF;
-                        }
-                    });
-                    editor.addCommand("anchorPluginCommand", {
-                        exec: function (editor) {
-                            var anchorName = prompt('Enter anchor name:'); // Prompt the user for anchor name
-                            if (anchorName) {
-                                var selectedText = editor.getSelection().getNative().toString().trim();
-
-                                var newElement = new CKEDITOR.dom.element('a');
-                                newElement.setText(' ');
-                                newElement.setAttribute('name', anchorName);
-                                newElement.setAttribute('class', "anchor-item-inline");
-
-                                var range = editor.getSelection().getRanges()[0];
-                                // if ((range.endOffset - range.startOffset) > 0) {
-                                var newRange = range.clone();
-                                newRange.collapse(true);
-                                newRange.insertNode(newElement);
-                                // range.deleteContents();
-                                // range.insertNode(newElement);
-                                // } else {
-                                //    alert('You have to select some text to be able to create an anchor!');
-                                // }
-                            }
-                        }
-                    });
-                }
-            });
 
             for (x = 0; x < spans.length; x++) {
                 if (allAccountSettings && allAccountSettings.length > 0) {
@@ -561,16 +600,11 @@ async function populateEditDynamicMenuDialog(accountId, reference, type, itemToS
     });
 }
 
-async function publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink) {
+async function publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path) {
 
     accountId = escapeHtml(accountId);
     reference = escapeHtml(reference);
     env = escapeHtml(env);
-    preview_server = escapeHtml(preview_server);
-    dynamic_path = escapeHtml(dynamic_path);
-    thisTemplate = escapeHtml(thisTemplate);
-    thisParameters = escapeHtml(thisParameters);
-    fieldsToLink = escapeHtml(fieldsToLink);
 
     $.ajax({
         type: "POST",
@@ -581,15 +615,6 @@ async function publishDynamicMenu(accountId, reference, env, preview_server, dyn
         processData: false,
         success: function (updated) {
             $('#publishDynamicListSuccessNotification').toast('show');
-
-            if (env !== 'save') {
-                if (thisTemplate !== '') {
-                    openInNewTab(preview_server + dynamic_path + thisTemplate + '.html?' + thisParameters + '=' + fieldsToLink);
-                } else {
-                    alert("There is no preview setting for this Menu yet. Please add one to preview this type.")
-                }
-            }
-
             doRedrawTable(true, updated.menus, true);
 
             var buttons_to_edit_or_add_container = document.getElementById('buttons_to_edit');
@@ -693,35 +718,6 @@ async function updateDynamicMenu(accountId, reference, env, preview_server, dyna
         });
         var values = jsonConfig.columns;
 
-        var thisTemplate = '';
-        var thisParameters = '';
-        var thisFields = '';
-        if (values && values[0]) {
-            thisTemplate = values[0][2];
-            thisParameters = values[0][3];
-            thisFields = values[0][4].split(';');
-        }
-
-        var fieldsToLink = '';
-        var index = 0;
-        for (var field in thisFields) {
-            var singleField = $('#e-' + thisFields[field]);
-
-            fieldsToLink += singleField.val();
-            if (thisFields.length > 1 && thisFields.length === index) {
-                fieldsToLink += fieldsToLink + '_';
-            }
-
-            index = index + 1;
-        }
-
-        var linkToPreview = '';
-        if (thisTemplate !== '') {
-            linkToPreview = preview_server + dynamic_path + thisTemplate + '.html?' + thisParameters + '=' + fieldsToLink
-            // $("#link_to_preview_add").html('<a href="' + linkToPreview + '">' + linkToPreview + '</a>');
-            // $("#link_to_preview_edit").html('<a href="' + linkToPreview + '">' + linkToPreview + '</a>');
-        }
-
         $.ajax({
             type: "POST",
             url: "/update_menu/" + accountId + "/account_" + accountId + "_menu_" + reference,
@@ -734,29 +730,7 @@ async function updateDynamicMenu(accountId, reference, env, preview_server, dyna
                 $('#editDynamicList').modal('hide');
                 $('#editDynamicListSuccessNotification').toast('show');
 
-                if (env === 'preview' || env === 'save' || env === 'saveOnly') {
-                    publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink);
-                } else {
-                    if (thisTemplate !== '') {
-                        openInNewTab(linkToPreview);
-                    } else {
-                        alert("You must have to setup the template in the configuration menu!")
-                    }
-                    doRedrawTable(true, updated.menus, true);
-
-                    const buttons_to_edit_container = document.getElementById('buttons_to_edit');
-                    const allActionButtons = buttons_to_edit_container.getElementsByTagName('button');
-                    for (let i = 0; i < allActionButtons.length; i++) {
-                        allActionButtons[i].disabled = false;
-                        allActionButtons[i].classList.remove('disabled');
-                    }
-                    const modal_footer_links = document.getElementById('modal-footer-edit');
-                    const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
-                    for (let i = 0; i < allActionButtonsFooter.length; i++) {
-                        allActionButtonsFooter[i].disabled = false;
-                        allActionButtonsFooter[i].classList.remove('disabled');
-                    }
-                }
+                publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path);
 
             },
             error: function (XMLHttpRequest, textStatus, errorThrown) {
@@ -977,38 +951,9 @@ async function addDynamicMenu(accountId, reference, env, preview_server, dynamic
         });
         var values = jsonConfig.columns;
 
-        var thisTemplate = '';
-        var thisParameters = '';
-        var thisFields = '';
-        if (values && values[0]) {
-            thisTemplate = values[0][2];
-            thisParameters = values[0][3];
-            thisFields = values[0][4].split(';');
-        }
-
-        var fieldsToLink = '';
-        var index = 0;
-        for (var field in thisFields) {
-            var singleField = $('#a-' + thisFields[field]);
-
-            fieldsToLink += singleField.val();
-            if (thisFields.length > 1 && thisFields.length === index) {
-                fieldsToLink += fieldsToLink + '_';
-            }
-
-            index = index + 1;
-        }
-
-        var linkToPreview = '';
-        if (thisTemplate !== '') {
-            linkToPreview = preview_server + dynamic_path + thisTemplate + '.html?' + thisParameters + '=' + fieldsToLink
-            // $("#link_to_preview_add").html('<a href="' + linkToPreview + '">' + linkToPreview + '</a>');
-            // $("#link_to_preview_edit").html('<a href="' + linkToPreview + '">' + linkToPreview + '</a>');
-        }
-
         $.ajax({
             type: "POST",
-            url: "/addnew_menu/account_" + accountId + "_menu_" + reference,
+            url: "/addnew_menu/" + accountId + "/account_" + accountId + "_menu_" + reference,
             contentType: 'application/json',
             data: JSON.stringify(form_data),
             dataType: 'json',
@@ -1018,16 +963,7 @@ async function addDynamicMenu(accountId, reference, env, preview_server, dynamic
                 $('#addDynamicList').modal('hide');
                 $('#addDynamicListSuccessNotification').toast('show');
 
-                if (env === 'preview' || env === 'save' || env === 'saveOnly') {
-                    publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink);
-                } else {
-                    if (thisTemplate !== '') {
-                        openInNewTab(linkToPreview);
-                    } else {
-                        alert("You must have to setup the template in the configuration menu!")
-                    }
-                    doRedrawTable(true, updated.menus, true);
-                }
+                publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink);
 
                 const buttons_to_add_container = document.getElementById('buttons_to_add');
                 const allActionButtons = buttons_to_add_container.getElementsByTagName('button');
@@ -1102,42 +1038,15 @@ async function deleteDynamicMenuEntries(accountId, reference, env, preview_serve
     checked_entries_str = checked_entries_str.slice(0, -1);
 
     // Get list configuration
-    let jsonConfig = await $.get("/api_menus/get_menu_configuration/" + accountId + "/" + reference, function (result) {
+    let jsonConfig = await $.get("/api_menu/get_menu_configuration/" + accountId + "/" + reference, function (result) {
         return result;
     });
     var values = jsonConfig.columns;
 
-    var thisTemplate = '';
-    var thisParameters = '';
-    var thisFields = '';
-    if (values && values[0]) {
-        thisTemplate = values[0][2];
-        thisParameters = values[0][3];
-        thisFields = values[0][4].split(';');
-    }
-
-    var fieldsToLink = '';
-    var index = 0;
-    for (var field in thisFields) {
-        var singleField = $('#a-' + thisFields[field]);
-
-        fieldsToLink += singleField.val();
-        if (thisFields.length > 1 && thisFields.length === index) {
-            fieldsToLink += fieldsToLink + '_';
-        }
-
-        index = index + 1;
-    }
-
-    var linkToPreview = '';
-    if (thisTemplate !== '') {
-        linkToPreview = preview_server + dynamic_path + thisTemplate + '.html?' + thisParameters + '=' + fieldsToLink
-    }
-
     // Post
     $.ajax({
         type: "POST",
-        url: "/delete_menu" + accountId + "/account_" + accountId + "_menu_" + reference,
+        url: "/delete_menu/" + accountId + "/account_" + accountId + "_menu_" + reference,
         data: {
             "entries_to_delete": checked_entries_str
         },
@@ -1432,26 +1341,14 @@ async function openConfiguration(accountId, reference) {
 
     var headColumns = jsonColumns.columns;
 
-    for (var x = 0; x < headColumns.length; x++) {
-        $('select#s-fields').append('<option value="' + escapeHtml(headColumns[x][2]) + '">' + escapeHtml(headColumns[x][2]) + '</option>');
-    }
-
+    $('select#s-mandatory-fields').empty();
     for (var x = 0; x < headColumns.length; x++) {
         $('select#s-mandatory-fields').append('<option value="' + escapeHtml(headColumns[x][2]) + '">' + escapeHtml(headColumns[x][2]) + '</option>');
-        $('select#s-field-to-save-by').append('<option value="' + escapeHtml(headColumns[x][2]) + '">' + escapeHtml(headColumns[x][2]) + '</option>');
     }
 
     if (values && values[0]) {
-        $("#s-template").val(escapeHtml(values[0][2]));
-        $("#s-parameters").val(escapeHtml(values[0][3]));
-
-        var fields = values[0][4].split(';');
-        for (var field in fields) {
-            $('#s-fields option[value="' + escapeHtml(fields[field]) + '"]').attr("selected", "selected");
-        }
-
-        if (values[0][5]) {
-            var mfields = values[0][5].split(',');
+        if (values[0][2]) {
+            var mfields = values[0][2].split(',');
             for (var mfield in mfields) {
                 $('#s-mandatory-fields option[value="' + escapeHtml(mfields[mfield]) + '"]').attr("selected", "selected");
             }
@@ -1502,6 +1399,13 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
     var localEnv = window.location.hostname;
     var rootPath = window.location;
     rootPath = rootPath.href.split('/menus/')[0];
+
+    // Get menu details
+    let menuDetails = await $.get("/api_menu/get_menu_details/" + accountId + "/" + reference, function (result) {
+        return result;
+    });
+    window.document.title = menuDetails["name"] + " " + window.document.title;
+    document.querySelector("#TableDiv > div > div.header-1 > h3").innerText = menuDetails["name"];
 
     $('#editDynamicList form .mb-3').html('');
     $('#addDynamicList form .mb-3').html('');
@@ -1586,6 +1490,7 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
 
                 allColumns.push({
                     aTargets: [xx + 1],
+                    orderable: false,
                     mData: function (source, type, row) {
                         var val = "<i style='color: #CCC;'>No data</i>";
                         var fullVal = (source[xx] ? source[xx] : "").toString();
@@ -1725,7 +1630,7 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
         aoColumns: allColumns,
         dom: 'Brltip',
         language: {"emptyTable": "No data available"},
-        order: [2, "asc"],
+        order: [1, "asc"],
         pageLength: 100,
         aLengthMenu: [[50, 100, 200, 300, 500, 1000], [50, 100, 200, 300, 500, 1000]],
         autoWidth: true,
@@ -1950,6 +1855,15 @@ function createPublishTicket(accountId, reference, type, server, path, button) {
     server = escapeHtml(server);
     path = escapeHtml(path);
     button = escapeHtml(button);
+    let comments = document.getElementById("publishComments").value
+
+    let allSelectedUsers = [];
+    $('.this-user-id:checked').each(function () {
+        let thisId = $(this).attr('id');
+        thisId = thisId.replace('thisUserId_', '');
+        allSelectedUsers.push(thisId);
+    })
+    allSelectedUsers = allSelectedUsers.join(',');
 
     var dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 5);
@@ -1964,7 +1878,9 @@ function createPublishTicket(accountId, reference, type, server, path, button) {
         priority: 1,
         dueDate: formattedDate,
         listName: reference,
-        entryId: entryId
+        entryId: entryId,
+        comments: comments,
+        assignEditor: allSelectedUsers
     }
 
     $.ajax({

@@ -8,7 +8,7 @@
     </script>
 
     <!-- ADD MODAL -->
-    <div class="modal fade" id="addDynamicList" tabindex="-1" aria-labelledby="addDynamicListLabel" aria-hidden="true">
+    <div class="modal fade" id="addDynamicList" tabindex="-1" aria-labelledby="addDynamicListLabel" aria-hidden="true" data-bs-backdrop='static'>
         <div class="modal-dialog large-modal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -18,7 +18,7 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
                         <button type="button" class="btn btn-success" onclick="addDynamicList('{{ accountId }}', '{{ reference }}', 'save', '{{ preview_server }}', '{{ dynamic_path }}', false, this, '{{ userId }}')">Save & Close</button>
                         <button type="button" class="btn btn-success" onclick="addDynamicList('{{ accountId }}', '{{ reference }}', 'preview', '{{ preview_server }}', '{{ dynamic_path }}', false, this, '{{ userId }}')">Save & Preview</button>
-                        <button type="button" class="btn btn-blue publish-btn" data-bs-toggle="modal" data-bs-target="#publishDynamicList">Publish</button>
+                        <button type="button" class="btn btn-blue publish-btn" data-bs-toggle="modal" data-bs-target="#publishDynamicList" onclick="publishList()">Publish</button>
                     </div>
                 </div>
                 <div class="modal-body">
@@ -29,39 +29,54 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
                     <button type="button" class="btn btn-success" onclick="addDynamicList('{{ accountId }}', '{{ reference }}', 'save', '{{ preview_server }}', '{{ dynamic_path }}', false, this, '{{ userId }}')">Save & Close</button>
                     <button type="button" class="btn btn-success" onclick="addDynamicList('{{ accountId }}', '{{ reference }}', 'preview', '{{ preview_server }}', '{{ dynamic_path }}', false, this, '{{ userId }}')">Save & Preview</button>
-                    <button type="button" class="btn btn-blue publish-btn" data-bs-toggle="modal" data-bs-target="#publishDynamicList">Publish</button>
+                    <button type="button" class="btn btn-blue publish-btn" data-bs-toggle="modal" data-bs-target="#publishDynamicList" onclick="publishList()">Publish</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- PUBLISH MODAL -->
-    <div class="modal fade" id="publishDynamicList" tabindex="-1" aria-labelledby="publishDynamicListLabel" aria-hidden="true">
-        <div class="modal-dialog small-modal">
+    <div class="modal fade" id="publishDynamicList" tabindex="-1" aria-labelledby="publishDynamicListLabel" aria-hidden="true" data-bs-backdrop='static'>
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="publishDynamicListLabel">Publish {{ referenceNoUnderscores }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title" id="publishDynamicListLabel">Send {{ referenceNoUnderscores }} to a reviewer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="doRefreshPage()"></button>
                 </div>
                 <div class="modal-body">
                     <div class="container">
-                        <div class="row">
+                        <div class="mb-3 list-users">
+                            <div class="row form-row">
+                                <div class="form-group col-md-8">
+                                    <label for="e-list-users" class="col-form-label">List of users:</label>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <input type="search" name="users-with-access-search" id="users-with-access-search" class="form-control" placeholder="Search..." aria-label="Search for..." autocomplete="off" spellcheck="false">
+                                </div>
+                            </div>
+                            <div class="users-with-access-container">
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <label class="form-label" for="publishComments">Comments</label><textarea class="form-control" id="publishComments" placeholder="Comments" rows="3"></textarea>
+                        </div>
+                        <!-- <div class="row">
                             <div class="col text-left">
                                 This will create a workflow request to publish the {{ referenceNoUnderscores }} List. Do you want to proceed?
                             </div>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
                 <div class="modal-footer" id="modal-footer-publish">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-success" onclick="createPublishTicket('{{ accountId }}', '{{ reference }}', 'publish', '{{ preview_server }}', '{{ dynamic_path }}', this)">Publish</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
+                    <button type="button" class="btn btn-success" onclick="createPublishTicket('{{ accountId }}', '{{ reference }}', 'publish', '{{ preview_server }}', '{{ dynamic_path }}', this)">Send</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- EDIT MODAL -->
-    <div class="modal fade" id="editDynamicList" tabindex="-1" aria-labelledby="editDynamicListLabel" aria-hidden="true">
+    <div class="modal fade" id="editDynamicList" tabindex="-1" aria-labelledby="editDynamicListLabel" aria-hidden="true" data-bs-backdrop='static'>
         <div class="modal-dialog large-modal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -72,7 +87,7 @@
                         <button type="button" class="btn btn-success" onclick="updateDynamicList('{{ accountId }}', '{{ reference }}', 'saveOnly', '{{ preview_server }}', '{{ dynamic_path }}', false, this, '{{ userId }}')">Save</button>
                         <button type="button" class="btn btn-success" onclick="updateDynamicList('{{ accountId }}', '{{ reference }}', 'save', '{{ preview_server }}', '{{ dynamic_path }}', false, this, '{{ userId }}')">Save & Close</button>
                         <button type="button" class="btn btn-success" onclick="updateDynamicList('{{ accountId }}', '{{ reference }}', 'preview', '{{ preview_server }}', '{{ dynamic_path }}', false, this, '{{ userId }}')">Save & Preview</button>
-                        <button type="button" class="btn btn-blue publish-btn" data-bs-toggle="modal" data-bs-target="#publishDynamicList">Publish</button>
+                        <button type="button" class="btn btn-blue publish-btn" data-bs-toggle="modal" data-bs-target="#publishDynamicList" onclick="publishList()">Publish</button>
                     </div>
                 </div>
                 <div class="modal-body">
@@ -84,14 +99,14 @@
                     <button type="button" class="btn btn-success" onclick="updateDynamicList('{{ accountId }}', '{{ reference }}', 'saveOnly', '{{ preview_server }}', '{{ dynamic_path }}', false, this, '{{ userId }}')">Save</button>
                     <button type="button" class="btn btn-success" onclick="updateDynamicList('{{ accountId }}', '{{ reference }}', 'save', '{{ preview_server }}', '{{ dynamic_path }}', false, this, '{{ userId }}')">Save & Close</button>
                     <button type="button" class="btn btn-success" onclick="updateDynamicList('{{ accountId }}', '{{ reference }}', 'preview', '{{ preview_server }}', '{{ dynamic_path }}', false, this, '{{ userId }}')">Save & Preview</button>
-                    <button type="button" class="btn btn-blue publish-btn" data-bs-toggle="modal" data-bs-target="#publishDynamicList">Publish</button>
+                    <button type="button" class="btn btn-blue publish-btn" data-bs-toggle="modal" data-bs-target="#publishDynamicList" onclick="publishList()">Publish</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- DELETE MODAL -->
-    <div class="modal fade" id="deleteDynamicList" tabindex="-1" aria-labelledby="deleteDynamicListLabel" aria-hidden="true">
+    <div class="modal fade" id="deleteDynamicList" tabindex="-1" aria-labelledby="deleteDynamicListLabel" aria-hidden="true" data-bs-backdrop='static'>
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -110,7 +125,7 @@
     </div>
 
     <!-- DELETE TEMPLATE MODAL -->
-    <div class="modal fade" id="deleteTemplate" tabindex="-1" aria-labelledby="deleteTemplate" aria-hidden="true" style="z-index: 99999; top: 28%;">
+    <div class="modal fade" id="deleteTemplate" tabindex="-1" aria-labelledby="deleteTemplate" aria-hidden="true" style="z-index: 99999; top: 28%;" data-bs-backdrop='static'>
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -129,7 +144,7 @@
     </div>
 
     <!-- UPLOAD CSV MODAL -->
-    <div class="modal fade" id="uploadDynamicList" tabindex="-1" aria-labelledby="uploadDynamicListLabel" aria-hidden="true">
+    <div class="modal fade" id="uploadDynamicList" tabindex="-1" aria-labelledby="uploadDynamicListLabel" aria-hidden="true" data-bs-backdrop='static'>
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -138,7 +153,7 @@
                 </div>
                 <form id="upload-csv-file" method="post" enctype="multipart/form-data">
                     <fieldset>
-                        <input type="file" class="form-control form-control-lg" name="csv-file" id="csv_file_to_upload"/>
+                        <input type="file" class="form-control form-control-lg" name="csv-file" id="csv_file_to_upload" accept=".csv"/>
                         <input type="hidden" name="reference" value="{{ reference }}"/>
                         <input type="hidden" name="accountId" value="{{ accountId }}"/>
                     </fieldset>
@@ -157,7 +172,10 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="uploadSetFieldsDynamicListLabel">Set Up {{ referenceNoUnderscores }}</h5>
-                    <button type="button" class="btn-close" aria-label="Close" onclick="uploadSetFieldsDynamicList('{{ accountId }}', '{{ reference }}', 'close')"></button>
+                    <div class="pull-right">
+                        <button type="button" class="btn btn-secondary" onclick="uploadSetFieldsDynamicList('{{ accountId }}', '{{ reference }}', 'close')">Close</button>
+                        <button type="button" class="btn btn-success" onclick="uploadSetFieldsDynamicList('{{ accountId }}', '{{ reference }}', 'save')">Save</button>
+                    </div>
                 </div>
                 <div class="modal-body">
                     <form method="post" id="setField-{{ reference }}">
@@ -173,7 +191,7 @@
     </div>
 
     <!-- CONFIG SET FIELDS MODAL -->
-    <div class="modal fade" id="setConfigurationDynamicList" tabindex="-1" aria-labelledby="setConfigurationDynamicListLabel" aria-hidden="true">
+    <div class="modal fade" id="setConfigurationDynamicList" tabindex="-1" aria-labelledby="setConfigurationDynamicListLabel" aria-hidden="true" data-bs-backdrop='static'>
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -215,18 +233,17 @@
     </div>
 
     <!-- TEMPLATE SET FIELDS MODAL -->
-    <div class="modal fade" id="setTemplateDynamicList" tabindex="-1" aria-labelledby="setTemplateDynamicListLabel" aria-hidden="true">
+    <div class="modal fade" id="setTemplateDynamicList" tabindex="-1" aria-labelledby="setTemplateDynamicListLabel" aria-hidden="true" data-bs-backdrop='static'>
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="setTemplateDynamicListLabel">Templates - {{ referenceNoUnderscores }}</h5>
+                    <h5 class="modal-title" id="setTemplateDynamicListLabel">Templates Settings - {{ referenceNoUnderscores }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="setTemplateDynamicList('{{ accountId }}', '{{ reference }}', 'close')"></button>
                 </div>
                 <div class="modal-body">
                     <form method="post" id="setTemplate-{{ reference }}">
                         <input type="hidden" class="form-control" id="h-s-{{ reference }}">
                         <div class="row">
-                            <h5 class="col-form-header">Templates Settings:</h5>
                             <div class="form-group col-md-12">
                                 <label for="s-templates" class="col-form-label">Templates:</label>
                                 <div class="row">
@@ -243,6 +260,10 @@
                                 <label for="s-template_location" class="col-form-label">URL Pattern: <span class="tip">You can use fields from the table to generate urls dynamically. eg. <strong>{title}</strong>, <strong>{year}</strong>, <strong>{category}</strong>. Find the list of available fields <span class="underline link" onclick="getAvailableFields('{{ accountId }}', '{{ reference }}')">here<span class="template_fields_container hide"></span></span></span></label>
                                 <input type="text" class="form-control" name="s-template_location" id="s-template_location" value="" onkeyup="sanitizeInput(event)">
                             </div>
+                            <div class="form-group col-md-12">
+                                <label for="s-feed_location" class="col-form-label">Feed Location:</label>
+                                <input type="text" class="form-control" name="s-feed_location" id="s-feed_location" value="" onkeyup="sanitizeInput(event)">
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -250,6 +271,72 @@
                     <a class="btn btn-blue" href="/manage_templates">Manage Templates</a>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="setTemplateDynamicList('{{ accountId }}', '{{ reference }}', 'close')">Close</button>
                     <button type="button" class="btn btn-success" onclick="setTemplateDynamicList('{{ accountId }}', '{{ reference }}', 'save')">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRAPE SETTINGS MODAL MODAL -->
+    <div class="modal fade" id="scrapeSettingsDynamicList" tabindex="-1" aria-labelledby="scrapeSettingsDynamicListLabel" aria-hidden="true" data-bs-backdrop='static'>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="scrapeSettingsDynamicListLabel">Scrape Settings - {{ referenceNoUnderscores }}</h5>
+                    <div class="pull-right">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="scrapeSettingsDynamicList('{{ accountId }}', '{{ reference }}', 'close')">Close</button>
+                        <button type="button" class="btn btn-success" onclick="scrapeSettingsDynamicList('{{ accountId }}', '{{ reference }}', 'save')">Save</button>
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#triggerNewScrapeModal">Scrape</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form method="post" id="setScrapeSettings-{{ reference }}">
+                        <div class="row">
+                            <div class="form-group col-md-12" style="margin-bottom: 20px">
+                                <label for="s-folders_to_scrape" class="col-form-label">Folders to scrape:</label>
+                                <div class="row">
+                                    <div class="form-group col-md-12">
+                                        <input type="text" class="form-control" name="s-folders_to_scrape" id="s-folders_to_scrape" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-12" style="margin-bottom: 20px">
+                                <label for="s-regex_rules" class="col-form-label">Regex rules for sub folders:</label>
+                                <div class="row">
+                                    <div class="form-group col-md-12">
+                                        <input type="text" class="form-control" name="s-regex_rules" id="s-regex_rules" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-12">
+                                <label for="s-feed_location" class="col-form-label">Available Fields Mapping:</label>
+                                <div class="form-group col-md-12" id="available_fields_mapping_container"></div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" id="modal-footer-config">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="scrapeSettingsDynamicList('{{ accountId }}', '{{ reference }}', 'close')">Close</button>
+                    <button type="button" class="btn btn-success" onclick="scrapeSettingsDynamicList('{{ accountId }}', '{{ reference }}', 'save')">Save</button>
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#triggerNewScrapeModal">Scrape</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW SCRAPE WARNING MODAL -->
+    <div class="modal modal-dialog fade" id="triggerNewScrapeModal" tabindex="-1" aria-labelledby="triggerNewScrapeLabel" aria-hidden="true" data-bs-backdrop='static'>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="triggerNewScrapeLabel">Scrape {{ referenceNoUnderscores }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="doRefreshPage()"></button>
+                </div>
+                <div class="modal-body">
+                    <h4>Are you sure you want to scrape for new '{{ reference }}' entry(s)?</h4>
+                </div>
+                <div class="modal-footer" id="modal-footer-delete">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" onclick="triggerNewScrape('{{ accountId }}', '{{ reference }}')">Yes</button>
                 </div>
             </div>
         </div>
@@ -356,6 +443,26 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
             </div>
         </div>
+
+        <div id="scrapeDynamicListSuccessNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                {{ referenceNoUnderscores }} scrape settings saved!
+            </div>
+        </div>
+
+        <div id="scrapeDynamicListSuccessRunningNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                {{ referenceNoUnderscores }} scrape is running!
+            </div>
+        </div>
     </div>
 
     <!-- Table -->
@@ -364,10 +471,10 @@
             <div class="header-1">
                 <h3 class="pull-left">{{ referenceNoUnderscores }}</h3>
                 <div class="header-btns pull-right">
-                    <button type="button" class="btn btn-blue publish-btn" data-bs-toggle="modal" data-bs-target="#publishDynamicList">Publish</button>
+                    <button type="button" class="btn btn-blue publish-btn" data-bs-toggle="modal" data-bs-target="#publishDynamicList" onclick="publishList()" disabled>Publish</button>
                     <button type="button" class="btn btn-orange previewButton" onclick="publishDynamicList('{{ accountId }}', '{{ reference }}', 'preview', '{{ preview_server }}', '{{ dynamic_path }}', false, false, false, true, false, false, this, '{{ userId }}')" disabled>Preview</button>
                     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addDynamicList" onclick="populateEditDynamicListDialog('{{ accountId }}', '{{ reference }}', 'add', '{{ userId }}');">Add</button>
-                    <button type="button" class="btn btn-blue editButton" data-bs-toggle="modal" data-bs-target="#editDynamicList" onclick="populateEditDynamicListDialog('{{ accountId }}', '{{ reference }}', 'edit', 'false', '{{ userId }}');" disabled>Edit</button>
+                    <!-- <button type="button" class="btn btn-blue editButton" data-bs-toggle="modal" data-bs-target="#editDynamicList" onclick="populateEditDynamicListDialog('{{ accountId }}', '{{ reference }}', 'edit', 'false', '{{ userId }}');" disabled>Edit</button> -->
                     <button type="button" class="btn btn-red deleteButton" data-bs-toggle="modal" data-bs-target="#deleteDynamicList" disabled>Delete</button>
                     <span class="dropdown_actions">
                         <button type="button" id="actions" class="btn btn-blue" onclick="dropDownActionsToggle()">Actions</button>
@@ -376,6 +483,7 @@
                             <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#setConfigurationDynamicList" onclick="openConfiguration('{{ accountId }}', '{{ reference }}');">Configuration</button>
                             <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#setTemplateDynamicList" onclick="openTemplate('{{ accountId }}', '{{ reference }}');">Templates</button>
                             <button type="button" class="btn btn-export" data-bs-toggle="modal" data-bs-target="#uploadDynamicList" onclick="dropDownActionsToggle();">Upload CSV</button>
+                            <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#scrapeSettingsDynamicList" onclick="populateScrapeSettingsDynamicList();">Scrape Settings</button>
                         </span>
                     </span>
                 </div>
@@ -400,7 +508,7 @@
 
 
 {% block script %}
-    <script type="text/javascript">var reference = "{{reference}}";
-    var accountId = "{{accountId}}";</script>
+    <script type="text/javascript">var reference = "{{reference}}", accountId = "{{accountId}}", userId = "{{userId}}", page_extension = "{{page_extension}}"</script>
     <script src="{{ url_for('static', filename='js/dynamic_list.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dynamic_list_scrape_settings.js') }}"></script>
 {% endblock %}

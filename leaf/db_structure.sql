@@ -71,8 +71,8 @@ CREATE TABLE IF NOT EXISTS `lists` (
 
 CREATE TABLE IF NOT EXISTS `menus` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `reference` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `name` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `reference` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `created` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `accountId` int DEFAULT NULL,
   `user_with_access` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
@@ -152,6 +152,9 @@ CREATE TABLE IF NOT EXISTS `site_meta` (
   `screenshotPath` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
   `modified_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `add_by` int DEFAULT NULL,
+  `modified_by` varchar(45) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `locked_by` INT(11) NULL DEFAULT NULL,
+  `locked` INT(11) NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `FK_site_id` (`site_id`),
   CONSTRAINT `FK_site_id` FOREIGN KEY (`site_id`) REFERENCES `sites` (`id`) ON DELETE CASCADE

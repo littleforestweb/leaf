@@ -166,10 +166,10 @@ window.addEventListener('DOMContentLoaded', async function main() {
     });
     json = json["sites"];
 
-    // // Redirect to site page if crawl is complete AND if account only has one site
-    // if (json.length === 1 && json[0]["status"] === "Complete") {
-    //     window.location.href = "/get_site?id=" + json[0]["id"];
-    // }
+    // Redirect to site page if crawl is complete AND if account only has one site
+    if (json.length === 1 && json[0]["status"] === "Complete") {
+        window.location.href = "/get_site?id=" + json[0]["id"];
+    }
 
     // Set dataset
     let dataset = [];

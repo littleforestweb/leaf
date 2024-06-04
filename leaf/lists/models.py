@@ -3,11 +3,14 @@
 import csv
 import html
 import json
-import os
+import chardet
 from datetime import datetime
+import re
+from typing import List, Tuple
 
 import pandas as pd
 import werkzeug.utils
+from flask import current_app
 
 from leaf.template_editor.models import *
 
@@ -120,7 +123,7 @@ def get_list_data(request, accountId: str, reference: str):
             listCount = mycursor.fetchone()[0]
 
             # Create json
-            jsonR = {"data": lists, "recordsTotal": listCount, "recordsFiltered": len(lists)}
+            jsonR = {"data": lists, "recordsTotal": listCount, "recordsFiltered": listCount}
 
         else:
             print("Invalid accountId")
@@ -156,7 +159,7 @@ def get_list_columns(accountId: str, reference: str):
             tableName = f"account_{accountId}_list_{reference}"
 
             # Create table if not exists
-            create_table_query = f"CREATE TABLE IF NOT EXISTS {tableName} (id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE, name VARCHAR(255))"
+            create_table_query = f"CREATE TABLE IF NOT EXISTS {tableName} (id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE, name VARCHAR(255), modified_by INT(11) DEFAULT NULL)"
             mycursor.execute(create_table_query, )
             mydb.commit()
 
@@ -271,7 +274,7 @@ def get_list_columns_with_properties(accountId: str, reference: str):
         return jsonify(jsonR)
 
 
-def get_list_configuration(accountId: str, reference: str):
+def get_list_configuration(accountId: str, reference: str, passed_session = None):
     """
     Get configuration information for a specific list from the database.
 
@@ -283,8 +286,15 @@ def get_list_configuration(accountId: str, reference: str):
         dict: A JSON response containing configuration information for the specified list.
     """
     jsonR = {'columns': []}
+    
+    if passed_session is None:
+        # Use the actual session variable
+        actual_account_id = session["accountId"]
+    else:
+        # Use the passed session value
+        actual_account_id = passed_session.get("accountId")
 
-    if not int(accountId) == int(session["accountId"]):
+    if not int(accountId) == int(actual_account_id):
         return jsonify({"error": "Forbidden"}), 403
 
     mydb, mycursor = db_connection()
@@ -318,7 +328,10 @@ def get_list_configuration(accountId: str, reference: str):
     else:
         print("Invalid accountId")
 
-    return jsonify(jsonR)
+    if passed_session is None:
+        return jsonify(jsonR)
+    else:
+        return jsonR
 
 
 def set_list_configuration(request, accountId: str, reference: str):
@@ -356,10 +369,6 @@ def set_list_configuration(request, accountId: str, reference: str):
             field_to_save_by = werkzeug.utils.escape(thisRequest.get("s-field-to-save-by"))
             modified_by = session["id"]
 
-            # Convert lists to strings for storage
-            if isinstance(fields, list):
-                fields = ';'.join(fields)
-
             if isinstance(mfields, list):
                 mfields = ';'.join(mfields)
 
@@ -369,8 +378,8 @@ def set_list_configuration(request, accountId: str, reference: str):
             col_to_return = [mfields, save_by_field, field_to_save_by, modified_by]
 
             # Insert new configuration for the specified list
-            insert_config_query = f"INSERT INTO {tableName} (main_table, mandatory_fields, save_by_field, field_to_save_by, modified_by) VALUES (%s, %s, %s, %s, %s)"
-            mycursor.execute(insert_config_query, (reference, mfields, save_by_field, field_to_save_by, modified_by))
+            insert_config_query = f"INSERT INTO {tableName} (main_table, mandatory_fields, save_by_field, field_to_save_by, created_by, modified_by) VALUES (%s, %s, %s, %s, %s, %s)"
+            mycursor.execute(insert_config_query, (reference, mfields, save_by_field, field_to_save_by, modified_by, modified_by))
             mydb.commit()
         else:
             print("Invalid accountId")
@@ -419,6 +428,7 @@ def get_all_templates(request, accountId: str):
                                  'in_lists VARCHAR(255) DEFAULT NULL',
                                  'template VARCHAR(255) DEFAULT NULL',
                                  'template_location VARCHAR(255) DEFAULT NULL',
+                                 'feed_location VARCHAR(255) DEFAULT NULL',
                                  'modified_by INT(11) DEFAULT NULL',
                                  'created DATETIME NULL DEFAULT CURRENT_TIMESTAMP',
                                  'modified DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP']
@@ -443,16 +453,19 @@ def get_all_templates(request, accountId: str):
             search_value_2 = request.args.get(f"sSearch_2")
             search_value_3 = request.args.get(f"sSearch_3")
             search_value_4 = request.args.get(f"sSearch_4")
+            search_value_5 = request.args.get(f"sSearch_5")
             if search_value_1:
                 searchColumnsFields.append({"field": "template", "value": search_value_1.replace("((((", "").replace("))))", "")})
             if search_value_2:
                 searchColumnsFields.append({"field": "template_location", "value": search_value_2.replace("((((", "").replace("))))", "")})
             if search_value_3:
-                searchColumnsFields.append({"field": "in_lists", "value": search_value_3.replace("((((", "").replace("))))", "")})
+                searchColumnsFields.append({"field": "feed_location", "value": search_value_3.replace("((((", "").replace("))))", "")})
             if search_value_4:
-                # searchColumnsFields.append({"field": "user.id", "value": search_value_4.replace("((((", "").replace("))))", "")})
-                # searchColumnsFields.append({"field": "user.username", "value": search_value_4.replace("((((", "").replace("))))", "")})
-                searchColumnsFields.append({"field": "user.email", "value": search_value_4.replace("((((", "").replace("))))", "")})
+                searchColumnsFields.append({"field": "in_lists", "value": search_value_4.replace("((((", "").replace("))))", "")})
+            if search_value_5:
+                # searchColumnsFields.append({"field": "user.id", "value": search_value_5.replace("((((", "").replace("))))", "")})
+                # searchColumnsFields.append({"field": "user.username", "value": search_value_5.replace("((((", "").replace("))))", "")})
+                searchColumnsFields.append({"field": "user.email", "value": search_value_5.replace("((((", "").replace("))))", "")})
 
             for searchColumnsField in searchColumnsFields:
                 searchColumnsFieldValue = searchColumnsField['value'].replace('"', "'")
@@ -515,6 +528,7 @@ def get_list_template(accountId: str, reference: str):
                                  'in_lists VARCHAR(255) DEFAULT NULL',
                                  'template VARCHAR(255) DEFAULT NULL',
                                  'template_location VARCHAR(255) DEFAULT NULL',
+                                 'feed_location VARCHAR(255) DEFAULT NULL',
                                  'modified_by INT(11) DEFAULT NULL',
                                  'created DATETIME NULL DEFAULT CURRENT_TIMESTAMP',
                                  'modified DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP']
@@ -561,9 +575,11 @@ def set_list_template(request, accountId: str, reference: str):
     template = werkzeug.utils.escape(template)
 
     template_location = werkzeug.utils.escape(str(thisRequest.get("s-template_location")))
+    feed_location = werkzeug.utils.escape(str(thisRequest.get("s-feed_location")))
 
-    if not template.endswith(".html"):
+    if not template.endswith("_html"):
         template += ".html"
+    template = template.replace("_html", ".html")
 
     if reference == '____no_list_selected____':
         reference = ""
@@ -588,8 +604,8 @@ def set_list_template(request, accountId: str, reference: str):
                 template_file = template_info[0][2]
                 template = template_file
 
-                update_config_query = f"UPDATE {tableName} SET in_lists = '', template_location = %s, modified = CURRENT_TIMESTAMP WHERE in_lists = %s"
-                mycursor.execute(update_config_query, (template_location, reference))
+                update_config_query = f"UPDATE {tableName} SET in_lists = '', template_location = %s, feed_location = %s, modified = CURRENT_TIMESTAMP WHERE in_lists = %s"
+                mycursor.execute(update_config_query, (template_location, feed_location, reference))
                 mydb.commit()
 
             if templates_format and templates_format == "input":
@@ -599,17 +615,17 @@ def set_list_template(request, accountId: str, reference: str):
 
             modified_by = int(session["id"])
 
-            col_to_return = [template, template_location, modified_by]
+            col_to_return = [template, template_location, feed_location, modified_by]
 
             if templates_format and templates_format == "select":
                 # Update template
-                update_config_query = f"UPDATE {tableName} SET in_lists = %s, template_location = %s, modified_by = %s, modified = CURRENT_TIMESTAMP WHERE template = %s"
-                mycursor.execute(update_config_query, (reference, template_location, modified_by, template))
+                update_config_query = f"UPDATE {tableName} SET in_lists = %s, template_location = %s, feed_location = %s, modified_by = %s, modified = CURRENT_TIMESTAMP WHERE template = %s"
+                mycursor.execute(update_config_query, (reference, template_location, feed_location, modified_by, template))
                 mydb.commit()
             else:
                 # Insert new template
-                insert_config_query = f"INSERT INTO {tableName} (in_lists, template, template_location, modified_by) VALUES (%s, %s, %s, %s)"
-                mycursor.execute(insert_config_query, (reference, template, template_location, modified_by))
+                insert_config_query = f"INSERT INTO {tableName} (in_lists, template, template_location, feed_location, modified_by) VALUES (%s, %s, %s, %s, %s)"
+                mycursor.execute(insert_config_query, (reference, template, template_location, feed_location, modified_by))
                 mydb.commit()
 
             if templates_format and templates_format == "input":
@@ -1058,7 +1074,8 @@ def get_settings(accountId: str):
             json_response = {
                 "settings": settings_data,
                 "images_webpath": Config.IMAGES_WEBPATH,
-                "original_images_webpath": Config.ORIGINAL_IMAGES_WEBPATH
+                "original_images_webpath": Config.ORIGINAL_IMAGES_WEBPATH,
+                "preview_server": Config.PREVIEW_SERVER
             }
         else:
             print("Invalid accountId")
@@ -1155,7 +1172,7 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         for key, value in selected_item_data.items():
             html_placeholder = '{{' + key + '}}'
             if html_placeholder in list_template_html:
-                list_template_html = list_template_html.replace(html_placeholder, value)
+                list_template_html = list_template_html.replace(html_placeholder, unescape_html(value))
 
         # Remove any HTML elements that contain html_placeholders that do not exist in the selected_item_data
         html_placeholders = re.findall(r'{{(.*?)}}', list_template_html)
@@ -1169,6 +1186,7 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         # Save new page in the correct folder based on template
         file_to_save = os.path.join(Config.WEBSERVER_FOLDER, file_url_path.strip("/"))
         folder_to_save_item = os.path.dirname(file_to_save)
+
         os.makedirs(folder_to_save_item, exist_ok=True)
         with open(file_to_save, 'w') as out_file:
             out_file.write(list_template_html)
@@ -1210,6 +1228,18 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
     finally:
         mydb.close()
         return jsonify({"full_list": full_list})
+
+
+def add_column_if_not_exists(cursor, table_name, column_name, column_definition):
+    # Check if the column exists
+    cursor.execute(f"""
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_NAME = '{table_name}' AND COLUMN_NAME = '{column_name}'
+    """)
+    if cursor.fetchone()[0] == 0:
+        # Column does not exist, so add it
+        cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition}")
 
 
 def update_dynamic_lists(request, accountId: str, account_list: str):
@@ -1272,6 +1302,16 @@ def update_dynamic_lists_database(accountId, account_list, item_id, this_request
     try:
 
         if isinstance(int(accountId), int) and isinstance(int(item_id), int):
+
+            leaf_selected_rss = this_request.get('leaf_selected_rss', [])
+            rss_string = ','.join(leaf_selected_rss)
+
+            # Add the column if it does not exist
+            add_column_if_not_exists(mycursor, account_list, "leaf_selected_rss", "TEXT")
+
+            mycursor.execute(f"UPDATE {account_list} SET leaf_selected_rss = %s, modified = CURRENT_TIMESTAMP WHERE id = %s", (rss_string, item_id))
+            mydb.commit()
+
             for key, val in this_request.items():
                 if key.startswith("e-"):
                     final_key = key.replace("e-", "")
@@ -1281,16 +1321,16 @@ def update_dynamic_lists_database(accountId, account_list, item_id, this_request
                         val = ';'.join(val)
 
                     # Update the database with the new value (use parameterized query to prevent SQL injection)
-                    if final_key != 'id':
+                    if final_key != 'id' and final_key != 'leaf_selected_rss':
                         final_val = val.replace('"', "'")
                         mycursor.execute(f"UPDATE {account_list} SET {final_key} = %s, modified = CURRENT_TIMESTAMP WHERE id = %s", (final_val, item_id))
                         mydb.commit()
 
-                    index += 1
+                index += 1
 
-                    # Check if all columns are processed, then return the updated list data
-                    if (index == len(this_request)):
-                        return columns_to_return
+                # Check if all columns are processed, then return the updated list data
+                if (index == len(this_request)):
+                    return columns_to_return
         else:
             print("Invalid accountId")
 
@@ -1856,3 +1896,427 @@ def remove_elements_with_content_or_src(html_content, target):
 
     # Return the modified HTML
     return soup.prettify()
+
+
+def scrape_list_data(request):
+    json_response = {"running": False, "action": "scraping_data"}
+
+    accountId = werkzeug.utils.escape(request.form.get("accountId"))
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    mydb, mycursor = db_connection()
+
+    try:
+
+        list_name = werkzeug.utils.escape(request.form.get("list_name"))
+
+        tableName = f"account_{accountId}_lists_scraping_settings"
+        scraping_query = f"SELECT * FROM {tableName} WHERE list=%s"
+        values = (list_name,)
+        mycursor.execute(scraping_query, values)
+        scraping_details = mycursor.fetchone()
+
+        json_response = {"running": True, "action": "scraping_data"}
+
+    except Exception as e:
+        print("crawl_list_data model")
+        print(e)
+    finally:
+        mydb.close()
+        return jsonify(json_response)
+
+def get_list_scrape_settings(accountId: str, reference: str):
+    accountId = werkzeug.utils.escape(accountId)
+    reference = werkzeug.utils.escape(reference)
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    json_response = {"scrape_settings": []}
+
+    mydb, mycursor = db_connection()
+
+    try:
+
+        tableName = f"account_{accountId}_lists_scraping_settings"
+        scraping_query = f"SELECT * FROM {tableName} WHERE list=%s"
+        values = (reference,)
+        mycursor.execute(scraping_query, values)
+        scraping_details = mycursor.fetchone()
+
+        json_response = {"scrape_settings": scraping_details}
+
+    except Exception as e:
+        print("crawl_list_data model")
+        print(e)
+    finally:
+        mydb.close()
+        return jsonify(json_response)
+
+
+def set_list_scrape_settings(request, accountId: str, reference: str):
+    """
+    Set scrape settings for a specific list in the database.
+
+    Args:
+        request (Request): The HTTP request object.
+        accountId (str): The account ID associated with the list.
+        reference (str): The reference code for the specific list.
+
+    Returns:
+        list: A list containing the values that were inserted into the database for scraping.
+    """
+    col_to_return = []
+
+    accountId = werkzeug.utils.escape(accountId)
+    reference = werkzeug.utils.escape(reference)
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    mydb, mycursor = db_connection()
+
+    try:
+        tableName = f"account_{accountId}_lists_scraping_settings"
+
+        if isinstance(int(accountId), int):
+
+            # Create a table if it doesn't exist
+            mycursor.execute(f"CREATE TABLE IF NOT EXISTS {tableName} (id INT AUTO_INCREMENT PRIMARY KEY, list VARCHAR(255) DEFAULT NULL, data JSON, created_by INT(11) DEFAULT NULL, created DATETIME NULL DEFAULT CURRENT_TIMESTAMP, modified DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)")
+
+            # Make sure the list is clean
+            delete_config_query = f"DELETE FROM {tableName} WHERE list = %s"
+            mycursor.execute(delete_config_query, (reference,))
+            mydb.commit()
+
+            thisRequest = request.get_json()
+
+            # Insert the data into the table
+            mycursor.execute(f"INSERT INTO {tableName} (list, data, created_by) VALUES (%s, %s, %s)", (reference, json.dumps(thisRequest), int(session["id"])))
+            mydb.commit()
+        else:
+            print("Invalid accountId")
+
+    except Exception as e:
+        print("set_list_scrape_settings model")
+        print(e)
+    finally:
+        mydb.close()
+        return jsonify(col_to_return)
+
+
+# Main function to scrape pages and save the content in JSON format
+def trigger_new_scrape(request):
+
+    accountId = werkzeug.utils.escape(request.form.get("accountId"))
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    mydb, mycursor = db_connection()
+
+    try:
+        tableName = f"account_{accountId}_lists_scraping_settings"
+
+        if isinstance(int(accountId), int):
+
+            reference = werkzeug.utils.escape(request.form.get("reference"))
+
+            scraping_query = f"SELECT data FROM {tableName} WHERE list=%s"
+            values = (reference,)
+            mycursor.execute(scraping_query, values)
+            scraping_details = mycursor.fetchone()
+            scraping_details = json.loads(unescape_html(scraping_details[0]))
+
+            folders_to_scrape = [folder.strip() for folder in scraping_details.get("s-folders_to_scrape", "").split(",")]
+            regex_rules = [folder.strip() for folder in scraping_details.get("s-regex_rules", "").split(",")]
+
+            tableName = f"account_{accountId}_list_{reference}"
+            delete_query = f"DELETE FROM {tableName};"
+            mycursor.execute(delete_query)
+            mydb.commit()
+
+            count_pages = 0
+                
+            for folder in folders_to_scrape:
+                folder_path = os.path.join(Config.WEBSERVER_FOLDER, folder)
+                # current_app.logger.debug(f"Folder: {folder_path}")
+                # Check if the folder exists
+                if os.path.exists(folder_path):
+                    current_app.logger.debug(f"Folder exist: {folder_path}")
+                if not os.path.exists(folder_path):
+                    print(f"Folder does not exist: {folder_path}")
+
+                for root, dirs, files in os.walk(folder_path):
+                    for file in files:
+                        if file.endswith(Config.PAGES_EXTENSION):
+                            file_path = os.path.join(root, file)
+                            match_rule = True
+                            if regex_rules and len(regex_rules) > 0:
+                                match_rule = None
+                                for regex_rule in regex_rules:
+                                    if regex_rule != '':
+                                        regex_rule = regex_rule.replace('__BACKSLASH__TO_REPLACE_ON_WEB__', '\\')
+                                        # Search for the pattern in the URL
+                                        match_rule = re.search(regex_rule, file_path)
+                                    else:
+                                        match_rule = True
+
+                            if match_rule is not None:
+                                html_content = read_html_file(file_path)
+                                soup = BeautifulSoup(html_content, 'lxml')
+                                page_data = {}
+
+                                for key, selector in scraping_details.items():
+                                    if selector == "__found_in_folder__":
+                                        data_key = key.replace("scrape__", "")
+                                        page_data[data_key] = folder
+                                    elif key.startswith("scrape__"):
+                                        data_key = key.replace("scrape__", "")
+                                        if selector.strip() != "":
+                                            content = extract_content(soup, selector)
+                                            if content:  # Only add if content is not empty or None
+                                                page_data[data_key] = content
+
+                                page_data["modified_by"] = session['id']
+                                if page_data:  # Only add the file's data if there's at least one key with content
+                                    columns = ', '.join(page_data.keys())
+                                    placeholders = ', '.join(['%s'] * len(page_data))
+                                    add_data = f"INSERT INTO {tableName} ({columns}) VALUES ({placeholders})"
+                                    data_tuple = tuple(page_data.values())
+                                    count_pages = count_pages + 1
+                                    # current_app.logger.debug(f"Total files to process: {count_pages}")
+                                    mycursor.execute(add_data, data_tuple)
+                                    mydb.commit()
+
+        else:
+            print("Invalid accountId")
+
+    except Exception as e:
+        print("trigger_new_scrape model")
+        print(e)
+        return jsonify({"task": "Adding pages", "status": False})
+    finally:
+        mydb.close()
+        return jsonify({"task": "Adding pages", "status": True})
+
+
+# Function to read HTML content from a file
+def read_html_file(file_path):
+    encoding = 'utf-8'
+    with open(file_path, 'rb') as file:
+        raw_data = file.read()
+        result = chardet.detect(raw_data)
+        encoding = result['encoding']
+        # if encoding.strip() != 'utf-8':
+        #     current_app.logger.debug(f"Detected encoding in file: {file_path} - {encoding}")
+
+    with open(file_path, 'r', encoding=encoding) as file:
+        return file.read()
+
+def extract_and_format(url: str, *pattern_and_format_pairs: Tuple[str, str]) -> str:
+    for pattern, output_format in pattern_and_format_pairs:
+        match = re.search(pattern, url)
+        
+        if match:
+            # Create a dictionary of all matched groups
+            matched_groups = {f'group{i}': match.group(i) for i in range(1, len(match.groups()) + 1)}
+            
+            # Replace format placeholders with the matched group values
+            formatted_output = output_format
+            for group_name, value in matched_groups.items():
+                formatted_output = formatted_output.replace(f'{{{group_name}}}', value)
+            
+            return formatted_output
+    return "No match found."
+
+# Function to extract content based on the given selector
+def extract_content(soup, selector):
+    try:
+        if '>' in selector and 'ignore' in selector:
+            # Split by the last occurrence of '>' to separate base selector and ignore part
+            parts = selector.rsplit('>', 1)
+            base_selector = parts[0].strip()
+            ignore_parts = parts[1].strip()
+            ignore_parts = re.search(r'ignore\((.+?)\)', ignore_parts)
+            ignore_parts = ignore_parts.group(1)
+
+            # Select the content based on the base selector
+            content = extract_content(soup, base_selector)
+            if not content:
+                return None
+
+            parts = ignore_parts.split(';')
+            tag_part = ""
+            text_part = ""
+
+            for part in parts:
+                if 'tag:' in part:
+                    tag_part = part
+                if 'text:' in part:
+                    text_part = part
+            
+            # Lists to store text patterns and tag patterns
+            text_patterns = []
+            tag_patterns = []
+
+            # Extract tag patterns
+            if tag_part:
+                tag_patterns = re.findall(r'tag:"(.*?)"', tag_part)
+                additional_tags = re.findall(r'",\s*"(.*?)"', tag_part)
+                tag_patterns.extend(additional_tags)
+
+            # Extract text patterns
+            if text_part:
+                text_patterns = re.findall(r'text:"(.*?)"', text_part)
+                additional_texts = re.findall(r'",\s*"(.*?)"', text_part)
+                text_patterns.extend(additional_texts)
+
+            # Remove text patterns from content
+            if len(text_patterns) > 0:
+                for pattern in text_patterns:
+                    content = content.replace(pattern, "")
+
+            # Remove tag patterns from content
+            if len(tag_patterns) > 0:
+                soup = BeautifulSoup(content, 'html.parser')
+                for tag in tag_patterns:
+                    for t in soup.find_all(tag):
+                        t.extract()
+                content = str(soup)
+
+            return content.strip()
+
+        if '>' in selector and 'regex' in selector:
+            # Split by the last occurrence of '>' to separate base selector and regex part
+            parts = selector.rsplit('>', 1)
+            base_selector = parts[0].strip()
+            regex_part = parts[1].strip()
+            # Replace the placeholder with actual backslash
+            regex_part = regex_part.replace('__BACKSLASH__TO_REPLACE_ON_WEB__', '\\')
+            
+            # Extract the regex pattern and format from the regex part
+            regex_match = re.search(r'regex\((.+?),\s*(.*?)\)', regex_part)
+            # regex_match = re.search(r'regex\(r?"(.+?)",\s*"(.*?)"\)', regex_part)
+            if not regex_match:
+                raise ValueError(f"Invalid regex format in selector: {selector}")
+            
+            pattern = regex_match.group(1)
+            output_format = regex_match.group(2)
+            
+            # Select the content based on the base selector
+            content = extract_content(soup, base_selector)
+            if not content:
+                return None
+            
+            # Apply the regex pattern to the element's content
+            match = re.search(pattern, content)
+            
+            if match:
+                # Create a dictionary of all matched groups
+                matched_groups = {f'group{i}': match.group(i) for i in range(1, len(match.groups()) + 1)}
+                # Replace format placeholders with the matched group values
+                formatted_output = output_format
+                for group_name, value in matched_groups.items():
+                    formatted_output = formatted_output.replace(f'{{{group_name}}}', value)
+                
+                return formatted_output
+            
+            return "No match found."
+
+        if selector.endswith('["ALL"]'):
+            selector = selector[:-9].strip()  # remove ["ALL"]
+            elements = soup.select(selector)
+            this_element_attr = ""
+            for element in elements:
+                this_element_attr = this_element_attr + str(element)
+            return this_element_attr
+
+        if selector.endswith('[ALL]'):
+            selector = selector[:-7].strip()  # remove [ALL]
+            elements = soup.select(selector)
+            this_element_attr = ""
+            for element in elements:
+                this_element_attr = this_element_attr + str(element)
+            return this_element_attr
+
+        if '>' in selector and '[' in selector and ']' in selector:
+            # Split by the last occurrence of '>'
+            parts = selector.rsplit('>', 1)
+            base_selector = parts[0].strip()
+            attribute_selector = parts[1].strip()
+            inside_split = False
+            has_split = False
+
+            # Handle cases with attributes
+            if '=' in attribute_selector:
+                
+                if '.split(' in attribute_selector:
+                    has_split = True
+                    start = attribute_selector.find('split("') + len('split("')
+                    end = attribute_selector.find('")', start)
+                    # Extract the substring
+                    inside_split = attribute_selector[start:end]
+
+                    # Split the input string at ".split("
+                    split_parts = attribute_selector.split('.split(')
+
+                    # The first part is the string before ".split("
+                    attribute_selector = split_parts[0]
+
+                attribute_name = attribute_selector.split('[')[-1].split('=')[0].strip()
+                attribute_value = attribute_selector.split('[')[-1].split('=')[1].strip(']').strip('"')
+                elements = soup.select(base_selector)
+                for element in elements:
+                    attr_value = element.get(attribute_name)
+                    if isinstance(attr_value, list):
+                        attr_value = ' '.join(attr_value)
+                    if attr_value == attribute_value:
+                        element_to_return = element.get('href')
+                        if has_split:
+                            return element_to_return.split(inside_split)[-1]
+                        else:
+                            return element_to_return
+            else:
+                attribute_name = attribute_selector.split('[')[-1].split(']')[0].strip()
+                elements = soup.select(base_selector)
+                this_element_attr = ""
+                for element in elements:
+                    if element.get(attribute_name):
+                        this_element_attr = element.get(attribute_name)
+                return this_element_attr
+
+        if '>' in selector and ']' in selector:
+            attribute = selector.split('[')[-1].split(']')[0]
+            selector = selector.rsplit('>', 1)[0].strip()
+            elements = soup.select(selector)
+            this_element_attr = ""
+            for element in elements:
+                if element.get(attribute):
+                    this_element_attr = element.get(attribute)
+            return this_element_attr
+
+        else:
+            element = soup.select_one(selector.strip())
+            return element.decode_contents().strip() if element and not is_only_linebreaks(element.text) else None
+            # return element.text.strip() if element and not is_only_linebreaks(element.text) else None
+    except Exception as e:
+        print(f"Error processing selector '{selector}': {e}")
+        return None
+
+def is_only_linebreaks(s):
+    # Strip all whitespace characters including newlines
+    stripped_string = s.strip()
+    # Check if the resulting string is empty
+    return stripped_string == ''
+
+# Function to unescape HTML entities
+def unescape_html(html):
+    return (html.replace('&gt;', '>')
+        .replace('&lt;', '<')
+        .replace('&quot;', '"')
+        .replace('&#39;', "'")
+        .replace('&amp;', '&')
+        .replace('&comma;', ','))

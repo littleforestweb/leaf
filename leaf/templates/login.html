@@ -32,7 +32,7 @@
             </div>
         </form>
         {% if is_saml_active == 1 %}
-            <a class="saml_login_link" href="/saml/login">SAML Login</a>
+            <input type="button" class="saml_login_link" onclick="do_saml_redirect()" value="SAML Login"/>
         {% endif %}
     </div>
 
@@ -43,5 +43,10 @@
         window.addEventListener('DOMContentLoaded', async function main() {
             $(".loadingBg").removeClass("show");
         })
+
+        function do_saml_redirect() {
+            const fullUrl = window.location.href;
+            window.location.href = "saml/login?url_to_redirect=" + fullUrl;
+        }
     </script>
 {% endblock %}

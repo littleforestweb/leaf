@@ -35,6 +35,21 @@ SERVERSIDE_TABLE_COLUMNS = {
             "column_name": "Action",
             "default": "",
             "order": 7
+        }, {
+            "data_name": "Modified By",
+            "column_name": "Modified By",
+            "default": "",
+            "order": 8
+        }, {
+            "data_name": "Locked",
+            "column_name": "Locked",
+            "default": "",
+            "order": 9
+        }, {
+            "data_name": "Locked By",
+            "column_name": "Locked By",
+            "default": "",
+            "order": 10
         },
     ],
     "get_site_files": [
@@ -68,6 +83,44 @@ SERVERSIDE_TABLE_COLUMNS = {
             "column_name": "Created",
             "default": "",
             "order": 6
+        }
+    ],
+    "get_versions": [
+        {
+            "data_name": "version",
+            "column_name": "version",
+            "default": "",
+            "order": 1
+        }, {
+            "data_name": "is_latest",
+            "column_name": "is_latest",
+            "default": "",
+            "order": 2
+        }, {
+            "data_name": "commit",
+            "column_name": "commit",
+            "default": "",
+            "order": 3
+        }, {
+            "data_name": "message",
+            "column_name": "message",
+            "default": "",
+            "order": 4
+        }, {
+            "data_name": "author_name",
+            "column_name": "author_name",
+            "default": "",
+            "order": 5
+        }, {
+            "data_name": "author_email",
+            "column_name": "author_email",
+            "default": "",
+            "order": 6
+        }, {
+            "data_name": "date",
+            "column_name": "date",
+            "default": "",
+            "order": 7
         }
     ]
 }

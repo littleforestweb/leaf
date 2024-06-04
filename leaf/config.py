@@ -2,6 +2,8 @@ import json
 import os
 import secrets
 
+from git import Repo
+
 
 def checkConfig(loaded_json):
     """
@@ -77,7 +79,8 @@ def checkConfig(loaded_json):
         "SAML_ATTRIBUTES_MAP": {},
         "POWER_USER_GROUP": "admin",
         "XMLSEC_BINARY": "",
-        "SITE_NOTICE": "This is a site notice that you can control on your config.json file. Keep it empty to remove the notice!"
+        "SITE_NOTICE": "This is a site notice that you can control on your config.json file. Keep it empty to remove the notice!",
+        "PAGES_EXTENSION": ".page"
     }
 
     # Update the loaded JSON with the expected structure
@@ -178,6 +181,12 @@ class Config:
     # Webserver Folder
     WEBSERVER_FOLDER = config["WEBSERVER_FOLDER"]
 
+    # Initialize the repository (if not already initialized)
+    try:
+        GIT_REPO = Repo(WEBSERVER_FOLDER)
+    except:
+        GIT_REPO = None
+
     # User email assigned
     ASSIGNED_USER_EMAIL = config["ASSIGNED_USER_EMAIL"]
 
@@ -221,6 +230,7 @@ class Config:
     XMLSEC_BINARY = config["XMLSEC_BINARY"]
 
     SITE_NOTICE = config["SITE_NOTICE"]
+    PAGES_EXTENSION = config["PAGES_EXTENSION"]
 
     # Auto Generated
     DYNAMIC_PATH = os.path.join("leaf_content", "lists")

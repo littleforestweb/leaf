@@ -6,7 +6,7 @@ from flask import Blueprint, render_template, request, jsonify, session
 from leaf import Config
 from leaf.decorators import login_required
 from leaf.sites.models import getSiteFromPageId, user_has_access_page, site_belongs_to_account
-from .models import get_page_html_path, remove_base_href, save_html_to_disk, update_modified_date, add_base_href
+from .models import get_page_details, remove_base_href, save_html_to_disk, update_modified_date, add_base_href
 
 # Create a Blueprint for the editor routes
 editor = Blueprint('editor', __name__)
@@ -59,7 +59,7 @@ def get_htmlCode():
             return jsonify({"error": "Forbidden"}), 403
 
         # Get HTML path for the page
-        html_path = get_page_html_path(int(page_id))
+        html_path = get_page_details(int(page_id))
         with open(html_path, 'r') as in_file:
             content = in_file.read()
 
@@ -95,7 +95,7 @@ def save_page():
             return jsonify({"error": "Forbidden"}), 403
 
         # Get HTML path from page_id
-        html_path = get_page_html_path(int(page_id))
+        html_path = get_page_details(int(page_id))
 
         # Remove base href from HTML
         data = remove_base_href(data)
@@ -107,7 +107,7 @@ def save_page():
         update_modified_date(page_id)
 
         # Set previewURL
-        previewURL = html_path.replace(Config.WEBSERVER_FOLDER, Config.PREVIEW_SERVER + '/')
+        previewURL = html_path.replace(Config.WEBSERVER_FOLDER.rstrip("/"), Config.PREVIEW_SERVER.rstrip("/"))
 
         # Return info back to view
         json_response = {"message": "success", "previewURL": previewURL}

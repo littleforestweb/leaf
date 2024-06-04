@@ -45,6 +45,10 @@ async function addList() {
     });
 }
 
+async function cleanUpAddList() {
+    $("#list-name").val("");
+}
+
 async function populateEditListModal(accountId) {
 
     let checked_items = $("input:checked");
@@ -317,7 +321,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 width: "20%",
                 targets: 3,
                 render: function (data, type, row) {
-                    return '<a href="/list/' + data + '">View</a><span class="hidden toEdit">' + data + '</span>';
+                    return '<a class="btn btn-sm" href="/list/' + data + '">View</a><span class="hidden toEdit">' + data + '</span>';
                 },
             }
         ]

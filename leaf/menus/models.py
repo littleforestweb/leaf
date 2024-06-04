@@ -56,6 +56,46 @@ def get_menus_data(accountId: int, userId: str, isAdmin: str):
         return jsonify(jsonR)
 
 
+def get_menu_details(accountId: str, reference: str):
+    """
+    Retrieve menu details for a specific account and reference.
+
+    Args:
+        accountId (str): The ID of the account requesting the menu details.
+        reference (str): The reference identifier for the specific menu.
+
+    Returns:
+        Response: A Flask JSON response containing either the menu details or an error message.
+        - On success: A JSON object with the following keys:
+            - id: The ID of the menu.
+            - name: The name of the menu.
+            - reference: The reference identifier of the menu.
+            - created: The creation timestamp of the menu.
+            - user_with_access: The user associated with access to the menu.
+        - On failure due to forbidden access: A JSON object with an "error" key and the message "Forbidden", along with a 403 status code.
+    """
+
+    jsonR = {'menu': []}
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    mydb, mycursor = db_connection()
+
+    try:
+        sql = "SELECT * FROM menus WHERE reference = %s AND accountId = %s"
+        queryVal = (reference, accountId,)
+        mycursor.execute(sql, queryVal)
+        menu = mycursor.fetchone()
+        jsonR = {"id": menu[0], "name": menu[1], "reference": menu[3], "created": menu[2], "user_with_access": menu[4]}
+    except Exception as e:
+        print("get_menu_details model")
+        print(e)
+    finally:
+        mydb.close()
+        return jsonify(jsonR)
+
+
 def get_menu_data(request, accountId: str, reference: str):
     """
     Get data for a single menu from the database.
@@ -286,12 +326,13 @@ def get_menu_configuration(accountId: str, reference: str):
 
         field_menu_for_config = ['id INT(11) AUTO_INCREMENT PRIMARY KEY UNIQUE',
                                  'main_table VARCHAR(255) DEFAULT NULL',
-                                 'template VARCHAR(255) DEFAULT NULL',
-                                 'parameters VARCHAR(255) DEFAULT NULL',
-                                 'fields VARCHAR(255) DEFAULT NULL',
                                  'mandatory_fields VARCHAR(255) DEFAULT NULL',
                                  'save_by_field VARCHAR(11) DEFAULT 0',
-                                 'field_to_save_by VARCHAR(255) DEFAULT NULL']
+                                 'field_to_save_by VARCHAR(255) DEFAULT NULL',
+                                 'created_by INT(11) DEFAULT NULL',
+                                 'modified_by INT(11) DEFAULT NULL',
+                                 'created DATETIME NULL DEFAULT CURRENT_TIMESTAMP',
+                                 'modified DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP']
         field_query_for_config = " (" + ", ".join(field_menu_for_config) + ")"
 
         tableName = f"account_{accountId}_menu_configuration"
@@ -336,7 +377,6 @@ def set_menu_configuration(request, accountId: str, reference: str):
         tableName = f"account_{accountId}_menu_configuration"
 
         if isinstance(int(accountId), int):
-
             # Delete existing configuration for the specified menu
             delete_config_query = f"DELETE FROM {tableName} WHERE main_table = %s"
             mycursor.execute(delete_config_query, (reference,))
@@ -344,28 +384,17 @@ def set_menu_configuration(request, accountId: str, reference: str):
 
             thisRequest = request.get_json()
 
-            template = werkzeug.utils.escape(str(thisRequest.get("s-template")))
-            parameters = werkzeug.utils.escape(str(thisRequest.get("s-parameters")))
-            fields = werkzeug.utils.escape(thisRequest.get("s-fields"))
             mfields = werkzeug.utils.escape(thisRequest.get("s-mandatory-fields"))
-            save_by_field = werkzeug.utils.escape(thisRequest.get("s-save-by-field"))
-            field_to_save_by = werkzeug.utils.escape(thisRequest.get("s-field-to-save-by"))
-
-            # Convert menus to strings for storage
-            if isinstance(fields, list):
-                fields = ';'.join(fields)
+            modified_by = session["id"]
 
             if isinstance(mfields, list):
                 mfields = ';'.join(mfields)
 
-            if isinstance(field_to_save_by, list):
-                field_to_save_by = ';'.join(field_to_save_by)
-
-            col_to_return = [template, parameters, fields, mfields, save_by_field, field_to_save_by]
+            col_to_return = [mfields, modified_by]
 
             # Insert new configuration for the specified menu
-            insert_config_query = f"INSERT INTO {tableName} (main_table, template, parameters, fields, mandatory_fields, save_by_field, field_to_save_by) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-            mycursor.execute(insert_config_query, (reference, template, parameters, fields, mfields, save_by_field, field_to_save_by))
+            insert_config_query = f"INSERT INTO {tableName} (main_table, mandatory_fields, created_by, modified_by) VALUES (%s, %s, %s, %s)"
+            mycursor.execute(insert_config_query, (reference, mfields, modified_by, modified_by))
             mydb.commit()
         else:
             print("Invalid accountId")
@@ -770,29 +799,6 @@ def publish_dynamic_menus(request, account_menu: str, accountId: str, reference:
         with open(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH, sanitized_reference + 'Menu.json'), 'w') as out_file:
             out_file.write(json_data_to_write)
 
-        # Additional logic to save data by country (sanitize user input)
-        this_request = request.get_json()
-        country_to_update = werkzeug.utils.escape(this_request.get("country_to_update"))
-        if country_to_update and isinstance(country_to_update, list):
-            country_to_update = ';'.join(country_to_update)
-
-            single_country_to_update = country_to_update.split(';')
-            for single_country_to_update in single_country_to_update:
-                # Query to retrieve data filtered by country (using parameterized query)
-                mycursor.execute(f"SELECT * FROM {account_menu} WHERE LOWER(`country`) LIKE %s",
-                                 ('%' + single_country_to_update.strip().lower() + '%',))
-                row_headers = [x[0] for x in mycursor.description]
-                full_menu_by_country = mycursor.fetchall()
-
-                # Convert data to a JSON format
-                json_data_by_country = [dict(zip(row_headers, result)) for result in full_menu_by_country]
-                json_data_to_write_by_country = json.dumps(json_data_by_country).replace('__BACKSLASH__TO_REPLACE__', '\\')
-
-                # Write JSON data to a file with the country-specific reference identifier (sanitize reference)
-                sanitized_reference_by_country = ''.join(e for e in sanitized_reference + '_' + single_country_to_update.strip().lower() if e.isalnum())
-                with open(os.path.join(Config.ENV_PATH, 'json_by_country', sanitized_reference_by_country + '_Menu.json'), 'w') as out_file_by_country:
-                    out_file_by_country.write(json_data_to_write_by_country)
-
     except Exception as e:
         print("publish_dynamic_menus model")
         print(e)
@@ -872,7 +878,7 @@ def update_dynamic_menus_database(accountId, account_menu, item_id, this_request
                     # Update the database with the new value (use parameterized query to prevent SQL injection)
                     if final_key != 'id':
                         final_val = val.replace('"', "'")
-                        mycursor.execute(f"UPDATE {account_list} SET {final_key} = %s WHERE id = %s", (final_val, item_id))
+                        mycursor.execute(f"UPDATE {account_menu} SET {final_key} = %s WHERE id = %s", (final_val, item_id))
                         mydb.commit()
 
                     index += 1

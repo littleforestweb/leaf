@@ -1,11 +1,15 @@
+import atexit
+import gc
 import os
 
+from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
 
 from leaf.config import Config
 from leaf.decorators import limiter
 from leaf.deployments.routes import deployments
 from leaf.editor.routes import editor
+from leaf.files_manager.routes import files_manager
 from leaf.groups.routes import groups
 from leaf.lists.routes import lists
 from leaf.main.routes import main
@@ -15,8 +19,9 @@ from leaf.serverside.saml import saml_route
 from leaf.sites.routes import sites
 from leaf.template_editor.routes import template_editor
 from leaf.users.routes import users
+from leaf.versioning.routes import versioning
+from leaf.workflow.models import check_if_should_publish_items
 from leaf.workflow.routes import workflow
-from leaf.files_manager.routes import files_manager
 
 
 def check_db():
@@ -97,6 +102,17 @@ def create_app(config_class=Config):
     app.register_blueprint(template_editor)
     app.register_blueprint(saml_route)
     app.register_blueprint(files_manager)
+    app.register_blueprint(versioning)
+
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(func=check_if_should_publish_items, trigger="interval", minutes=5)
+    scheduler.start()
+
+    # Shut down the scheduler when exiting the app
+    atexit.register(lambda: scheduler.shutdown())
+
+    # Optional: Force garbage collection
+    atexit.register(lambda: gc.collect())
 
     # Check Database Integrity
     check_db()

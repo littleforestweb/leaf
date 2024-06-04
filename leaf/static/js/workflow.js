@@ -86,6 +86,9 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 if (mData[12] === "Approved" || mData[12] === '6') {
                     thisStatusActionColor = "isGreen";
                 }
+                if (mData[12] === '7') {
+                    thisStatusActionColor = "isYellow";
+                }
 
                 $(nRow).addClass(thisStatusActionColor);
             }
@@ -205,6 +208,8 @@ window.addEventListener('DOMContentLoaded', async function main() {
                     currentStatus = "Approved and awaiting deployment";
                 } else if (data === "Approved" || data === "6") {
                     currentStatus = "Complete";
+                } else if (data === "7") {
+                    currentStatus = "Waiting to be published";
                 } else if (data === "Rejected") {
                     currentStatus = "Rejected";
                 }
@@ -213,7 +218,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             },
         }, {
             "targets": 13, "render": function (data, type, row) {
-                let elem = "<a class='green-link' href='workflow_details?id=" + data[0] + "'>Review</a><br>";
+                let elem = "<a class='btn btn-sm' href='workflow_details?id=" + data[0] + "'>Review</a><br>";
                 // if (data[1] !== "Approved" && data[1] !== "Rejected") {
                 //     elem += "<a class='green-link' href='#' onclick='setStatus(\"Approve\", " + data[0] + ")'>Approve</a><br><a class='green-link' href='#' onclick='setStatus(\"Reject\" ," + data[0] + ")'>Reject</a>";
                 // }

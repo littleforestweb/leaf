@@ -88,6 +88,25 @@ def api_get_menu(accountId: str, reference: str):
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
 
+@menus.route('/api_menu/get_menu_details/<accountId>/<reference>')
+@login_required
+def api_get_menu_details(accountId: str, reference: str):
+    """
+    Retrieves details for a single menu based on account and reference.
+
+    Args:
+        accountId (str): Account ID.
+        reference (str): Menu reference.
+
+    Returns:
+        JSON response with data for the specified menu.
+    """
+    return get_menu_details(accountId, reference)
+
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
 @menus.route('/api_menu/get_menu_columns/<accountId>/<reference>', methods=['GET', 'POST'])
 @login_required
 def api_get_menu_columns(accountId: str, reference: str):
@@ -324,7 +343,7 @@ def update_dynamic_menu(accountId: str, account_menu: str):
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
 
-@menus.route('/addnew/<accountId>/<account_menu>', methods=['POST'])
+@menus.route('/addnew_menu/<accountId>/<account_menu>', methods=['POST'])
 @login_required
 def addnew_dynamic_menu(accountId: str, account_menu: str):
     """
@@ -344,7 +363,7 @@ def addnew_dynamic_menu(accountId: str, account_menu: str):
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
 
-@menus.route('/delete/<accountId>/<account_menu>', methods=['POST'])
+@menus.route('/delete_menu/<accountId>/<account_menu>', methods=['POST'])
 @login_required
 def delete_dynamic_menu(accountId: str, account_menu: str):
     """
