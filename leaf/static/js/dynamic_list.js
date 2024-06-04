@@ -107,6 +107,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
     $('#editDynamicList form .mb-3 .selected-container').remove('');
     $('input[type="checkbox"]').removeAttr('checked');
     let checked_items = $('input[type="checkbox"]').first();
+
     if (type === 'edit') {
         checked_items = $('input[type="checkbox"]:checked');
     }
@@ -661,7 +662,11 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                         }
                     }
                     if (spanId === "leaf_selected_rss") {
-                        $('#e-' + spanId).parent().addClass("hidden");
+                        if (type === 'edit') {
+                            $('#e-' + spanId).parent().addClass("hidden");
+                        } else {
+                            $('#a-' + spanId).parent().addClass("hidden");
+                        } 
                         thisValue = escapeHtml(spans[x].textContent).split(',');
                         for (var singleValue in thisValue) {
                             $("#this_rss_id_" + thisValue[singleValue]).prop('checked', true);
