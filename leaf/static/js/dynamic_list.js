@@ -436,7 +436,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                 // Populate edit fields
                                 let site_dynamic_list = escapeHtml(spans[x].textContent.replace(/__BACKSLASH__TO_REPLACE__/g, "\\").replace(/&comma;/g, ','));
 
-                                if (allAccountSettings[f][6] && allAccountSettings[f][6] === "textarea") {
+                                if (allAccountSettings[f][6] && (allAccountSettings[f][6] === "textarea" || allAccountSettings[f][6] === "text_area")) {
                                     var attrs = {};
 
                                     $.each($('#e-' + spanId).attributes, function () {
@@ -446,7 +446,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                     $('#e-' + spanId).replaceWith($('<textarea name="e-' + spanId + '" class="form-control ' + mandatoryClass + '" id="e-' + spanId + '"></textarea>'));
                                     $('#a-' + spanId).replaceWith($('<textarea name="a-' + spanId + '" class="form-control ' + mandatoryClass + '" id="a-' + spanId + '"></textarea>'));
                                     if (type === 'edit') {
-                                        $('#e-' + spanId).val(site_dynamic_list);
+                                        $('#e-' + spanId).val(site_dynamic_list.replace(/&amp;amp;comma;/g, ','));
                                     }
 
                                 } else if (allAccountSettings[f][6] && allAccountSettings[f][6] === "input") {
