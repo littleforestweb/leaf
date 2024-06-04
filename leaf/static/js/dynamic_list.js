@@ -452,7 +452,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
 
                                 } else if (allAccountSettings[f][6] && allAccountSettings[f][6] === "input") {
                                     if (type === 'edit') {
-                                        $('#e-' + spanId).addClass(mandatoryClass).val(site_dynamic_list);
+                                        $('#e-' + spanId).addClass(mandatoryClass).val(site_dynamic_list.replace(/__BACKSLASH__TO_REPLACE_ON_WEB__/g, "\\"));
                                     } else {
                                         $('#a-' + spanId).addClass(mandatoryClass);
                                     }
