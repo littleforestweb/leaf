@@ -20,6 +20,7 @@ from leaf import Config
 from leaf import decorators
 from leaf.lists.models import get_list_configuration
 from leaf.users.models import get_user_permission_level
+from leaf.files_manager.models import get_rss_feed_by_id
 
 
 def is_workflow_owner(workflow_id):
@@ -278,12 +279,26 @@ def process_type_3(workflow_data, mycursor):
             list_page_url = list_template
 
             if results and len(results) > 0:
+                workflow_data["leaf_selected_rss"] = ""
+                workflow_data["leaf_selected_rss_ids"] = ""
+
                 for result in results:
                     for key, value in result.items():
                         if key.lower() in publication_names:
                             publication_date = value
                         else:
                             list_page_url = list_page_url.replace("{" + key + "}", str(value))
+                        
+                        if key.lower() == "leaf_selected_rss":
+                            rss_values = value
+                            rss_values = rss_values.split(",")
+                            rss_data = []
+                            for rss_item in rss_values:
+                                rss_data.append(get_rss_feed_by_id(rss_item))
+                            
+                            workflow_data["leaf_selected_rss"] = rss_data
+                            workflow_data["leaf_selected_rss_ids"] = value
+
 
                 for field in items:
                     if publication_date and (field == "year" or field == "month" or field == "day"):
@@ -307,6 +322,8 @@ def process_type_3(workflow_data, mycursor):
             workflow_data["siteId"] = f"{list_page_url}" + (Config.PAGES_EXTENSION if not list_page_url.endswith(Config.PAGES_EXTENSION) else "")
 
             workflow_data["publication_date"] = False if not publication_date else publication_date
+
+            workflow_data["preview_server"] = Config.PREVIEW_SERVER
 
 
 def get_workflows():
@@ -1226,61 +1243,64 @@ def proceed_action_workflow(request, not_real_request=None):
                                 except Exception as e:
                                     pass
 
-                for srv in Config.DEPLOYMENTS_SERVERS:
+            for srv in Config.DEPLOYMENTS_SERVERS:
 
-                    HTMLPath = werkzeug.utils.escape(request.form.get("list_item_url_path").strip("/"))
-                    local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
-                    list_feed_path = werkzeug.utils.escape(request.form.get("list_feed_path").strip("/"))
+                HTMLPath = werkzeug.utils.escape(request.form.get("list_item_url_path").strip("/"))
+                local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
+                list_feed_path = werkzeug.utils.escape(request.form.get("list_feed_path").strip("/"))
+                rss_ids = werkzeug.utils.escape(request.form.get("rss_ids"))
 
-                    # Replace Preview Reference with Live webserver references
-                    with open(local_path) as inFile:
-                        data = inFile.read()
+                # Replace Preview Reference with Live webserver references
+                with open(local_path) as inFile:
+                    data = inFile.read()
 
-                    original_content = data
-                    original_content_changed = data.replace(Config.LEAFCMS_SERVER, Config.PREVIEW_SERVER + Config.DYNAMIC_PATH.strip('/') + '/leaf')
-                    data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf')
-                    with open(local_path, "w") as outFile:
-                        outFile.write(data)
+                original_content = data
+                original_content_changed = data.replace(Config.LEAFCMS_SERVER, Config.PREVIEW_SERVER + Config.DYNAMIC_PATH.strip('/') + '/leaf')
+                data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf')
+                with open(local_path, "w") as outFile:
+                    outFile.write(data)
 
-                    assets = find_page_assets(original_content_changed)
+                assets = find_page_assets(original_content_changed)
 
-                    # SCP Files
-                    remote_path = os.path.join(srv["remote_path"], HTMLPath)
-                    ssh = paramiko.SSHClient()
-                    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                    if srv["pkey"] != "":
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                        if srv["pw"] == "":
-                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                        else:
-                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                # SCP Files
+                remote_path = os.path.join(srv["remote_path"], HTMLPath)
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                if srv["pkey"] != "":
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                    if srv["pw"] == "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
                     else:
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-                    with ssh.open_sftp() as scp:
-                        actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
-                        for asset in assets:
-                            assetFilename = asset.split("/")[-1].strip('/')
-                            assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
-                            assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
-                            actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
-                            if not actionResultAsset:
-                                try:
-                                    raise Exception("Failed to SCP - " + lp + " - " + rp)
-                                except Exception as e:
-                                    pass
-                        if not actionResult:
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                else:
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                with ssh.open_sftp() as scp:
+                    actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                    for asset in assets:
+                        assetFilename = asset.split("/")[-1].strip('/')
+                        assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
+                        assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                        actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
+                        if not actionResultAsset:
                             try:
                                 raise Exception("Failed to SCP - " + lp + " - " + rp)
                             except Exception as e:
                                 pass
+                    if not actionResult:
+                        try:
+                            raise Exception("Failed to SCP - " + lp + " - " + rp)
+                        except Exception as e:
+                            pass
 
-                    with open(local_path, "w") as outFile:
-                        outFile.write(original_content)
+                with open(local_path, "w") as outFile:
+                    outFile.write(original_content)
 
-                # Regenerate Feed
-                if not isMenu:
-                    # gen_sitemap(mycursor, thisType)
-                    gen_feed(mycursor, account_list, list_feed_path, listName, accountId)
+            # Regenerate Feed
+            if not isMenu:
+                site_ids = werkzeug.utils.escape(request.form.get("site_ids"))
+                # This will generate a global feed for all items using the same template
+                gen_feed(mycursor, account_list, list_feed_path, listName, accountId)
+                update_feed_lists(mycursor, account_list, rss_ids, listName, accountId, site_ids)
         else:
             print("Publication date in the future: " + str(target_date) + "; current date: " + str(current_date))
 
@@ -1376,6 +1396,25 @@ def proceed_action_workflow(request, not_real_request=None):
             print("No need to Set Status as it's already set to 'Waiting'")
 
         return {"message": "waiting", "action": action}
+
+def update_feed_lists(mycursor, account_list, rss_ids, list_name, accountId, site_ids):
+    rss_ids = rss_ids.split(",")
+    site_ids = site_ids.split(",")
+    for site_item in site_ids:
+        query_list = f"SELECT * FROM account_{accountId}_list_{list_name} WHERE id=%s"
+        params_list = (site_item,)
+        mycursor.execute(query_list, params_list)
+        pages = mycursor.fetchall()
+
+        # Get column headers from the cursor description
+        headers = [description[0] for description in mycursor.description]
+
+        # Combine headers and data
+        results = [dict(zip(headers, row)) for row in pages]
+    
+        for rss_item in rss_ids:
+            rss_data = get_rss_feed_by_id(rss_item)
+            update_rss_feed(mycursor, accountId, list_name, rss_data[0][2], results[0])
 
 
 def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
@@ -1637,6 +1676,153 @@ def find_page_assets(original_content):
     return assets
 
 
+def update_rss_feed(mycursor, account_id, list_name, file_path, new_item_data):
+    tree, root = parse_xml(os.path.join(Config.WEBSERVER_FOLDER, file_path))
+    create_or_update_item_element(tree, root, mycursor, account_id, list_name, new_item_data, file_path)
+    # tree.write(os.path.join(Config.WEBSERVER_FOLDER, file_path), encoding='UTF-8', xml_declaration=True)
+
+
+def parse_xml(file_path):
+    tree = ET.parse(file_path)
+    root = tree.getroot()
+    return tree, root
+
+
+def find_item_by_guid(root, new_guid):
+    for item in root.findall('./channel/item'):
+        guid = item.find('guid').text
+        # print(guid + " : "+ new_guid)
+        if guid == new_guid:
+            return item
+    return None
+
+def create_or_update_item_element(tree, root, mycursor, account_id, list_name, new_item_data, file_path):
+    template_query = f"SELECT template_location FROM account_%s_list_template WHERE in_lists=%s"
+    params = (int(account_id), list_name,)
+    mycursor.execute(template_query, params)
+    list_template_result = mycursor.fetchone()
+
+    if list_template_result and len(list_template_result) > 0:
+        list_template = list_template_result[0]
+
+        # Regular expression to find words within curly braces
+        pattern = r'{(.*?)}'
+
+        # Using re.findall() to extract the contents within the braces
+        items = re.findall(pattern, list_template)
+
+        publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
+
+        item = ET.Element('item')
+
+        for srv in Config.DEPLOYMENTS_SERVERS:
+            guid_found = False
+            existing_item = False
+            publication_date = False
+            publication_date_formated = False
+            guid_key = False
+            guid_key_value = False
+            list_page_url = list_template
+            image_element = None  # Track the image element to attach captions
+            for key, value in new_item_data.items():
+                # Check if this field can serve as a GUID
+                if is_guid_candidate(key):
+                    guid_key = key
+                    guid_key_value = value
+                    guid_found = True
+
+                if key.lower() in publication_names:
+                    publication_date = value
+                    value = format_pub_date(value)
+                else:
+                    list_page_url = list_page_url.replace("{" + key + "}", str(value))
+
+                if publication_date:
+                    for field in items:
+                        if field == "year" or field == "month" or field == "day":
+                            single_field = extract_month_and_day(publication_date, field)
+                            single_field = str(single_field)
+
+                            list_page_url = list_page_url.replace("{" + field + "}", single_field)
+
+                    if isinstance(value, datetime.datetime):
+                        value = value.strftime('%Y-%m-%d %H:%M:%S')
+
+
+                if key.lower() == 'id' or key.lower() == 'modified_by' or key.lower() == 'created_by' or key.lower() == 'created' or key.lower() == 'modified' or key.lower() == 'leaf_selected_rss':
+                    continue  # Skip if it's the id key, modified_by key or created_by key
+
+                if is_empty_or_whitespace(value):
+                    continue  # Skip creating element for empty or whitespace-only values
+
+                # Normalize key names to camelCase
+                normalized_key = camel_case_convert(key)
+                if guid_key != key:
+                    sub_elem = ET.SubElement(item, normalized_key)
+                    sub_elem.text = value
+
+                # Check for image URLs and create a separate image element
+                if is_image_url(str(value)):
+                    image_element = ET.SubElement(sub_elem, "image")
+                    ET.SubElement(image_element, "url").text = value
+
+                # Attach captions directly to the image element
+                if image_element and is_caption_key(key):
+                    ET.SubElement(image_element, "title").text = value
+
+            if guid_found:
+                if isinstance(guid_key_value, str) and not (guid_key_value.startswith('http://') or guid_key_value.startswith('https://')):
+                    guid_key_value = os.path.join(srv["webserver_url"], list_page_url)
+                    guid_key_value = guid_key_value + (Config.PAGES_EXTENSION if not guid_key_value.endswith(Config.PAGES_EXTENSION) else "")
+
+                guid_elem = ET.SubElement(item, "guid")
+                guid_elem.text = guid_key_value
+                existing_item = find_item_by_guid(root, guid_key_value)
+
+                guid_candidate_elem = ET.SubElement(item, guid_key)
+                guid_candidate_elem.text = guid_key_value
+
+                existing_item = find_item_by_guid(root, guid_key_value)
+                if existing_item:
+                    for elem in item:
+                        existing_elem = existing_item.find(elem.tag)
+                        if existing_elem is not None:
+                            existing_elem.text = elem.text
+                        else:
+                            existing_item.append(elem)
+                    create_or_update_item_element(tree, root, mycursor, account_id, list_name, item, file_path)
+                    # Write the RSS Feed in Preview Server
+                    tree.write(os.path.join(Config.WEBSERVER_FOLDER, file_path), encoding='UTF-8', xml_declaration=True)
+                    
+                    # Write the RSS Feed in Remote Server
+                    rss_directory = os.path.dirname(os.path.join(srv["remote_path"], file_path))
+                    if not os.path.exists(rss_directory):
+                        os.makedirs(rss_directory)
+                    tree.write(os.path.join(srv["remote_path"], file_path), encoding='UTF-8', xml_declaration=True)
+                    print("Existing item updated in RSS feed.")
+                else:
+                    add_item_to_channel(tree, root, item, os.path.join(Config.WEBSERVER_FOLDER, file_path), account_id, list_name, mycursor, srv)
+                    print("New item added to RSS feed.")
+
+
+def add_item_to_channel(tree, root, new_item, file_path, account_id, list_name, mycursor, srv):
+    channel = root.find('channel')
+    channel.append(new_item)
+    # Write the RSS Feed in Preview Server
+    tree.write(os.path.join(Config.WEBSERVER_FOLDER, file_path), encoding='UTF-8', xml_declaration=True)
+    
+    # Write the RSS Feed in Remote Server
+    rss_directory = os.path.dirname(os.path.join(srv["remote_path"], file_path))
+    if not os.path.exists(rss_directory):
+        os.makedirs(rss_directory)
+    tree.write(os.path.join(srv["remote_path"], file_path), encoding='UTF-8', xml_declaration=True)
+
+
+def format_pub_date(date_str):
+    date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+    return date_obj.strftime('%a, %d %b %Y %H:%M:%S +0000')
+
+
 def camel_case_convert(key):
     """Convert keys from 'pub-date' or 'pub date' to 'pubDate'."""
     parts = re.split('-| ', key)
@@ -1645,7 +1831,7 @@ def camel_case_convert(key):
 
 def is_guid_candidate(key):
     """Determine if the key is a suitable candidate for use as a GUID."""
-    candidates = ['link', 'url', 'file_url', 'path', 'item_path', 'item_link', 'file_path', 'doc_link', 'doc', 'doc_path', 'document_path', 'document_url']
+    candidates = ['link', 'url', 'file_link', 'file_url', 'item_link', 'item_url', 'doc_link', 'document_url']
     key_lower = key.lower().replace('_', '').replace('-', '')
     return any(candidate in key_lower for candidate in candidates)
 

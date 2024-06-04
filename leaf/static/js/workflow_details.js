@@ -37,7 +37,7 @@ CKEDITOR.plugins.add("anchor", {
     }
 });
 
-async function setStatus(status, id, type, listName, accountId, files_details, site_ids, list_item_url_path, list_feed_path, publication_date) {
+async function setStatus(status, id, type, listName, accountId, files_details, site_ids, list_item_url_path, list_feed_path, publication_date, rss_ids) {
     document.getElementById("actionContainer").innerHTML = "<span>Deploying...</span>"
 
     let jsonConfigSaveByFields = false;
@@ -72,7 +72,8 @@ async function setStatus(status, id, type, listName, accountId, files_details, s
         "site_ids": site_ids,
         "list_item_url_path": list_item_url_path,
         "list_feed_path": list_feed_path,
-        "publication_date": publication_date
+        "publication_date": publication_date,
+        "rss_ids": rss_ids
     }
 
     $.ajax({

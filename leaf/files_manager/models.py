@@ -88,6 +88,8 @@ def list_all_files(site_id, archive):
                 access_files = [{"id": file[0], "Path": os.path.join("/", file[1]), "Filename": file[2], "Mime Type": file[3], "Created By": file[4], "Created": file[5]} for file in site_files if any(file[1].startswith(path.lstrip("/")) for path in folder_paths)]
             else:
                 access_files = [{"id": file[0], "Path": os.path.join("/", file[1]), "Filename": file[2], "Mime Type": file[3], "Created By": file[4], "Created": file[5]} for file in site_files]
+        else:
+            access_files = [{"id": file[0], "Path": os.path.join("/", file[1]), "Filename": file[2], "Mime Type": file[3], "Created By": file[4], "Created": file[5]} for file in site_files]
 
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
@@ -147,7 +149,7 @@ def list_rss_files(site_id, archive):
                        IFNULL({userUsernameEmail}, %s) AS modified_by, site_assets.created 
                 FROM site_assets 
                 LEFT JOIN user ON site_assets.modified_by = user.id 
-                WHERE site_id IN ({sites_result_placeholder}) AND site_assets.mimeType = 'text/xml' AND site_assets.status <> -1
+                WHERE site_id IN ({sites_result_placeholder}) AND (site_assets.mimeType = 'text/xml' OR site_assets.mimeType = 'application/xml') AND site_assets.status <> -1
                 """
             else:
                 files_query = f"""
@@ -155,7 +157,7 @@ def list_rss_files(site_id, archive):
                        IFNULL({userUsernameEmail}, %s) AS modified_by, site_assets.created 
                 FROM site_assets 
                 LEFT JOIN user ON site_assets.modified_by = user.id 
-                WHERE site_id IN ({sites_result_placeholder}) AND site_assets.mimeType = 'text/xml' AND site_assets.status = -1
+                WHERE site_id IN ({sites_result_placeholder}) AND (site_assets.mimeType = 'text/xml' OR site_assets.mimeType = 'application/xml') AND site_assets.status = -1
                 """
 
             # Execute the query with the modified_by_default parameter
@@ -163,9 +165,9 @@ def list_rss_files(site_id, archive):
 
         else:
             if archive != "1":
-                files_query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, IFNULL({userUsernameEmail}, '{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}') AS modified_by, site_assets.created FROM site_assets LEFT JOIN user ON site_assets.modified_by = user.id WHERE site_id = %s AND site_assets.mimeType = 'text/xml' AND site_assets.status <> -1"
+                files_query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, IFNULL({userUsernameEmail}, '{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}') AS modified_by, site_assets.created FROM site_assets LEFT JOIN user ON site_assets.modified_by = user.id WHERE site_id = %s AND (site_assets.mimeType = 'text/xml' OR site_assets.mimeType = 'application/xml') AND site_assets.status <> -1"
             else:
-                files_query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, IFNULL({userUsernameEmail}, '{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}') AS modified_by, site_assets.created FROM site_assets LEFT JOIN user ON site_assets.modified_by = user.id WHERE site_id = %s AND site_assets.mimeType = 'text/xml' AND site_assets.status = -1"
+                files_query = f"SELECT site_assets.id, site_assets.path, site_assets.filename, site_assets.mimeType, IFNULL({userUsernameEmail}, '{first_user_admin[0]}, {first_user_admin[1]}, {first_user_admin[2]}') AS modified_by, site_assets.created FROM site_assets LEFT JOIN user ON site_assets.modified_by = user.id WHERE site_id = %s AND (site_assets.mimeType = 'text/xml' OR site_assets.mimeType = 'application/xml') AND site_assets.status = -1"
             mycursor.execute(files_query, [site_id])
 
         site_files = mycursor.fetchall()
@@ -183,6 +185,8 @@ def list_rss_files(site_id, archive):
                 access_files = [{"id": file[0], "Path": os.path.join("/", file[1]), "Filename": file[2], "Mime Type": file[3], "Created By": file[4], "Created": file[5]} for file in rss_feeds if any(file[1].startswith(path.lstrip("/")) for path in folder_paths)]
             else:
                 access_files = [{"id": file[0], "Path": os.path.join("/", file[1]), "Filename": file[2], "Mime Type": file[3], "Created By": file[4], "Created": file[5]} for file in rss_feeds]
+        else:
+            access_files = [{"id": file[0], "Path": os.path.join("/", file[1]), "Filename": file[2], "Mime Type": file[3], "Created By": file[4], "Created": file[5]} for file in rss_feeds]
 
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
@@ -190,6 +194,25 @@ def list_rss_files(site_id, archive):
     finally:
         mydb.close()
         return access_files
+
+
+def get_rss_feed_by_id(item_id):
+    site_rss = []
+    try:
+        # Get a database connection using the 'db_connection' decorator
+        mydb, mycursor = decorators.db_connection()
+
+        files_query = f"SELECT * FROM site_assets WHERE id = %s AND (site_assets.mimeType = 'text/xml' OR site_assets.mimeType = 'application/xml') AND site_assets.status <> -1"
+        mycursor.execute(files_query, [item_id])
+        site_rss = mycursor.fetchall()
+
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        raise RuntimeError(f"An error occurred while fetching files: {str(e)}")
+    finally:
+        mydb.close()
+        return site_rss
+
 
 # Function to check if a file starts with <rss> tag
 def is_rss_feed(file_path):
@@ -225,6 +248,16 @@ def insert_file_into_db(accountId, site_id, filename, folder, mime_type, status)
     mydb, mycursor = decorators.db_connection()
 
     try:
+        if site_id == False:
+            # Execute query to get the site IDs associated with the account
+            mycursor.execute("SELECT id FROM sites WHERE accountId = %s", (session["accountId"],))
+            sites_result = mycursor.fetchall()
+
+            # Extract site IDs from the result
+            try:
+                site_id = sites_result[0][0]
+            except IndexError:
+                site_id = None
 
         path = os.path.join(folder, filename)
         query = f"INSERT INTO site_assets (site_id, filename, path, mimeType, status, modified_by) VALUES (%s, %s, %s, %s, %s, %s)"

@@ -91,9 +91,14 @@ div.float-right button.btn {
 .users-with-access .form-check-input[type=checkbox] {
     margin-top: 2px;
 }
+.rss_feed_entry .form-check-input[type=checkbox] {
+    margin-top: -10px;
+}
 
 .users-with-access .form-check-input[type=checkbox]:after,
-.users-with-access .form-check-input[type=checkbox]:before {
+.users-with-access .form-check-input[type=checkbox]:before,
+.rss_feed_entry .form-check-input[type=checkbox]:after,
+.rss_feed_entry .form-check-input[type=checkbox]:before {
     display: none;
 }
 
@@ -708,7 +713,8 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
     position: relative;
 }
 
-.users-with-access-container {
+.users-with-access-container,
+.rss-list-container {
     margin-top: 10px;
     box-shadow: 0 0 1px #000;
     font-size: 13px;
@@ -716,20 +722,29 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
     overflow: auto;
 }
 
-.users-with-access-container.warning-not-completed {
+.users-with-access-container.warning-not-completed,
+.rss-list-container.warning-not-completed {
     border: 1px solid red;
     border-radius: 3px;
 }
 
-.form-control.users-with-access {
+.form-control.users-with-access,
+.form-control.rss_feed_entry {
     width: 32.5333333333%;
     display: inline-block;
     margin: .4%;
 }
 
-.form-control.users-with-access:hover {
+.form-control.users-with-access:hover,
+.form-control.rss_feed_entry:hover {
     background: #e3e3e3;
     cursor: pointer;
+}
+
+.form-control.rss_feed_entry .rss_file_location {
+    float: left;
+    font-size: 12px;
+    color: #5f5f5f;
 }
 
 div.dt-button-collection > :last-child > * {

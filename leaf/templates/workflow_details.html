@@ -80,6 +80,24 @@
                             </div>
                         </div>
                     {% endif %}
+                    {% if data.leaf_selected_rss %}
+                        <div class="mb-2 col-sm-12">
+                            <div class="card">
+                                <h5 class="card-header">RSS Feeds</h5>
+                                <div class="card-body">
+                                    <div class="row">
+                                        {% for singleRss in data.leaf_selected_rss %}
+                                            {% if singleRss[0] %}
+                                                <div class="row">
+                                                    <div class="col-12"><span><a target="_blank" href="{{ data.preview_server }}{{ singleRss[0][2] }}">{{ data.preview_server }}{{ singleRss[0][2] }}</a></span></div>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
                     <div class="mb-2 col-sm-12">
                         <div class="card" id="comments-sections">
                             <h5 class="card-header">Comments
@@ -178,13 +196,13 @@
                                         {% if data.status == "7" %}
                                             <span>No Action needed <br> Will be published on: <strong>{{ data.publication_date }}</strong></span>
                                         {% elif (data.status != "6" and data.status != "Approved") and data.status != "Rejected" %}
-                                            <button class='btn btn-success' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}")' {% if data.user_permission_level != 4 %} disabled {% endif %}>Approve</button>
+                                            <button class='btn btn-success' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}", "{{ data.leaf_selected_rss_ids }}")' {% if data.user_permission_level != 4 %} disabled {% endif %}>Approve</button>
                                             -
-                                            <button class='btn btn-red' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}")' {% if data.user_permission_level != 4 %} disabled {% endif %}>Reject</button>
+                                            <button class='btn btn-red' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}", "{{ data.leaf_selected_rss_ids }}")' {% if data.user_permission_level != 4 %} disabled {% endif %}>Reject</button>
                                         {% elif data.status == "Rejected" %}
-                                            <button class='btn btn-success' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}")' {% if data.user_permission_level != 4 %} disabled {% endif %}>Approve</button>
+                                            <button class='btn btn-success' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}", "{{ data.leaf_selected_rss_ids }}")' {% if data.user_permission_level != 4 %} disabled {% endif %}>Approve</button>
                                             -
-                                            <button class='btn btn-red' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}")' {% if data.user_permission_level != 4 %} disabled {% endif %}>Reject</button>
+                                            <button class='btn btn-red' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}", "{{ data.leaf_selected_rss_ids }}")' {% if data.user_permission_level != 4 %} disabled {% endif %}>Reject</button>
                                         {% else %}
                                             <span>No Action needed</span>
                                         {% endif %}

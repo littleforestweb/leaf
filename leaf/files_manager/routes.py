@@ -57,7 +57,10 @@ def files_api_upload():
       remote, and live URLs for reference.
     """
     account_id = werkzeug.utils.escape(request.form.get("account_id"))
-    site_id = werkzeug.utils.escape(request.form.get("site_id"))
+    if request.form.get("site_id"):
+        site_id = werkzeug.utils.escape(request.form.get("site_id"))
+    else:
+        site_id = False
     folder = werkzeug.utils.escape(request.form.get("folder"))
     file = request.files["file"]
     filename = file.filename
@@ -80,8 +83,9 @@ def files_api_upload():
     # Set Preview URL
     preview_url = Config.PREVIEW_SERVER + "/" if not Config.PREVIEW_SERVER.endswith("/") else Config.PREVIEW_SERVER
     preview_url = preview_url + os.path.join(folder, filename)
-
     mime_type = mimetypes.guess_type(preview_url)[0]
+    if not mime_type or mime_type == "":
+        mime_type = file.mimetype
 
     models.insert_file_into_db(account_id, site_id, filename, folder, mime_type, "200")
 

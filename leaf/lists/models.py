@@ -1230,6 +1230,18 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         return jsonify({"full_list": full_list})
 
 
+def add_column_if_not_exists(cursor, table_name, column_name, column_definition):
+    # Check if the column exists
+    cursor.execute(f"""
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_NAME = '{table_name}' AND COLUMN_NAME = '{column_name}'
+    """)
+    if cursor.fetchone()[0] == 0:
+        # Column does not exist, so add it
+        cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition}")
+
+
 def update_dynamic_lists(request, accountId: str, account_list: str):
     """
     Update a dynamic list in the database.
@@ -1290,6 +1302,16 @@ def update_dynamic_lists_database(accountId, account_list, item_id, this_request
     try:
 
         if isinstance(int(accountId), int) and isinstance(int(item_id), int):
+
+            leaf_selected_rss = this_request.get('leaf_selected_rss', [])
+            rss_string = ','.join(leaf_selected_rss)
+
+            # Add the column if it does not exist
+            add_column_if_not_exists(mycursor, account_list, "leaf_selected_rss", "TEXT")
+
+            mycursor.execute(f"UPDATE {account_list} SET leaf_selected_rss = %s, modified = CURRENT_TIMESTAMP WHERE id = %s", (rss_string, item_id))
+            mydb.commit()
+
             for key, val in this_request.items():
                 if key.startswith("e-"):
                     final_key = key.replace("e-", "")
@@ -1299,16 +1321,16 @@ def update_dynamic_lists_database(accountId, account_list, item_id, this_request
                         val = ';'.join(val)
 
                     # Update the database with the new value (use parameterized query to prevent SQL injection)
-                    if final_key != 'id':
+                    if final_key != 'id' and final_key != 'leaf_selected_rss':
                         final_val = val.replace('"', "'")
                         mycursor.execute(f"UPDATE {account_list} SET {final_key} = %s, modified = CURRENT_TIMESTAMP WHERE id = %s", (final_val, item_id))
                         mydb.commit()
 
-                    index += 1
+                index += 1
 
-                    # Check if all columns are processed, then return the updated list data
-                    if (index == len(this_request)):
-                        return columns_to_return
+                # Check if all columns are processed, then return the updated list data
+                if (index == len(this_request)):
+                    return columns_to_return
         else:
             print("Invalid accountId")
 

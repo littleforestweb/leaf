@@ -177,8 +177,8 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
 
             for (x = 0; x < spans.length; x++) {
                 if (allAccountSettings && allAccountSettings.length > 0) {
+                    var spanId = spans[x].getAttribute("id").split('_pos_')[0].toLowerCase();
                     for (var f = 0; f < allAccountSettings.length; f++) {
-                        var spanId = spans[x].getAttribute("id").split('_pos_')[0].toLowerCase();
                         var thisFieldItem = allAccountSettings[f][2].toLowerCase();
                         if (allAccountSettings[f][1] === reference && thisFieldItem === spanId) {
 
@@ -190,8 +190,8 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                 if (type === 'edit') {
                                     $('#e-' + spanId).attr('disabled', true);
                                     if ($('#e-' + spanId).val() === '') {
-                                        $('#e-' + spanId).val(thisLabel).removeAttr('id', 'e-' + spanId).attr('id', 'eRobot-' + spanId).attr('class', 'form-control eRobot-field');
-                                        $('#eRobot-' + spanId).parent().append('<input id="e-' + spanId + '" type="hidden" value="' + userId + '" />');
+                                        $('#e-' + spanId).val(thisLabel).removeAttr('id', 'eRobot-' + spanId).attr('id', 'eRobot-' + spanId).attr('class', 'form-control eRobot-field');
+                                        $('#eRobot-' + spanId).parent().append('<input id="e-' + spanId + '" name="e-' + spanId + '" type="hidden" value="' + userId + '" />');
                                     }
                                 } else {
                                     $('#a-' + spanId).attr('disabled', true);
@@ -624,7 +624,47 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                             }
                         }
                         if ((x + 1) === spans.length && (f + 1) === allAccountSettings.length) {
+                            
+                            $('form#' + type + '-' + reference).find("#list-rss-container").remove();
+
+                            let rss_list = await $.get("/files/list_rss_files", function (result) {
+                                return result;
+                            });
+
+                            $('form#' + type + '-' + reference).append('<div id="list-rss-container" class="mb-3 list-rss"><div class="row form-row"><div class="form-group col-md-8"><label for="e-list-rss" class="col-form-label">RSS List:</label></div><div class="form-group col-md-4"><input type="search" name="rss-list-search" id="rss-list-search" class="form-control" placeholder="Search..." aria-label="Search for..." autocomplete="off" spellcheck="false"></div></div><div class="rss-list-container"></div></div>');
+                            
+                            for (var single in rss_list) {
+                                var rss_single = rss_list[single];
+                                $('form#' + type + '-' + reference + ' .rss-list-container').append('<label for="this_rss_id_' + rss_single["id"] + '" class="form-control rss_feed_entry"><span class="rss_file">' + rss_single["Filename"] + '</span><span class="rss_file_location">' + rss_single["Path"] + '</span><input type="checkbox" class="form-check-input pull-right this-rss-id" name="this_rss_id_' + rss_single["id"] + '" id="this_rss_id_' + rss_single["id"] + '"></label>');
+                            }
+
+                            // Disable Enter
+                            $('#rss-list-search').on('keypress', function (e) {
+                                if (e.keyCode === 13) {
+                                    e.preventDefault(); // Prevent default behavior of return key
+                                    return false; // Stop further execution
+                                }
+                            });
+
+                            $('#rss-list-search').on('keyup', function (e) {
+                                let tagElems = $('.rss_feed_entry');
+                                $(tagElems).hide();
+                                for (let i = 0; i < tagElems.length; i++) {
+                                    let tag = $(tagElems).eq(i);
+                                    if (($(tag).children('span.rss_file_location').text().toLowerCase()).indexOf($(this).val().toLowerCase()) !== -1) {
+                                        $(tag).show();
+                                    }
+                                }
+                            });
+
                             $('#editDynamicList').removeClass('loadingBg');
+                        }
+                    }
+                    if (spanId === "leaf_selected_rss") {
+                        $('#e-' + spanId).parent().addClass("hidden");
+                        thisValue = escapeHtml(spans[x].textContent).split(',');
+                        for (var singleValue in thisValue) {
+                            $("#this_rss_id_" + thisValue[singleValue]).prop('checked', true);
                         }
                     }
                 }
@@ -653,6 +693,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
     lastEntry = escapeHtml(lastEntry);
 
     $(".previewButton").prop('disabled', true);
+    $(".publish-btn").prop('disabled', true);
 
     var selectedItem = '';
     // Get list configuration
@@ -687,15 +728,19 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         matches.push(match[1]);
     }
 
+    var thisValId = escapeHtml($('input[type="checkbox"]:not(.this-rss-id):checked').val());
+
+    if (!thisValId) {
+        thisValId = escapeHtml($('#e-id').val());
+    }
+
     publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
     var fieldsToLink = thisTemplate;
-    var thisValId = '';
+
     for (var field in matches) {
-        thisValId = escapeHtml($('input[type="checkbox"]:checked').val());
-        if (!thisValId) {
-            thisValId = escapeHtml($('#e-id').val());
-        }
+
         var singleField = $('span#' + matches[field] + '_pos_' + thisValId).html();
+
         if (matches[field] === "year" || matches[field] === "month" || matches[field] === "day") {
             let matchingColumn = null;
 
@@ -712,6 +757,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
             singleField = extractMonthAndDay(singleField, matches[field]);
             singleField = singleField.toString();
         }
+
         if (singleField) {
             singleField = singleField.split('/');
         }
@@ -782,6 +828,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
             }
 
             $(".previewButton").prop('disabled', false);
+            $(".publish-btn").prop('disabled', false);
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
             $('#publishDynamicList').modal('hide');
@@ -807,6 +854,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
             }
 
             $(".previewButton").prop('disabled', false);
+            $(".publish-btn").prop('disabled', false);
         }
     });
 }
@@ -924,6 +972,11 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
             linkToPreview = preview_server + dynamic_path + thisTemplate + '.html?' + thisParameters + '=' + fieldsToLink
         }
 
+        let selectedRssCheckboxes = document.querySelectorAll('.this-rss-id:checked');
+        let selectedRssValues = Array.from(selectedRssCheckboxes).map(cb => cb.name.replace('this_rss_id_', ''));
+
+        form_data.leaf_selected_rss = selectedRssValues;
+
         $.ajax({
             type: "POST",
             url: "/update/" + accountId + "/account_" + accountId + "_list_" + reference,
@@ -1034,11 +1087,11 @@ async function getFormData(formid, userId = false, preview_server) {
         }
     }
 
-    var allFormElements = Array.from(form.querySelectorAll('input:not([type="search"]):not([type="checkbox"]):not(.file-name-reference):not(.clear-btn):not(.ck-hidden):not(.ck-input):not(.hidden-field):not(.document-remover):not(.eRobot-field), select, textarea, div.form-select')).filter(element => element.id);
+    var allFormElements = Array.from(form.querySelectorAll('input:not([type="search"]):not([type="checkbox"]):not(.file-name-reference):not(.clear-btn):not(.ck-hidden):not(.ck-input):not(.hidden-field):not(.document-remover):not(.eRobot-field):not(:disabled), select, textarea, div.form-select')).filter(element => element.id);
     let formdata = {};
 
     var mandatoryElementsNotCompleted = [];
-
+    
     for (const element of allFormElements) {
         if (element.classList.value.includes('mandatoryField') || (element.closest('textarea') && element.closest('textarea').classList.value.includes('mandatoryField'))) {
             mandatoryElementsNotCompleted.push(element.id);
@@ -2054,7 +2107,7 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
                         headColumns[xx][7] = e[7];
                     }
 
-                    if (headColumns[xx][0] === e[2] && e[6] === 'hidde-it') {
+                    if ((headColumns[xx][0] === e[2] && e[6] === 'hidde-it') || headColumns[xx][0] === 'leaf_selected_rss') {
                         hideIt = true;
                     } else if ((headColumns[xx][0] === e[2] && e[6] === 'multiselect') || (headColumns[xx][0] === e[2] && e[6] === 'multi_checkbox')) {
                         shouldSplitArray = true;
@@ -2289,9 +2342,11 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
             $('input[type="checkbox"]').on('click', function () {
                 $(".deleteButton").prop('disabled', true);
                 $(".previewButton").prop('disabled', true);
+                $(".publish-btn").prop('disabled', true);
                 if ($('input[type="checkbox"]:checked').length > 0) {
                     $(".deleteButton").prop('disabled', false);
                     $(".previewButton").prop('disabled', false);
+                    $(".publish-btn").prop('disabled', false);
                 }
 
                 $(".editButton").prop('disabled', true);

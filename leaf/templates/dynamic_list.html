@@ -471,7 +471,7 @@
             <div class="header-1">
                 <h3 class="pull-left">{{ referenceNoUnderscores }}</h3>
                 <div class="header-btns pull-right">
-                    <button type="button" class="btn btn-blue publish-btn" data-bs-toggle="modal" data-bs-target="#publishDynamicList" onclick="publishList()">Publish</button>
+                    <button type="button" class="btn btn-blue publish-btn" data-bs-toggle="modal" data-bs-target="#publishDynamicList" onclick="publishList()" disabled>Publish</button>
                     <button type="button" class="btn btn-orange previewButton" onclick="publishDynamicList('{{ accountId }}', '{{ reference }}', 'preview', '{{ preview_server }}', '{{ dynamic_path }}', false, false, false, true, false, false, this, '{{ userId }}')" disabled>Preview</button>
                     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addDynamicList" onclick="populateEditDynamicListDialog('{{ accountId }}', '{{ reference }}', 'add', '{{ userId }}');">Add</button>
                     <!-- <button type="button" class="btn btn-blue editButton" data-bs-toggle="modal" data-bs-target="#editDynamicList" onclick="populateEditDynamicListDialog('{{ accountId }}', '{{ reference }}', 'edit', 'false', '{{ userId }}');" disabled>Edit</button> -->
