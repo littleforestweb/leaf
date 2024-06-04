@@ -1186,7 +1186,8 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         # Save new page in the correct folder based on template
         file_to_save = os.path.join(Config.WEBSERVER_FOLDER, file_url_path.strip("/"))
         folder_to_save_item = os.path.dirname(file_to_save)
-
+        print(file_to_save)
+        print(list_template_html)
         os.makedirs(folder_to_save_item, exist_ok=True)
         with open(file_to_save, 'w') as out_file:
             out_file.write(list_template_html)
@@ -1415,6 +1416,9 @@ def prepare_columns_and_values_when_adding_list(this_request, accountId):
                 columns.append(final_key)
                 column_values.append(val)
 
+    columns.append("modified_by")
+    column_values.append(str(session["id"]))
+
     return columns, column_values
 
 
@@ -1464,6 +1468,15 @@ def update_dynamically_linked_fields_when_adding_list(mydb, mycursor, accountId,
 
     final_key_to_update_dynamically = ''
     final_val_to_update_dynamically = ''
+
+    leaf_selected_rss = this_request.get('leaf_selected_rss', [])
+    rss_string = ','.join(leaf_selected_rss)
+
+    # Add the column if it does not exist
+    add_column_if_not_exists(mycursor, account_list, "leaf_selected_rss", "TEXT")
+
+    mycursor.execute(f"UPDATE {account_list} SET leaf_selected_rss = %s, modified = CURRENT_TIMESTAMP WHERE id = %s", (rss_string, last_row_id))
+    mydb.commit()
 
     for key, val in this_request.items():
         if key.startswith("a-"):

@@ -18,9 +18,9 @@ from werkzeug.datastructures import MultiDict
 
 from leaf import Config
 from leaf import decorators
+from leaf.files_manager.models import get_rss_feed_by_id
 from leaf.lists.models import get_list_configuration
 from leaf.users.models import get_user_permission_level
-from leaf.files_manager.models import get_rss_feed_by_id
 
 
 def is_workflow_owner(workflow_id):
@@ -224,13 +224,17 @@ def process_type_6_or_7(workflow_data, mycursor):
 
         # Construct the SQL query
         query = f"SELECT site_assets.path, site_assets.filename FROM site_assets WHERE id IN ({placeholders})"
-
-        # Execute the query
         mycursor.execute(query, tuple(filesIds))  # Convert list to tuple for the query parameters
         result = mycursor.fetchall()  # fetchall if you expect more than one row, fetchone if you expect only one
 
         workflow_data["files_details"] = result
         workflow_data["preview_server"] = Config.PREVIEW_SERVER
+
+        # Add site URL
+        query = f"SELECT site_assets.path FROM site_assets WHERE id = %s"
+        mycursor.execute(query, filesIds)
+        result = mycursor.fetchone()[0]
+        workflow_data["siteUrl"] = urljoin(Config.PREVIEW_SERVER, result)
 
 
 def process_type_3(workflow_data, mycursor):
@@ -288,17 +292,16 @@ def process_type_3(workflow_data, mycursor):
                             publication_date = value
                         else:
                             list_page_url = list_page_url.replace("{" + key + "}", str(value))
-                        
+
                         if key.lower() == "leaf_selected_rss":
                             rss_values = value
                             rss_values = rss_values.split(",")
                             rss_data = []
                             for rss_item in rss_values:
                                 rss_data.append(get_rss_feed_by_id(rss_item))
-                            
+
                             workflow_data["leaf_selected_rss"] = rss_data
                             workflow_data["leaf_selected_rss_ids"] = value
-
 
                 for field in items:
                     if publication_date and (field == "year" or field == "month" or field == "day"):
@@ -1397,6 +1400,7 @@ def proceed_action_workflow(request, not_real_request=None):
 
         return {"message": "waiting", "action": action}
 
+
 def update_feed_lists(mycursor, account_list, rss_ids, list_name, accountId, site_ids):
     rss_ids = rss_ids.split(",")
     site_ids = site_ids.split(",")
@@ -1411,7 +1415,7 @@ def update_feed_lists(mycursor, account_list, rss_ids, list_name, accountId, sit
 
         # Combine headers and data
         results = [dict(zip(headers, row)) for row in pages]
-    
+
         for rss_item in rss_ids:
             rss_data = get_rss_feed_by_id(rss_item)
             update_rss_feed(mycursor, accountId, list_name, rss_data[0][2], results[0])
@@ -1696,6 +1700,7 @@ def find_item_by_guid(root, new_guid):
             return item
     return None
 
+
 def create_or_update_item_element(tree, root, mycursor, account_id, list_name, new_item_data, file_path):
     template_query = f"SELECT template_location FROM account_%s_list_template WHERE in_lists=%s"
     params = (int(account_id), list_name,)
@@ -1748,7 +1753,6 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
                     if isinstance(value, datetime.datetime):
                         value = value.strftime('%Y-%m-%d %H:%M:%S')
 
-
                 if key.lower() == 'id' or key.lower() == 'modified_by' or key.lower() == 'created_by' or key.lower() == 'created' or key.lower() == 'modified' or key.lower() == 'leaf_selected_rss':
                     continue  # Skip if it's the id key, modified_by key or created_by key
 
@@ -1793,7 +1797,7 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
                     create_or_update_item_element(tree, root, mycursor, account_id, list_name, item, file_path)
                     # Write the RSS Feed in Preview Server
                     tree.write(os.path.join(Config.WEBSERVER_FOLDER, file_path), encoding='UTF-8', xml_declaration=True)
-                    
+
                     # Write the RSS Feed in Remote Server
                     rss_directory = os.path.dirname(os.path.join(srv["remote_path"], file_path))
                     if not os.path.exists(rss_directory):
@@ -1810,7 +1814,7 @@ def add_item_to_channel(tree, root, new_item, file_path, account_id, list_name, 
     channel.append(new_item)
     # Write the RSS Feed in Preview Server
     tree.write(os.path.join(Config.WEBSERVER_FOLDER, file_path), encoding='UTF-8', xml_declaration=True)
-    
+
     # Write the RSS Feed in Remote Server
     rss_directory = os.path.dirname(os.path.join(srv["remote_path"], file_path))
     if not os.path.exists(rss_directory):
