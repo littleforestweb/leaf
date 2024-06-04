@@ -733,44 +733,48 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         matches.push(match[1]);
     }
 
-    var thisValId = escapeHtml($('input[type="checkbox"]:not(.this-rss-id):checked').val());
+    if (lastEntry) {
+        var thisValId = escapeHtml($('input[type="checkbox"]:not(.this-rss-id):checked').val());
 
-    if (!thisValId) {
-        thisValId = escapeHtml($('#e-id').val());
-    }
+        if (!thisValId) {
+            thisValId = escapeHtml($('#e-id').val());
+        }
 
-    publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
-    var fieldsToLink = thisTemplate;
+        publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
+        var fieldsToLink = thisTemplate;
 
-    for (var field in matches) {
+        for (var field in matches) {
 
-        var singleField = $('span#' + matches[field] + '_pos_' + thisValId).html();
+            var singleField = $('span#' + matches[field] + '_pos_' + thisValId).html();
 
-        if (matches[field] === "year" || matches[field] === "month" || matches[field] === "day") {
-            let matchingColumn = null;
+            if (matches[field] === "year" || matches[field] === "month" || matches[field] === "day") {
+                let matchingColumn = null;
 
-            for (const column of headColumns) {
-                if (publication_names.includes(column[2].toLowerCase())) {
-                    matchingColumn = column;
-                    break;
+                for (const column of headColumns) {
+                    if (publication_names.includes(column[2].toLowerCase())) {
+                        matchingColumn = column;
+                        break;
+                    }
                 }
+                singleField = $('input#e-' + matchingColumn[2].toLowerCase()).val();
+                if (singleField == "") {
+                    singleField = $('span#' + matchingColumn[2].toLowerCase() + '_pos_' + thisValId).html();
+                }
+                singleField = extractMonthAndDay(singleField, matches[field]);
+                singleField = singleField.toString();
             }
-            singleField = $('input#e-' + matchingColumn[2].toLowerCase()).val();
-            if (singleField == "") {
-                singleField = $('span#' + matchingColumn[2].toLowerCase() + '_pos_' + thisValId).html();
+
+            if (singleField) {
+                singleField = singleField.split('/');
             }
-            singleField = extractMonthAndDay(singleField, matches[field]);
-            singleField = singleField.toString();
-        }
 
-        if (singleField) {
-            singleField = singleField.split('/');
+            // Remove empty strings and join with "/"
+            singleField = singleField.filter(item => item !== '').join('/');
+            fieldsToLink = fieldsToLink.replace("{" + matches[field] + "}", singleField);
+            selectedItem = thisValId;
         }
-
-        // Remove empty strings and join with "/"
-        singleField = singleField.filter(item => item !== '').join('/');
-        fieldsToLink = fieldsToLink.replace("{" + matches[field] + "}", singleField);
-        selectedItem = thisValId;
+    } else {
+        selectedItem = lastEntry;
     }
 
     var checkCountryField = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.country pre .hidden');

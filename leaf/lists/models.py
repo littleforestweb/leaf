@@ -1415,6 +1415,9 @@ def prepare_columns_and_values_when_adding_list(this_request, accountId):
                 columns.append(final_key)
                 column_values.append(val)
 
+    columns.append("modified_by")
+    column_values.append(str(session["id"]))
+
     return columns, column_values
 
 
