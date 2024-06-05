@@ -106,7 +106,7 @@
     </div>
 
     <!-- DELETE MODAL -->
-    <div class="modal fade" id="deleteDynamicList" tabindex="-1" aria-labelledby="deleteDynamicListLabel" aria-hidden="true" data-bs-backdrop='static'>
+    <!-- <div class="modal fade" id="deleteDynamicList" tabindex="-1" aria-labelledby="deleteDynamicListLabel" aria-hidden="true" data-bs-backdrop='static'>
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -119,6 +119,44 @@
                 <div class="modal-footer" id="modal-footer-delete">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
                     <button type="button" class="btn btn-danger" onclick="deleteDynamicListEntries('{{ accountId }}', '{{ reference }}', 'save', '{{ preview_server }}', '{{ dynamic_path }}', this, '{{ userId }}')">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div> -->
+    <div class="modal fade" id="deleteDynamicList" tabindex="-1" aria-labelledby="deleteDynamicListLabel" aria-hidden="true" data-bs-backdrop='static'>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteDynamicListLabel">Send {{ referenceNoUnderscores }} to a reviewer for deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="doRefreshPage()"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="container">
+                        <div class="mb-3 list-users">
+                            <div class="row form-row">
+                                <div class="form-group col-md-8">
+                                    <label for="e-list-users" class="col-form-label">List of users:</label>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <input type="search" name="users-with-access-search" id="users-with-access-search" class="form-control" placeholder="Search..." aria-label="Search for..." autocomplete="off" spellcheck="false">
+                                </div>
+                            </div>
+                            <div class="users-with-access-container">
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <label class="form-label" for="publishComments">Comments</label><textarea class="form-control" id="publishComments" placeholder="Comments" rows="3"></textarea>
+                        </div>
+                        <!-- <div class="row">
+                            <div class="col text-left">
+                                This will create a workflow request to publish the {{ referenceNoUnderscores }} List. Do you want to proceed?
+                            </div>
+                        </div> -->
+                    </div>
+                </div>
+                <div class="modal-footer" id="modal-footer-publish">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="doRefreshPage()">Close</button>
+                    <button type="button" class="btn btn-success" onclick="createPublishTicket('{{ accountId }}', '{{ reference }}', 'delete', '{{ preview_server }}', '{{ dynamic_path }}', this)">Send</button>
                 </div>
             </div>
         </div>
@@ -475,7 +513,7 @@
                     <button type="button" class="btn btn-orange previewButton" onclick="publishDynamicList('{{ accountId }}', '{{ reference }}', 'preview', '{{ preview_server }}', '{{ dynamic_path }}', false, false, false, true, false, false, this, '{{ userId }}')" disabled>Preview</button>
                     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addDynamicList" onclick="populateEditDynamicListDialog('{{ accountId }}', '{{ reference }}', 'add', false, '{{ userId }}');">Add</button>
                     <!-- <button type="button" class="btn btn-blue editButton" data-bs-toggle="modal" data-bs-target="#editDynamicList" onclick="populateEditDynamicListDialog('{{ accountId }}', '{{ reference }}', 'edit', 'false', '{{ userId }}');" disabled>Edit</button> -->
-                    <button type="button" class="btn btn-red deleteButton" data-bs-toggle="modal" data-bs-target="#deleteDynamicList" disabled>Delete</button>
+                    <button type="button" class="btn btn-red deleteButton" data-bs-toggle="modal" data-bs-target="#deleteDynamicList" onclick="publishList()" disabled>Delete</button>
                     <span class="dropdown_actions">
                         <button type="button" id="actions" class="btn btn-blue" onclick="dropDownActionsToggle()">Actions</button>
                         <span class="actions_container hide">
