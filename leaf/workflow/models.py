@@ -19,7 +19,7 @@ from werkzeug.datastructures import MultiDict
 from leaf import Config
 from leaf import decorators
 from leaf.files_manager.models import get_rss_feed_by_id
-from leaf.lists.models import get_list_configuration
+from leaf.lists.models import get_list_configuration, custom_serializer
 from leaf.users.models import get_user_permission_level
 
 
@@ -174,8 +174,8 @@ def process_specific_workflow_type(workflow_data, mycursor):
         process_type_1_or_5(workflow_data, mycursor)
     elif workflow_data["type"] == 6 or workflow_data["type"] == 7:
         process_type_6_or_7(workflow_data, mycursor)
-    elif str(workflow_data["type"]) == "3":
-        process_type_3(workflow_data, mycursor)
+    elif str(workflow_data["type"]) == "3" or str(workflow_data["type"]) == "8":
+        process_type_3_or_8(workflow_data, mycursor)
 
 
 def process_type_1_or_5(workflow_data, mycursor):
@@ -237,9 +237,9 @@ def process_type_6_or_7(workflow_data, mycursor):
         workflow_data["siteUrl"] = urljoin(Config.PREVIEW_SERVER, result)
 
 
-def process_type_3(workflow_data, mycursor):
+def process_type_3_or_8(workflow_data, mycursor):
     """
-    Process workflow details for type 3.
+    Process workflow details for type 3 or 8.
 
     Args:
         workflow_data (dict): Workflow details.
@@ -747,7 +747,7 @@ def add_workflow(thisRequest):
             title = title_dict.get(thisType, 'New Leaf dynamic workflow review')
 
         # Handle specific types
-        if thisType == 3 or thisType == 5:
+        if thisType == 3 or thisType == 5 or thisType == 8:
             siteIds = thisRequest.get("entryId")
 
         if thisType == 6 or thisType == 7:
@@ -1141,7 +1141,7 @@ def proceed_action_workflow(request, not_real_request=None):
                     scp.put(local_path, remote_path)
 
     elif listName:
-        if target_date <= current_date:
+        if target_date <= current_date or thisType == 8:
             if not_real_request is None:
                 accountId = session['accountId']
             else:
@@ -1154,15 +1154,12 @@ def proceed_action_workflow(request, not_real_request=None):
             listName = ''.join(e for e in listName if e.isalnum())
             if isMenu:
                 completeListName = listName + "Menu.json"
-                account_list = "account_" + str(accountId) + "_menu_" + listName
+                account_list = f"account_{str(accountId)}_menu_{listName}"
             else:
                 completeListName = listName + "List.json"
-                account_list = "account_" + str(accountId) + "_list_" + listName
-
-            saveByFields = werkzeug.utils.escape(request.form.get("saveByFields"))
-            fieldsToSaveBy = False
-            if saveByFields == '1':
-                fieldsToSaveBy = werkzeug.utils.escape(request.form.get("fieldsToSaveBy"))
+                account_list = f"account_{str(accountId)}_list_{listName}"
+            
+            site_ids = werkzeug.utils.escape(request.form.get("site_ids"))
 
             # do scp for LISTS
             for srv in Config.DEPLOYMENTS_SERVERS:
@@ -1187,47 +1184,63 @@ def proceed_action_workflow(request, not_real_request=None):
                         except Exception as e:
                             pass
 
+
+                saveByFields = werkzeug.utils.escape(request.form.get("saveByFields"))
+                fieldsToSaveBy = False
+                if saveByFields == '1':
+                    fieldsToSaveBy = werkzeug.utils.escape(request.form.get("fieldsToSaveBy"))
+
+                final_list = list()
                 # Save list by pre-selected field independently to speed up the front end (on preview and live environment)
                 if fieldsToSaveBy:
                     fieldsToSaveBy = "".join(fieldsToSaveBy)
                     fieldsToSaveBy = fieldsToSaveBy.split(';')
                     for singleFieldToSaveBy in fieldsToSaveBy:
-                        if isMenu:
-                            mycursor.execute("SELECT DISTINCT %s FROM account_%s_menu_%s", (str(singleFieldToSaveBy), str(accountId), listName,))
-                        else:
-                            mycursor.execute("SELECT DISTINCT %s FROM account_%s_list_%s", (str(singleFieldToSaveBy), str(accountId), listName,))
+                        mycursor.execute(f"SELECT {singleFieldToSaveBy} FROM {account_list} WHERE id = %s", (site_ids,))
+                        fullEntry = mycursor.fetchall()
 
-                        listCleanArray = set()
-                        for fullSingleEntry in mycursor.fetchall():
-                            entries = fullSingleEntry[0].split(';')
-                            for singleEntry in entries:
-                                listCleanArray.add(singleEntry.strip().lower())
+                        if fullEntry and len(fullEntry) > 0:
 
-                        final_list = list(listCleanArray)
+                            listCleanArray = set()
+                            for fullSingleEntry in fullEntry:
+                                entries = fullSingleEntry[0].split(';')
+                                for singleEntry in entries:
+                                    listCleanArray.add(singleEntry.strip().lower())
 
-                        for singleListItem in final_list:
-                            if isMenu:
-                                mycursor.execute("SELECT * FROM account_%s_menu_%s WHERE LOWER(%s) LIKE '%%s%' ", (str(accountId), listName, singleFieldToSaveBy, singleListItem,))
-                            else:
-                                mycursor.execute("SELECT * FROM account_%s_list_%s WHERE LOWER(%s) LIKE '%%s%' ", (str(accountId), listName, singleFieldToSaveBy, singleListItem,))
+                            final_list.append(listCleanArray)
+
+                    pages_to_delete_from_feed = False
+                    if thisType == 8:
+                        query_list = f"SELECT * FROM {account_list} WHERE id=%s"
+                        params_list = (site_ids,)
+                        mycursor.execute(query_list, params_list)
+                        pages_to_delete_from_feed = mycursor.fetchall()
+                        mycursor.execute(f"DELETE FROM {account_list} WHERE id=%s", (site_ids,))
+                        mydb.commit()
+
+                    for singleListItemList in final_list:
+                        for singleListItem in singleListItemList:
+                            mycursor.execute(f"SELECT * FROM {account_list} WHERE LOWER(%s) = %s ", (singleFieldToSaveBy, singleListItem,))
 
                             row_headers = [x[0] for x in mycursor.description]
                             fullListByCountry = mycursor.fetchall()
                             json_data_by_country = [dict(zip(row_headers, result)) for result in fullListByCountry]
-                            json_data_to_write_by_country = json.dumps(json_data_by_country).replace('__BACKSLASH__TO_REPLACE__', '\\')
+                            json_data_to_write_by_country = json.dumps(json_data_by_country, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
 
                             if isMenu:
-                                with open(os.path.join(Config.ENV_PATH, "json_by_country", listName + "_" + singleListItem + "_Menu.json"), "w") as outFileByCountry:
+                                completeListNameByCountry = listName + "_" + singleListItem.replace("/", "__fslash__") + "_Menu.json"
+                                os.makedirs(os.path.join(Config.ENV_PATH, "json_by_field"), exist_ok=True)
+                                with open(os.path.join(Config.ENV_PATH, "json_by_field", completeListNameByCountry), "w") as outFileByCountry:
                                     outFileByCountry.write(json_data_to_write_by_country)
-                                completeListNameByCountry = listName + "_" + singleListItem + "_" + "Menu.json"
                             else:
-                                with open(os.path.join(Config.ENV_PATH, "json_by_country", listName + "_" + singleListItem + "_List.json"), "w") as outFileByCountry:
+                                completeListNameByCountry = listName + "_" + singleListItem.replace("/", "__fslash__") + "_List.json"
+                                os.makedirs(os.path.join(Config.ENV_PATH, "json_by_field"), exist_ok=True)
+                                with open(os.path.join(Config.ENV_PATH, "json_by_field", completeListNameByCountry), "w") as outFileByCountry:
                                     outFileByCountry.write(json_data_to_write_by_country)
-                                completeListNameByCountry = listName + "_" + singleListItem + "_" + "List.json"
 
                             DYNAMIC_PATH = Config.DYNAMIC_PATH.strip('/')
-                            local_path = os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, "json_by_country", completeListNameByCountry)
-                            remote_path = os.path.join(srv["remote_path"], DYNAMIC_PATH, "json_by_country", completeListNameByCountry)
+                            local_path = os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, "json_by_field", completeListNameByCountry)
+                            remote_path = os.path.join(srv["remote_path"], DYNAMIC_PATH, "json_by_field", completeListNameByCountry)
                             ssh = paramiko.SSHClient()
                             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                             if srv["pkey"] != "":
@@ -1300,10 +1313,9 @@ def proceed_action_workflow(request, not_real_request=None):
 
             # Regenerate Feed
             if not isMenu:
-                site_ids = werkzeug.utils.escape(request.form.get("site_ids"))
                 # This will generate a global feed for all items using the same template
                 gen_feed(mycursor, account_list, list_feed_path, listName, accountId)
-                update_feed_lists(mycursor, account_list, rss_ids, listName, accountId, site_ids)
+                update_feed_lists(mycursor, account_list, rss_ids, listName, accountId, site_ids, thisType, pages_to_delete_from_feed)
         else:
             print("Publication date in the future: " + str(target_date) + "; current date: " + str(current_date))
 
@@ -1401,24 +1413,26 @@ def proceed_action_workflow(request, not_real_request=None):
         return {"message": "waiting", "action": action}
 
 
-def update_feed_lists(mycursor, account_list, rss_ids, list_name, accountId, site_ids):
+def update_feed_lists(mycursor, account_list, rss_ids, list_name, accountId, site_ids, thisType, pages):
     rss_ids = rss_ids.split(",")
     site_ids = site_ids.split(",")
     for site_item in site_ids:
-        query_list = f"SELECT * FROM account_{accountId}_list_{list_name} WHERE id=%s"
-        params_list = (site_item,)
-        mycursor.execute(query_list, params_list)
-        pages = mycursor.fetchall()
+        if thisType != 8:
+            query_list = f"SELECT * FROM account_{accountId}_list_{list_name} WHERE id=%s"
+            params_list = (site_item,)
+            mycursor.execute(query_list, params_list)
+            pages = mycursor.fetchall()
 
         # Get column headers from the cursor description
         headers = [description[0] for description in mycursor.description]
 
         # Combine headers and data
         results = [dict(zip(headers, row)) for row in pages]
+        result = results[0]
 
         for rss_item in rss_ids:
             rss_data = get_rss_feed_by_id(rss_item)
-            update_rss_feed(mycursor, accountId, list_name, rss_data[0][2], results[0])
+            update_rss_feed(mycursor, accountId, list_name, rss_data[0][2], result, thisType)
 
 
 def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
@@ -1680,9 +1694,9 @@ def find_page_assets(original_content):
     return assets
 
 
-def update_rss_feed(mycursor, account_id, list_name, file_path, new_item_data):
+def update_rss_feed(mycursor, account_id, list_name, file_path, new_item_data, thisType):
     tree, root = parse_xml(os.path.join(Config.WEBSERVER_FOLDER, file_path))
-    create_or_update_item_element(tree, root, mycursor, account_id, list_name, new_item_data, file_path)
+    create_or_update_item_element(tree, root, mycursor, account_id, list_name, new_item_data, file_path, thisType)
     # tree.write(os.path.join(Config.WEBSERVER_FOLDER, file_path), encoding='UTF-8', xml_declaration=True)
 
 
@@ -1700,8 +1714,16 @@ def find_item_by_guid(root, new_guid):
             return item
     return None
 
+def find_and_delete_item_by_guid(root, new_guid):
+    channel = root.find('./channel')
+    for item in channel.findall('item'):
+        guid = item.find('guid').text
+        if guid == new_guid:
+            channel.remove(item)
+            return True
+    return False
 
-def create_or_update_item_element(tree, root, mycursor, account_id, list_name, new_item_data, file_path):
+def create_or_update_item_element(tree, root, mycursor, account_id, list_name, new_item_data, file_path, thisType):
     template_query = f"SELECT template_location FROM account_%s_list_template WHERE in_lists=%s"
     params = (int(account_id), list_name,)
     mycursor.execute(template_query, params)
@@ -1787,15 +1809,21 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
                 guid_candidate_elem.text = guid_key_value
 
                 existing_item = find_item_by_guid(root, guid_key_value)
+
                 if existing_item:
-                    for elem in item:
-                        existing_elem = existing_item.find(elem.tag)
-                        if existing_elem is not None:
-                            existing_elem.text = elem.text
-                        else:
-                            existing_item.append(elem)
-                    create_or_update_item_element(tree, root, mycursor, account_id, list_name, item, file_path)
-                    # Write the RSS Feed in Preview Server
+                    if thisType == 8:
+                        existing_item = find_and_delete_item_by_guid(root, guid_key_value)
+                        delete_item_from_disk(list_page_url)
+                    else:
+                        for elem in item:
+                            existing_elem = existing_item.find(elem.tag)
+                            if existing_elem is not None:
+                                existing_elem.text = elem.text
+                            else:
+                                existing_item.append(elem)
+                        create_or_update_item_element(tree, root, mycursor, account_id, list_name, item, file_path, thisType)
+                        # Write the RSS Feed in Preview Server
+                    
                     tree.write(os.path.join(Config.WEBSERVER_FOLDER, file_path), encoding='UTF-8', xml_declaration=True)
 
                     # Write the RSS Feed in Remote Server
@@ -1803,10 +1831,17 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
                     if not os.path.exists(rss_directory):
                         os.makedirs(rss_directory)
                     tree.write(os.path.join(srv["remote_path"], file_path), encoding='UTF-8', xml_declaration=True)
-                    print("Existing item updated in RSS feed.")
+                    
+                    if thisType == 8:
+                        print("Existing item deleted in RSS feed.")
+                    else:
+                        print("Existing item updated in RSS feed.")
                 else:
-                    add_item_to_channel(tree, root, item, os.path.join(Config.WEBSERVER_FOLDER, file_path), account_id, list_name, mycursor, srv)
-                    print("New item added to RSS feed.")
+                    if thisType != 8:
+                        add_item_to_channel(tree, root, item, file_path, account_id, list_name, mycursor, srv)
+                        print("New item added to RSS feed.")
+                    else:
+                        print("No item to remove in RSS feed.")
 
 
 def add_item_to_channel(tree, root, new_item, file_path, account_id, list_name, mycursor, srv):
@@ -1821,6 +1856,22 @@ def add_item_to_channel(tree, root, new_item, file_path, account_id, list_name, 
         os.makedirs(rss_directory)
     tree.write(os.path.join(srv["remote_path"], file_path), encoding='UTF-8', xml_declaration=True)
 
+def delete_item_from_disk(item_path):
+    to_delete = os.path.join(Config.WEBSERVER_FOLDER, item_path)
+    to_delete = to_delete + (Config.PAGES_EXTENSION if not to_delete.endswith(Config.PAGES_EXTENSION) else "")
+    if os.path.isfile(to_delete):
+        os.remove(to_delete)
+        print(f"File {to_delete} has been removed.")
+    else:
+        print(f"File {to_delete} does not exist.")
+    for srv in Config.DEPLOYMENTS_SERVERS:
+        to_delete_remote = os.path.join(srv['remote_path'], item_path)
+        to_delete_remote = to_delete_remote + (Config.PAGES_EXTENSION if not to_delete_remote.endswith(Config.PAGES_EXTENSION) else "")
+        if os.path.isfile(to_delete_remote):
+            os.remove(to_delete_remote)
+            print(f"File {to_delete_remote} has been removed.")
+        else:
+            print(f"File {to_delete_remote} does not exist.")
 
 def format_pub_date(date_str):
     date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d')

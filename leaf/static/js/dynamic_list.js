@@ -787,8 +787,11 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         }
 
         // Remove empty strings and join with "/"
-        singleField = singleField.filter(item => item !== '').join('/');
-        fieldsToLink = fieldsToLink.replace("{" + matches[field] + "}", singleField);
+        if (singleField) {
+            singleField = singleField.filter(item => item !== '').join('/');
+            fieldsToLink = fieldsToLink.replace("{" + matches[field] + "}", singleField);
+        }
+        
         selectedItem = thisValId;
     }
 
@@ -2440,8 +2443,8 @@ function createPublishTicket(accountId, reference, type, server, path, button) {
 
     form_data = {
         accountId: accountId,
-        title: 'List ' + reference + ' submission',
-        type: 3,
+        title: (type === "delete" ? ('List ' + reference + ' removal') : ('List ' + reference + ' submission')),
+        type: (type === "delete" ? 8 : 3),
         priority: 1,
         dueDate: formattedDate,
         listName: reference,
