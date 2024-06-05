@@ -44,7 +44,7 @@ function getFileNameAndExtension(fileName) {
         name = fileName;
     }
 
-    return { name, extension };
+    return {name, extension};
 }
 
 async function setFull_pathSpan() {
@@ -52,12 +52,174 @@ async function setFull_pathSpan() {
     const fullFileName = document.getElementById("file").value.split('\\').pop();
 
     // Get the file name and extension using the helper function
-    const { name, extension } = getFileNameAndExtension(fullFileName);
+    const {name, extension} = getFileNameAndExtension(fullFileName);
     const final_extension = extension.trim().split(".")[1]
 
     // Sanitize only the base name part, preserving the original extension
     const sanitizedFileName = sanitizeFilePath(name) + "." + final_extension;
     document.getElementById("full_path").value = joinPath(folder, sanitizedFileName);
+}
+
+async function populateUserList() {
+    let listOfUsers = await $.get("/api/get_lfi_admin_users/" + accountId, function (result) {
+        return result;
+    });
+
+    $('.users-with-access-container').html('');
+    for (let x = 0; x < listOfUsers.users.length; x++) {
+        let thisUser = listOfUsers.users[x];
+        let userImage = '<span class="logo_image_container"><img class="logo_image" src="' + thisUser["user_image"] + '" onerror="this.style.display=\'none\'" /></span>';
+        if (thisUser["user_image"].startsWith('#')) {
+            let colorToFillBg = thisUser["user_image"];
+            let usernameInitial = (thisUser["username"] ? thisUser["username"] : "LF").charAt(0);
+            userImage = '<span class="logo_image" style="background-color:' + colorToFillBg + '">' + usernameInitial + '</span>';
+        }
+        $(".users-with-access-container").prepend('<label for="thisUserId_' + thisUser["id"] + '" class="form-control users-with-access users-with-access_' + thisUser["id"] + '">' + userImage + '<span class="userName">' + thisUser["username"] + '</span><input type="checkbox" class="form-check-input pull-right this-user-id" name="thisUserId_' + thisUser["id"] + '" id="thisUserId_' + thisUser["id"] + '" ' + '/></span>');
+    }
+
+    // Disable Enter
+    $('#users-with-access-search').on('keypress', function (e) {
+        if (e.keyCode === 13) {
+            e.preventDefault(); // Prevent default behavior of return key
+            return false; // Stop further execution
+        }
+    });
+
+    $('#users-with-access-search').on('keyup', function (e) {
+        let tagElems = $('.users-with-access');
+        $(tagElems).hide();
+        for (let i = 0; i < tagElems.length; i++) {
+            let tag = $(tagElems).eq(i);
+            if (($(tag).children('span.userName').text().toLowerCase()).indexOf($(this).val().toLowerCase()) !== -1) {
+                $(tag).show();
+            }
+        }
+    });
+
+
+    $('.this-user-id').click(function () {
+        $('.this-user-id').not(this).prop("checked", false);
+    });
+}
+
+function upload_file(formData) {
+    fetch('/files/fileupload_api', {
+        method: 'POST',
+        body: formData,
+    })
+        .then(data => {
+            document.getElementById('modal-footer-upload-btn').disabled = true;
+            document.getElementById('modal-footer-upload-close').disabled = true;
+            document.getElementById('file_upload_result').classList.add("form-control");
+            document.getElementById('file_upload_result').classList.remove("is-invalid");
+            document.getElementById('file_upload_result').classList.add("is-valid");
+            document.getElementById('file_upload_result').textContent = 'Upload successful!';
+            console.log(data);
+            setTimeout(function () {
+                window.location.reload();
+            }, 500);
+        })
+        .catch(error => {
+            document.getElementById('file_upload_result').classList.add("form-control");
+            document.getElementById('file_upload_result').classList.remove("is-valid");
+            document.getElementById('file_upload_result').classList.add("is-invalid");
+            document.getElementById('file_upload_result').textContent = 'Upload failed.';
+            console.error('Error:', error);
+        });
+}
+
+function removeFiles(accountId, button) {
+    accountId = escapeHtml(accountId);
+    var entriesToDelete = $('#files_table').find('input[type="checkbox"]:checked').map(function () {
+        return $(this).val();
+    }).get();
+
+    form_data = {
+        account_id: accountId,
+        entries_to_delete: entriesToDelete
+    }
+
+    $.ajax({
+        type: "POST",
+        url: "/files/remove_files",
+        contentType: 'application/json',
+        data: JSON.stringify(form_data),
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        success: function (status) {
+            setTimeout(function () {
+                window.location.reload();
+            }, 500);
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+            console.log("ERROR");
+            setTimeout(function () {
+                window.location.reload();
+            }, 500);
+        }
+    });
+}
+
+async function publishFile() {
+    await populateUserList();
+}
+
+async function createPublishTicket(accountId, type = 6) {
+
+    accountId = escapeHtml(accountId);
+
+    let allSelectedUsers = [];
+    $('.this-user-id:checked').each(function () {
+        let thisId = $(this).attr('id');
+        thisId = thisId.replace('thisUserId_', '');
+        allSelectedUsers.push(thisId);
+    })
+    allSelectedUsers = allSelectedUsers.join(',');
+
+    var dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 5);
+    var formattedDate = dueDate.toISOString().slice(0, 10);
+
+    var entries = $('#files_table').find('input[type="checkbox"]:checked').map(function () {
+        return $(this).val();
+    }).get();
+
+    var theTitle = 'New file(s) submission';
+    if (type === 7) {
+        theTitle = 'New file(s) removal';
+    }
+
+    let comments = document.getElementById("publishComments").value
+
+    let form_data = {
+        accountId: accountId,
+        title: theTitle,
+        dueDate: formattedDate,
+        priority: 1,
+        entryId: entries,
+        type: type,
+        assignEditor: allSelectedUsers,
+        comments: comments,
+    }
+
+    $.ajax({
+        type: "POST",
+        url: "/workflow/add",
+        contentType: 'application/json',
+        data: JSON.stringify(form_data),
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        success: function (entry) {
+            console.log(entry);
+            window.location.replace("/workflow");
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+            console.log("ERROR");
+            window.location.replace("/workflow");
+        }
+    });
 }
 
 window.addEventListener('DOMContentLoaded', async function main() {
@@ -210,7 +372,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             const fullFileName = document.getElementById("file").value.split('\\').pop();
 
             // Get the file name and extension using the helper function
-            const { name, extension } = getFileNameAndExtension(fullFileName);
+            const {name, extension} = getFileNameAndExtension(fullFileName);
             const final_extension = extension.trim().split(".")[1]
 
             // Sanitize only the base name part, preserving the original extension
@@ -218,7 +380,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             const originalFile = fileInput.files[0];
 
             // Create a new File object with the desired name
-            const newFile = new File([originalFile],sanitizedFileName, {
+            const newFile = new File([originalFile], sanitizedFileName, {
                 type: originalFile.type,
                 lastModified: originalFile.lastModified
             });
@@ -240,108 +402,4 @@ window.addEventListener('DOMContentLoaded', async function main() {
         }
     });
 });
-
-function upload_file(formData) {
-    fetch('/files/fileupload_api', {
-        method: 'POST',
-        body: formData,
-    })
-        .then(data => {
-            document.getElementById('modal-footer-upload-btn').disabled = true;
-            document.getElementById('modal-footer-upload-close').disabled = true;
-            document.getElementById('file_upload_result').classList.add("form-control");
-            document.getElementById('file_upload_result').classList.remove("is-invalid");
-            document.getElementById('file_upload_result').classList.add("is-valid");
-            document.getElementById('file_upload_result').textContent = 'Upload successful!';
-            console.log(data);
-            setTimeout(function () {
-                window.location.reload();
-            }, 500);
-        })
-        .catch(error => {
-            document.getElementById('file_upload_result').classList.add("form-control");
-            document.getElementById('file_upload_result').classList.remove("is-valid");
-            document.getElementById('file_upload_result').classList.add("is-invalid");
-            document.getElementById('file_upload_result').textContent = 'Upload failed.';
-            console.error('Error:', error);
-        });
-}
-
-function removeFiles(accountId, button) {
-    accountId = escapeHtml(accountId);
-    var entriesToDelete = $('#files_table').find('input[type="checkbox"]:checked').map(function () {
-        return $(this).val();
-    }).get();
-
-    form_data = {
-        account_id: accountId,
-        entries_to_delete: entriesToDelete
-    }
-
-    $.ajax({
-        type: "POST",
-        url: "/files/remove_files",
-        contentType: 'application/json',
-        data: JSON.stringify(form_data),
-        dataType: 'json',
-        cache: false,
-        processData: false,
-        success: function (status) {
-            setTimeout(function () {
-                window.location.reload();
-            }, 500);
-        },
-        error: function (XMLHttpRequest, textStatus, errorThrown) {
-            console.log("ERROR");
-            setTimeout(function () {
-                window.location.reload();
-            }, 500);
-        }
-    });
-}
-
-function createPublishTicket(accountId, type = 6) {
-
-    accountId = escapeHtml(accountId);
-
-    var dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 5);
-    var formattedDate = dueDate.toISOString().slice(0, 10);
-
-    var entries = $('#files_table').find('input[type="checkbox"]:checked').map(function () {
-        return $(this).val();
-    }).get();
-
-    var theTitle = 'New file(s) submission';
-    if (type == 7) {
-        theTitle = 'New file(s) removal';
-    }
-
-    form_data = {
-        accountId: accountId,
-        title: theTitle,
-        dueDate: formattedDate,
-        priority: 1,
-        entryId: entries,
-        type: type
-    }
-
-    $.ajax({
-        type: "POST",
-        url: "/workflow/add",
-        contentType: 'application/json',
-        data: JSON.stringify(form_data),
-        dataType: 'json',
-        cache: false,
-        processData: false,
-        success: function (entry) {
-            console.log(entry);
-            window.location.replace("/workflow");
-        },
-        error: function (XMLHttpRequest, textStatus, errorThrown) {
-            console.log("ERROR");
-            window.location.replace("/workflow");
-        }
-    });
-}
 
