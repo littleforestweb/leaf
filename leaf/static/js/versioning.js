@@ -228,7 +228,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             // Reapply custom highlighting and modifications here...
             let latestRow = document.querySelector("#checkbox_" + this.api().rows().count()).parentElement.parentElement;
             latestRow.classList.add("isGreen");
-            latestRow.children[1].innerText += " (Latest)";
+            latestRow.children[1].innerText += " (Current Live version)";
         }
     });
 

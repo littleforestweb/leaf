@@ -42,48 +42,42 @@
     </div>
 
     <!-- PUBLISH MODAL -->
-    <div class="modal fade" id="createPublishTicketModal" tabindex="-1" aria-labelledby="createPublishTicketModalLabel" aria-hidden="true">
-        <div class="modal-dialog small-modal">
+    <div class="modal fade" id="publishModal" tabindex="-1" aria-labelledby="Publish Modal" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="createPublishTicketModalLabel">Publish <span id="file_name_to_publish"></span></h5>
+                    <h5 class="modal-title">Send to a reviewer</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="container">
-                        <div class="row">
-                            <div class="col text-left">
-                                This will create a workflow request to publish the selected files. Do you want to proceed?
+                    <form>
+                        <div class="mb-3 list-users">
+                            <div class="row form-row">
+                                <div class="form-group col-md-8">
+                                    <label for="e-list-users" class="col-form-label">List of users:</label>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <input type="search" name="users-with-access-search" id="users-with-access-search" class="form-control" placeholder="Search..." aria-label="Search for..." autocomplete="off" spellcheck="false">
+                                </div>
+                            </div>
+                            <div class="users-with-access-container">
                             </div>
                         </div>
+                    </form>
+                    <div class="mt-2">
+                        <label class="form-label" for="publishComments">Comments</label><textarea class="form-control" id="publishComments" placeholder="Comments" rows="3"></textarea>
+                    </div>
+                    <div hidden class="container mt-2">
+                        <label for="selectedIds" class="form-label">Selected ID's</label><textarea disabled class="form-control" id="selectedIds" rows="1"></textarea>
                     </div>
                 </div>
-                <div class="modal-footer" id="modal-footer-publish">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-success" onclick="createPublishTicket('{{ accountId }}')">Publish</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success">Send</button>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- DELETE MODAL -->
-    <div class="modal fade" id="removeFilesModal" tabindex="-1" aria-labelledby="removeFileLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="removeFileLabel">Remove Files</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <h4>Are you sure you want to remove the selected file(s)?</h4>
-                </div>
-                <div class="modal-footer" id="modal-footer-delete">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-danger" onclick="createPublishTicket('{{ accountId }}', '7')">Remove</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- END PUBLISH MODAL -->
 
     <div class="card mb-4">
         <div class="card-body">
@@ -91,8 +85,8 @@
                 <h3 style="float: left">{% if archive != "1" %}Files Manager{% else %}Files Archive{% endif %}</h3>
                 <div style="float:right; margin-left: 10px;" class="header-btns">
                     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#uploadFilesModal">Upload Files</button>
-                    <button type="button" id="remove_file_btn" class="btn btn-red deleteButton" data-bs-toggle="modal" data-bs-target="#removeFilesModal" disabled>Remove File</button>
-                    <button type="button" id="publish_file_btn" class="btn btn-blue editButton" data-bs-toggle="modal" data-bs-target="#createPublishTicketModal" disabled>Publish</button>
+                    <button type="button" id="publish_file_btn" class="btn btn-blue" onclick="doActionBtn(6)" disabled>Publish</button>
+                    <button type="button" id="remove_file_btn" class="btn btn-red" onclick="doActionBtn(7)" disabled>Delete File</button>
                     {% if archive != "1" %}
                         <a class="btn" target="_self" href="/files/fileupload?siteId={{ site_id }}&archive=1">Archived</a>
                     {% else %}

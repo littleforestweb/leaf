@@ -447,12 +447,14 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                     $('#e-' + spanId).replaceWith($('<textarea name="e-' + spanId + '" class="form-control ' + mandatoryClass + '" id="e-' + spanId + '"></textarea>'));
                                     $('#a-' + spanId).replaceWith($('<textarea name="a-' + spanId + '" class="form-control ' + mandatoryClass + '" id="a-' + spanId + '"></textarea>'));
                                     if (type === 'edit') {
-                                        $('#e-' + spanId).val(site_dynamic_list.replace(/&amp;amp;comma;/g, ','));
+                                        $('#e-' + spanId).addClass(mandatoryClass).val(site_dynamic_list.replace(/&amp;amp;comma;/g, ',').replace(/&amp;amp;/g, '&').replace(/&amp;/g, '&').replace(/__BACKSLASH__TO_REPLACE_ON_WEB__/g, "\\"));
+                                    } else {
+                                        $('#a-' + spanId).addClass(mandatoryClass);
                                     }
 
                                 } else if (allAccountSettings[f][6] && allAccountSettings[f][6] === "input") {
                                     if (type === 'edit') {
-                                        $('#e-' + spanId).addClass(mandatoryClass).val(site_dynamic_list.replace(/__BACKSLASH__TO_REPLACE_ON_WEB__/g, "\\"));
+                                        $('#e-' + spanId).addClass(mandatoryClass).val(site_dynamic_list.replace(/&amp;amp;comma;/g, ',').replace(/&amp;amp;/g, '&').replace(/&amp;/g, '&').replace(/__BACKSLASH__TO_REPLACE_ON_WEB__/g, "\\"));
                                     } else {
                                         $('#a-' + spanId).addClass(mandatoryClass);
                                     }
@@ -686,16 +688,14 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
     });
 }
 
-async function publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, justPreview, lastEntry, thisCountry = false, thisButton, userId = false, task = false) {
+async function publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, justPreview, lastEntry, field_to_save_by = false, thisButton, userId = false, task = false) {
 
     accountId = escapeHtml(accountId);
     reference = escapeHtml(reference);
     env = escapeHtml(env);
     preview_server = escapeHtml(preview_server);
     dynamic_path = escapeHtml(dynamic_path);
-    thisTemplate = escapeHtml(thisTemplate);
-    thisParameters = escapeHtml(thisParameters);
-    fieldsToLink = escapeHtml(fieldsToLink);
+    save_by_field = escapeHtml(save_by_field);
     lastEntry = escapeHtml(lastEntry);
     task = escapeHtml(task);
 
@@ -703,11 +703,6 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
     $(".publish-btn").prop('disabled', true);
 
     var selectedItem = '';
-    // Get list configuration
-    let jsonConfig = await $.get("/api/get_list_configuration/" + accountId + "/" + reference, function (result) {
-        return result;
-    });
-    var values = jsonConfig.columns;
 
     let jsonAllTemplate = await $.get("/api/get_list_template/" + accountId + "/" + reference, function (result) {
         return result;
@@ -749,6 +744,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
     }
 
     publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
+
     var fieldsToLink = thisTemplate;
 
     for (var field in matches) {
@@ -796,17 +792,18 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         selectedItem = thisValId;
     }
 
-    var checkCountryField = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.country pre .hidden');
-    if (!thisCountry && checkCountryField.length > 0) {
-        thisCountry = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.country pre .hidden').html().trim();
-        thisCountry = thisCountry.replace(/,/g, ';');
+    var check_save_by_field = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.' + save_by_field + ' pre .hidden');
+    if (!field_to_save_by && check_save_by_field.length > 0) {
+        field_to_save_by = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.' + save_by_field + ' pre .hidden').html().trim();
+        field_to_save_by = field_to_save_by.replace(/,/g, ';');
     }
 
     $.ajax({
         type: "POST",
         url: "/publish/account_" + accountId + "_list_" + reference + '/' + accountId + '/' + reference + '/' + env,
         data: JSON.stringify({
-            "country_to_update": thisCountry,
+            "save_by_field": save_by_field,
+            "field_to_save_by": field_to_save_by,
             "file_url_path": getFileUrlPath(fieldsToLink, page_extension),
             "list_template_id": listTemplateId,
             "list_item_id": selectedItem,
@@ -963,34 +960,14 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
         var values = jsonConfig.columns;
 
         var thisTemplate = '';
-        var thisParameters = '';
+        var field_to_save_by = '';
         var thisFields = '';
         if (values && values[0]) {
             thisTemplate = values[0][2];
-            thisParameters = values[0][3];
-            thisFields = values[0][4].split(';');
+            field_to_save_by = values[0][3];
+            thisFields = values[0][4];
         }
-
-        var fieldsToLink = '';
-        var index = 0;
-        for (var field in thisFields) {
-            var singleField = $('#e-' + thisFields[field]);
-
-            fieldsToLink += singleField.val();
-            if (thisFields.length > 1 && thisFields.length === index) {
-                fieldsToLink += fieldsToLink + '_';
-            }
-
-            index = index + 1;
-        }
-
-        var linkToPreview = '';
-        if (thisTemplate !== '') {
-            if (!preview_server.endsWith("/")) {
-                preview_server += "/";
-            }
-            linkToPreview = preview_server + dynamic_path + thisTemplate + '.html?' + thisParameters + '=' + fieldsToLink
-        }
+        var save_by_field = $('#e-' + thisFields).val();
 
         let selectedRssCheckboxes = document.querySelectorAll('.this-rss-id:checked');
         let selectedRssValues = Array.from(selectedRssCheckboxes).map(cb => cb.name.replace('this_rss_id_', ''));
@@ -1007,32 +984,16 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
             processData: false,
             success: function (updated) {
 
-                thisCountry = form_data["e-country"];
-
-                if (env === 'preview' && !justPreview || env === 'save' || env === 'saveOnly') {
-                    if (thisCountry && thisCountry !== '' && thisCountry.length > 0) {
-                        publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, false, form_data["e-id"], thisCountry, thisButton, userId);
-                    } else {
-                        publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, false, form_data["e-id"], false, thisButton, userId);
-                    }
+                if (parseInt(field_to_save_by) !== 0) {
+                    field_to_save_by = thisFields;
                 } else {
+                    field_to_save_by = false;
+                }
 
-                    if (thisTemplate !== '') {
-                        openInNewTab(linkToPreview);
-                    } else {
-                        alert("You must have to setup the template in the configuration menu!")
-                    }
-
-                    if (env !== "saveOnly" && env !== "preview" && !justPreview) {
-                        $('#editDynamicList').modal('hide');
-                    }
-                    $('#editDynamicListSuccessNotification').toast('show');
-                    if (env !== "saveOnly" && env !== "preview" && !justPreview) {
-                        location.reload(true);
-                        //doRedrawTable(true, updated.lists, true);
-                    } else {
-                        cleanUpActionButtons()
-                    }
+                if (field_to_save_by && field_to_save_by !== '' && field_to_save_by.length > 0) {
+                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, form_data["e-id"], field_to_save_by, thisButton, userId);
+                } else {
+                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, form_data["e-id"], false, thisButton, userId);
                 }
 
             },
@@ -1276,34 +1237,14 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
         var values = jsonConfig.columns;
 
         var thisTemplate = '';
-        var thisParameters = '';
+        var field_to_save_by = '';
         var thisFields = '';
         if (values && values[0]) {
             thisTemplate = values[0][2];
-            thisParameters = values[0][3];
-            thisFields = values[0][4].split(';');
+            field_to_save_by = values[0][3];
+            thisFields = values[0][4];
         }
-
-        var fieldsToLink = '';
-        var index = 0;
-        for (var field in thisFields) {
-            var singleField = $('#a-' + thisFields[field]);
-
-            fieldsToLink += singleField.val();
-            if (thisFields.length > 1 && thisFields.length === index) {
-                fieldsToLink += fieldsToLink + '_';
-            }
-
-            index = index + 1;
-        }
-
-        var linkToPreview = '';
-        if (thisTemplate !== '') {
-            if (!preview_server.endsWith("/")) {
-                preview_server += "/";
-            }
-            linkToPreview = preview_server + dynamic_path + thisTemplate + '.html?' + thisParameters + '=' + fieldsToLink
-        }
+        var save_by_field = $('#a-' + thisFields).val();
 
         let selectedRssCheckboxes = document.querySelectorAll('.this-rss-id:checked');
         let selectedRssValues = Array.from(selectedRssCheckboxes).map(cb => cb.name.replace('this_rss_id_', ''));
@@ -1320,31 +1261,16 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
             processData: false,
             success: function (updated) {
                 
-                thisCountry = form_data["e-country"];
-                if (env === 'preview' && !justPreview || env === 'save' || env === 'saveOnly') {
-                    if (thisCountry && thisCountry !== '' && thisCountry.length > 0) {
-                        publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, false, updated.lastEntry, thisCountry, thisButton, userId);
-                    } else {
-                        publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, false, updated.lastEntry, false, thisButton, userId);
-                    }
+                if (parseInt(field_to_save_by) !== 0) {
+                    field_to_save_by = thisFields;
                 } else {
+                    field_to_save_by = false;
+                }
 
-                    if (thisTemplate !== '') {
-                        openInNewTab(linkToPreview);
-                    } else {
-                        alert("You must have to setup the template in the configuration menu!")
-                    }
-
-                    if (env !== "saveOnly" && env !== "preview" && !justPreview) {
-                        $('#editDynamicList').modal('hide');
-                    }
-                    $('#editDynamicListSuccessNotification').toast('show');
-                    if (env !== "saveOnly" && env !== "preview" && !justPreview) {
-                        location.reload(true);
-                        //doRedrawTable(true, updated.lists, true);
-                    } else {
-                        cleanUpActionButtons()
-                    }
+                if (field_to_save_by && field_to_save_by !== '' && field_to_save_by.length > 0) {
+                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, updated.lastEntry, field_to_save_by, thisButton, userId);
+                } else {
+                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, updated.lastEntry, false, thisButton, userId);
                 }
 
             },
@@ -1391,31 +1317,14 @@ async function deleteDynamicListEntries(accountId, reference, env, preview_serve
     var values = jsonConfig.columns;
 
     var thisTemplate = '';
-    var thisParameters = '';
+    var field_to_save_by = '';
     var thisFields = '';
     if (values && values[0]) {
         thisTemplate = values[0][2];
-        thisParameters = values[0][3];
-        thisFields = values[0][4].split(';');
+        field_to_save_by = values[0][3];
+        thisFields = values[0][4];
     }
-
-    var fieldsToLink = '';
-    var index = 0;
-    for (var field in thisFields) {
-        var singleField = $('#a-' + thisFields[field]);
-
-        fieldsToLink += singleField.val();
-        if (thisFields.length > 1 && thisFields.length === index) {
-            fieldsToLink += fieldsToLink + '_';
-        }
-
-        index = index + 1;
-    }
-
-    var linkToPreview = '';
-    if (thisTemplate !== '') {
-        linkToPreview = preview_server + dynamic_path + thisTemplate + '.html?' + thisParameters + '=' + fieldsToLink
-    }
+    var save_by_field = $('#e-' + thisFields).val();
 
     // Post
     $.ajax({
@@ -1426,13 +1335,16 @@ async function deleteDynamicListEntries(accountId, reference, env, preview_serve
         },
         success: function (entry) {
 
-            // We have to check this login on publishing spliting by country
-            thisCountry = checked_entries_str["e-country"];
-
-            if (thisCountry && thisCountry !== '' && thisCountry.length > 0) {
-                publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, false, false, thisCountry, thisButton, userId, "delete");
+            if (parseInt(field_to_save_by) !== 0) {
+                field_to_save_by = thisFields;
             } else {
-                publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, false, false, false, thisButton, userId, "delete");
+                field_to_save_by = false;
+            }
+
+            if (field_to_save_by && field_to_save_by !== '' && field_to_save_by.length > 0) {
+                publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, false, field_to_save_by, thisButton, userId, "delete");
+            } else {
+                publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, false, false, thisButton, userId, "delete");
             }
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {

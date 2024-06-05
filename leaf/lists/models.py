@@ -1186,8 +1186,6 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         # Save new page in the correct folder based on template
         file_to_save = os.path.join(Config.WEBSERVER_FOLDER, file_url_path.strip("/"))
         folder_to_save_item = os.path.dirname(file_to_save)
-        print(file_to_save)
-        print(list_template_html)
         os.makedirs(folder_to_save_item, exist_ok=True)
         with open(file_to_save, 'w') as out_file:
             out_file.write(list_template_html)
@@ -1198,30 +1196,30 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
 
         # Write JSON data to a file with the specified reference identifier (sanitize reference)
         sanitized_reference = ''.join(e for e in reference if e.isalnum())
+        os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH), exist_ok=True)
         with open(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH, sanitized_reference + 'List.json'), 'w') as out_file:
             out_file.write(json_data_to_write)
 
-        # Additional logic to save data by country (sanitize user input)
-        country_to_update = werkzeug.utils.escape(this_request.get("country_to_update"))
-        if country_to_update and isinstance(country_to_update, list):
-            country_to_update = ';'.join(country_to_update)
+        # Additional logic to save data by field (sanitize user input)
+        save_by_field = werkzeug.utils.escape(this_request.get("save_by_field"))
+        field_to_save_by = werkzeug.utils.escape(this_request.get("field_to_save_by"))
+        if field_to_save_by != "False":
+            # Query to retrieve data filtered by field (using parameterized query)
+            mycursor.execute(f"SELECT * FROM {account_list} WHERE LOWER(`{field_to_save_by}`) = %s", (save_by_field.strip().lower(),))
+            row_headers = [x[0] for x in mycursor.description]
+            full_list_by_field = mycursor.fetchall()
 
-            single_country_to_update = country_to_update.split(';')
-            for single_country_to_update in single_country_to_update:
-                # Query to retrieve data filtered by country (using parameterized query)
-                mycursor.execute(f"SELECT * FROM {account_list} WHERE LOWER(`country`) LIKE %s",
-                                 ('%' + single_country_to_update.strip().lower() + '%',))
-                row_headers = [x[0] for x in mycursor.description]
-                full_list_by_country = mycursor.fetchall()
+            # Convert data to a JSON format
+            json_data_by_field = [dict(zip(row_headers, result)) for result in full_list_by_field]
+            json_data_to_write_by_field = json.dumps(json_data_by_field, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
 
-                # Convert data to a JSON format
-                json_data_by_country = [dict(zip(row_headers, result)) for result in full_list_by_country]
-                json_data_to_write_by_country = json.dumps(json_data_by_country).replace('__BACKSLASH__TO_REPLACE__', '\\')
+            # Write JSON data to a file with the field-specific reference identifier (sanitize reference)
+            sanitized_save_by_field = ''.join(e for e in (save_by_field.replace("/", "leaffslash").strip().lower()) if e.isalnum())
+            sanitized_save_by_field = sanitized_save_by_field.replace("leaffslash", "__fslash__")
 
-                # Write JSON data to a file with the country-specific reference identifier (sanitize reference)
-                sanitized_reference_by_country = ''.join(e for e in sanitized_reference + '_' + single_country_to_update.strip().lower() if e.isalnum())
-                with open(os.path.join(Config.DYNAMIC_PATH, 'json_by_country', sanitized_reference_by_country + '_List.json'), 'w') as out_file_by_country:
-                    out_file_by_country.write(json_data_to_write_by_country)
+            os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH, 'json_by_field'), exist_ok=True)
+            with open(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH, 'json_by_field', sanitized_reference + "_" + sanitized_save_by_field + '_List.json'), 'w') as out_file_by_field:
+                out_file_by_field.write(json_data_to_write_by_field)
 
     except Exception as e:
         print("publish_dynamic_lists model")
