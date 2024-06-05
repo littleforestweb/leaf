@@ -161,11 +161,8 @@ function removeFiles(accountId, button) {
     });
 }
 
-async function publishFile() {
-    await populateUserList();
-}
-
-async function createPublishTicket(accountId, type = 6) {
+async function createPublishTicket(btn, accountId, type = 6) {
+    btn.disabled = true;
 
     accountId = escapeHtml(accountId);
 
