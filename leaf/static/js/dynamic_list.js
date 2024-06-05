@@ -1268,9 +1268,9 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
                 }
 
                 if (field_to_save_by && field_to_save_by !== '' && field_to_save_by.length > 0) {
-                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, field_to_save_by, false, updated.lastEntry, save_by_field, thisButton, userId);
+                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, updated.lastEntry, field_to_save_by, thisButton, userId);
                 } else {
-                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, field_to_save_by, false, updated.lastEntry, false, thisButton, userId);
+                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, updated.lastEntry, false, thisButton, userId);
                 }
 
             },
@@ -1342,9 +1342,9 @@ async function deleteDynamicListEntries(accountId, reference, env, preview_serve
             }
 
             if (field_to_save_by && field_to_save_by !== '' && field_to_save_by.length > 0) {
-                publishDynamicList(accountId, reference, env, preview_server, dynamic_path, field_to_save_by, false, false, save_by_field, thisButton, userId, "delete");
+                publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, false, field_to_save_by, thisButton, userId, "delete");
             } else {
-                publishDynamicList(accountId, reference, env, preview_server, dynamic_path, field_to_save_by, false, false, false, thisButton, userId, "delete");
+                publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, false, false, thisButton, userId, "delete");
             }
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
