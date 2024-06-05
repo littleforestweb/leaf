@@ -447,12 +447,14 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                     $('#e-' + spanId).replaceWith($('<textarea name="e-' + spanId + '" class="form-control ' + mandatoryClass + '" id="e-' + spanId + '"></textarea>'));
                                     $('#a-' + spanId).replaceWith($('<textarea name="a-' + spanId + '" class="form-control ' + mandatoryClass + '" id="a-' + spanId + '"></textarea>'));
                                     if (type === 'edit') {
-                                        $('#e-' + spanId).val(site_dynamic_list.replace(/&amp;amp;comma;/g, ','));
+                                        $('#e-' + spanId).addClass(mandatoryClass).val(site_dynamic_list.replace(/&amp;amp;comma;/g, ',').replace(/&amp;amp;/g, '&').replace(/&amp;/g, '&').replace(/__BACKSLASH__TO_REPLACE_ON_WEB__/g, "\\"));
+                                    } else {
+                                        $('#a-' + spanId).addClass(mandatoryClass);
                                     }
 
                                 } else if (allAccountSettings[f][6] && allAccountSettings[f][6] === "input") {
                                     if (type === 'edit') {
-                                        $('#e-' + spanId).addClass(mandatoryClass).val(site_dynamic_list.replace(/__BACKSLASH__TO_REPLACE_ON_WEB__/g, "\\"));
+                                        $('#e-' + spanId).addClass(mandatoryClass).val(site_dynamic_list.replace(/&amp;amp;comma;/g, ',').replace(/&amp;amp;/g, '&').replace(/&amp;/g, '&').replace(/__BACKSLASH__TO_REPLACE_ON_WEB__/g, "\\"));
                                     } else {
                                         $('#a-' + spanId).addClass(mandatoryClass);
                                     }
