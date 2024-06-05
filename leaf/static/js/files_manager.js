@@ -312,7 +312,7 @@ function createPublishTicket(accountId, type = 6) {
         return $(this).val();
     }).get();
 
-    var theTitle = 'New file(s) submition';
+    var theTitle = 'New file(s) submission';
     if (type == 7) {
         theTitle = 'New file(s) removal';
     }
