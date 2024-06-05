@@ -664,13 +664,14 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                     if (spanId === "leaf_selected_rss") {
                         if (type === 'edit') {
                             $('#e-' + spanId).parent().addClass("hidden");
+
+                            thisValue = escapeHtml(spans[x].textContent).split(',');
+                            for (var singleValue in thisValue) {
+                                $("#this_rss_id_" + thisValue[singleValue]).prop('checked', true);
+                            }
                         } else {
                             $('#a-' + spanId).parent().addClass("hidden");
                         } 
-                        thisValue = escapeHtml(spans[x].textContent).split(',');
-                        for (var singleValue in thisValue) {
-                            $("#this_rss_id_" + thisValue[singleValue]).prop('checked', true);
-                        }
                     }
                 }
             }
@@ -685,7 +686,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
     });
 }
 
-async function publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, justPreview, lastEntry, thisCountry = false, thisButton, userId = false) {
+async function publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, justPreview, lastEntry, thisCountry = false, thisButton, userId = false, task = false) {
 
     accountId = escapeHtml(accountId);
     reference = escapeHtml(reference);
@@ -696,6 +697,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
     thisParameters = escapeHtml(thisParameters);
     fieldsToLink = escapeHtml(fieldsToLink);
     lastEntry = escapeHtml(lastEntry);
+    task = escapeHtml(task);
 
     $(".previewButton").prop('disabled', true);
     $(".publish-btn").prop('disabled', true);
@@ -733,48 +735,65 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         matches.push(match[1]);
     }
 
-    if (lastEntry) {
-        var thisValId = escapeHtml($('input[type="checkbox"]:not(.this-rss-id):checked').val());
-
-        if (!thisValId) {
-            thisValId = escapeHtml($('#e-id').val());
-        }
-
-        publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
-        var fieldsToLink = thisTemplate;
-
-        for (var field in matches) {
-
-            var singleField = $('span#' + matches[field] + '_pos_' + thisValId).html();
-
-            if (matches[field] === "year" || matches[field] === "month" || matches[field] === "day") {
-                let matchingColumn = null;
-
-                for (const column of headColumns) {
-                    if (publication_names.includes(column[2].toLowerCase())) {
-                        matchingColumn = column;
-                        break;
-                    }
-                }
-                singleField = $('input#e-' + matchingColumn[2].toLowerCase()).val();
-                if (singleField == "") {
-                    singleField = $('span#' + matchingColumn[2].toLowerCase() + '_pos_' + thisValId).html();
-                }
-                singleField = extractMonthAndDay(singleField, matches[field]);
-                singleField = singleField.toString();
-            }
-
-            if (singleField) {
-                singleField = singleField.split('/');
-            }
-
-            // Remove empty strings and join with "/"
-            singleField = singleField.filter(item => item !== '').join('/');
-            fieldsToLink = fieldsToLink.replace("{" + matches[field] + "}", singleField);
-            selectedItem = thisValId;
-        }
+    if (lastEntry && lastEntry !== false && lastEntry !== "false") {
+        var thisValId = lastEntry;
     } else {
-        selectedItem = lastEntry;
+        var thisValId = escapeHtml($('input[type="checkbox"]:not(.this-rss-id):checked').val());
+    }
+
+    if (!thisValId) {
+        thisValId = escapeHtml($('#e-id').val());
+        if (!thisValId || thisValId.trim() === "") {
+            thisValId = escapeHtml($('#a-id').val());
+        }
+    }
+
+    publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
+    var fieldsToLink = thisTemplate;
+
+    for (var field in matches) {
+
+        var singleField = $('span#' + matches[field] + '_pos_' + thisValId).html();
+        if (!singleField || singleField.trim() === "") {
+            singleField = $('input#e-' + matches[field].toLowerCase()).val();
+        }
+        if (!singleField || singleField.trim() === "") {
+            singleField = $('input#a-' + matches[field].toLowerCase()).val();
+        }
+
+        if (matches[field] === "year" || matches[field] === "month" || matches[field] === "day") {
+            let matchingColumn = null;
+
+            for (const column of headColumns) {
+                if (publication_names.includes(column[2].toLowerCase())) {
+                    matchingColumn = column;
+                    break;
+                }
+            }
+            if (!singleField || singleField.trim() === "") {
+                singleField = $('input#e-' + matchingColumn[2].toLowerCase()).val();
+            }
+
+            if (!singleField || singleField.trim() === "") {
+                singleField = $('input#a-' + matchingColumn[2].toLowerCase()).val();
+            }
+
+            if (singleField == "") {
+                singleField = $('span#' + matchingColumn[2].toLowerCase() + '_pos_' + thisValId).html();
+            }
+
+            singleField = extractMonthAndDay(singleField, matches[field]);
+            singleField = singleField.toString();
+        }
+
+        if (singleField) {
+            singleField = singleField.split('/');
+        }
+
+        // Remove empty strings and join with "/"
+        singleField = singleField.filter(item => item !== '').join('/');
+        fieldsToLink = fieldsToLink.replace("{" + matches[field] + "}", singleField);
+        selectedItem = thisValId;
     }
 
     var checkCountryField = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.country pre .hidden');
@@ -790,7 +809,8 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
             "country_to_update": thisCountry,
             "file_url_path": getFileUrlPath(fieldsToLink, page_extension),
             "list_template_id": listTemplateId,
-            "list_item_id": selectedItem
+            "list_item_id": selectedItem,
+            "task": task
         }),
         contentType: 'application/json',
         dataType: 'json',
@@ -816,58 +836,49 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
                 location.reload(true);
                 //doRedrawTable(true, updated.lists, true);
             } else {
-                var buttons_to_edit_or_add_container = document.getElementById('buttons_to_edit');
-                if (!buttons_to_edit_or_add_container) {
-                    buttons_to_edit_or_add_container = document.getElementById('buttons_to_add');
-                }
-                const allActionButtons = buttons_to_edit_or_add_container.getElementsByTagName('button');
-                for (let i = 0; i < allActionButtons.length; i++) {
-                    allActionButtons[i].disabled = false;
-                    allActionButtons[i].classList.remove('disabled');
-                }
-                var modal_footer_links = document.getElementById('modal-footer-edit');
-                if (!modal_footer_links) {
-                    modal_footer_links = document.getElementById('modal-footer-add')
-                }
-                const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
-                for (let i = 0; i < allActionButtonsFooter.length; i++) {
-                    allActionButtonsFooter[i].disabled = false;
-                    allActionButtonsFooter[i].classList.remove('disabled');
-                }
+                cleanUpActionButtons();
             }
-
-            $(".previewButton").prop('disabled', false);
-            $(".publish-btn").prop('disabled', false);
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
             $('#publishDynamicList').modal('hide');
             $('#errorModal').modal('show');
 
-            var buttons_to_edit_or_add_container = document.getElementById('buttons_to_edit');
-            if (!buttons_to_edit_or_add_container) {
-                buttons_to_edit_or_add_container = document.getElementById('buttons_to_add');
-            }
-            const allActionButtons = buttons_to_edit_or_add_container.getElementsByTagName('button');
-            for (let i = 0; i < allActionButtons.length; i++) {
-                allActionButtons[i].disabled = false;
-                allActionButtons[i].classList.remove('disabled');
-            }
-            var modal_footer_links = document.getElementById('modal-footer-edit');
-            if (!modal_footer_links) {
-                modal_footer_links = document.getElementById('modal-footer-add')
-            }
-            const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
-            for (let i = 0; i < allActionButtonsFooter.length; i++) {
-                allActionButtonsFooter[i].disabled = false;
-                allActionButtonsFooter[i].classList.remove('disabled');
-            }
-
-            $(".previewButton").prop('disabled', false);
-            $(".publish-btn").prop('disabled', false);
+            cleanUpActionButtons();
         }
     });
 }
 
+function cleanUpActionButtons() {
+    var buttons_to_edit_container = document.getElementById('buttons_to_edit');
+    var buttons_to_add_container = document.getElementById('buttons_to_add');
+
+    var allActionButtons = buttons_to_edit_container.getElementsByTagName('button');
+    for (let i = 0; i < allActionButtons.length; i++) {
+        allActionButtons[i].disabled = false;
+        allActionButtons[i].classList.remove('disabled');
+    }
+    var allActionButtons = buttons_to_add_container.getElementsByTagName('button');
+    for (let i = 0; i < allActionButtons.length; i++) {
+        allActionButtons[i].disabled = false;
+        allActionButtons[i].classList.remove('disabled');
+    }
+    var modal_footer_links_edit = document.getElementById('modal-footer-edit');
+    var modal_footer_links_add = document.getElementById('modal-footer-add')
+
+    var allActionButtonsFooter = modal_footer_links_edit.getElementsByTagName('button');
+    for (let i = 0; i < allActionButtonsFooter.length; i++) {
+        allActionButtonsFooter[i].disabled = false;
+        allActionButtonsFooter[i].classList.remove('disabled');
+    }
+    var allActionButtonsFooter = modal_footer_links_add.getElementsByTagName('button');
+    for (let i = 0; i < allActionButtonsFooter.length; i++) {
+        allActionButtonsFooter[i].disabled = false;
+        allActionButtonsFooter[i].classList.remove('disabled');
+    }
+
+    $(".previewButton").prop('disabled', false);
+    $(".publish-btn").prop('disabled', false);
+}
 
 async function updateDynamicList(accountId, reference, env, preview_server, dynamic_path, justPreview, thisButton, userId = false) {
 
@@ -1000,9 +1011,9 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
 
                 if (env === 'preview' && !justPreview || env === 'save' || env === 'saveOnly') {
                     if (thisCountry && thisCountry !== '' && thisCountry.length > 0) {
-                        publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, false, false, thisCountry, thisButton, userId);
+                        publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, false, form_data["e-id"], thisCountry, thisButton, userId);
                     } else {
-                        publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, false, false, false, thisButton, userId);
+                        publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, false, form_data["e-id"], false, thisButton, userId);
                     }
                 } else {
 
@@ -1020,18 +1031,7 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
                         location.reload(true);
                         //doRedrawTable(true, updated.lists, true);
                     } else {
-                        const buttons_to_edit_container = document.getElementById('buttons_to_edit');
-                        const allActionButtons = buttons_to_edit_container.getElementsByTagName('button');
-                        for (let i = 0; i < allActionButtons.length; i++) {
-                            allActionButtons[i].disabled = false;
-                            allActionButtons[i].classList.remove('disabled');
-                        }
-                        const modal_footer_links = document.getElementById('modal-footer-edit');
-                        const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
-                        for (let i = 0; i < allActionButtonsFooter.length; i++) {
-                            allActionButtonsFooter[i].disabled = false;
-                            allActionButtonsFooter[i].classList.remove('disabled');
-                        }
+                        cleanUpActionButtons()
                     }
                 }
 
@@ -1040,18 +1040,7 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
                 $('#editDynamicList').modal('hide');
                 $('#errorModal').modal('show');
 
-                const buttons_to_edit_container = document.getElementById('buttons_to_edit');
-                const allActionButtons = buttons_to_edit_container.getElementsByTagName('button');
-                for (let i = 0; i < allActionButtons.length; i++) {
-                    allActionButtons[i].disabled = false;
-                    allActionButtons[i].classList.remove('disabled');
-                }
-                const modal_footer_links = document.getElementById('modal-footer-edit');
-                const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
-                for (let i = 0; i < allActionButtonsFooter.length; i++) {
-                    allActionButtonsFooter[i].disabled = false;
-                    allActionButtonsFooter[i].classList.remove('disabled');
-                }
+                cleanUpActionButtons()
             }
         });
     } else {
@@ -1061,18 +1050,7 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
         }
         alert("You have to complete all mandatory fields (" + form_data[0]['mandatoryElementsNotCompletedToReturn'].join(", ").replace(/e-/g, '') + ")!");
 
-        const buttons_to_edit_container = document.getElementById('buttons_to_edit');
-        const allActionButtons = buttons_to_edit_container.getElementsByTagName('button');
-        for (let i = 0; i < allActionButtons.length; i++) {
-            allActionButtons[i].disabled = false;
-            allActionButtons[i].classList.remove('disabled');
-        }
-        const modal_footer_links = document.getElementById('modal-footer-edit');
-        const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
-        for (let i = 0; i < allActionButtonsFooter.length; i++) {
-            allActionButtonsFooter[i].disabled = false;
-            allActionButtonsFooter[i].classList.remove('disabled');
-        }
+        cleanUpActionButtons()
     }
 }
 
@@ -1224,14 +1202,14 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
     preview_server = escapeHtml(preview_server);
     dynamic_path = escapeHtml(dynamic_path);
 
-    const buttons_to_add_container = document.getElementById('buttons_to_add');
-    const allActionButtons = buttons_to_add_container.getElementsByTagName('button');
+    var buttons_to_add_container = document.getElementById('buttons_to_add');
+    var allActionButtons = buttons_to_add_container.getElementsByTagName('button');
     for (let i = 0; i < allActionButtons.length; i++) {
         allActionButtons[i].disabled = true;
         allActionButtons[i].classList.add('disabled');
     }
-    const modal_footer_links = document.getElementById('modal-footer-add');
-    const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
+    var modal_footer_links = document.getElementById('modal-footer-add');
+    var allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
     for (let i = 0; i < allActionButtonsFooter.length; i++) {
         allActionButtonsFooter[i].disabled = true;
         allActionButtonsFooter[i].classList.add('disabled');
@@ -1327,6 +1305,11 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
             linkToPreview = preview_server + dynamic_path + thisTemplate + '.html?' + thisParameters + '=' + fieldsToLink
         }
 
+        let selectedRssCheckboxes = document.querySelectorAll('.this-rss-id:checked');
+        let selectedRssValues = Array.from(selectedRssCheckboxes).map(cb => cb.name.replace('this_rss_id_', ''));
+
+        form_data.leaf_selected_rss = selectedRssValues;
+
         $.ajax({
             type: "POST",
             url: "/addnew/" + accountId + "/account_" + accountId + "_list_" + reference,
@@ -1336,7 +1319,7 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
             cache: false,
             processData: false,
             success: function (updated) {
-
+                
                 thisCountry = form_data["e-country"];
                 if (env === 'preview' && !justPreview || env === 'save' || env === 'saveOnly') {
                     if (thisCountry && thisCountry !== '' && thisCountry.length > 0) {
@@ -1360,18 +1343,7 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
                         location.reload(true);
                         //doRedrawTable(true, updated.lists, true);
                     } else {
-                        const buttons_to_add_container = document.getElementById('buttons_to_add');
-                        const allActionButtons = buttons_to_add_container.getElementsByTagName('button');
-                        for (let i = 0; i < allActionButtons.length; i++) {
-                            allActionButtons[i].disabled = false;
-                            allActionButtons[i].classList.remove('disabled');
-                        }
-                        const modal_footer_links = document.getElementById('modal-footer-add');
-                        const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
-                        for (let i = 0; i < allActionButtonsFooter.length; i++) {
-                            allActionButtonsFooter[i].disabled = false;
-                            allActionButtonsFooter[i].classList.remove('disabled');
-                        }
+                        cleanUpActionButtons()
                     }
                 }
 
@@ -1380,18 +1352,7 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
                 $('#addDynamicList').modal('hide');
                 $('#errorModal').modal('show');
 
-                const buttons_to_add_container = document.getElementById('buttons_to_add');
-                const allActionButtons = buttons_to_add_container.getElementsByTagName('button');
-                for (let i = 0; i < allActionButtons.length; i++) {
-                    allActionButtons[i].disabled = false;
-                    allActionButtons[i].classList.remove('disabled');
-                }
-                const modal_footer_links = document.getElementById('modal-footer-add');
-                const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
-                for (let i = 0; i < allActionButtonsFooter.length; i++) {
-                    allActionButtonsFooter[i].disabled = false;
-                    allActionButtonsFooter[i].classList.remove('disabled');
-                }
+                cleanUpActionButtons()
             }
         });
     } else {
@@ -1401,18 +1362,7 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
         }
         alert("You have to complete all mandatory fields (" + form_data[0]['mandatoryElementsNotCompletedToReturn'].join(", ").replace(/a-/g, '') + ")!");
 
-        const buttons_to_add_container = document.getElementById('buttons_to_add');
-        const allActionButtons = buttons_to_add_container.getElementsByTagName('button');
-        for (let i = 0; i < allActionButtons.length; i++) {
-            allActionButtons[i].disabled = false;
-            allActionButtons[i].classList.remove('disabled');
-        }
-        const modal_footer_links = document.getElementById('modal-footer-add');
-        const allActionButtonsFooter = modal_footer_links.getElementsByTagName('button');
-        for (let i = 0; i < allActionButtonsFooter.length; i++) {
-            allActionButtonsFooter[i].disabled = false;
-            allActionButtonsFooter[i].classList.remove('disabled');
-        }
+        cleanUpActionButtons()
     }
 }
 
@@ -1480,9 +1430,9 @@ async function deleteDynamicListEntries(accountId, reference, env, preview_serve
             thisCountry = checked_entries_str["e-country"];
 
             if (thisCountry && thisCountry !== '' && thisCountry.length > 0) {
-                publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, false, false, thisCountry, thisButton, userId);
+                publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, false, false, thisCountry, thisButton, userId, "delete");
             } else {
-                publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, false, false, false, thisButton, userId);
+                publishDynamicList(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink, false, false, false, thisButton, userId, "delete");
             }
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
