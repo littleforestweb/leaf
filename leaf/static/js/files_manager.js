@@ -128,41 +128,16 @@ function upload_file(formData) {
         });
 }
 
-function removeFiles(accountId, button) {
-    accountId = escapeHtml(accountId);
-    var entriesToDelete = $('#files_table').find('input[type="checkbox"]:checked').map(function () {
-        return $(this).val();
-    }).get();
-
-    form_data = {
-        account_id: accountId,
-        entries_to_delete: entriesToDelete
+async function doActionBtn(action) {
+    await populateUserList();
+    document.querySelector("#publishModal > div > div > div.modal-footer > button").onclick = function () {
+        createTicket(accountId, action);
     }
-
-    $.ajax({
-        type: "POST",
-        url: "/files/remove_files",
-        contentType: 'application/json',
-        data: JSON.stringify(form_data),
-        dataType: 'json',
-        cache: false,
-        processData: false,
-        success: function (status) {
-            setTimeout(function () {
-                window.location.reload();
-            }, 500);
-        },
-        error: function (XMLHttpRequest, textStatus, errorThrown) {
-            console.log("ERROR");
-            setTimeout(function () {
-                window.location.reload();
-            }, 500);
-        }
-    });
+    $('#publishModal').modal('show');
 }
 
-async function createPublishTicket(btn, accountId, type = 6) {
-    btn.disabled = true;
+async function createTicket(accountId, type = 6) {
+    document.querySelector("#publishModal > div > div > div.modal-footer > button").disabled = true;
 
     accountId = escapeHtml(accountId);
 

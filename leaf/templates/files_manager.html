@@ -72,31 +72,12 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" onclick="createPublishTicket(this, {{ accountId }}, 6)" class="btn btn-success">Send</button>
+                    <button type="button" class="btn btn-success">Send</button>
                 </div>
             </div>
         </div>
     </div>
     <!-- END PUBLISH MODAL -->
-
-    <!-- DELETE MODAL -->
-    <div class="modal fade" id="removeFilesModal" tabindex="-1" aria-labelledby="removeFileLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="removeFileLabel">Remove Files</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <h4>Are you sure you want to remove the selected file(s)?</h4>
-                </div>
-                <div class="modal-footer" id="modal-footer-delete">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-danger" onclick="createPublishTicket('{{ accountId }}', '7')">Remove</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <div class="card mb-4">
         <div class="card-body">
@@ -104,8 +85,8 @@
                 <h3 style="float: left">{% if archive != "1" %}Files Manager{% else %}Files Archive{% endif %}</h3>
                 <div style="float:right; margin-left: 10px;" class="header-btns">
                     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#uploadFilesModal">Upload Files</button>
-                    <button type="button" id="remove_file_btn" class="btn btn-red deleteButton" data-bs-toggle="modal" data-bs-target="#removeFilesModal" disabled>Remove File</button>
-                    <button type="button" id="publish_file_btn" class="btn btn-blue editButton" data-bs-toggle="modal" onclick="populateUserList()" data-bs-target="#publishModal" disabled>Publish</button>
+                    <button type="button" id="publish_file_btn" class="btn btn-blue" onclick="doActionBtn(6)" disabled>Publish</button>
+                    <button type="button" id="remove_file_btn" class="btn btn-red" onclick="doActionBtn(7)" disabled>Delete File</button>
                     {% if archive != "1" %}
                         <a class="btn" target="_self" href="/files/fileupload?siteId={{ site_id }}&archive=1">Archived</a>
                     {% else %}
