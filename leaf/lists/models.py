@@ -1205,7 +1205,7 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         field_to_save_by = werkzeug.utils.escape(this_request.get("field_to_save_by"))
         if field_to_save_by != "False":
             # Query to retrieve data filtered by field (using parameterized query)
-            mycursor.execute(f"SELECT * FROM {account_list} WHERE LOWER(`{field_to_save_by}`) LIKE %s", ('%' + save_by_field.strip().lower() + '%',))
+            mycursor.execute(f"SELECT * FROM {account_list} WHERE LOWER(`{field_to_save_by}`) = %s", (save_by_field.strip().lower(),))
             row_headers = [x[0] for x in mycursor.description]
             full_list_by_field = mycursor.fetchall()
 
