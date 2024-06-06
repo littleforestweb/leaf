@@ -1161,30 +1161,8 @@ def proceed_action_workflow(request, not_real_request=None):
             
             site_ids = werkzeug.utils.escape(request.form.get("site_ids"))
 
-            # do scp for LISTS
             for srv in Config.DEPLOYMENTS_SERVERS:
                 DYNAMIC_PATH = Config.DYNAMIC_PATH.strip('/')
-                local_path = os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, completeListName)
-                remote_path = os.path.join(srv["remote_path"], DYNAMIC_PATH, completeListName)
-                ssh = paramiko.SSHClient()
-                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                if srv["pkey"] != "":
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                    if srv["pw"] == "":
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                    else:
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                else:
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-                with ssh.open_sftp() as scp:
-                    actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
-                    if not actionResult:
-                        try:
-                            raise Exception("Failed to SCP - " + lp + " - " + rp)
-                        except Exception as e:
-                            pass
-
-
                 saveByFields = werkzeug.utils.escape(request.form.get("saveByFields"))
                 fieldsToSaveBy = False
                 if saveByFields == '1':
@@ -1220,27 +1198,28 @@ def proceed_action_workflow(request, not_real_request=None):
 
                     for singleListItemList in final_list:
                         for singleListItem in singleListItemList:
-                            mycursor.execute(f"SELECT * FROM {account_list} WHERE LOWER(%s) = %s ", (singleFieldToSaveBy, singleListItem,))
+                            mycursor.execute(f"SELECT * FROM {account_list} WHERE LOWER(`{singleFieldToSaveBy}`) = %s ", (singleListItem.strip().lower(),))
 
                             row_headers = [x[0] for x in mycursor.description]
-                            fullListByCountry = mycursor.fetchall()
-                            json_data_by_country = [dict(zip(row_headers, result)) for result in fullListByCountry]
-                            json_data_to_write_by_country = json.dumps(json_data_by_country, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
+                            fullListByField = mycursor.fetchall()
 
+                            json_data_by_field = [dict(zip(row_headers, result)) for result in fullListByField]
+                            json_data_to_write_by_field = json.dumps(json_data_by_field, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
+                            
                             if isMenu:
-                                completeListNameByCountry = listName + "_" + singleListItem.replace("/", "__fslash__") + "_Menu.json"
-                                os.makedirs(os.path.join(Config.ENV_PATH, "json_by_field"), exist_ok=True)
-                                with open(os.path.join(Config.ENV_PATH, "json_by_field", completeListNameByCountry), "w") as outFileByCountry:
-                                    outFileByCountry.write(json_data_to_write_by_country)
+                                completeListNameByField = listName + "_" + singleListItem.replace("/", "__fslash__") + "_Menu.json"
+                                os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, "json_by_field"), exist_ok=True)
+                                with open(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, "json_by_field", completeListNameByField), "w") as outFileByField:
+                                    outFileByField.write(json_data_to_write_by_field)
                             else:
-                                completeListNameByCountry = listName + "_" + singleListItem.replace("/", "__fslash__") + "_List.json"
-                                os.makedirs(os.path.join(Config.ENV_PATH, "json_by_field"), exist_ok=True)
-                                with open(os.path.join(Config.ENV_PATH, "json_by_field", completeListNameByCountry), "w") as outFileByCountry:
-                                    outFileByCountry.write(json_data_to_write_by_country)
+                                completeListNameByField = listName + "_" + singleListItem.replace("/", "__fslash__") + "_List.json"
+                                os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, "json_by_field"), exist_ok=True)
+                                with open(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, "json_by_field", completeListNameByField), "w") as outFileByField:
+                                    outFileByField.write(json_data_to_write_by_field)
 
-                            DYNAMIC_PATH = Config.DYNAMIC_PATH.strip('/')
-                            local_path = os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, "json_by_field", completeListNameByCountry)
-                            remote_path = os.path.join(srv["remote_path"], DYNAMIC_PATH, "json_by_field", completeListNameByCountry)
+                            # do scp for LISTS by field
+                            local_path = os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, "json_by_field", completeListNameByField)
+                            remote_path = os.path.join(srv["remote_path"], DYNAMIC_PATH, "json_by_field", completeListNameByField)
                             ssh = paramiko.SSHClient()
                             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                             if srv["pkey"] != "":
@@ -1259,27 +1238,22 @@ def proceed_action_workflow(request, not_real_request=None):
                                 except Exception as e:
                                     pass
 
-            for srv in Config.DEPLOYMENTS_SERVERS:
 
-                HTMLPath = werkzeug.utils.escape(request.form.get("list_item_url_path").strip("/"))
-                local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
-                list_feed_path = werkzeug.utils.escape(request.form.get("list_feed_path").strip("/"))
-                rss_ids = werkzeug.utils.escape(request.form.get("rss_ids"))
+                mycursor.execute(f"SELECT * FROM {account_list}")
 
-                # Replace Preview Reference with Live webserver references
-                with open(local_path) as inFile:
-                    data = inFile.read()
+                row_headers = [x[0] for x in mycursor.description]
+                fullList = mycursor.fetchall()
 
-                original_content = data
-                original_content_changed = data.replace(Config.LEAFCMS_SERVER, Config.PREVIEW_SERVER + Config.DYNAMIC_PATH.strip('/') + '/leaf')
-                data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf')
-                with open(local_path, "w") as outFile:
-                    outFile.write(data)
+                json_data = [dict(zip(row_headers, result)) for result in fullList]
+                json_data_to_write = json.dumps(json_data, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
 
-                assets = find_page_assets(original_content_changed)
-
-                # SCP Files
-                remote_path = os.path.join(srv["remote_path"], HTMLPath)
+                os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH), exist_ok=True)
+                with open(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, completeListName), "w") as outFile:
+                    outFile.write(json_data_to_write)
+                
+                # do scp for LISTS
+                local_path = os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, completeListName)
+                remote_path = os.path.join(srv["remote_path"], DYNAMIC_PATH, completeListName)
                 ssh = paramiko.SSHClient()
                 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                 if srv["pkey"] != "":
@@ -1292,30 +1266,70 @@ def proceed_action_workflow(request, not_real_request=None):
                     ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
                 with ssh.open_sftp() as scp:
                     actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
-                    for asset in assets:
-                        assetFilename = asset.split("/")[-1].strip('/')
-                        assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
-                        assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
-                        actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
-                        if not actionResultAsset:
-                            try:
-                                raise Exception("Failed to SCP - " + lp + " - " + rp)
-                            except Exception as e:
-                                pass
                     if not actionResult:
                         try:
                             raise Exception("Failed to SCP - " + lp + " - " + rp)
                         except Exception as e:
                             pass
 
-                with open(local_path, "w") as outFile:
-                    outFile.write(original_content)
+            HTMLPath = werkzeug.utils.escape(request.form.get("list_item_url_path").strip("/"))
+            local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
+            list_feed_path = werkzeug.utils.escape(request.form.get("list_feed_path").strip("/"))
+            rss_ids = werkzeug.utils.escape(request.form.get("rss_ids"))
+
+            if thisType != 8:
+                for srv in Config.DEPLOYMENTS_SERVERS:
+
+                    # Replace Preview Reference with Live webserver references
+                    with open(local_path) as inFile:
+                        data = inFile.read()
+
+                    original_content = data
+                    original_content_changed = data.replace(Config.LEAFCMS_SERVER, Config.PREVIEW_SERVER + Config.DYNAMIC_PATH.strip('/') + '/leaf')
+                    data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf')
+                    with open(local_path, "w") as outFile:
+                        outFile.write(data)
+
+                    assets = find_page_assets(original_content_changed)
+
+                    # SCP Files
+                    remote_path = os.path.join(srv["remote_path"], HTMLPath)
+                    ssh = paramiko.SSHClient()
+                    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                    if srv["pkey"] != "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                        if srv["pw"] == "":
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                        else:
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                    else:
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                    with ssh.open_sftp() as scp:
+                        actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                        for asset in assets:
+                            assetFilename = asset.split("/")[-1].strip('/')
+                            assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
+                            assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                            actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
+                            if not actionResultAsset:
+                                try:
+                                    raise Exception("Failed to SCP - " + lp + " - " + rp)
+                                except Exception as e:
+                                    pass
+                        if not actionResult:
+                            try:
+                                raise Exception("Failed to SCP - " + lp + " - " + rp)
+                            except Exception as e:
+                                pass
+
+                    with open(local_path, "w") as outFile:
+                        outFile.write(original_content)
 
             # Regenerate Feed
             if not isMenu:
                 # This will generate a global feed for all items using the same template
                 gen_feed(mycursor, account_list, list_feed_path, listName, accountId)
-                update_feed_lists(mycursor, account_list, rss_ids, listName, accountId, site_ids, thisType, pages_to_delete_from_feed)
+                update_feed_lists_and_or_delete_from_directory(mycursor, account_list, rss_ids, listName, accountId, site_ids, thisType, pages_to_delete_from_feed)
         else:
             print("Publication date in the future: " + str(target_date) + "; current date: " + str(current_date))
 
@@ -1413,7 +1427,7 @@ def proceed_action_workflow(request, not_real_request=None):
         return {"message": "waiting", "action": action}
 
 
-def update_feed_lists(mycursor, account_list, rss_ids, list_name, accountId, site_ids, thisType, pages):
+def update_feed_lists_and_or_delete_from_directory(mycursor, account_list, rss_ids, list_name, accountId, site_ids, thisType, pages):
     rss_ids = rss_ids.split(",")
     site_ids = site_ids.split(",")
     for site_item in site_ids:
@@ -1697,8 +1711,6 @@ def find_page_assets(original_content):
 def update_rss_feed(mycursor, account_id, list_name, file_path, new_item_data, thisType):
     tree, root = parse_xml(os.path.join(Config.WEBSERVER_FOLDER, file_path))
     create_or_update_item_element(tree, root, mycursor, account_id, list_name, new_item_data, file_path, thisType)
-    # tree.write(os.path.join(Config.WEBSERVER_FOLDER, file_path), encoding='UTF-8', xml_declaration=True)
-
 
 def parse_xml(file_path):
     tree = ET.parse(file_path)
@@ -1810,10 +1822,12 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
 
                 existing_item = find_item_by_guid(root, guid_key_value)
 
+                if thisType == 8:
+                    delete_item_from_disk(list_page_url)
+
                 if existing_item:
                     if thisType == 8:
                         existing_item = find_and_delete_item_by_guid(root, guid_key_value)
-                        delete_item_from_disk(list_page_url)
                     else:
                         for elem in item:
                             existing_elem = existing_item.find(elem.tag)
