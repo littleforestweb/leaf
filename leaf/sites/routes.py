@@ -524,3 +524,14 @@ def api_request_unlock():
         # Log the exception or handle it as appropriate for your application
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
+
+
+@sites.route('/api/get_single_user_folder_access')
+@login_required
+def api_get_single_user_folder_access():
+    try:
+        return models.get_user_access_folder()
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code

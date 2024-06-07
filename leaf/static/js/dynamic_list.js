@@ -198,6 +198,35 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                     $('#a-' + spanId).attr('disabled', true);
                                 }
 
+                            } else if (allAccountSettings[f][3] === '-_leaf_access_folders_-') {
+                                let getUserFolderAccess = await getUserFolderAccessByValue();
+                                let thisLabel = getUserFolderAccess;
+
+                                var thisSpanList = (spans[x] ? spans[x].getAttribute("id").split('_pos_')[0] : '');
+                                var thisSpanId = (spans[x] ? spans[x].getAttribute("id").split('_pos_')[1] : '');
+
+                                var thisFieldValue = "";
+                                if (type === 'edit') {
+                                    thisFieldValue = $('#' + thisSpanList + '_pos_' + thisSpanId).text();
+                                }
+                                thisFieldValue = thisFieldValue.split(",");
+
+                                if (type === 'edit') {
+                                    var fieldsDropdown = '<select multiple name="e-' + thisSpanList + '" class="form-select form-select-md toCapitalize" id="e-' + thisSpanList + '"><option value="" disabled ' + (thisFieldValue && thisFieldValue.length > 0 ? "" : " selected") + '>Select option</option></select>';
+                                    $('#e-' + thisSpanList).replaceWith(fieldsDropdown);
+                                    for (single_item in getUserFolderAccess) {
+                                        var single_item_clean = (getUserFolderAccess[single_item] + reference).replace(/^\/|\/$/g, '');
+                                        $('select#e-' + thisSpanList).append('<option value="' + single_item_clean + '" ' + (thisFieldValue.includes(single_item_clean) ? " selected" : "") + '>' + single_item_clean.toLowerCase() + '</option>');
+                                    }
+                                } else {
+                                    var fieldsDropdown = '<select multiple name="a-' + thisSpanList + '" class="form-select form-select-md toCapitalize" id="a-' + thisSpanList + '"><option value="" disabled selected>Select option</option></select>';
+                                    $('#a-' + thisSpanList).replaceWith(fieldsDropdown);
+                                    for (single_item in getUserFolderAccess) {
+                                        var single_item_clean = (getUserFolderAccess[single_item] + reference).replace(/^\/|\/$/g, '');
+                                        $('select#a-' + thisSpanList).append('<option value="' + single_item_clean + '" ' + (thisFieldValue.includes(single_item_clean) ? " selected" : "") + '>' + single_item_clean.toLowerCase() + '</option>');
+                                    }
+                                }
+
                             } else if (allAccountSettings[f][6] && (allAccountSettings[f][6] === "select" || allAccountSettings[f][6] === "multiselect" || allAccountSettings[f][6] === "multi_checkbox")) {
 
                                 $.ajax({
@@ -688,6 +717,60 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
     });
 }
 
+async function generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, splitByField, fieldValue) {
+    for (var field in matches) {
+        var singleField = $('span#' + matches[field] + '_pos_' + thisValId).html();
+        if (!singleField || singleField.trim() === "") {
+            singleField = $('#e-' + matches[field].toLowerCase()).val();
+        }
+        if (!singleField || singleField.trim() === "") {
+            singleField = $('#a-' + matches[field].toLowerCase()).val();
+        }
+
+        if (matches[field] === "year" || matches[field] === "month" || matches[field] === "day") {
+            let matchingColumn = null;
+
+            for (const column of headColumns) {
+                if (publication_names.includes(column[2].toLowerCase())) {
+                    matchingColumn = column;
+                    break;
+                }
+            }
+            if (!singleField || singleField.trim() === "") {
+                singleField = $('#e-' + matchingColumn[2].toLowerCase()).val();
+            }
+
+            if (!singleField || singleField.trim() === "") {
+                singleField = $('#a-' + matchingColumn[2].toLowerCase()).val();
+            }
+
+            if (singleField == "") {
+                singleField = $('span#' + matchingColumn[2].toLowerCase() + '_pos_' + thisValId).html();
+            }
+
+            singleField = extractMonthAndDay(singleField, matches[field]);
+            singleField = singleField.toString();
+        }
+
+        // if (singleField) {
+        //     singleField = singleField.split('/');
+        // }
+
+        // Remove empty strings and join with "/"
+        if (singleField) {
+            // singleField = singleField.filter(item => item !== '').join('/');
+            if (matches[field] === splitByField) {
+                fieldsToLink_base = fieldsToLink_base.replace("{" + matches[field] + "}", fieldValue);
+            } else {
+                fieldsToLink_base = fieldsToLink_base.replace("{" + matches[field] + "}", singleField);
+            }
+            
+        }
+    }
+
+    return getFileUrlPath(fieldsToLink_base, page_extension)
+}
+
 async function publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, justPreview, lastEntry, field_to_save_by = false, thisButton, userId = false, task = false) {
 
     accountId = escapeHtml(accountId);
@@ -745,61 +828,40 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
 
     publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
 
-    var fieldsToLink = thisTemplate;
-
-    for (var field in matches) {
-
-        var singleField = $('span#' + matches[field] + '_pos_' + thisValId).html();
-        if (!singleField || singleField.trim() === "") {
-            singleField = $('input#e-' + matches[field].toLowerCase()).val();
-        }
-        if (!singleField || singleField.trim() === "") {
-            singleField = $('input#a-' + matches[field].toLowerCase()).val();
-        }
-
-        if (matches[field] === "year" || matches[field] === "month" || matches[field] === "day") {
-            let matchingColumn = null;
-
-            for (const column of headColumns) {
-                if (publication_names.includes(column[2].toLowerCase())) {
-                    matchingColumn = column;
-                    break;
-                }
+    var splitByField = null;
+    var splitByFieldValues = null;
+    for (const column of headColumns) {
+        if (column[3] === "-_leaf_access_folders_-") {
+            splitByField = column[2];
+            splitByFieldValues = $('select#e-' + splitByField).val();
+            if (!splitByFieldValues) {
+                splitByFieldValues = $('select#a-' + splitByField).val();
             }
-            if (!singleField || singleField.trim() === "") {
-                singleField = $('input#e-' + matchingColumn[2].toLowerCase()).val();
+            if (!splitByFieldValues) {
+                splitByFieldValues = $('span#' + splitByField + '_pos_' + thisValId).html();
+                splitByFieldValues = splitByFieldValues.split(",");
             }
-
-            if (!singleField || singleField.trim() === "") {
-                singleField = $('input#a-' + matchingColumn[2].toLowerCase()).val();
-            }
-
-            if (singleField == "") {
-                singleField = $('span#' + matchingColumn[2].toLowerCase() + '_pos_' + thisValId).html();
-            }
-
-            singleField = extractMonthAndDay(singleField, matches[field]);
-            singleField = singleField.toString();
+            break;
         }
-
-        if (singleField) {
-            singleField = singleField.split('/');
-        }
-
-        // Remove empty strings and join with "/"
-        if (singleField) {
-            singleField = singleField.filter(item => item !== '').join('/');
-            fieldsToLink = fieldsToLink.replace("{" + matches[field] + "}", singleField);
-        }
-        
-        selectedItem = thisValId;
     }
 
-    var check_save_by_field = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.' + save_by_field + ' pre .hidden');
+    var fieldsToLink_base = thisTemplate;
+    var fieldsToLink = new Array();
+    if (splitByFieldValues) {
+        for (fieldValue in splitByFieldValues) {
+            fieldsToLink.push(await generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, splitByField, splitByFieldValues[fieldValue]));
+        }
+    } else {
+        fieldsToLink.push(await generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, false, false));
+    }
+
+    selectedItem = thisValId;
+    var check_save_by_field = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.' + field_to_save_by + ' pre .hidden');
     if (!field_to_save_by && check_save_by_field.length > 0) {
-        field_to_save_by = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.' + save_by_field + ' pre .hidden').html().trim();
+        field_to_save_by = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.' + field_to_save_by + ' pre .hidden').html().trim();
         field_to_save_by = field_to_save_by.replace(/,/g, ';');
     }
+    console.log(field_to_save_by);
 
     $.ajax({
         type: "POST",
@@ -807,9 +869,10 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         data: JSON.stringify({
             "save_by_field": save_by_field,
             "field_to_save_by": field_to_save_by,
-            "file_url_path": getFileUrlPath(fieldsToLink, page_extension),
+            "file_url_path": fieldsToLink,
             "list_template_id": listTemplateId,
             "list_item_id": selectedItem,
+            "split_by_field": splitByField,
             "task": task
         }),
         contentType: 'application/json',
@@ -825,7 +888,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
                     if (!preview_server.endsWith("/")) {
                         preview_server += "/";
                     }
-                    openInNewTab(preview_server + getFileUrlPath(fieldsToLink, page_extension));
+                    openInNewTab(preview_server + getFileUrlPath(fieldsToLink[0], page_extension));
                 } else {
                     alert("There is no preview setting for this List yet. Please add one to preview this type.")
                 }
@@ -904,7 +967,7 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
 
     var idToLink = '';
     $('#edit-' + reference + ' > .mb-3').each(function () {
-        if ($(this).hasClass('autoGenerated') && $(this).find('input[type="hidden"]').val().trim() === '') {
+        if ($(this).hasClass('autoGenerated')) {
             var autoGen = escapeHtml($('#e-name').val());
             if (!autoGen || autoGen === '' || autoGen === null || autoGen === 'null' || autoGen === undefined || autoGen === 'undefined' || autoGen === NaN || autoGen === 'nan') {
                 autoGen = escapeHtml($('#e-title').val());
@@ -1008,6 +1071,13 @@ async function getUserDetailsByValue(id, label) {
     return getUserDetails
 }
 
+async function getUserFolderAccessByValue() {
+    let getUserFolderAccess = await $.get("/api/get_single_user_folder_access", function (result) {
+        return result;
+    });
+    return getUserFolderAccess
+}
+
 async function getFormData(formid, userId = false, preview_server) {
     formid = escapeHtml(formid);
     var form = document.getElementById(formid);
@@ -1030,7 +1100,6 @@ async function getFormData(formid, userId = false, preview_server) {
         }
 
         if (!element.type) {
-
             var yourArray = [];
             var allChildNodes = $(element)[0].childNodes;
             for (const childElement of allChildNodes) {
@@ -1038,9 +1107,7 @@ async function getFormData(formid, userId = false, preview_server) {
                     yourArray.push($(childElement).find('input').val().replace(/,/g, '&comma;').replace(/\'/g, "’"));
                 }
             }
-
             formdata[element.id] = yourArray;
-
         } else if (element.classList.contains('text-editor')) {
             formdata[element.name] = CKEDITOR.instances[element.id].getData().replace(/,/g, '&comma;').replace(/\\/g, "__BACKSLASH__TO_REPLACE_ON_WEB__").replace(/\'/g, "’").replace(/\xA0/g, '');
             if (preview_server) {
@@ -1052,7 +1119,6 @@ async function getFormData(formid, userId = false, preview_server) {
         } else if (element.type === 'checkbox') {
             formdata[element.name] = escapeHtml(element.checked);
         } else if (element.type === 'file') {
-
             if (element.files.length > 0) {
                 var form_data_single_file = new FormData();
                 form_data_single_file.append("files[]", element.files[0]);
@@ -1385,13 +1451,14 @@ async function populateDropdowns(accountId, reference, listsDropdown, fields, is
             thisElementToEdit.classList.add('mb-3');
             thisElementToEdit.classList.add('mb-container');
             thisElementToEdit.classList.add('s-' + thisField + '-container');
-            thisElementToEdit.innerHTML = '<div class="row"><div class="form-group col-md-5"><label for="s-' + thisField + '" class="col-form-label">' + thisField + ':</label>' + '<select name="selectItem_' + thisField + '" class="form-select form-select-md connection" id="s-' + thisField + '"><option value="null" selected>Static Field</option></select></div><div class="form-group col-md-4"><label for="typeSelectItem_' + thisField + '" class="col-form-label">Field Type:</label><select name="typeSelectItem_' + thisField + '" id="typeSelectItem_' + thisField + '" class="form-select form-select-md field_type typeSelectItem_Item"><option value="input">Input</option><option value="text_area">Text Area</option><option value="wysiwyg">Wysiwyg Editor</option><option value="password">Password</option><option value="select">Single Select</option><option value="multiselect">Multi Select</option><option value="multi_checkbox">Check Box</option><option value="code">Code</option><option value="date">Date</option><option value="image">Image</option><option value="pdf">PDF</option><option value="hidde-it">Hidden Field</option><option value="autoGenerated">Auto Generated</option><option value="disabledField">Disabled</option></select></div><div class="form-group col-md-3"><label for="displaySettingsItem_' + thisField + '" class="col-form-label">Visible in list:</label><select name="displaySettingsItem_' + thisField + '" id="dsi_' + thisField + '" class="form-select form-select-md"><option value="1">Yes</option><option value="0">No</option></select></div></div>';
+            thisElementToEdit.innerHTML = '<div class="row"><div class="form-group col-md-5"><label for="s-' + thisField + '" class="col-form-label">' + thisField + ':</label>' + '<select name="selectItem_' + thisField + '" class="form-select form-select-md connection" id="s-' + thisField + '"><option value="null" selected>Static Field</option></select></div><div class="form-group col-md-4"><label for="typeSelectItem_' + thisField + '" class="col-form-label">Field Type:</label><select name="typeSelectItem_' + thisField + '" id="typeSelectItem_' + thisField + '" class="form-select form-select-md field_type typeSelectItem_Item"><option value="input">Input</option><option value="text_area">Text Area</option><option value="wysiwyg">Wysiwyg Editor</option><option value="select">Single Select</option><option value="multiselect">Multi Select</option><option value="multi_checkbox">Check Box</option><option value="date">Date</option><option value="image">Image</option><option value="pdf">PDF</option><option value="hidde-it">Hidden Field</option><option value="autoGenerated">Auto Generated</option><option value="disabledField">Disabled</option></select></div><div class="form-group col-md-3"><label for="displaySettingsItem_' + thisField + '" class="col-form-label">Visible in list:</label><select name="displaySettingsItem_' + thisField + '" id="dsi_' + thisField + '" class="form-select form-select-md"><option value="1">Yes</option><option value="0">No</option></select></div></div>';
 
             document.getElementById("setField-" + reference).appendChild(thisElementToEdit);
 
             $('#typeSelectItem_' + thisField).val(fieldType);
             $('#dsi_' + thisField).val(displaySettingsItem);
 
+            $('select#s-' + thisField).append('<option value="-_leaf_access_folders_-" ' + (linkedTable === '-_leaf_access_folders_-' ? "selected" : "") + '>Access Folders</option>');
             $('select#s-' + thisField).append('<option value="-_leaf_users_-" ' + (linkedTable === '-_leaf_users_-' ? "selected" : "") + '>Leaf Users</option>');
             for (var v = 0; v < listsDropdown.length; v++) {
                 if (listsDropdown[v] !== reference && listsDropdown[v] !== 'configuration' && listsDropdown[v] !== 'template') {
@@ -1399,7 +1466,7 @@ async function populateDropdowns(accountId, reference, listsDropdown, fields, is
                 }
 
                 if (!isEditing && (v + 1) === listsDropdown.length) {
-                    if (linkedTable && linkedField && linkedTable !== 'None' && linkedField !== 'None' && linkedTable !== '-_leaf_users_-') {
+                    if (linkedTable && linkedField && linkedTable !== 'None' && linkedField !== 'None' && linkedTable !== '-_leaf_users_-' && linkedTable !== '-_leaf_access_folders_-') {
                         $.ajax({
                             type: "GET",
                             url: "/api/get_list_columns_with_returned_id/" + accountId + "/" + linkedTable + "/" + thisField + "/" + linkedField + "/" + linkedFieldLabel,
@@ -1458,7 +1525,26 @@ async function populateDropdowns(accountId, reference, listsDropdown, fields, is
                                 $('#errorModal').modal('show');
                             }
                         });
+                    } else if (linkedTable === '-_leaf_access_folders_-') {
+                        $.ajax({
+                            type: "GET",
+                            url: "/api/get_list_columns_with_returned_id/" + accountId + "/" + linkedTable + "/" + thisField + "/" + linkedField + "/" + linkedFieldLabel,
+                            success: function (allFieldsResponse) {
+                                fieldToReturn = allFieldsResponse.fieldToReturn;
+                                linkedFieldToReturn = allFieldsResponse.linkedFieldToReturn;
+                                linkedFieldLabelToReturn = allFieldsResponse.linkedFieldLabelToReturn;
 
+                                $('#s-' + fieldToReturn + '-assignedField').remove();
+                                var fieldsDropdown = '<div id="s-' + fieldToReturn + '-assignedFieldRow" class="row"><div class="form-group col-md-6"><label for="s-' + fieldToReturn + '-assignedField" class="col-form-label">Assigned Field:</label><select name="s-' + fieldToReturn + '-assignedField" class="form-select form-select-md" id="s-' + fieldToReturn + '-assignedField"></select></div><div class="form-group col-md-6"><label for="s-' + fieldToReturn + '-assignedFieldLabel" class="col-form-label">Assigned Label:</label><select name="s-' + fieldToReturn + '-assignedFieldLabel" class="form-select form-select-md" id="s-' + fieldToReturn + '-assignedFieldLabel"></select></div></div>';
+                                $('.s-' + fieldToReturn + '-container').append(fieldsDropdown);
+
+                                $('select#s-' + fieldToReturn + '-assignedField').append('<option value="folder" ' + (linkedFieldToReturn === 'folder' ? "selected" : "") + '>folder</option>');
+                                $('select#s-' + fieldToReturn + '-assignedFieldLabel').append('<option value="folder" ' + (linkedFieldLabelToReturn === 'folder' ? "selected" : "") + '>folder</option>');
+
+                            }, error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                $('#errorModal').modal('show');
+                            }
+                        });
                     }
                     $("#uploadSetFieldsDynamicList").modal('show');
                 }
@@ -1473,7 +1559,7 @@ async function populateDropdowns(accountId, reference, listsDropdown, fields, is
                 $('#typeSelectItem_' + thisField + ' option[value="multi_checkbox"]').removeAttr('disabled');
             }
 
-            if (linkedTable === "-_leaf_users_-") {
+            if (linkedTable === "-_leaf_users_-" || linkedTable === "-_leaf_access_folders_-") {
                 $('#typeSelectItem_' + thisField + ' option').attr('disabled', true);
                 $('#typeSelectItem_' + thisField + ' option[value="disabledField"]').removeAttr('disabled');
                 $('#typeSelectItem_' + thisField).val("disabledField");
@@ -1486,7 +1572,7 @@ async function populateDropdowns(accountId, reference, listsDropdown, fields, is
         var thisId = escapeHtml($(this).attr('id'));
         var thisIdClean = thisId.replace("s-", "");
 
-        if (thisValue !== "null" && thisValue !== "-_leaf_users_-") {
+        if (thisValue !== "null" && thisValue !== "-_leaf_users_-" && thisValue !== "-_leaf_access_folders_-") {
             $.ajax({
                 type: "GET",
                 url: "/api/get_list_columns/" + accountId + "/" + thisValue,
@@ -1534,6 +1620,21 @@ async function populateDropdowns(accountId, reference, listsDropdown, fields, is
 
             $('select#' + thisId + '-assignedField').append('<option value="email">email</option>');
             $('select#' + thisId + '-assignedFieldLabel').append('<option value="email">email</option>');
+
+        } else if (thisValue === "-_leaf_access_folders_-") {
+
+            $('#typeSelectItem_' + thisIdClean + ' option').attr('disabled', true);
+            $('#typeSelectItem_' + thisIdClean + ' option[value="disabledField"]').removeAttr('disabled');
+
+            $('#typeSelectItem_' + thisIdClean).val("disabledField");
+
+            $('#' + thisId + '-assignedFieldRow').remove();
+
+            var fieldsDropdownContainer = '<div id="' + thisId + '-assignedFieldRow" class="row"><div class="form-group col-md-6"><label for="' + thisId + '-assignedField" class="col-form-label">Assigned Field:</label><select name="' + thisId + '-assignedField" class="form-select form-select-md" id="' + thisId + '-assignedField"></select></div><div class="form-group col-md-6"><label for="' + thisId + '-assignedFieldLabel" class="col-form-label">Assigned Label:</label><select name="' + thisId + '-assignedFieldLabel" class="form-select form-select-md" id="' + thisId + '-assignedFieldLabel"></select></div></div>';
+            $('.' + thisId + '-container').append(fieldsDropdownContainer);
+
+            $('select#' + thisId + '-assignedField').append('<option value="folder" selected>folder</option>');
+            $('select#' + thisId + '-assignedFieldLabel').append('<option value="folder" selected>folder</option>');
 
         } else {
             $('#typeSelectItem_' + thisIdClean + ' option').removeAttr('disabled');
@@ -1964,6 +2065,11 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
                         modifiedFieldLabel = true;
                         thisLabel = e[5];
                     }
+
+                    if (headColumns[xx][0] === e[2] && e[3] === "-_leaf_access_folders_-") {
+                        modifiedFieldLabel = true;
+                        thisLabel = e[5];
+                    }
                 })
 
                 $('#table.table_' + reference + " thead tr").append('<th class="' + (headColumns[xx][7] !== 0 ? ((xx === 0 || hideIt === true) ? 'hidden ' : '') : 'hidden ') + 'center sorting the_reference" id="theReferenceHead_' + xx + '">' + headColumns[xx][0] + '</th>');
@@ -1985,7 +2091,7 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
 
                         val = (source[xx] ? source[xx] : "").toString();
 
-                        val = val.replace(/__BACKSLASH__TO_REPLACE__/g, "\\");
+                        val = val.replace(/__BACKSLASH__TO_REPLACE__/g, "\\").replace(/&amp;comma;/g, ',').replace(/&comma;/g, ',').replace(/&amp;/g, '&');
 
                         if (modifiedFieldLabel && source[xx] && source[xx] !== "nan") {
                             val = val.split(', ');
@@ -1994,6 +2100,12 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
                             }
                             if (thisLabel === "email") {
                                 val = val[2];
+                            }
+                            if (thisLabel === "folder") {
+                                val = val[0];
+                            }
+                            if (thisLabel === "id") {
+                                val = val[0];
                             }
                         }
 
@@ -2240,17 +2352,17 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
                 $('#search_col_index_1').keyup();
                 $('input[type="checkbox"]#entry_' + itemId).prop('checked', true);
                 if ($('input[type="checkbox"]#entry_' + itemId + ':checked')) {
-                    $('#editDynamicList').modal('show').addClass('loadingBg');
-                    populateEditDynamicListDialog('3', reference, 'edit', itemId);
+                    $('#editDynamicList').modal('show');//.addClass('loadingBg');
+
+                    populateEditDynamicListDialog(accountId, reference, 'edit', itemId, userId);
                 }
                 $('#editDynamicList .btn.publish-btn').remove();
-            } else {
-                $('#search_col_index_1').val("");
-                $('#search_col_index_1').keyup();
             }
 
-            $(".loadingBg").removeClass("show");
+            $('#search_col_index_1').val("");
+            $('#search_col_index_1').keyup();
 
+            $(".loadingBg").removeClass("show");
             if (doSetUpTable === true) {
                 populateUploadFieldsDynamicListDialog(accountId, reference, responseFields, isEditing, false);
             }

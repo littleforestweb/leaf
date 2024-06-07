@@ -57,11 +57,10 @@ async function setStatus(status, id, type, listName, accountId, files_details, s
         }
     }
 
-    if (listName !== "") {
-        list_item_url_path = new URL(list_item_url_path).pathname.trimStart("/");
-    }
-    console.log(jsonConfigSaveByFields);
-    console.log(jsonConfigFieldsToSaveBy);
+    // if (listName !== "") {
+    //     list_item_url_path = new URL(list_item_url_path).pathname.trimStart("/");
+    // }
+
     let dataF = {
         "id": id,
         "status": status,

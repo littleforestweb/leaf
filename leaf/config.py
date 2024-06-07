@@ -181,11 +181,9 @@ class Config:
     # Webserver Folder
     WEBSERVER_FOLDER = config["WEBSERVER_FOLDER"]
 
-    # Initialize the repository (if not already initialized)
-    try:
+    # Initialize the repository
+    if os.path.exists(os.path.join(WEBSERVER_FOLDER, ".git")):
         GIT_REPO = Repo(WEBSERVER_FOLDER)
-    except:
-        GIT_REPO = None
 
     # User email assigned
     ASSIGNED_USER_EMAIL = config["ASSIGNED_USER_EMAIL"]
