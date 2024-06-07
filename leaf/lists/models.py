@@ -7,6 +7,7 @@ import chardet
 from datetime import datetime
 import re
 from typing import List, Tuple
+from markupsafe import Markup
 
 import pandas as pd
 import werkzeug.utils
@@ -978,7 +979,7 @@ def create_middle_tables(request, accountId: str, reference: str):
                     mapping_table_name = f"account_{accountId}_mappings_list_{reference}_{val}"
 
                     # Drop existing mapping table
-                    if val != "null" and val != '-_leaf_users_-':
+                    if val != "null" and val != '-_leaf_users_-' and val != '-_leaf_access_folders_-':
                         mycursor.execute(f"DROP TABLE IF EXISTS {mapping_table_name}")
                         mydb.commit()
 
@@ -1156,7 +1157,7 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         full_list = mycursor.fetchall()
 
         this_request = request.get_json()
-        file_url_path = werkzeug.utils.escape(this_request.get("file_url_path"))
+        file_url_paths = this_request.get("file_url_path")
         list_template_id = werkzeug.utils.escape(this_request.get("list_template_id"))
         list_item_id = werkzeug.utils.escape(this_request.get("list_item_id"))
 
@@ -1184,11 +1185,13 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
                 list_template_html = list_template_html.replace("{{" + placeholder + "}}", '')
 
         # Save new page in the correct folder based on template
-        file_to_save = os.path.join(Config.WEBSERVER_FOLDER, file_url_path.strip("/"))
-        folder_to_save_item = os.path.dirname(file_to_save)
-        os.makedirs(folder_to_save_item, exist_ok=True)
-        with open(file_to_save, 'w') as out_file:
-            out_file.write(list_template_html)
+        for file_url_path in file_url_paths:
+            file_url_path = werkzeug.utils.escape(file_url_path)
+            file_to_save = os.path.join(Config.WEBSERVER_FOLDER, file_url_path.strip("/"))
+            folder_to_save_item = os.path.dirname(file_to_save)
+            os.makedirs(folder_to_save_item, exist_ok=True)
+            with open(file_to_save, 'w') as out_file:
+                out_file.write(list_template_html)
 
         # Convert data to a JSON format
         json_data = [dict(zip(row_headers, result)) for result in full_list]
@@ -1205,21 +1208,31 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         field_to_save_by = werkzeug.utils.escape(this_request.get("field_to_save_by"))
         if field_to_save_by != "False":
             # Query to retrieve data filtered by field (using parameterized query)
-            mycursor.execute(f"SELECT * FROM {account_list} WHERE LOWER(`{field_to_save_by}`) = %s", (save_by_field.strip().lower(),))
-            row_headers = [x[0] for x in mycursor.description]
-            full_list_by_field = mycursor.fetchall()
+            # Convert to string if it is Markup
+            if isinstance(save_by_field, Markup):
+                save_by_field = str(save_by_field)
+            # Split the save_by_field into individual paths
+            save_by_field = save_by_field.split(",")
+            for this_field_to_save in save_by_field:
+                this_field_to_save = this_field_to_save.split(",")
+                # Construct the SQL query with multiple FIND_IN_SET conditions
+                by_field_conditions = " OR ".join([f"FIND_IN_SET(%s, `{field_to_save_by}`)" for _ in this_field_to_save])
+                by_field_query = f"SELECT * FROM {account_list} WHERE {by_field_conditions}"
+                mycursor.execute(by_field_query,tuple(this_field_to_save))
+                row_headers = [x[0] for x in mycursor.description]
+                full_list_by_field = mycursor.fetchall()
 
-            # Convert data to a JSON format
-            json_data_by_field = [dict(zip(row_headers, result)) for result in full_list_by_field]
-            json_data_to_write_by_field = json.dumps(json_data_by_field, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
+                # Convert data to a JSON format
+                json_data_by_field = [dict(zip(row_headers, result)) for result in full_list_by_field]
+                json_data_to_write_by_field = json.dumps(json_data_by_field, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
 
-            # Write JSON data to a file with the field-specific reference identifier (sanitize reference)
-            sanitized_save_by_field = ''.join(e for e in (save_by_field.replace("/", "leaffslash").strip().lower()) if e.isalnum())
-            sanitized_save_by_field = sanitized_save_by_field.replace("leaffslash", "__fslash__")
+                # Write JSON data to a file with the field-specific reference identifier (sanitize reference)
+                sanitized_save_by_field = ''.join(e for e in (this_field_to_save[0].replace("/", "leaffslash").strip().lower()) if e.isalnum())
+                sanitized_save_by_field = sanitized_save_by_field.replace("leaffslash", "__fslash__")
 
-            os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH, 'json_by_field'), exist_ok=True)
-            with open(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH, 'json_by_field', sanitized_reference + "_" + sanitized_save_by_field + '_List.json'), 'w') as out_file_by_field:
-                out_file_by_field.write(json_data_to_write_by_field)
+                os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH, 'json_by_field'), exist_ok=True)
+                with open(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH, 'json_by_field', sanitized_reference + "_" + sanitized_save_by_field + '_List.json'), 'w') as out_file_by_field:
+                    out_file_by_field.write(json_data_to_write_by_field)
 
     except Exception as e:
         print("publish_dynamic_lists model")

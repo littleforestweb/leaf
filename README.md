@@ -20,4 +20,5 @@ Workflow Types
 5 - Remove Static Pages
 6 - Static Assets
 7 - Remove Static Assets
+8 - Remove Dynamic List Items
 ```
