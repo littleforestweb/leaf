@@ -368,6 +368,7 @@ def set_list_configuration(request, accountId: str, reference: str):
             mfields = werkzeug.utils.escape(thisRequest.get("s-mandatory-fields"))
             save_by_field = werkzeug.utils.escape(thisRequest.get("s-save-by-field"))
             field_to_save_by = werkzeug.utils.escape(thisRequest.get("s-field-to-save-by"))
+            field_to_save_by_includes = werkzeug.utils.escape(thisRequest.get("s-field-to-save-by-includes"))
             modified_by = session["id"]
 
             if isinstance(mfields, list):
@@ -378,9 +379,11 @@ def set_list_configuration(request, accountId: str, reference: str):
 
             col_to_return = [mfields, save_by_field, field_to_save_by, modified_by]
 
+            add_column_if_not_exists(mycursor, tableName, "field_to_save_by_includes", "TEXT", "field_to_save_by")
+
             # Insert new configuration for the specified list
-            insert_config_query = f"INSERT INTO {tableName} (main_table, mandatory_fields, save_by_field, field_to_save_by, created_by, modified_by) VALUES (%s, %s, %s, %s, %s, %s)"
-            mycursor.execute(insert_config_query, (reference, mfields, save_by_field, field_to_save_by, modified_by, modified_by))
+            insert_config_query = f"INSERT INTO {tableName} (main_table, mandatory_fields, save_by_field, field_to_save_by, field_to_save_by_includes, created_by, modified_by) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+            mycursor.execute(insert_config_query, (reference, mfields, save_by_field, field_to_save_by, field_to_save_by_includes, modified_by, modified_by))
             mydb.commit()
         else:
             print("Invalid accountId")
@@ -1206,6 +1209,7 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         # Additional logic to save data by field (sanitize user input)
         save_by_field = werkzeug.utils.escape(this_request.get("save_by_field"))
         field_to_save_by = werkzeug.utils.escape(this_request.get("field_to_save_by"))
+        field_to_save_by_includes = werkzeug.utils.escape(this_request.get("field_to_save_by_includes"))
         if field_to_save_by != "False":
             # Query to retrieve data filtered by field (using parameterized query)
             # Convert to string if it is Markup
@@ -1217,7 +1221,7 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
                 this_field_to_save = this_field_to_save.split(",")
                 # Construct the SQL query with multiple FIND_IN_SET conditions
                 by_field_conditions = " OR ".join([f"FIND_IN_SET(%s, `{field_to_save_by}`)" for _ in this_field_to_save])
-                by_field_query = f"SELECT * FROM {account_list} WHERE {by_field_conditions}"
+                by_field_query = f"SELECT {field_to_save_by_includes} FROM {account_list} WHERE {by_field_conditions}"
                 mycursor.execute(by_field_query,tuple(this_field_to_save))
                 row_headers = [x[0] for x in mycursor.description]
                 full_list_by_field = mycursor.fetchall()
@@ -1242,7 +1246,7 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         return jsonify({"full_list": full_list})
 
 
-def add_column_if_not_exists(cursor, table_name, column_name, column_definition):
+def add_column_if_not_exists(cursor, table_name, column_name, column_definition, after_column):
     # Check if the column exists
     cursor.execute(f"""
         SELECT COUNT(*)
@@ -1251,7 +1255,10 @@ def add_column_if_not_exists(cursor, table_name, column_name, column_definition)
     """)
     if cursor.fetchone()[0] == 0:
         # Column does not exist, so add it
-        cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition}")
+        if after_column:
+            cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition} AFTER {after_column}")
+        else:
+            cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition}")
 
 
 def update_dynamic_lists(request, accountId: str, account_list: str):
@@ -1319,7 +1326,7 @@ def update_dynamic_lists_database(accountId, account_list, item_id, this_request
             rss_string = ','.join(leaf_selected_rss)
 
             # Add the column if it does not exist
-            add_column_if_not_exists(mycursor, account_list, "leaf_selected_rss", "TEXT")
+            add_column_if_not_exists(mycursor, account_list, "leaf_selected_rss", "TEXT", False)
 
             mycursor.execute(f"UPDATE {account_list} SET leaf_selected_rss = %s, modified = CURRENT_TIMESTAMP WHERE id = %s", (rss_string, item_id))
             mydb.commit()
@@ -1484,7 +1491,7 @@ def update_dynamically_linked_fields_when_adding_list(mydb, mycursor, accountId,
     rss_string = ','.join(leaf_selected_rss)
 
     # Add the column if it does not exist
-    add_column_if_not_exists(mycursor, account_list, "leaf_selected_rss", "TEXT")
+    add_column_if_not_exists(mycursor, account_list, "leaf_selected_rss", "TEXT", False)
 
     mycursor.execute(f"UPDATE {account_list} SET leaf_selected_rss = %s, modified = CURRENT_TIMESTAMP WHERE id = %s", (rss_string, last_row_id))
     mydb.commit()

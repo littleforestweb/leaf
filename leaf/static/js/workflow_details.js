@@ -42,6 +42,7 @@ async function setStatus(status, id, type, listName, accountId, files_details, s
 
     let jsonConfigSaveByFields = false;
     let jsonConfigFieldsToSaveBy = false;
+    let jsonConfigFieldsToSaveByIncludes = false;
 
     if (listName || listName !== "") {
         // Get list configuration
@@ -54,6 +55,7 @@ async function setStatus(status, id, type, listName, accountId, files_details, s
         }
         if (jsonConfig.columns[0] && jsonConfig.columns[0][4]) {
             jsonConfigFieldsToSaveBy = jsonConfig.columns[0][4];
+            jsonConfigFieldsToSaveByIncludes = (!Number.isInteger(jsonConfig.columns[0][5]) ? jsonConfig.columns[0][5] : '');
         }
     }
 
@@ -68,6 +70,7 @@ async function setStatus(status, id, type, listName, accountId, files_details, s
         "listName": listName,
         "saveByFields": jsonConfigSaveByFields,
         "fieldsToSaveBy": jsonConfigFieldsToSaveBy,
+        "fieldsToSaveByIncludes": jsonConfigFieldsToSaveByIncludes,
         "files_details": files_details,
         "site_ids": site_ids,
         "list_item_url_path": list_item_url_path,
