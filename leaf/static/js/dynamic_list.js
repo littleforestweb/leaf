@@ -716,7 +716,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
     });
 }
 
-async function generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, splitByField, fieldValue) {
+async function generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, splitByField, fieldValue, field_to_save_by_includes) {
     for (var field in matches) {
         var singleField = $('span#' + matches[field] + '_pos_' + thisValId).html();
         if (!singleField || singleField.trim() === "") {
@@ -770,7 +770,7 @@ async function generate_fields_to_link(publication_names, headColumns, fieldsToL
     return getFileUrlPath(fieldsToLink_base, page_extension)
 }
 
-async function publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, justPreview, lastEntry, field_to_save_by = false, thisButton, userId = false, task = false) {
+async function publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, justPreview, lastEntry, field_to_save_by = false, field_to_save_by_includes = false, thisButton, userId = false, task = false) {
 
     accountId = escapeHtml(accountId);
     reference = escapeHtml(reference);
@@ -827,31 +827,15 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
 
     publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
 
-    var splitByField = null;
-    var splitByFieldValues = null;
-    for (const column of headColumns) {
-        if (column[3] === "-_leaf_access_folders_-") {
-            splitByField = column[2];
-            splitByFieldValues = $('select#e-' + splitByField).val();
-            if (!splitByFieldValues) {
-                splitByFieldValues = $('select#a-' + splitByField).val();
-            }
-            if (!splitByFieldValues) {
-                splitByFieldValues = $('span#' + splitByField + '_pos_' + thisValId).html();
-                splitByFieldValues = splitByFieldValues.split(",");
-            }
-            break;
-        }
-    }
-
     var fieldsToLink_base = thisTemplate;
     var fieldsToLink = new Array();
-    if (splitByFieldValues) {
+    if (field_to_save_by) {
+        var splitByFieldValues = save_by_field.split(",");
         for (fieldValue in splitByFieldValues) {
-            fieldsToLink.push(await generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, splitByField, splitByFieldValues[fieldValue]));
+            fieldsToLink.push(await generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, field_to_save_by, splitByFieldValues[fieldValue], field_to_save_by_includes));
         }
     } else {
-        fieldsToLink.push(await generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, false, false));
+        fieldsToLink.push(await generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, false, false, false));
     }
 
     selectedItem = thisValId;
@@ -860,7 +844,6 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         field_to_save_by = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.' + field_to_save_by + ' pre .hidden').html().trim();
         field_to_save_by = field_to_save_by.replace(/,/g, ';');
     }
-    console.log(field_to_save_by);
 
     $.ajax({
         type: "POST",
@@ -868,10 +851,11 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         data: JSON.stringify({
             "save_by_field": save_by_field,
             "field_to_save_by": field_to_save_by,
+            "field_to_save_by_includes": field_to_save_by_includes,
             "file_url_path": fieldsToLink,
             "list_template_id": listTemplateId,
             "list_item_id": selectedItem,
-            "split_by_field": splitByField,
+            "split_by_field": save_by_field,
             "task": task
         }),
         contentType: 'application/json',
@@ -1008,10 +992,12 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
         var thisTemplate = '';
         var field_to_save_by = '';
         var thisFields = '';
+        var thisFieldsIncludes = '';
         if (values && values[0]) {
             thisTemplate = values[0][2];
             field_to_save_by = values[0][3];
             thisFields = values[0][4];
+            thisFieldsIncludes = (!Number.isInteger(values[0][5]) ? values[0][5] : '');
         }
         var save_by_field = $('#e-' + thisFields).val();
 
@@ -1037,9 +1023,9 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
                 }
 
                 if (field_to_save_by && field_to_save_by !== '' && field_to_save_by.length > 0) {
-                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, form_data["e-id"], field_to_save_by, thisButton, userId);
+                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, form_data["e-id"], field_to_save_by, thisFieldsIncludes, thisButton, userId);
                 } else {
-                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, form_data["e-id"], false, thisButton, userId);
+                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, form_data["e-id"], false, false, thisButton, userId);
                 }
 
             },
@@ -1269,10 +1255,12 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
         var thisTemplate = '';
         var field_to_save_by = '';
         var thisFields = '';
+        var thisFieldsIncludes = '';
         if (values && values[0]) {
             thisTemplate = values[0][2];
             field_to_save_by = values[0][3];
             thisFields = values[0][4];
+            thisFieldsIncludes = (!Number.isInteger(values[0][5]) ? values[0][5] : '');
         }
         var save_by_field = $('#a-' + thisFields).val();
 
@@ -1298,9 +1286,9 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
                 }
 
                 if (field_to_save_by && field_to_save_by !== '' && field_to_save_by.length > 0) {
-                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, updated.lastEntry, field_to_save_by, thisButton, userId);
+                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, updated.lastEntry, field_to_save_by, thisFieldsIncludes, thisButton, userId);
                 } else {
-                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, updated.lastEntry, false, thisButton, userId);
+                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, updated.lastEntry, false, false, thisButton, userId);
                 }
 
             },
@@ -1349,10 +1337,12 @@ async function deleteDynamicListEntries(accountId, reference, env, preview_serve
     var thisTemplate = '';
     var field_to_save_by = '';
     var thisFields = '';
+    var thisFieldsIncludes = '';
     if (values && values[0]) {
         thisTemplate = values[0][2];
         field_to_save_by = values[0][3];
         thisFields = values[0][4];
+        thisFieldsIncludes = (!Number.isInteger(values[0][5]) ? values[0][5] : '');
     }
     var save_by_field = $('#e-' + thisFields).val();
 
@@ -1372,9 +1362,9 @@ async function deleteDynamicListEntries(accountId, reference, env, preview_serve
             }
 
             if (field_to_save_by && field_to_save_by !== '' && field_to_save_by.length > 0) {
-                publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, false, field_to_save_by, thisButton, userId, "delete");
+                publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, false, field_to_save_by, thisFieldsIncludes, thisButton, userId, "delete");
             } else {
-                publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, false, false, thisButton, userId, "delete");
+                publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, false, false, false, thisButton, userId, "delete");
             }
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
@@ -1758,9 +1748,11 @@ async function openConfiguration(accountId, reference) {
 
     $('select#s-mandatory-fields').empty();
     $('select#s-field-to-save-by').empty();
+    $('select#s-field-to-save-by-includes').empty();
     for (var x = 0; x < headColumns.length; x++) {
         $('select#s-mandatory-fields').append('<option value="' + escapeHtml(headColumns[x][2]) + '">' + escapeHtml(headColumns[x][2]) + '</option>');
         $('select#s-field-to-save-by').append('<option value="' + escapeHtml(headColumns[x][2]) + '">' + escapeHtml(headColumns[x][2]) + '</option>');
+        $('select#s-field-to-save-by-includes').append('<option value="' + escapeHtml(headColumns[x][2]) + '">' + escapeHtml(headColumns[x][2]) + '</option>');
     }
 
     if (values && values[0]) {
@@ -1780,6 +1772,13 @@ async function openConfiguration(accountId, reference) {
             var sfields = values[0][4].split(';');
             for (var sfield in sfields) {
                 $('#s-field-to-save-by option[value="' + escapeHtml(sfields[sfield]) + '"]').attr("selected", "selected");
+            }
+        }
+
+        if (values[0][5] && !Number.isInteger(values[0][5])) {
+            var sfields = values[0][5].split(',');
+            for (var sfield in sfields) {
+                $('#s-field-to-save-by-includes option[value="' + escapeHtml(sfields[sfield]) + '"]').attr("selected", "selected");
             }
         }
     }

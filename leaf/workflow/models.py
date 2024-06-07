@@ -1218,8 +1218,10 @@ def proceed_action_workflow(request, not_real_request=None):
                 DYNAMIC_PATH = Config.DYNAMIC_PATH.strip('/')
                 saveByFields = werkzeug.utils.escape(request.form.get("saveByFields"))
                 fieldsToSaveBy = False
+                fieldsToSaveByIncludes = False
                 if saveByFields == '1':
                     fieldsToSaveBy = werkzeug.utils.escape(request.form.get("fieldsToSaveBy"))
+                    fieldsToSaveByIncludes = werkzeug.utils.escape(request.form.get("fieldsToSaveByIncludes"))
 
                 final_list = list()
                 # Save list by pre-selected field independently to speed up the front end (on preview and live environment)
@@ -1255,7 +1257,7 @@ def proceed_action_workflow(request, not_real_request=None):
                             for singleItem in singleListItemToSearch:
                                 singleItem = singleItem.split(",")
                                 by_field_conditions = " OR ".join([f"FIND_IN_SET(%s, `{singleFieldToSaveBy}`)" for _ in singleItem])
-                                by_field_query = f"SELECT * FROM {account_list} WHERE {by_field_conditions} AND ({date_conditions})"
+                                by_field_query = f"SELECT {fieldsToSaveByIncludes} FROM {account_list} WHERE {by_field_conditions} AND ({date_conditions})"
                                 by_field_params = tuple(singleItem) + (current_date_to_compare_in_db,) * len(existing_publication_names)
                                 mycursor.execute(by_field_query, by_field_params)
 
