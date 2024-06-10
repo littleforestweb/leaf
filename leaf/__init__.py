@@ -107,8 +107,6 @@ def create_app(config_class=Config):
     scheduler = BackgroundScheduler()
     scheduler.add_job(func=check_if_should_publish_items, trigger="interval", minutes=5)
     scheduler.start()
-
-    # Shut down the scheduler when exiting the app
     atexit.register(lambda: scheduler.shutdown())
 
     # Optional: Force garbage collection

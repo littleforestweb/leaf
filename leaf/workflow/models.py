@@ -1,3 +1,4 @@
+import ast
 import datetime
 import json
 import os
@@ -5,7 +6,6 @@ import re
 import smtplib
 import subprocess
 import time
-import ast
 import xml.etree.ElementTree as ET
 from email.message import EmailMessage
 from urllib.parse import unquote, urljoin
@@ -67,7 +67,7 @@ def get_workflow_details(workflow_id):
     mydb, mycursor = decorators.db_connection()
 
     try:
-        query = "SELECT workflow.id, workflow.startUser, workflow.title, workflow.assignEditor, workflow.dueDate, workflow.tags, workflow.comments, workflow.submittedDate, workflow.type, workflow.status, workflow.siteIds, workflow.attachments, workflow.priority, workflow.listName, workflow.lastEdited FROM workflow WHERE workflow.id=%s"
+        query = "SELECT workflow.id, workflow.startUser, workflow.title, workflow.assignEditor, workflow.dueDate, workflow.tags, workflow.comments, workflow.submittedDate, workflow.type, workflow.status, workflow.siteIds, workflow.attachments, workflow.priority, workflow.listName, workflow.lastEdited, workflow.pubDate FROM workflow WHERE workflow.id=%s"
         params = (workflow_id,)
         mycursor.execute(query, params)
         results = mycursor.fetchone()
@@ -128,7 +128,8 @@ def extract_workflow_data(results):
         "statusMessage": "On track",
         "siteTitles": "",
         "siteUrl": "",
-        "siteInfo": {}
+        "siteInfo": {},
+        "publication_date": results[15]
     }
 
     return workflow_data
@@ -295,7 +296,7 @@ def process_type_3_or_8(workflow_data, mycursor):
                     for this_property in list_columns_with_properties[this_properties]:
                         if (this_property[3] == '-_leaf_access_folders_-'):
                             field_to_split_by = this_property[2]
-                
+
                 for result in results:
                     if field_to_split_by:
                         field_to_split_by_in_result = result[field_to_split_by].split(",")
@@ -780,6 +781,7 @@ def add_workflow(thisRequest):
         siteIds = str(thisRequest.get("siteIds")).split(";")[0] if thisRequest.get("siteIds") else ""
         thisType = int(thisRequest.get("type")) if thisRequest.get("type") else 1
         listName = thisRequest.get("listName") if thisRequest.get("listName") else ""
+        pubDate = str(thisRequest.get("pubDate")) if thisRequest.get("pubDate") else str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
         # Set default title based on workflow type
         if thisRequest.get("title"):
@@ -812,8 +814,8 @@ def add_workflow(thisRequest):
         accountId = session["accountId"]
 
         # Add Workflow to DB
-        query = "INSERT INTO workflow (startUser, assignEditor, comments, siteIds, submittedDate, title, type, status, tags, dueDate, attachments, priority, accountId, listName) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        params = (startUser, assignEditor, comments, siteIds, submittedDate, title, thisType, status, tags, dueDate, attachments, priority, accountId, listName)
+        query = "INSERT INTO workflow (startUser, assignEditor, comments, siteIds, submittedDate, title, type, status, tags, dueDate, attachments, priority, accountId, listName, pubDate) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        params = (startUser, assignEditor, comments, siteIds, submittedDate, title, thisType, status, tags, dueDate, attachments, priority, accountId, listName, pubDate)
         mycursor.execute(query, params)
         mydb.commit()
         workflow_id = mycursor.lastrowid
@@ -1037,8 +1039,8 @@ def proceed_action_workflow(request, not_real_request=None):
 
     target_date = False
     if publication_date:
-        target_date = datetime.datetime.strptime(publication_date, '%Y-%m-%d').date()
-    current_date = datetime.datetime.utcnow().date()
+        target_date = datetime.datetime.strptime(publication_date, "%Y-%m-%d %H:%M:%S").date()
+    current_date = datetime.datetime.now().date()
 
     thisType = 1
     if werkzeug.utils.escape(request.form.get("type")):
@@ -1081,6 +1083,13 @@ def proceed_action_workflow(request, not_real_request=None):
             return {"error": "Forbidden"}
 
     if not listName and thisType == 1:
+
+        # Check for pubDate
+        if target_date > current_date:
+            mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", ("7", workflow_id))
+            mydb.commit()
+            return {"message": "waiting", "action": action}
+
         # Get local file path
         query = "SELECT site_meta.HTMLPath FROM site_meta JOIN workflow ON site_meta.id = workflow.siteIds WHERE workflow.id = %s"
         params = (workflow_id,)
@@ -1211,7 +1220,7 @@ def proceed_action_workflow(request, not_real_request=None):
             existing_publication_names = [name for name in publication_names if column_exists(mycursor, account_list, name)]
             date_conditions = " AND ".join([f"({field} IS NULL OR {field} <= %s)" for field in existing_publication_names])
             current_date_to_compare_in_db = datetime.datetime.now().strftime('%Y-%m-%d')
-            
+
             site_ids = werkzeug.utils.escape(request.form.get("site_ids"))
 
             for srv in Config.DEPLOYMENTS_SERVERS:
@@ -1266,7 +1275,7 @@ def proceed_action_workflow(request, not_real_request=None):
 
                                 json_data_by_field = [dict(zip(row_headers, result)) for result in fullListByField]
                                 json_data_to_write_by_field = json.dumps(json_data_by_field, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
-                                
+
                                 if isMenu:
                                     completeListNameByField = listName + "_" + singleItem[0].replace("/", "__fslash__") + "_Menu.json"
                                     os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, "json_by_field"), exist_ok=True)
@@ -1299,7 +1308,6 @@ def proceed_action_workflow(request, not_real_request=None):
                                     except Exception as e:
                                         pass
 
-
                 full_query = f"SELECT * FROM {account_list} WHERE ({date_conditions})"
                 full_params = (current_date_to_compare_in_db,) * len(existing_publication_names)
                 mycursor.execute(full_query, full_params)
@@ -1313,7 +1321,7 @@ def proceed_action_workflow(request, not_real_request=None):
                 os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH), exist_ok=True)
                 with open(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, completeListName), "w") as outFile:
                     outFile.write(json_data_to_write)
-                
+
                 # do scp for LISTS
                 local_path = os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, completeListName)
                 remote_path = os.path.join(srv["remote_path"], DYNAMIC_PATH, completeListName)
@@ -1498,36 +1506,38 @@ def proceed_action_workflow(request, not_real_request=None):
 
         return {"message": "waiting", "action": action}
 
+
 # Function to check if a column exists in the table
 def column_exists(cursor, table_name, column_name):
     cursor.execute(f"SHOW COLUMNS FROM {table_name} LIKE '{column_name}'")
     return cursor.fetchone() is not None
 
+
 def update_feed_lists_and_or_delete_from_directory(mycursor, account_list, rss_ids, list_name, accountId, site_ids, thisType, pages):
+    if rss_ids:
+        rss_ids = rss_ids.split(",")
+
+    site_ids = site_ids.split(",")
+    for site_item in site_ids:
+        if thisType != 8:
+            query_list = f"SELECT * FROM account_{accountId}_list_{list_name} WHERE id=%s"
+            params_list = (site_item,)
+            mycursor.execute(query_list, params_list)
+            pages = mycursor.fetchall()
+
+        # Get column headers from the cursor description
+        headers = [description[0] for description in mycursor.description]
+
+        # Combine headers and data
+        results = [dict(zip(headers, row)) for row in pages]
+        result = results[0]
+
         if rss_ids:
-            rss_ids = rss_ids.split(",")
-
-        site_ids = site_ids.split(",")
-        for site_item in site_ids:
-            if thisType != 8:
-                query_list = f"SELECT * FROM account_{accountId}_list_{list_name} WHERE id=%s"
-                params_list = (site_item,)
-                mycursor.execute(query_list, params_list)
-                pages = mycursor.fetchall()
-
-            # Get column headers from the cursor description
-            headers = [description[0] for description in mycursor.description]
-
-            # Combine headers and data
-            results = [dict(zip(headers, row)) for row in pages]
-            result = results[0]
-
-            if rss_ids:
-                for rss_item in rss_ids:
-                    rss_data = get_rss_feed_by_id(rss_item)
-                    update_rss_feed(mycursor, accountId, list_name, rss_data[0][2], result, thisType)
-            else:
-                update_rss_feed(mycursor, accountId, list_name, False, result, thisType)
+            for rss_item in rss_ids:
+                rss_data = get_rss_feed_by_id(rss_item)
+                update_rss_feed(mycursor, accountId, list_name, rss_data[0][2], result, thisType)
+        else:
+            update_rss_feed(mycursor, accountId, list_name, False, result, thisType)
 
 
 def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
@@ -1796,6 +1806,7 @@ def update_rss_feed(mycursor, account_id, list_name, file_path, new_item_data, t
         tree, root = parse_xml(os.path.join(Config.WEBSERVER_FOLDER, file_path))
     create_or_update_item_element(tree, root, mycursor, account_id, list_name, new_item_data, file_path, thisType)
 
+
 def parse_xml(file_path):
     tree = ET.parse(file_path)
     root = tree.getroot()
@@ -1810,6 +1821,7 @@ def find_item_by_guid(root, new_guid):
             return item
     return None
 
+
 def find_and_delete_item_by_guid(root, new_guid):
     channel = root.find('./channel')
     for item in channel.findall('item'):
@@ -1818,6 +1830,7 @@ def find_and_delete_item_by_guid(root, new_guid):
             channel.remove(item)
             return True
     return False
+
 
 def create_or_update_item_element(tree, root, mycursor, account_id, list_name, new_item_data, file_path, thisType):
     template_query = f"SELECT template_location FROM account_%s_list_template WHERE in_lists=%s"
@@ -1847,7 +1860,7 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
             guid_key_value = False
             list_page_url = list_template
             image_element = None  # Track the image element to attach captions
-            
+
             if tree:
                 for key, value in new_item_data.items():
                     # Check if this field can serve as a GUID
@@ -1923,7 +1936,7 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
                                 existing_item.append(elem)
                         create_or_update_item_element(tree, root, mycursor, account_id, list_name, item, file_path, thisType)
                         # Write the RSS Feed in Preview Server
-                    
+
                     tree.write(os.path.join(Config.WEBSERVER_FOLDER, file_path), encoding='UTF-8', xml_declaration=True)
 
                     # Write the RSS Feed in Remote Server
@@ -1931,7 +1944,7 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
                     if not os.path.exists(rss_directory):
                         os.makedirs(rss_directory)
                     tree.write(os.path.join(srv["remote_path"], file_path), encoding='UTF-8', xml_declaration=True)
-                    
+
                     if thisType == 8:
                         print("Existing item deleted in RSS feed.")
                     else:
@@ -1959,6 +1972,7 @@ def add_item_to_channel(tree, root, new_item, file_path, account_id, list_name, 
         os.makedirs(rss_directory)
     tree.write(os.path.join(srv["remote_path"], file_path), encoding='UTF-8', xml_declaration=True)
 
+
 def delete_item_from_disk(item_path):
     to_delete = os.path.join(Config.WEBSERVER_FOLDER, item_path)
     to_delete = to_delete + (Config.PAGES_EXTENSION if not to_delete.endswith(Config.PAGES_EXTENSION) else "")
@@ -1975,6 +1989,7 @@ def delete_item_from_disk(item_path):
             print(f"File {to_delete_remote} has been removed.")
         else:
             print(f"File {to_delete_remote} does not exist.")
+
 
 def format_pub_date(date_str):
     date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d')
@@ -2056,112 +2071,204 @@ def extract_month_and_day(date_string, field):
 
 
 def check_if_should_publish_items():
+    mydb, mycursor = decorators.db_connection()
+    mycursor.execute(f"SELECT * FROM workflow WHERE status=7")
+    data = mycursor.fetchall()
+
+    # Fetch column headers from the cursor
+    column_headers = [i[0] for i in mycursor.description]
+
+    # Convert query result to list of dictionaries
+    waiting_workflows = [dict(zip(column_headers, row)) for row in data]
+
+    # Process each workflow
+    for workflow in waiting_workflows:
+        if workflow["type"] == 1:
+            check_if_should_publish_pages(workflow)
+        elif workflow["type"] == 3:
+            check_if_should_publish_list(workflow)
+
+
+def check_if_should_publish_pages(workflow):
+    mydb, mycursor = decorators.db_connection()
+
+    workflow_id = workflow["id"]
+
+    # Skip if pubDate
+    if workflow["pubDate"] > datetime.datetime.now():
+        return
+
+    # Get local file path
+    query = "SELECT site_meta.HTMLPath FROM site_meta JOIN workflow ON site_meta.id = workflow.siteIds WHERE workflow.id = %s"
+    params = (workflow_id,)
+    mycursor.execute(query, params)
+    HTMLPath = mycursor.fetchone()[0]
+
+    for srv in Config.DEPLOYMENTS_SERVERS:
+        HTMLPath = HTMLPath.strip("/")
+        local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
+
+        # Replace Preview Reference with Live webserver references
+        with open(local_path) as inFile:
+            data = inFile.read()
+            original_content = data
+        data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH)
+        with open(local_path, "w") as outFile:
+            outFile.write(data)
+
+        assets = find_page_assets(original_content)
+
+        # SCP Files
+        remote_path = os.path.join(srv["remote_path"], HTMLPath)
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        if srv["pkey"] != "":
+            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+            if srv["pw"] == "":
+                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+            else:
+                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+        else:
+            ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+        with ssh.open_sftp() as scp:
+            actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+            for asset in assets:
+                assetFilename = asset.split("/")[-1].strip('/')
+                assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
+                assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
+                if not actionResultAsset:
+                    try:
+                        raise Exception("Failed to SCP - " + lp + " - " + rp)
+                    except Exception as e:
+                        pass
+            if not actionResult:
+                try:
+                    raise Exception("Failed to SCP - " + lp + " - " + rp)
+                except Exception as e:
+                    pass
+
+        with open(local_path, "w") as outFile:
+            outFile.write(original_content)
+
+    # Regenerate Sitemap
+    query = "SELECT id, site_id FROM site_meta WHERE HTMLPath = %s"
+    mycursor.execute(query, [HTMLPath])
+    page_id, site_id = mycursor.fetchone()
+    gen_sitemap(mycursor, site_id, 1)
+
+    # Get Assign User Info
+    editorInfo = get_user_details(workflow["assignEditor"], mycursor)
+
+    # Git operations
+    query = "SELECT workflow.comments FROM workflow WHERE id = %s"
+    mycursor.execute(query, [workflow_id])
+    workflow_comment = mycursor.fetchone()[0]
+    Config.GIT_REPO.index.add([os.path.join(Config.WEBSERVER_FOLDER, HTMLPath), os.path.join(Config.WEBSERVER_FOLDER, "sitemap.xml")])
+    Config.GIT_REPO.index.commit(workflow_comment, author=Actor(editorInfo["username"], editorInfo["email"]))
+
+    # Update DB Status
+    mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", ("Approved", workflow_id))
+    mydb.commit()
+
+
+def check_if_should_publish_list(workflow):
     publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
 
     mydb, mycursor = decorators.db_connection()
 
     try:
-        # Query to workflow to get all with status "Waiting" and get the siteIds, and then check if type list or page and query the page/list based on the id to get the publication date
-        mycursor.execute(f"SELECT * FROM workflow WHERE status=7")
-        data = mycursor.fetchall()
 
-        # Fetch column headers from the cursor
-        column_headers = [i[0] for i in mycursor.description]
+        template_query = f"SELECT template_location, feed_location FROM account_%s_list_template WHERE in_lists=%s"
+        template_params = (workflow['accountId'], workflow['listName'],)
+        mycursor.execute(template_query, template_params)
+        template_list = mycursor.fetchone()
 
-        # Convert query result to list of dictionaries
-        waiting_workflows = [dict(zip(column_headers, row)) for row in data]
+        if template_list and len(template_list) > 0:
+            list_template = template_list[0]
+            list_feed = template_list[1]
 
-        for workflow in waiting_workflows:
-            template_query = f"SELECT template_location, feed_location FROM account_%s_list_template WHERE in_lists=%s"
-            template_params = (workflow['accountId'], workflow['listName'],)
-            mycursor.execute(template_query, template_params)
-            template_list = mycursor.fetchone()
+            # Regular expression to find words within curly braces
+            pattern = r'{(.*?)}'
 
-            if template_list and len(template_list) > 0:
-                list_template = template_list[0]
-                list_feed = template_list[1]
+            # Using re.findall() to extract the contents within the braces
+            items = re.findall(pattern, list_template)
 
-                # Regular expression to find words within curly braces
-                pattern = r'{(.*?)}'
+            site_ids = workflow['siteIds']
+            query_list = f"SELECT * FROM account_{workflow['accountId']}_list_{workflow['listName']} WHERE id=%s"
+            params_list = (site_ids,)
+            mycursor.execute(query_list, params_list)
+            fields_to_link = mycursor.fetchall()
 
-                # Using re.findall() to extract the contents within the braces
-                items = re.findall(pattern, list_template)
+            # Get column headers from the cursor description
+            headers = [description[0] for description in mycursor.description]
 
-                site_ids = workflow['siteIds']
-                query_list = f"SELECT * FROM account_{workflow['accountId']}_list_{workflow['listName']} WHERE id=%s"
-                params_list = (site_ids,)
-                mycursor.execute(query_list, params_list)
-                fields_to_link = mycursor.fetchall()
+            # Combine headers and data
+            results = [dict(zip(headers, row)) for row in fields_to_link]
 
-                # Get column headers from the cursor description
-                headers = [description[0] for description in mycursor.description]
+            publication_date = False
 
-                # Combine headers and data
-                results = [dict(zip(headers, row)) for row in fields_to_link]
+            list_page_url = list_template
 
-                publication_date = False
+            if results and len(results) > 0:
+                for result in results:
+                    for key, value in result.items():
+                        if key.lower() in publication_names:
+                            publication_date = value
+                        else:
+                            list_page_url = list_page_url.replace("{" + key + "}", str(value))
 
-                list_page_url = list_template
+                if publication_date:
+                    for field in items:
+                        if publication_date and (field == "year" or field == "month" or field == "day"):
+                            single_field = extract_month_and_day(publication_date, field)
+                            single_field = str(single_field)
 
-                if results and len(results) > 0:
-                    for result in results:
-                        for key, value in result.items():
-                            if key.lower() in publication_names:
-                                publication_date = value
-                            else:
-                                list_page_url = list_page_url.replace("{" + key + "}", str(value))
+                            list_page_url = list_page_url.replace("{" + field + "}", single_field)
+                            list_page_url = f"{list_page_url}" + (Config.PAGES_EXTENSION if not list_page_url.endswith(Config.PAGES_EXTENSION) else "")
 
-                    if publication_date:
-                        for field in items:
-                            if publication_date and (field == "year" or field == "month" or field == "day"):
-                                single_field = extract_month_and_day(publication_date, field)
-                                single_field = str(single_field)
+                    passed_session = {"accountId": workflow['accountId']}
 
-                                list_page_url = list_page_url.replace("{" + field + "}", single_field)
-                                list_page_url = f"{list_page_url}" + (Config.PAGES_EXTENSION if not list_page_url.endswith(Config.PAGES_EXTENSION) else "")
+                    jsonConfig = get_list_configuration(workflow['accountId'], workflow['listName'], passed_session)
 
-                        passed_session = {"accountId": workflow['accountId']}
+                    # Process the JSON response
+                    jsonConfigSaveByFields = None
+                    jsonConfigFieldsToSaveBy = None
 
-                        jsonConfig = get_list_configuration(workflow['accountId'], workflow['listName'], passed_session)
+                    if 'columns' in jsonConfig and len(jsonConfig['columns']) > 0:
+                        if len(jsonConfig['columns'][0]) > 3:
+                            jsonConfigSaveByFields = jsonConfig['columns'][0][3]
+                        if len(jsonConfig['columns'][0]) > 4:
+                            jsonConfigFieldsToSaveBy = jsonConfig['columns'][0][4]
 
-                        # Process the JSON response
-                        jsonConfigSaveByFields = None
-                        jsonConfigFieldsToSaveBy = None
+                    new_request_data = {
+                        "id": workflow['id'],
+                        "status": workflow['status'],
+                        "type": workflow['type'],
+                        "listName": workflow['listName'],
+                        "saveByFields": jsonConfigSaveByFields,
+                        "fieldsToSaveBy": jsonConfigFieldsToSaveBy,
+                        "files_details": "",
+                        "site_ids": site_ids,
+                        "list_item_url_path": list_page_url,
+                        "list_feed_path": list_feed,
+                        "publication_date": publication_date,
+                        "accountId": int(workflow['accountId']),
+                        "user_id": workflow['assignEditor']
+                    }
 
-                        if 'columns' in jsonConfig and len(jsonConfig['columns']) > 0:
-                            if len(jsonConfig['columns'][0]) > 3:
-                                jsonConfigSaveByFields = jsonConfig['columns'][0][3]
-                            if len(jsonConfig['columns'][0]) > 4:
-                                jsonConfigFieldsToSaveBy = jsonConfig['columns'][0][4]
+                    # Simulate a request object
+                    class MockRequest:
+                        def __init__(self, form_data):
+                            self.form = MultiDict(form_data)
 
-                        new_request_data = {
-                            "id": workflow['id'],
-                            "status": workflow['status'],
-                            "type": workflow['type'],
-                            "listName": workflow['listName'],
-                            "saveByFields": jsonConfigSaveByFields,
-                            "fieldsToSaveBy": jsonConfigFieldsToSaveBy,
-                            "files_details": "",
-                            "site_ids": site_ids,
-                            "list_item_url_path": list_page_url,
-                            "list_feed_path": list_feed,
-                            "publication_date": publication_date,
-                            "accountId": int(workflow['accountId']),
-                            "user_id": workflow['assignEditor']
-                        }
+                    # print(new_request_data)
+                    # Create a mock request object
+                    mock_request = MockRequest(new_request_data)
+                    new_action_workflow = proceed_action_workflow(mock_request, True)
 
-                        # Simulate a request object
-                        class MockRequest:
-                            def __init__(self, form_data):
-                                self.form = MultiDict(form_data)
-
-                        # print(new_request_data)
-                        # Create a mock request object
-                        mock_request = MockRequest(new_request_data)
-                        new_action_workflow = proceed_action_workflow(mock_request, True)
-
-                    else:
-                        print(site_ids + " has no publication date defined!", flush=True)
+                else:
+                    print(site_ids + " has no publication date defined!", flush=True)
 
             else:
                 print(workflow['listName'] + " as no template defined!", flush=True)
