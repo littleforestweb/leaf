@@ -719,10 +719,10 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
 async function generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, splitByField, fieldValue, field_to_save_by_includes) {
     for (var field in matches) {
         var singleField = $('span#' + matches[field] + '_pos_' + thisValId).html();
-        if (!singleField || singleField.trim() === "") {
+        if (!singleField || singleField && singleField.trim() === "") {
             singleField = $('#e-' + matches[field].toLowerCase()).val();
         }
-        if (!singleField || singleField.trim() === "") {
+        if (!singleField || singleField && singleField.trim() === "") {
             singleField = $('#a-' + matches[field].toLowerCase()).val();
         }
 
@@ -735,11 +735,11 @@ async function generate_fields_to_link(publication_names, headColumns, fieldsToL
                     break;
                 }
             }
-            if (!singleField || singleField.trim() === "") {
+            if (!singleField || singleField && singleField.trim() === "") {
                 singleField = $('#e-' + matchingColumn[2].toLowerCase()).val();
             }
 
-            if (!singleField || singleField.trim() === "") {
+            if (!singleField || singleField && singleField.trim() === "") {
                 singleField = $('#a-' + matchingColumn[2].toLowerCase()).val();
             }
 
