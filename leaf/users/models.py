@@ -19,6 +19,8 @@ def get_users_data():
 
         # Extract user data and create a list of dictionaries
         users_list = [{"id": user[0], "username": user[1], "email": user[2], "is_admin": user[3], "is_manager": user[4], "first_name": user[5], "last_name": user[6], "display_name": user[7]} for user in mycursor.fetchall()]
+        for user in users_list:
+            get_user_groups(user["id"])
 
         return users_list
 
@@ -161,6 +163,44 @@ def get_user_permission_level(user_id, htmlpath):
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
         raise RuntimeError(f"An error occurred while fetching user permission level: {str(e)}")
+    finally:
+        if mydb:
+            mydb.close()
+
+
+def get_user_groups(user_id):
+    """
+    Fetches the groups associated with a given user ID from the database.
+
+    This function connects to the database, executes a query to retrieve the groups
+    that the specified user belongs to, and returns a dictionary containing
+    the group IDs and names.
+
+    Args:
+        user_id (int): The ID of the user whose groups are to be fetched.
+
+    Returns:
+        list: A dict represents a group with the group's ID as the key and the group's name as the value.
+    """
+
+    mydb, mycursor = db_connection()
+
+    try:
+        # Fetch the user groups
+        query = """
+        SELECT user_groups.group_id, user_groups.group_name
+        FROM group_member
+        JOIN user_groups ON group_member.group_id = user_groups.group_id
+        WHERE group_member.user_id = %s;
+        """
+
+        mycursor.execute(query, (user_id,))
+        groups = {group_id: group_name for group_id, group_name in mycursor.fetchall()}
+        return groups
+
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        raise RuntimeError(f"An error occurred while fetching user groups: {str(e)}")
     finally:
         if mydb:
             mydb.close()
