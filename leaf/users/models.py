@@ -19,8 +19,6 @@ def get_users_data():
 
         # Extract user data and create a list of dictionaries
         users_list = [{"id": user[0], "username": user[1], "email": user[2], "is_admin": user[3], "is_manager": user[4], "first_name": user[5], "last_name": user[6], "display_name": user[7]} for user in mycursor.fetchall()]
-        for user in users_list:
-            get_user_groups(user["id"])
 
         return users_list
 
