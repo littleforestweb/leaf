@@ -35,6 +35,9 @@ async function addWorkflow(btn) {
     })
     allSelectedUsers = allSelectedUsers.join(',');
 
+    let pubDate = $('#review-date').datepicker("getDate");
+    pubDate = pubDate.getFullYear() + ':' + (pubDate.getMonth() + 1) + ':' + pubDate.getDate() + " 00:00:00";
+
     let form_data = {
         "startUser": userId,
         "assignEditor": allSelectedUsers,
@@ -42,7 +45,8 @@ async function addWorkflow(btn) {
         "comments": comments,
         "tags": "",
         "type": 1,
-        "priority": 2
+        "priority": 2,
+        "pubDate": pubDate
     }
 
     $.ajax({
@@ -448,4 +452,11 @@ window.addEventListener('DOMContentLoaded', async function main() {
     // Clean-up
     $("#table_wrapper > .dt-buttons").appendTo("div.header-btns");
     $(".loadingBg").removeClass("show");
+
+    // Set Publish Modal Datepicker
+    $('#review-date').datepicker({
+        format: 'yyyy/mm/dd',
+        autoclose: true,
+        todayHighlight: true
+    }).datepicker('setDate', new Date());
 });

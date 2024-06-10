@@ -22,3 +22,17 @@ Workflow Types
 7 - Remove Static Assets
 8 - Remove Dynamic List Items
 ```
+
+Workflow Status
+
+```
+Approved
+Rejected
+1 - New Request 
+2 - In Progress
+3 - Sent back for clarification
+4 - Send back for review
+5 - Approved and awaiting deployment
+6 - Complete
+7 - Waiting
+```
