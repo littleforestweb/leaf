@@ -3,18 +3,17 @@
 import csv
 import html
 import json
-import chardet
 from datetime import datetime
-import re
-from typing import List, Tuple
-from markupsafe import Markup
+from typing import Tuple
 
+import chardet
 import pandas as pd
 import werkzeug.utils
 from flask import current_app
+from markupsafe import Markup
 
-from leaf.template_editor.models import *
 from leaf.sites.models import get_user_access_folder
+from leaf.template_editor.models import *
 
 
 def get_lists_data(accountId: int, userId: str, isAdmin: str):
@@ -37,14 +36,9 @@ def get_lists_data(accountId: int, userId: str, isAdmin: str):
     mydb, mycursor = db_connection()
 
     try:
-        if isAdmin != '1':
-            sql = "SELECT lists.id, lists.name, lists.reference, lists.created, lists.user_with_access FROM lists WHERE (accountId = %s AND LOCATE('userId', user_with_access) > 0) OR (accountId = %s AND lists.name = 'Articles') OR (accountId = %s AND lists.name = 'News') OR (accountId = %s AND lists.name = 'People')"
-            queryVal = (accountId, accountId, accountId, accountId)
-            mycursor.execute(sql, queryVal)
-        else:
-            sql = "SELECT lists.id, lists.name, lists.reference, lists.created, lists.user_with_access FROM lists WHERE accountId = %s"
-            queryVal = (accountId,)
-            mycursor.execute(sql, queryVal)
+        sql = "SELECT lists.id, lists.name, lists.reference, lists.created, lists.user_with_access FROM lists WHERE accountId = %s"
+        queryVal = (accountId,)
+        mycursor.execute(sql, queryVal)
 
         lists = mycursor.fetchall()
 
@@ -122,7 +116,7 @@ def get_list_data(request, accountId: str, reference: str):
 
             # Constructing folder access where clause
             folder_where_clause = " OR ".join([f"{folder_access_field} LIKE '{path[1:]}%'" for path in user_access_folder])
-            
+
             # Combine where clauses if both exist
             if field_list and has_folder_access_defined:
                 where_clause = f"({' AND '.join(field_list)}) AND ({folder_where_clause})"
@@ -134,7 +128,7 @@ def get_list_data(request, accountId: str, reference: str):
                 where_clause = ""
 
             if where_clause != "":
-                where_clause = f"WHERE {where_clause}" 
+                where_clause = f"WHERE {where_clause}"
 
             if field_list:
                 query_params = list(f"%{searchColumnsField['value']}%" for searchColumnsField in searchColumnsFields)
@@ -303,7 +297,7 @@ def get_list_columns_with_properties(accountId: str, reference: str):
         return jsonify(jsonR)
 
 
-def get_list_configuration(accountId: str, reference: str, passed_session = None):
+def get_list_configuration(accountId: str, reference: str, passed_session=None):
     """
     Get configuration information for a specific list from the database.
 
@@ -315,7 +309,7 @@ def get_list_configuration(accountId: str, reference: str, passed_session = None
         dict: A JSON response containing configuration information for the specified list.
     """
     jsonR = {'columns': []}
-    
+
     if passed_session is None:
         # Use the actual session variable
         actual_account_id = session["accountId"]
@@ -1250,7 +1244,7 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
                 # Construct the SQL query with multiple FIND_IN_SET conditions
                 by_field_conditions = " OR ".join([f"FIND_IN_SET(%s, `{field_to_save_by}`)" for _ in this_field_to_save])
                 by_field_query = f"SELECT {field_to_save_by_includes} FROM {account_list} WHERE {by_field_conditions}"
-                mycursor.execute(by_field_query,tuple(this_field_to_save))
+                mycursor.execute(by_field_query, tuple(this_field_to_save))
                 row_headers = [x[0] for x in mycursor.description]
                 full_list_by_field = mycursor.fetchall()
 
@@ -1986,6 +1980,7 @@ def scrape_list_data(request):
         mydb.close()
         return jsonify(json_response)
 
+
 def get_list_scrape_settings(accountId: str, reference: str):
     accountId = werkzeug.utils.escape(accountId)
     reference = werkzeug.utils.escape(reference)
@@ -2068,7 +2063,6 @@ def set_list_scrape_settings(request, accountId: str, reference: str):
 
 # Main function to scrape pages and save the content in JSON format
 def trigger_new_scrape(request):
-
     accountId = werkzeug.utils.escape(request.form.get("accountId"))
 
     if not int(accountId) == int(session["accountId"]):
@@ -2098,7 +2092,7 @@ def trigger_new_scrape(request):
             mydb.commit()
 
             count_pages = 0
-                
+
             for folder in folders_to_scrape:
                 folder_path = os.path.join(Config.WEBSERVER_FOLDER, folder)
                 # current_app.logger.debug(f"Folder: {folder_path}")
@@ -2175,21 +2169,23 @@ def read_html_file(file_path):
     with open(file_path, 'r', encoding=encoding) as file:
         return file.read()
 
+
 def extract_and_format(url: str, *pattern_and_format_pairs: Tuple[str, str]) -> str:
     for pattern, output_format in pattern_and_format_pairs:
         match = re.search(pattern, url)
-        
+
         if match:
             # Create a dictionary of all matched groups
             matched_groups = {f'group{i}': match.group(i) for i in range(1, len(match.groups()) + 1)}
-            
+
             # Replace format placeholders with the matched group values
             formatted_output = output_format
             for group_name, value in matched_groups.items():
                 formatted_output = formatted_output.replace(f'{{{group_name}}}', value)
-            
+
             return formatted_output
     return "No match found."
+
 
 # Function to extract content based on the given selector
 def extract_content(soup, selector):
@@ -2216,7 +2212,7 @@ def extract_content(soup, selector):
                     tag_part = part
                 if 'text:' in part:
                     text_part = part
-            
+
             # Lists to store text patterns and tag patterns
             text_patterns = []
             tag_patterns = []
@@ -2255,24 +2251,24 @@ def extract_content(soup, selector):
             regex_part = parts[1].strip()
             # Replace the placeholder with actual backslash
             regex_part = regex_part.replace('__BACKSLASH__TO_REPLACE_ON_WEB__', '\\')
-            
+
             # Extract the regex pattern and format from the regex part
             regex_match = re.search(r'regex\((.+?),\s*(.*?)\)', regex_part)
             # regex_match = re.search(r'regex\(r?"(.+?)",\s*"(.*?)"\)', regex_part)
             if not regex_match:
                 raise ValueError(f"Invalid regex format in selector: {selector}")
-            
+
             pattern = regex_match.group(1)
             output_format = regex_match.group(2)
-            
+
             # Select the content based on the base selector
             content = extract_content(soup, base_selector)
             if not content:
                 return None
-            
+
             # Apply the regex pattern to the element's content
             match = re.search(pattern, content)
-            
+
             if match:
                 # Create a dictionary of all matched groups
                 matched_groups = {f'group{i}': match.group(i) for i in range(1, len(match.groups()) + 1)}
@@ -2280,9 +2276,9 @@ def extract_content(soup, selector):
                 formatted_output = output_format
                 for group_name, value in matched_groups.items():
                     formatted_output = formatted_output.replace(f'{{{group_name}}}', value)
-                
+
                 return formatted_output
-            
+
             return "No match found."
 
         if selector.endswith('["ALL"]'):
@@ -2311,7 +2307,7 @@ def extract_content(soup, selector):
 
             # Handle cases with attributes
             if '=' in attribute_selector:
-                
+
                 if '.split(' in attribute_selector:
                     has_split = True
                     start = attribute_selector.find('split("') + len('split("')
@@ -2365,17 +2361,19 @@ def extract_content(soup, selector):
         print(f"Error processing selector '{selector}': {e}")
         return None
 
+
 def is_only_linebreaks(s):
     # Strip all whitespace characters including newlines
     stripped_string = s.strip()
     # Check if the resulting string is empty
     return stripped_string == ''
 
+
 # Function to unescape HTML entities
 def unescape_html(html):
     return (html.replace('&gt;', '>')
-        .replace('&lt;', '<')
-        .replace('&quot;', '"')
-        .replace('&#39;', "'")
-        .replace('&amp;', '&')
-        .replace('&comma;', ','))
+            .replace('&lt;', '<')
+            .replace('&quot;', '"')
+            .replace('&#39;', "'")
+            .replace('&amp;', '&')
+            .replace('&comma;', ','))
