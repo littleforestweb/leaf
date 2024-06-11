@@ -6,33 +6,35 @@
 
     <div class="login container border text-center col-4 px-4 py-5 rounded-5 {% if is_saml_active == 1 %}hasSAML{% endif %}">
         <h1>Welcome to Leaf</h1>
-        <h2>Please login</h2>
-        <form action="{{ url_for('main.login') }}" method="post">
-            <div class="form-outline mb-4">
-                <input type="text" name="email" placeholder="email@example.com" id="email" class="form-control active" required/>
-                <label class="form-label" for="email" style="margin-left: 0px;"><i class="fal fa-envelope"></i> Email</label>
-                <div class="form-notch">
-                    <div class="form-notch-leading" style="width: 9px;"></div>
-                    <div class="form-notch-middle" style="width: 88.8px;"></div>
-                    <div class="form-notch-trailing"></div>
+        {% if is_saml_active != 1 %}
+            <h2>Please login</h2>
+            <form action="{{ url_for('main.login') }}" method="post">
+                <div class="form-outline mb-4">
+                    <input type="text" name="email" placeholder="email@example.com" id="email" class="form-control active" required/>
+                    <label class="form-label" for="email" style="margin-left: 0px;"><i class="fal fa-envelope"></i> Email</label>
+                    <div class="form-notch">
+                        <div class="form-notch-leading" style="width: 9px;"></div>
+                        <div class="form-notch-middle" style="width: 88.8px;"></div>
+                        <div class="form-notch-trailing"></div>
+                    </div>
                 </div>
-            </div>
-            <div class="form-outline mb-4">
-                <input type="password" name="password" placeholder="*****" id="password" class="form-control active" required/>
-                <label class="form-label" for="password" style="margin-left: 0px;"><i class="fal fa-key"></i> Password</label>
-                <div class="form-notch">
-                    <div class="form-notch-leading" style="width: 9px;"></div>
-                    <div class="form-notch-middle" style="width: 88.8px;"></div>
-                    <div class="form-notch-trailing"></div>
+                <div class="form-outline mb-4">
+                    <input type="password" name="password" placeholder="*****" id="password" class="form-control active" required/>
+                    <label class="form-label" for="password" style="margin-left: 0px;"><i class="fal fa-key"></i> Password</label>
+                    <div class="form-notch">
+                        <div class="form-notch-leading" style="width: 9px;"></div>
+                        <div class="form-notch-middle" style="width: 88.8px;"></div>
+                        <div class="form-notch-trailing"></div>
+                    </div>
                 </div>
-            </div>
-            <div class="msg {{ msgClass }}">{{ msg }}</div>
-            <div class="container col-8">
-                <input type="submit" class="btn btn-success btn-block mb-4" value="Login"/>
-            </div>
-        </form>
+                <div class="msg {{ msgClass }}">{{ msg }}</div>
+                <div class="container col-8">
+                    <input type="submit" class="btn btn-success btn-block mb-4" value="Login"/>
+                </div>
+            </form>
+        {% endif %}
         {% if is_saml_active == 1 %}
-            <input type="button" class="saml_login_link" onclick="do_saml_redirect()" value="SAML Login"/>
+            <input type="button" style="margin-top: 20px;float: none;margin-bottom: 30px;" class="btn btn-blue saml_login_link" onclick="do_saml_redirect()" value="Login using single sign on"/>
         {% endif %}
     </div>
 
