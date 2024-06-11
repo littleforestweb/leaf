@@ -7,8 +7,10 @@ from flask import render_template, Blueprint, jsonify, request, session, send_fr
 
 from leaf.config import Config
 from leaf.decorators import login_required, limiter, db_connection, generate_jwt
+from leaf.users.models import get_user_groups
 
 main = Blueprint('main', __name__)
+
 
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #
@@ -138,6 +140,10 @@ def login():
                 session['is_admin'] = lfi_user[6]
                 session['is_manager'] = lfi_user[7]
                 session['logout_redirect'] = False
+
+                # Check if user is source editor
+                user_groups = dict(get_user_groups(session["id"]))
+                session['is_source_editor'] = 1 if Config.SOURCE_EDITOR_USER_GROUP in list(user_groups.values()) else 0
 
                 # Generate and store JWT token in the session
                 jwt_token = generate_jwt()
@@ -738,6 +744,7 @@ def api_upload():
         "fileName": os.path.basename(file_path),
         "url": url_to_return
     })
+
 
 def uniquify(path):
     """
