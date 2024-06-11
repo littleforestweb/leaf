@@ -63,3 +63,28 @@ def get_user_groups(user_id):
     finally:
         if mydb:
             mydb.close()
+
+
+def get_all_user_groups(account_id):
+    """
+    Fetch groups from the database.
+
+    Returns:
+        list: List of groups fetched from the database.
+    """
+
+    # Get a database connection
+    mydb, mycursor = decorators.db_connection()
+
+    query = "SELECT group_id, group_name FROM user_groups where user_groups.account_id = %s"
+    values = (account_id,)
+    # Execute the SQL query to fetch groups
+    mycursor.execute(query, values)
+
+    # Fetch all the rows
+    groups = mycursor.fetchall()
+    groups = {group[1]: group[0] for group in groups}
+
+    # Close the database connection
+    mydb.close()
+    return groups
