@@ -7,7 +7,7 @@ from flask import render_template, Blueprint, jsonify, request, session, send_fr
 
 from leaf.config import Config
 from leaf.decorators import login_required, limiter, db_connection, generate_jwt
-from leaf.users.models import get_user_groups
+from leaf.groups.models import get_user_groups
 
 main = Blueprint('main', __name__)
 

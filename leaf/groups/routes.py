@@ -2,7 +2,7 @@ from flask import render_template, Blueprint, jsonify, session
 
 from leaf import Config
 from leaf.decorators import login_required, admin_required
-from leaf.groups.models import get_groups
+from leaf.groups.models import get_account_groups
 
 groups = Blueprint('groups', __name__)
 
@@ -39,7 +39,7 @@ def api_get_groups():
     """
     try:
         # Fetch deployments data from the model
-        groups_data = get_groups()
+        groups_data = get_account_groups(session['accountId'])
 
         # Create JSON response
         json_response = {"groups": groups_data}

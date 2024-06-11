@@ -14,6 +14,7 @@ import werkzeug.utils
 from flask import current_app
 
 from leaf.template_editor.models import *
+from leaf.sites.models import get_user_access_folder
 
 
 def get_lists_data(accountId: int, userId: str, isAdmin: str):
@@ -86,6 +87,18 @@ def get_list_data(request, accountId: str, reference: str):
         direction = request.args.get("sSortDir_0").upper()
         sortingColumn = request.args.get("iSortCol_0")
 
+        has_folder_access_defined = False
+        folder_access_field = False
+        list_settings = get_list_columns_with_properties(accountId, reference)
+        list_settings_str = list_settings.get_data(as_text=True)
+        list_settings = json.loads(list_settings_str)["columns"]
+        for list_setting in list_settings:
+            if list_setting[3] == "-_leaf_access_folders_-":
+                has_folder_access_defined = True
+                folder_access_field = list_setting[2]
+
+        user_access_folder = get_user_access_folder()
+
         if isinstance(int(accountId), int):
             tableName = f"account_{accountId}_list_{reference}"
             showColumnsQuery = f"SHOW COLUMNS FROM {tableName}"
@@ -107,20 +120,35 @@ def get_list_data(request, accountId: str, reference: str):
             userUsernameEmail = 'CONCAT(user.id, ", ", user.username, ", ", user.email)'
             columnsFinal = [f"{tableName}.{row[0]}" if row[0] != 'modified_by' else f"{userUsernameEmail}" for row in listColumns]
 
-            where_clause = " AND ".join(field_list)
+            # Constructing folder access where clause
+            folder_where_clause = " OR ".join([f"{folder_access_field} LIKE '{path[1:]}%'" for path in user_access_folder])
+            
+            # Combine where clauses if both exist
+            if field_list and has_folder_access_defined:
+                where_clause = f"({' AND '.join(field_list)}) AND ({folder_where_clause})"
+            elif field_list:
+                where_clause = " AND ".join(field_list)
+            elif has_folder_access_defined:
+                where_clause = folder_where_clause
+            else:
+                where_clause = ""
+
+            if where_clause != "":
+                where_clause = f"WHERE {where_clause}" 
+
             if field_list:
                 query_params = list(f"%{searchColumnsField['value']}%" for searchColumnsField in searchColumnsFields)
-                query = f"SELECT {', '.join(columnsFinal)} FROM {tableName} INNER JOIN user ON {tableName}.modified_by = user.id WHERE {where_clause} ORDER BY {listColumns[int(sortingColumn) - 1][0]} {direction} LIMIT %s, %s"
+                query = f"SELECT {', '.join(columnsFinal)} FROM {tableName} INNER JOIN user ON {tableName}.modified_by = user.id {where_clause} ORDER BY {listColumns[int(sortingColumn) - 1][0]} {direction} LIMIT %s, %s"
                 mycursor.execute(query, query_params + [skip, limit])
             else:
                 order_by = listColumns[int(sortingColumn) - 1][0]
-                query = f"SELECT {', '.join(columnsFinal)} FROM {tableName} INNER JOIN user ON {tableName}.modified_by = user.id ORDER BY {order_by} {direction} LIMIT %s, %s"
+                query = f"SELECT {', '.join(columnsFinal)} FROM {tableName} INNER JOIN user ON {tableName}.modified_by = user.id {where_clause} ORDER BY {order_by} {direction} LIMIT %s, %s"
                 mycursor.execute(query, (skip, limit))
 
             lists = mycursor.fetchall()
             # print(lists)
 
-            mycursor.execute(f"SELECT COUNT(*) FROM {tableName}")
+            mycursor.execute(f"SELECT COUNT(*) FROM {tableName} {where_clause}")
             listCount = mycursor.fetchone()[0]
 
             # Create json
