@@ -122,7 +122,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
     });
 
     // Init CKEditor
-    CKEDITOR.replace("htmlCode", {
+    ckeditorConfig = {
         toolbar: [
             {name: "clipboard", items: ["Cut", "Copy", "Paste", "PasteText", "PasteFromWord", "-", "Undo", "Redo"]},
             {name: "basicstyles", items: ["Bold", "Italic", "Underline", "Strike"]},
@@ -131,7 +131,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {name: "insert", items: ["Image", "Embed", "Table", "HorizontalRule", "SpecialChar", "inserthtml4x"]},
             {name: "styles", items: ["Styles", "Format"]},
             {name: "colors", items: ["TextColor", "BGColor"]},
-            {name: "actions", items: ["Source", "Preview", "SaveBtn", "PublishBtn"]}
+            {name: "actions", items: ["Preview", "SaveBtn", "PublishBtn"]}
         ],
         extraPlugins: "anchor, inserthtml4x, embed, saveBtn, pastefromword",
         codeSnippet_theme: 'prism',
@@ -176,7 +176,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 window.addEventListener('beforeunload', async function (event) {
                     // Perform any necessary actions before showing the confirmation dialog
                     console.log('User attempted to leave the page.');
-                    
+
                     // Show a confirmation dialog
                     event.preventDefault();
                     event.returnValue = ''; // This triggers the default confirmation dialog in most browsers
@@ -207,7 +207,19 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 });
             }
         }
-    });
+    };
+
+    // Conditionally add "Source" button if is_source_editor is true
+    if (is_source_editor === 1 || is_admin === 1) {
+        ckeditorConfig.toolbar.forEach(function (toolbarGroup) {
+            if (toolbarGroup.name === "actions") {
+                toolbarGroup.items.push("Source");
+            }
+        });
+    }
+
+    // Initialize CKEditor with the configuration
+    CKEDITOR.replace("htmlCode", ckeditorConfig);
 
     // Remove loadingBg
     $(".loadingBg").removeClass("show");
