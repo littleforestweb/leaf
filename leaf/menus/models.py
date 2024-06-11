@@ -33,14 +33,9 @@ def get_menus_data(accountId: int, userId: str, isAdmin: str):
     mydb, mycursor = db_connection()
 
     try:
-        if isAdmin != '1':
-            sql = "SELECT menus.id, menus.name, menus.reference, menus.created, menus.user_with_access FROM menus WHERE (accountId = %s AND LOCATE('userId', user_with_access) > 0) OR (accountId = %s AND menus.name = 'Articles') OR (accountId = %s AND menus.name = 'News') OR (accountId = %s AND menus.name = 'People')"
-            queryVal = (accountId, accountId, accountId, accountId)
-            mycursor.execute(sql, queryVal)
-        else:
-            sql = "SELECT menus.id, menus.name, menus.reference, menus.created, menus.user_with_access FROM menus WHERE accountId = %s"
-            queryVal = (accountId,)
-            mycursor.execute(sql, queryVal)
+        sql = "SELECT menus.id, menus.name, menus.reference, menus.created, menus.user_with_access FROM menus WHERE accountId = %s"
+        queryVal = (accountId,)
+        mycursor.execute(sql, queryVal)
 
         menus = mycursor.fetchall()
 
