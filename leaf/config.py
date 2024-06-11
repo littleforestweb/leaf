@@ -78,10 +78,10 @@ def checkConfig(loaded_json):
         "IDP_X509CERT": "",
         "SAML_ATTRIBUTES_MAP": {},
         "POWER_USER_GROUP": "admin",
+        "SOURCE_EDITOR_USER_GROUP": "source_editor",
         "XMLSEC_BINARY": "",
         "SITE_NOTICE": "This is a site notice that you can control on your config.json file. Keep it empty to remove the notice!",
-        "PAGES_EXTENSION": ".page",
-        "SOURCE_EDITOR_USER_GROUP": "source_editor"
+        "PAGES_EXTENSION": ".page"
     }
 
     # Update the loaded JSON with the expected structure
