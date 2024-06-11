@@ -35,8 +35,8 @@ async function addWorkflow(btn) {
     })
     allSelectedUsers = allSelectedUsers.join(',');
 
-    let pubDate = $('#review-date').datepicker("getDate");
-    pubDate = pubDate.getFullYear() + ':' + (pubDate.getMonth() + 1) + ':' + pubDate.getDate() + " 00:00:00";
+    let pubDate = new Date(document.querySelector("#pubDate").value);
+    pubDate = pubDate.getFullYear() + '/' + (pubDate.getMonth() + 1) + '/' + pubDate.getDate() + " " + pubDate.getHours() + ":" + pubDate.getMinutes() + ":" + pubDate.getSeconds();
 
     let form_data = {
         "startUser": userId,
@@ -453,10 +453,6 @@ window.addEventListener('DOMContentLoaded', async function main() {
     $("#table_wrapper > .dt-buttons").appendTo("div.header-btns");
     $(".loadingBg").removeClass("show");
 
-    // Set Publish Modal Datepicker
-    $('#review-date').datepicker({
-        format: 'yyyy/mm/dd',
-        autoclose: true,
-        todayHighlight: true
-    }).datepicker('setDate', new Date());
+    // Set the value of the pubDate input field
+    document.querySelector('#pubDate').value = new Date().toISOString().slice(0, 16);
 });

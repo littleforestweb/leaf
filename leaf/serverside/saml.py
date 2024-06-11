@@ -251,7 +251,7 @@ def idp_initiated():
                         lfi_user = mycursor.fetchone()
                         mydb.commit()
 
-                        leaf_user_groups = groups_model.get_all_user_groups(lfi_user[4])
+                        leaf_user_groups = groups_model.get_account_groups(lfi_user[4])
 
                         # SQL query to check if an entry already exists
                         check_query = "SELECT * FROM group_member WHERE group_id=%s AND user_id=%s"
