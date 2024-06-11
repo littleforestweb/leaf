@@ -64,7 +64,7 @@ def checkConfig(loaded_json):
         "HERITRIX_PORT": "",
         "HERITRIX_USER": "",
         "HERITRIX_PASS": "",
-        "SAML_ACTIVE": 1,
+        "SAML_ACTIVE": 0,
         "SP_ENTITY_ID": "",
         "SP_ASSERTION_CONSUMER_SERVICE_URL": "",
         "SP_SINGLE_LOGOUT_SERVICE_URL": "",
