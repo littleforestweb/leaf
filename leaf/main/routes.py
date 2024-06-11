@@ -143,7 +143,7 @@ def login():
 
                 # Check if user is source editor
                 user_groups = dict(get_user_groups(session["id"]))
-                session['is_source_editor'] = 1 if "source_editor" in list(user_groups.values()) else 0
+                session['is_source_editor'] = 1 if Config.SOURCE_EDITOR_USER_GROUP in list(user_groups.values()) else 0
 
                 # Generate and store JWT token in the session
                 jwt_token = generate_jwt()
