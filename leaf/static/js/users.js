@@ -93,8 +93,8 @@ document.querySelector("#editUserModal").addEventListener("show.bs.modal", event
     let row = selectedCheckbox.closest('tr');
     let userName = row.find('td:eq(2)').text().trim();
     let userEmail = row.find('td:eq(3)').text().trim();
-    let userIsAdmin = row.find('td:eq(4)').text().trim() === "Yes" ? 1 : 0;
-    let userIsManager = row.find('td:eq(5)').text().trim() === "Yes" ? 1 : 0;
+    let userIsAdmin = row.find('td:eq(7)').text().trim() === "Yes" ? 1 : 0;
+    let userIsManager = row.find('td:eq(8)').text().trim() === "Yes" ? 1 : 0;
     document.querySelector("#edit-user-name").value = userName;
     document.querySelector("#edit-user-email").value = userEmail;
     document.querySelector("#edit-user-is-admin").value = userIsAdmin;
