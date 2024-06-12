@@ -17,6 +17,7 @@ from signxml import XMLVerifier
 from leaf import Config
 from leaf.decorators import db_connection, generate_jwt
 from leaf.groups import models as groups_model
+from leaf.groups.models import get_user_groups
 
 saml_route = Blueprint("saml_route", __name__)
 
@@ -305,6 +306,10 @@ def idp_initiated():
                         session['is_admin'] = isAdmin
                         session['is_manager'] = lfi_user[7]
                         session['logout_redirect'] = logout_redirect
+
+                        # Check if user is source editor
+                        user_groups = dict(get_user_groups(session["id"]))
+                        session['is_source_editor'] = 1 if Config.SOURCE_EDITOR_USER_GROUP in list(user_groups.values()) else 0
 
                         # Generate and store JWT token in the session
                         jwt_token = generate_jwt()
