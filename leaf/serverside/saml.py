@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 import requests
 import werkzeug.utils
 from defusedxml.lxml import fromstring
-from flask import Blueprint, render_template, session, request, redirect, Response
+from flask import Blueprint, render_template, session, request, redirect, Response, current_app
 from lxml import etree
 from saml2 import BINDING_HTTP_POST
 from saml2 import BINDING_HTTP_REDIRECT
@@ -262,6 +262,7 @@ def idp_initiated():
                         delete_query = "DELETE FROM group_member WHERE group_id=%s AND user_id=%s"
 
                         for group in groups:
+                            current_app.logger.warning(group)
                             if group in leaf_user_groups:
                                 # Get the corresponding group_id
                                 group_id = leaf_user_groups[group]
