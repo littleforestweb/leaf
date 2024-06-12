@@ -521,11 +521,13 @@
                     <span class="dropdown_actions">
                         <button type="button" id="actions" class="btn btn-blue" onclick="dropDownActionsToggle()">Actions</button>
                         <span class="actions_container hide">
-                            <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#uploadSetFieldsDynamicList" onclick="populateUploadFieldsForSettings('{{ accountId }}', '{{ reference }}');">Settings</button>
-                            <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#setConfigurationDynamicList" onclick="openConfiguration('{{ accountId }}', '{{ reference }}');">Configuration</button>
-                            <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#setTemplateDynamicList" onclick="openTemplate('{{ accountId }}', '{{ reference }}');">Templates</button>
-                            <button type="button" class="btn btn-export" data-bs-toggle="modal" data-bs-target="#uploadDynamicList" onclick="dropDownActionsToggle();">Upload CSV</button>
-                            <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#scrapeSettingsDynamicList" onclick="populateScrapeSettingsDynamicList();">Scrape Settings</button>
+                            {% if is_admin == 1 %}
+                                <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#uploadSetFieldsDynamicList" onclick="populateUploadFieldsForSettings('{{ accountId }}', '{{ reference }}');">Settings</button>
+                                <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#setConfigurationDynamicList" onclick="openConfiguration('{{ accountId }}', '{{ reference }}');">Configuration</button>
+                                <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#setTemplateDynamicList" onclick="openTemplate('{{ accountId }}', '{{ reference }}');">Templates</button>
+                                <button type="button" class="btn btn-export" data-bs-toggle="modal" data-bs-target="#uploadDynamicList" onclick="dropDownActionsToggle();">Upload CSV</button>
+                                <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#scrapeSettingsDynamicList" onclick="populateScrapeSettingsDynamicList();">Scrape Settings</button>
+                            {% endif %}
                         </span>
                     </span>
                 </div>

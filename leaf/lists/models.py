@@ -118,11 +118,11 @@ def get_list_data(request, accountId: str, reference: str):
             folder_where_clause = " OR ".join([f"{folder_access_field} LIKE '{path[1:]}%'" for path in user_access_folder])
 
             # Combine where clauses if both exist
-            if field_list and has_folder_access_defined:
+            if field_list and has_folder_access_defined and session["is_admin"] != 1:
                 where_clause = f"({' AND '.join(field_list)}) AND ({folder_where_clause})"
             elif field_list:
                 where_clause = " AND ".join(field_list)
-            elif has_folder_access_defined:
+            elif has_folder_access_defined and session["is_admin"] != 1:
                 where_clause = folder_where_clause
             else:
                 where_clause = ""
