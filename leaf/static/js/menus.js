@@ -228,7 +228,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
         let reference = entry["reference"];
         let created = entry["created"];
         let user_with_access = entry["user_with_access"];
-        dataset.push([[id, name, user_with_access], [name, reference, created], reference, created]);
+        dataset.push([[id, name, user_with_access], [name, reference], created, reference]);
     }
 
     // Setup - add a text input to each header cell
@@ -294,14 +294,14 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 className: "center",
                 targets: 0,
                 render: function (data, type, row) {
-                    return "<input type='checkbox' id='" + data[0] + "' value='" + data[1] + "' ><input class='users_with_access_list hide' value='" + data[2] + "' />";
+                    return "<input type='checkbox' id='" + data + "' value='" + data[1] + "' ><input class='users_with_access_list hide' value='" + data[2] + "' />";
                 },
             },
             {
                 width: "50%",
                 targets: 1,
                 render: function (data, type, row) {
-                    return '<a href="/menu/' + data[2] + '"><span class="toEdit">' + data[0] + '</span></a>';
+                    return '<a href="/menu/' + data[1] + '"><span class="toEdit">' + data[0] + '</span></a>';
                 },
             },
             {

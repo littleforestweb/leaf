@@ -11,6 +11,7 @@ from flask import jsonify, session
 
 from leaf.config import Config
 from leaf.decorators import db_connection
+from leaf.sites.models import get_user_access_folder
 
 
 def get_menus_data(accountId: int, userId: str, isAdmin: str):
@@ -39,7 +40,18 @@ def get_menus_data(accountId: int, userId: str, isAdmin: str):
 
         menus = mycursor.fetchall()
 
-        menusLst = [{"id": singleMenu[0], "name": singleMenu[1], "reference": singleMenu[3], "created": singleMenu[2], "user_with_access": singleMenu[4]} for singleMenu in menus]
+        if session["is_admin"] == 0:
+            groups_names = [gname.split('/')[1] for gname in get_user_access_folder()]
+            menusLst = [
+                {"id": singleMenu[0], "name": singleMenu[1], "reference": singleMenu[2], "created": singleMenu[3], "user_with_access": singleMenu[4]}
+                for singleMenu in menus
+                if any(group_name in singleMenu[2] for group_name in groups_names)
+            ]
+        else:
+            menusLst = [
+                {"id": singleMenu[0], "name": singleMenu[1], "reference": singleMenu[2], "created": singleMenu[3], "user_with_access": singleMenu[4]}
+                for singleMenu in menus
+            ]
 
         jsonR = {"menus": menusLst}
 

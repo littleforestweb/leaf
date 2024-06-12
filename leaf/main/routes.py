@@ -284,7 +284,7 @@ def api_get_lfi_users(accountId):
 
     mydb, mycursor = db_connection()
 
-    sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE user.is_admin <> 1 AND account.active = 1 AND account.id = %s"
+    sql = "SELECT user.id, CASE WHEN image IS NOT NULL AND image <> '' THEN CONCAT('', image) WHEN (image IS NULL OR image = '') AND color IS NOT NULL AND color <> '' THEN color ELSE '#176713' END AS user_image, CASE WHEN (first_name IS NULL OR first_name = '') OR (last_name IS NULL OR last_name = '') THEN username ELSE CONCAT(first_name, ' ', last_name) END AS username, user.email, user.account_id, name, user.is_admin, user.is_manager FROM user LEFT JOIN user_image ON user_id = user.id LEFT JOIN account ON user.account_id = account.id WHERE user.is_admin <> 1 AND account.id = %s"
     val = (accountId,)
     mycursor.execute(sql, val)
     users = mycursor.fetchall()
@@ -292,7 +292,6 @@ def api_get_lfi_users(accountId):
     usersLst = [{"id": singleUser[0], "user_image": singleUser[1], "username": singleUser[2], "email": singleUser[3],
                  "account_id": singleUser[4], "account_name": singleUser[5], "is_admin": singleUser[6],
                  "is_manager": singleUser[7]} for singleUser in users]
-
     # Create JSON
     jsonR = {"users": usersLst}
 
