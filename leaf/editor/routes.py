@@ -1,7 +1,7 @@
 import traceback
 
 import werkzeug.utils
-from flask import Blueprint, render_template, request, jsonify, session
+from flask import Blueprint, render_template, request, jsonify, session, current_app
 
 from leaf import Config
 from leaf.decorators import login_required
@@ -34,7 +34,7 @@ def view_editor():
 
         return render_template('editor.html', email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], page_id=page_id, site_notice=Config.SITE_NOTICE, is_source_editor=session["is_source_editor"])
     except Exception as e:
-        print(traceback.format_exc())
+        current_app.logger.error(traceback.format_exc())
         # Handle exceptions and return an error response with status code 500
         return jsonify({"error": str(e)}), 500
 

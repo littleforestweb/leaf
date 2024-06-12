@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 import requests
 import werkzeug.utils
 from defusedxml.lxml import fromstring
-from flask import Blueprint, render_template, session, request, redirect, Response
+from flask import Blueprint, render_template, session, request, redirect, Response, current_app
 from lxml import etree
 from saml2 import BINDING_HTTP_POST
 from saml2 import BINDING_HTTP_REDIRECT
@@ -17,6 +17,7 @@ from signxml import XMLVerifier
 from leaf import Config
 from leaf.decorators import db_connection, generate_jwt
 from leaf.groups import models as groups_model
+from leaf.groups.models import get_user_groups
 
 saml_route = Blueprint("saml_route", __name__)
 
@@ -261,6 +262,7 @@ def idp_initiated():
                         delete_query = "DELETE FROM group_member WHERE group_id=%s AND user_id=%s"
 
                         for group in groups:
+                            current_app.logger.warning(group)
                             if group in leaf_user_groups:
                                 # Get the corresponding group_id
                                 group_id = leaf_user_groups[group]
@@ -305,6 +307,10 @@ def idp_initiated():
                         session['is_admin'] = isAdmin
                         session['is_manager'] = lfi_user[7]
                         session['logout_redirect'] = logout_redirect
+
+                        # Check if user is source editor
+                        user_groups = dict(get_user_groups(session["id"]))
+                        session['is_source_editor'] = 1 if Config.SOURCE_EDITOR_USER_GROUP in list(user_groups.values()) else 0
 
                         # Generate and store JWT token in the session
                         jwt_token = generate_jwt()
