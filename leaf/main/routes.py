@@ -3,7 +3,7 @@ import os
 import urllib.parse
 
 import werkzeug.utils
-from flask import render_template, Blueprint, jsonify, request, session, send_from_directory, redirect
+from flask import render_template, Blueprint, jsonify, request, session, send_from_directory, redirect, current_app
 
 from leaf.config import Config
 from leaf.decorators import login_required, limiter, db_connection, generate_jwt
@@ -143,7 +143,9 @@ def login():
 
                 # Check if user is source editor
                 user_groups = dict(get_user_groups(session["id"]))
+                current_app.logger.error(user_groups)
                 session['is_source_editor'] = 1 if Config.SOURCE_EDITOR_USER_GROUP in list(user_groups.values()) else 0
+                current_app.logger.error(session['is_source_editor'])
 
                 # Generate and store JWT token in the session
                 jwt_token = generate_jwt()
