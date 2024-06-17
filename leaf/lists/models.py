@@ -54,6 +54,15 @@ def get_lists_data(accountId: int, userId: str, isAdmin: str):
         return jsonify(jsonR)
 
 
+def build_folder_access_where_clause(folder_access_field, user_access_folder):
+    where_clauses = []
+    for path in user_access_folder:
+        clause = f"""value LIKE '{path[1:]}%'
+        """
+        where_clauses.append(clause)
+    return " OR ".join(where_clauses)
+
+
 def get_list_data(request, accountId: str, reference: str):
     """
     Get data for a single list from the database.
@@ -115,7 +124,24 @@ def get_list_data(request, accountId: str, reference: str):
             columnsFinal = [f"{tableName}.{row[0]}" if row[0] != 'modified_by' else f"{userUsernameEmail}" for row in listColumns]
 
             # Constructing folder access where clause
-            folder_where_clause = " OR ".join([f"{folder_access_field} LIKE '{path[1:]}%'" for path in user_access_folder])
+            # folder_where_clause = " OR ".join([f"{folder_access_field} LIKE '{path[1:]}%'" for path in user_access_folder])
+            folder_where_clause_start = f"""
+            {tableName}.id IN (
+                SELECT DISTINCT id
+                FROM (
+                    SELECT id,
+                           TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX({folder_access_field}, ',', numbers.n), ',', -1)) AS value
+                    FROM leaf.account_2_list_news
+                    JOIN (
+                        SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL
+                        SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL
+                        SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10
+                    ) numbers
+                    WHERE numbers.n <= 1 + LENGTH({folder_access_field}) - LENGTH(REPLACE({folder_access_field}, ',', ''))
+                ) split_values
+                """
+            folder_where_clause = build_folder_access_where_clause(folder_access_field, user_access_folder)
+            folder_where_clause = f"{folder_where_clause_start} WHERE {folder_where_clause})"
 
             # Combine where clauses if both exist
             if field_list and has_folder_access_defined and session["is_admin"] != 1:

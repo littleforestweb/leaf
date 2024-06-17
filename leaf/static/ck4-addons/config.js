@@ -26,7 +26,7 @@ CKEDITOR.editorConfig = function (config) {
 
     // Set sandbox attributes for iframes to restrict their behavior.
     config.iframe_attributes = {
-        sandbox: 'allow-scripts allow-same-origin'
+        sandbox: 'allow-scripts allow-same-origin allow-top-navigation'
     };
 
     config.clipboard_handleImages = false;
