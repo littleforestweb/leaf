@@ -57,8 +57,14 @@ def get_lists_data(accountId: int, userId: str, isAdmin: str):
 def build_folder_access_where_clause(folder_access_field, user_access_folder):
     where_clauses = []
     for path in user_access_folder:
-        clause = f"""value LIKE '{path[1:]}%'
+        
+        my_path_value = path[1:]
+        if my_path_value.endswith('/'):
+            my_path_value = my_path_value.rstrip('/')
+        
+        clause = f"""value LIKE '{my_path_value}%'
         """
+        
         where_clauses.append(clause)
     return " OR ".join(where_clauses)
 
