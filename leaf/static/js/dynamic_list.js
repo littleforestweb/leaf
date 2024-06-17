@@ -2100,7 +2100,7 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
                                 val = val[2];
                             }
                             if (thisLabel === "folder") {
-                                val = val[0];
+                                val = val[0].replace(/,/g, ', ');
                             }
                             if (thisLabel === "id") {
                                 val = val[0];
