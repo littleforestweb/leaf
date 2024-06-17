@@ -57,32 +57,15 @@ def get_lists_data(accountId: int, userId: str, isAdmin: str):
 def build_folder_access_where_clause(folder_access_field, user_access_folder):
     where_clauses = []
     for path in user_access_folder:
-        
         my_path_value = path[1:]
         if my_path_value.endswith('/'):
             my_path_value = my_path_value.rstrip('/')
-        
-        clause = f"""value LIKE '{my_path_value}%'
-        """
-        
-        where_clauses.append(clause)
-    return " OR ".join(where_clauses)
+        clause = "SUBSTRING_INDEX(value, '/', 1) LIKE %s"
+        where_clauses.append((clause, my_path_value))
+    return where_clauses
 
 
 def get_list_data(request, accountId: str, reference: str):
-    """
-    Get data for a single list from the database.
-
-    Args:
-        request (Request): The HTTP request object.
-        accountId (str): The account ID associated with the list.
-        reference (str): The reference code for the specific list.
-
-    Returns:
-        dict: A JSON response containing data for the single list. The response includes
-        a list of records ('data'), the total number of records ('recordsTotal'), and the
-        number of records after filtering ('recordsFiltered') based on search criteria.
-    """
     jsonR = {'data': [], 'recordsTotal': 0, 'recordsFiltered': 0}
 
     if not int(accountId) == int(session["accountId"]):
@@ -111,7 +94,7 @@ def get_list_data(request, accountId: str, reference: str):
         if isinstance(int(accountId), int):
             tableName = f"account_{accountId}_list_{reference}"
             showColumnsQuery = f"SHOW COLUMNS FROM {tableName}"
-            mycursor.execute(showColumnsQuery, )
+            mycursor.execute(showColumnsQuery)
             listColumns = mycursor.fetchall()
 
             searchColumnsFields = []
@@ -130,14 +113,17 @@ def get_list_data(request, accountId: str, reference: str):
             columnsFinal = [f"{tableName}.{row[0]}" if row[0] != 'modified_by' else f"{userUsernameEmail}" for row in listColumns]
 
             # Constructing folder access where clause
-            # folder_where_clause = " OR ".join([f"{folder_access_field} LIKE '{path[1:]}%'" for path in user_access_folder])
+            folder_where_clauses = build_folder_access_where_clause(folder_access_field, user_access_folder)
+            folder_where_clause = " OR ".join([clause for clause, _ in folder_where_clauses])
+            folder_where_params = [f"{value}" for _, value in folder_where_clauses]
+
             folder_where_clause_start = f"""
             {tableName}.id IN (
                 SELECT DISTINCT id
                 FROM (
                     SELECT id,
                            TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX({folder_access_field}, ',', numbers.n), ',', -1)) AS value
-                    FROM leaf.{tableName}
+                    FROM {tableName}
                     JOIN (
                         SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL
                         SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL
@@ -146,16 +132,19 @@ def get_list_data(request, accountId: str, reference: str):
                     WHERE numbers.n <= 1 + LENGTH({folder_access_field}) - LENGTH(REPLACE({folder_access_field}, ',', ''))
                 ) split_values
                 """
-            folder_where_clause = build_folder_access_where_clause(folder_access_field, user_access_folder)
             folder_where_clause = f"{folder_where_clause_start} WHERE {folder_where_clause})"
 
             # Combine where clauses if both exist
+            query_params = []
             if field_list and has_folder_access_defined and session["is_admin"] != 1:
                 where_clause = f"({' AND '.join(field_list)}) AND ({folder_where_clause})"
+                query_params = [f"%{searchColumnsField['value']}%" for searchColumnsField in searchColumnsFields] + folder_where_params
             elif field_list:
                 where_clause = " AND ".join(field_list)
+                query_params = [f"%{searchColumnsField['value']}%" for searchColumnsField in searchColumnsFields]
             elif has_folder_access_defined and session["is_admin"] != 1:
                 where_clause = folder_where_clause
+                query_params = folder_where_params
             else:
                 where_clause = ""
 
@@ -163,21 +152,32 @@ def get_list_data(request, accountId: str, reference: str):
                 where_clause = f"WHERE {where_clause}"
 
             if field_list:
-                query_params = list(f"%{searchColumnsField['value']}%" for searchColumnsField in searchColumnsFields)
-                query = f"SELECT {', '.join(columnsFinal)} FROM {tableName} INNER JOIN user ON {tableName}.modified_by = user.id {where_clause} ORDER BY {listColumns[int(sortingColumn) - 1][0]} {direction} LIMIT %s, %s"
-                mycursor.execute(query, query_params + [skip, limit])
+                query = f"""
+                SELECT {', '.join(columnsFinal)} 
+                FROM {tableName} 
+                INNER JOIN user ON {tableName}.modified_by = user.id 
+                {where_clause} 
+                ORDER BY {listColumns[int(sortingColumn) - 1][0]} {direction} 
+                LIMIT %s, %s
+                """
+                query_params.extend([skip, limit])
+                mycursor.execute(query, query_params)
             else:
                 order_by = listColumns[int(sortingColumn) - 1][0]
-                query = f"SELECT {', '.join(columnsFinal)} FROM {tableName} INNER JOIN user ON {tableName}.modified_by = user.id {where_clause} ORDER BY {order_by} {direction} LIMIT %s, %s"
-                mycursor.execute(query, (skip, limit))
+                query = f"""
+                SELECT {', '.join(columnsFinal)} 
+                FROM {tableName} 
+                INNER JOIN user ON {tableName}.modified_by = user.id 
+                {where_clause} 
+                ORDER BY {order_by} {direction} 
+                LIMIT %s, %s
+                """
+                mycursor.execute(query, query_params + [skip, limit])
 
             lists = mycursor.fetchall()
-            # print(lists)
-
-            mycursor.execute(f"SELECT COUNT(*) FROM {tableName} {where_clause}")
+            mycursor.execute(f"SELECT COUNT(*) FROM {tableName} {where_clause}", query_params)
             listCount = mycursor.fetchone()[0]
 
-            # Create json
             jsonR = {"data": lists, "recordsTotal": listCount, "recordsFiltered": listCount}
 
         else:
