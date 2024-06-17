@@ -2141,13 +2141,19 @@ def trigger_new_scrape(request):
                             match_rule = True
                             if regex_rules and len(regex_rules) > 0:
                                 match_rule = None
+                                is_match = True
                                 for regex_rule in regex_rules:
                                     if regex_rule != '':
                                         regex_rule = regex_rule.replace('__BACKSLASH__TO_REPLACE_ON_WEB__', '\\')
                                         # Search for the pattern in the URL
-                                        match_rule = re.search(regex_rule, file_path)
+                                        this_match = re.search(regex_rule, file_path)
+                                        if this_match is None:
+                                            is_match = None
                                     else:
                                         match_rule = True
+
+                                if is_match is not None:
+                                    match_rule = True
 
                             if match_rule is not None:
                                 html_content = read_html_file(file_path)
