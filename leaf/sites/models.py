@@ -120,8 +120,12 @@ def get_user_access_folder(mycursor=None):
         mydb, mycursor = decorators.db_connection()
 
     # Get User Access folders
-    query = "SELECT ua.folder_path FROM leaf.user_access ua JOIN leaf.user_groups ug ON ua.group_id = ug.group_id JOIN leaf.group_member gm ON ug.group_id = gm.group_id WHERE gm.user_id = %s"
-    mycursor.execute(query, (session["id"],))
+    if session["is_admin"] == 1:
+        query = "SELECT ua.folder_path FROM leaf.user_access ua"
+        mycursor.execute(query)
+    else:
+        query = "SELECT ua.folder_path FROM leaf.user_access ua JOIN leaf.user_groups ug ON ua.group_id = ug.group_id JOIN leaf.group_member gm ON ug.group_id = gm.group_id WHERE gm.user_id = %s"
+        mycursor.execute(query, (session["id"],))
     return [folder_path[0] for folder_path in mycursor.fetchall()]
 
 
