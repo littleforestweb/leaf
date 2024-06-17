@@ -137,7 +137,7 @@ def get_list_data(request, accountId: str, reference: str):
                 FROM (
                     SELECT id,
                            TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX({folder_access_field}, ',', numbers.n), ',', -1)) AS value
-                    FROM leaf.account_2_list_news
+                    FROM leaf.{tableName}
                     JOIN (
                         SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL
                         SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL
