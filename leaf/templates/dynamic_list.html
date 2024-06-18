@@ -463,6 +463,16 @@
             </div>
         </div>
 
+        <div id="saveJsonByFieldDynamicListSuccessNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                {{ referenceNoUnderscores }} saved by field successfully!
+            </div>
+        </div>
+
         <div id="deleteTemplateSuccessNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="toast-header">
                 <strong class="me-auto">Message</strong>
@@ -527,6 +537,7 @@
                                 <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#setTemplateDynamicList" onclick="openTemplate('{{ accountId }}', '{{ reference }}');">Templates</button>
                                 <button type="button" class="btn btn-export" data-bs-toggle="modal" data-bs-target="#uploadDynamicList" onclick="dropDownActionsToggle();">Upload CSV</button>
                                 <button type="button" class="btn btn-settings" data-bs-toggle="modal" data-bs-target="#scrapeSettingsDynamicList" onclick="populateScrapeSettingsDynamicList();">Scrape Settings</button>
+                                <button type="button" class="btn btn-settings" onclick="saveJsonsByFields('{{ accountId }}', '{{ reference }}')">Save By Field</button>
                             {% endif %}
                         </span>
                     </span>

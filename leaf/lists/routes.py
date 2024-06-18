@@ -392,6 +392,26 @@ def publish_dynamic_list(account_list: str, accountId: str, reference: str, env:
 # ---------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------- #@
 
+@lists.route('/save_jsons_by_fields/<account_list>/<accountId>/<reference>', methods=['POST'])
+@login_required
+def save_jsons_by_fields(account_list: str, accountId: str, reference: str):
+    """
+    Save a dynamic list based on account and reference.
+
+    Args:
+        account_list (str): Account list.
+        accountId (str): Account ID.
+        reference (str): List reference.
+
+    Returns:
+        JSON response indicating success or failure.
+    """
+    if request.method == 'POST':
+        return generate_all_json_files_by_fields(request, account_list, accountId, reference)
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #@
+
 @lists.route('/update/<accountId>/<account_list>', methods=['POST'])
 @login_required
 def update_dynamic_list(accountId: str, account_list: str):

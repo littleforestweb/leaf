@@ -864,7 +864,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         processData: false,
         success: function (updated) {
 
-            $('#publishDynamicListSuccessNotification').toast('show');
+            // $('#publishDynamicListSuccessNotification').toast('show');
 
             if ((env !== 'saveOnly' && env !== 'save')) {
                 if (thisTemplate !== '') {
@@ -890,6 +890,59 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
             $('#errorModal').modal('show');
 
             cleanUpActionButtons();
+        }
+    });
+}
+
+async function saveJsonsByFields(accountId, reference) {
+
+    accountId = escapeHtml(accountId);
+    reference = escapeHtml(reference);
+
+    // Get list configuration
+    let jsonConfig = await $.get("/api/get_list_configuration/" + accountId + "/" + reference, function (result) {
+        return result;
+    });
+    var values = jsonConfig.columns;
+
+    var save_by_field = '';
+    var thisFields = '';
+    var thisFieldsIncludes = '';
+
+    if (values && values[0]) {
+        save_by_field = values[0][3];
+        thisFields = values[0][4];
+        thisFieldsIncludes = (!Number.isInteger(values[0][5]) ? values[0][5] : '');
+    }
+
+    $(".saveJsonByFields-btn").prop('disabled', true);
+
+    $.ajax({
+        type: "POST",
+        url: "/save_jsons_by_fields/account_" + accountId + "_list_" + reference + '/' + accountId + '/' + reference,
+        data: JSON.stringify({
+            "save_by_field": save_by_field,
+            "field_to_save_by": thisFields,
+            "field_to_save_by_includes": thisFieldsIncludes
+        }),
+        contentType: 'application/json',
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        success: function (updated) {
+
+            $('#saveJsonByFieldDynamicListSuccessNotification').toast('show');
+            $(".saveJsonByFields-btn").prop('disabled', false);
+            // location.reload(true);
+            cleanUpActionButtons();
+            dropDownActionsToggle();
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+            $('#publishDynamicList').modal('hide');
+            $('#errorModal').modal('show');
+
+            cleanUpActionButtons();
+            dropDownActionsToggle();
         }
     });
 }
