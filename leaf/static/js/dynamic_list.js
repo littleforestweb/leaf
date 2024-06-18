@@ -215,14 +215,14 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                     var fieldsDropdown = '<select multiple name="e-' + thisSpanList + '" class="form-select form-select-md toCapitalize" id="e-' + thisSpanList + '"><option value="" disabled ' + (thisFieldValue && thisFieldValue.length > 0 ? "" : " selected") + '>Select option</option></select>';
                                     $('#e-' + thisSpanList).replaceWith(fieldsDropdown);
                                     for (single_item in getUserFolderAccess) {
-                                        var single_item_clean = (getUserFolderAccess[single_item] + reference).replace(/^\/|\/$/g, '');
+                                        var single_item_clean = (getUserFolderAccess[single_item] + (reference == "seminars" || reference == "events" ? "news/" + reference : reference)).replace(/^\/|\/$/g, '');
                                         $('select#e-' + thisSpanList).append('<option value="' + single_item_clean + '" ' + (thisFieldValue.includes(single_item_clean) ? " selected" : "") + '>' + single_item_clean.toLowerCase() + '</option>');
                                     }
                                 } else {
                                     var fieldsDropdown = '<select multiple name="a-' + thisSpanList + '" class="form-select form-select-md toCapitalize" id="a-' + thisSpanList + '"><option value="" disabled selected>Select option</option></select>';
                                     $('#a-' + thisSpanList).replaceWith(fieldsDropdown);
                                     for (single_item in getUserFolderAccess) {
-                                        var single_item_clean = (getUserFolderAccess[single_item] + reference).replace(/^\/|\/$/g, '');
+                                        var single_item_clean = (getUserFolderAccess[single_item] + (reference == "seminars" || reference == "events" ? "news/" + reference : reference)).replace(/^\/|\/$/g, '');
                                         $('select#a-' + thisSpanList).append('<option value="' + single_item_clean + '" ' + (thisFieldValue.includes(single_item_clean) ? " selected" : "") + '>' + single_item_clean.toLowerCase() + '</option>');
                                     }
                                 }
