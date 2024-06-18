@@ -160,8 +160,7 @@ def get_list_data(request, accountId: str, reference: str):
                 ORDER BY {listColumns[int(sortingColumn) - 1][0]} {direction} 
                 LIMIT %s, %s
                 """
-                query_params.extend([skip, limit])
-                mycursor.execute(query, query_params)
+                mycursor.execute(query, query_params + [skip, limit])
             else:
                 order_by = listColumns[int(sortingColumn) - 1][0]
                 query = f"""
@@ -1181,10 +1180,91 @@ def get_all_lists(accountId: str):
         mydb.close()
         return jsonify(json_response)
 
+def generate_all_json_files_by_fields(request, account_list: str, accountId: str, reference: str):
+    """
+    Generate dynamic list data to JSON files by field.
+
+    Args:
+        request (Request): The HTTP request object.
+        account_list (str): The name of the database table.
+        accountId (str): The account ID for which to retrieve the data.
+        reference (str): The reference identifier.
+        env (str): The environment identifier.
+
+    Returns:
+        Response: A JSON response containing the full list data.
+    """
+    full_list = []
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    mydb, mycursor = db_connection()
+
+    try:
+        # Query to retrieve all data from the specified database table (using parameterized query)
+        mycursor.execute(f"SELECT * FROM {account_list}")
+
+        # Fetch column headers
+        row_headers = [x[0] for x in mycursor.description]
+
+        # Fetch all rows from the database table
+        full_list = mycursor.fetchall()
+
+        this_request = request.get_json()
+
+        sanitized_reference = ''.join(e for e in reference if e.isalnum())
+
+        save_by_field = werkzeug.utils.escape(this_request.get("save_by_field"))
+        field_to_save_by = werkzeug.utils.escape(this_request.get("field_to_save_by"))
+
+        fields_to_save = f"""
+        SELECT DISTINCT TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(paths.value, ',', numbers.n), ',', -1)) AS unique_value
+        FROM (
+            SELECT {field_to_save_by} AS value FROM leaf.{account_list}
+        ) paths
+        JOIN (
+            SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL
+            SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL
+            SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10
+        ) numbers ON CHAR_LENGTH(paths.value) - CHAR_LENGTH(REPLACE(paths.value, ',', '')) >= numbers.n - 1
+        ORDER BY unique_value;
+        """
+        mycursor.execute(fields_to_save)
+        fields_to_save = mycursor.fetchall()
+        unique_fields_to_save = [row[0] for row in fields_to_save]
+
+        field_to_save_by_includes = werkzeug.utils.escape(this_request.get("field_to_save_by_includes"))
+        if field_to_save_by != "False":
+            for this_field_to_save in unique_fields_to_save:
+                # Construct the SQL query with multiple FIND_IN_SET conditions
+                by_field_query = f"SELECT {field_to_save_by_includes} FROM {account_list} WHERE FIND_IN_SET(%s, `{field_to_save_by}`)"
+                mycursor.execute(by_field_query, (this_field_to_save,))
+                row_headers = [x[0] for x in mycursor.description]
+                full_list_by_field = mycursor.fetchall()
+
+                # Convert data to a JSON format
+                json_data_by_field = [dict(zip(row_headers, result)) for result in full_list_by_field]
+                json_data_to_write_by_field = json.dumps(json_data_by_field, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
+
+                # Write JSON data to a file with the field-specific reference identifier (sanitize reference)
+                sanitized_save_by_field = ''.join(e for e in (this_field_to_save.replace("/", "leaffslash").replace("-", "leafhiffen").strip().lower()) if e.isalnum())
+                sanitized_save_by_field = sanitized_save_by_field.replace("leaffslash", "__fslash__").replace("leafhiffen", "-")
+
+                os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH, 'json_by_field'), exist_ok=True)
+                with open(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH, 'json_by_field', sanitized_reference + "_" + sanitized_save_by_field + '_List.json'), 'w') as out_file_by_field:
+                    out_file_by_field.write(json_data_to_write_by_field)
+
+    except Exception as e:
+        print("generate_all_json_files_by_fields model")
+        print(e)
+    finally:
+        mydb.close()
+        return jsonify({"full_list": full_list})
 
 def publish_dynamic_lists(request, account_list: str, accountId: str, reference: str, env: str):
     """
-    Publish dynamic list data to JSON files and optionally by country.
+    Publish dynamic list data to JSON files and optionally by field.
 
     Args:
         request (Request): The HTTP request object.
@@ -1285,8 +1365,8 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
                 json_data_to_write_by_field = json.dumps(json_data_by_field, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
 
                 # Write JSON data to a file with the field-specific reference identifier (sanitize reference)
-                sanitized_save_by_field = ''.join(e for e in (this_field_to_save[0].replace("/", "leaffslash").strip().lower()) if e.isalnum())
-                sanitized_save_by_field = sanitized_save_by_field.replace("leaffslash", "__fslash__")
+                sanitized_save_by_field = ''.join(e for e in (this_field_to_save[0].replace("/", "leaffslash").replace("-", "leafhiffen").strip().lower()) if e.isalnum())
+                sanitized_save_by_field = sanitized_save_by_field.replace("leaffslash", "__fslash__").replace("leafhiffen", "-")
 
                 os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH, 'json_by_field'), exist_ok=True)
                 with open(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH, 'json_by_field', sanitized_reference + "_" + sanitized_save_by_field + '_List.json'), 'w') as out_file_by_field:
