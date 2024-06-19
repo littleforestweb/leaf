@@ -1344,13 +1344,15 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         save_by_field = werkzeug.utils.escape(this_request.get("save_by_field"))
         field_to_save_by = werkzeug.utils.escape(this_request.get("field_to_save_by"))
         field_to_save_by_includes = werkzeug.utils.escape(this_request.get("field_to_save_by_includes"))
-        if field_to_save_by != "False":
+
+        if field_to_save_by != "False" and save_by_field != "false":
             # Query to retrieve data filtered by field (using parameterized query)
             # Convert to string if it is Markup
             if isinstance(save_by_field, Markup):
                 save_by_field = str(save_by_field)
             # Split the save_by_field into individual paths
             save_by_field = save_by_field.split(",")
+
             for this_field_to_save in save_by_field:
                 this_field_to_save = this_field_to_save.split(",")
                 # Construct the SQL query with multiple FIND_IN_SET conditions

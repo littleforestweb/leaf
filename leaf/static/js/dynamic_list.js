@@ -855,7 +855,6 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         field_to_save_by = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.' + field_to_save_by + ' pre .hidden').html().trim();
         field_to_save_by = field_to_save_by.replace(/,/g, ';');
     }
-
     $.ajax({
         type: "POST",
         url: "/publish/account_" + accountId + "_list_" + reference + '/' + accountId + '/' + reference + '/' + env,
