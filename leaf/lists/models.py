@@ -2447,7 +2447,10 @@ def extract_content(soup, selector):
                     if isinstance(attr_value, list):
                         attr_value = ' '.join(attr_value)
                     if attr_value == attribute_value:
-                        element_to_return = element.get('href')
+                        if attribute_value == "datePublished":
+                            element_to_return = element.get('content')
+                        else:
+                            element_to_return = element.get('href')
                         if has_split:
                             return element_to_return.split(inside_split)[-1]
                         else:
