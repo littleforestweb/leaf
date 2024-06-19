@@ -1302,6 +1302,8 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         mycursor.execute(f"SELECT * FROM {account_list} WHERE id = %s", (list_item_id,))
         selected_item_id = mycursor.fetchone()
 
+        current_app.logger.debug(row_headers)
+        current_app.logger.debug(selected_item_id)
         # Combine column names with fetched row values
         selected_item_data = dict(zip(row_headers, selected_item_id))
 
