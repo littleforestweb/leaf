@@ -872,7 +872,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         dataType: 'json',
         cache: false,
         processData: false,
-        success: function (updated) {
+        success: async function (updated) {
 
             // $('#publishDynamicListSuccessNotification').toast('show');
 
@@ -891,7 +891,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
                     } else {
                         fieldsToLink.push(await generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, false, false, false));
                     }
-                    
+
                     openInNewTab(preview_server + getFileUrlPath(fieldsToLink[0], page_extension));
                 } else {
                     alert("There is no preview setting for this List yet. Please add one to preview this type.")
