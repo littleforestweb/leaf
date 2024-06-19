@@ -1403,8 +1403,9 @@ def proceed_action_workflow(request, not_real_request=None):
                 # Regenerate Feed
                 if not isMenu:
                     # This will generate a global feed for all items using the same template
-                    gen_feed(mycursor, account_list, list_feed_path, listName, accountId)
-                    print(rss_ids)
+                    if list_feed_path and list_feed_path != "":
+                        gen_feed(mycursor, account_list, list_feed_path, listName, accountId)
+                    
                     if rss_ids and rss_ids != "":
                         update_feed_lists_and_or_delete_from_directory(mycursor, account_list, rss_ids, listName, accountId, site_ids, thisType, pages_to_delete_from_feed)
                     else:

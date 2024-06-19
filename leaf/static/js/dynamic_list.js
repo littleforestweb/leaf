@@ -882,6 +882,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
                 location.reload(true);
                 //doRedrawTable(true, updated.lists, true);
             } else {
+                // doRedrawTable(true, updated.lists, false);
                 cleanUpActionButtons();
             }
         },
@@ -1189,7 +1190,6 @@ async function getFormData(formid, userId = false, preview_server) {
                 }
             }
         } else if (element.type === 'datetime-local') {
-            console.log(element.value);
             formdata[element.name] = moment(element.value).format('YYYY-MM-DD HH:mm:ss');
         
         } else if (element.options) {
