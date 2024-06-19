@@ -317,7 +317,7 @@ def process_type_3_or_8(workflow_data, mycursor):
 
                                         list_page_url_template = list_page_url_template.replace("{" + field + "}", single_field)
 
-                                if key.lower() == "leaf_selected_rss":
+                                if key.lower() == "leaf_selected_rss" and value is not None:
                                     rss_values = value
                                     rss_values = rss_values.split(",")
                                     rss_data = []
@@ -2040,8 +2040,10 @@ def extract_month_and_day(date_string, field):
 
     # Detect and parse the date format
     if "-" in date_string:
+        date_string = date_string.split(" ")[0]
         year_str, month_str, day_str = date_string.split("-")
     elif "/" in date_string:
+        date_string = date_string.split(" ")[0]
         year_str, month_str, day_str = date_string.split("/")
     elif date_string.isdigit():  # Check if the string is a valid epoch time
         date = datetime.fromtimestamp(int(date_string))
@@ -2059,7 +2061,6 @@ def extract_month_and_day(date_string, field):
         year = add_leading_zero(int(year_str))
         month = add_leading_zero(int(month_str))
         day = add_leading_zero(int(day_str))
-
     # Return the requested part
     field = field.lower()
     if field == "year":
