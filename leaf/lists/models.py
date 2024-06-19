@@ -1309,8 +1309,9 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         # Replace html_placeholders with actual values from the selected_item_data
         for key, value in selected_item_data.items():
             html_placeholder = '{{' + key + '}}'
-            if html_placeholder in list_template_html:
-                list_template_html = list_template_html.replace(html_placeholder, unescape_html(value))
+            if list_template_html:
+                if html_placeholder in list_template_html:
+                    list_template_html = list_template_html.replace(html_placeholder, unescape_html(value))
 
         # Remove any HTML elements that contain html_placeholders that do not exist in the selected_item_data
         html_placeholders = re.findall(r'{{(.*?)}}', list_template_html)
@@ -1319,7 +1320,8 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
             if not any(placeholder in selected_item_data for placeholder in re.findall(r'{{(\w+)}}', element_with_placeholder)):
                 list_template_html = remove_elements_with_content_or_src(list_template_html, "{{" + placeholder + "}}")
                 # Removed remaining unused tags
-                list_template_html = list_template_html.replace("{{" + placeholder + "}}", '')
+                if list_template_html:
+                    list_template_html = list_template_html.replace("{{" + placeholder + "}}", '')
 
         # Save new page in the correct folder based on template
         for file_url_path in file_url_paths:
@@ -1332,7 +1334,8 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
 
         # Convert data to a JSON format
         json_data = [dict(zip(row_headers, result)) for result in full_list]
-        json_data_to_write = json.dumps(json_data, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
+        if json_data:
+            json_data_to_write = json.dumps(json_data, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
 
         # Write JSON data to a file with the specified reference identifier (sanitize reference)
         sanitized_reference = ''.join(e for e in reference if e.isalnum())
