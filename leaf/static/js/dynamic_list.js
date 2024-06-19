@@ -199,6 +199,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                 }
 
                             } else if (allAccountSettings[f][3] === '-_leaf_access_folders_-') {
+
                                 let getUserFolderAccess = await getUserFolderAccessByValue();
                                 let thisLabel = getUserFolderAccess;
 
@@ -211,15 +212,22 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                 }
                                 thisFieldValue = thisFieldValue.split(",");
 
+                                var mandatoryClass = '';
+                                for (var mfield in mfields) {
+                                    if (mfields[mfield] === thisSpanList) {
+                                        mandatoryClass = 'mandatoryField';
+                                    }
+                                }
+
                                 if (type === 'edit') {
-                                    var fieldsDropdown = '<select multiple name="e-' + thisSpanList + '" class="form-select form-select-md toCapitalize" id="e-' + thisSpanList + '"><option value="" disabled ' + (thisFieldValue && thisFieldValue.length > 0 ? "" : " selected") + '>Select option</option></select>';
+                                    var fieldsDropdown = '<select multiple name="e-' + thisSpanList + '" class="form-select form-select-md toCapitalize ' + mandatoryClass + '" id="e-' + thisSpanList + '"><option value="" disabled ' + (thisFieldValue && thisFieldValue.length > 0 ? "" : " selected") + '>Select option</option></select>';
                                     $('#e-' + thisSpanList).replaceWith(fieldsDropdown);
                                     for (single_item in getUserFolderAccess) {
                                         var single_item_clean = (getUserFolderAccess[single_item] + (reference == "seminars" || reference == "events" ? "news/" + reference : reference)).replace(/^\/|\/$/g, '');
                                         $('select#e-' + thisSpanList).append('<option value="' + single_item_clean + '" ' + (thisFieldValue.includes(single_item_clean) ? " selected" : "") + '>' + single_item_clean.toLowerCase() + '</option>');
                                     }
                                 } else {
-                                    var fieldsDropdown = '<select multiple name="a-' + thisSpanList + '" class="form-select form-select-md toCapitalize" id="a-' + thisSpanList + '"><option value="" disabled selected>Select option</option></select>';
+                                    var fieldsDropdown = '<select multiple name="a-' + thisSpanList + '" class="form-select form-select-md toCapitalize ' + mandatoryClass + '" id="a-' + thisSpanList + '"><option value="" disabled selected>Select option</option></select>';
                                     $('#a-' + thisSpanList).replaceWith(fieldsDropdown);
                                     for (single_item in getUserFolderAccess) {
                                         var single_item_clean = (getUserFolderAccess[single_item] + (reference == "seminars" || reference == "events" ? "news/" + reference : reference)).replace(/^\/|\/$/g, '');
@@ -549,12 +557,12 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                     if (type === 'edit') {
                                         var formatFound = getFormat(site_dynamic_list);
 
-                                        $('#e-' + spanId).attr("type", "datetime-local");
+                                        $('#e-' + spanId).attr("type", "datetime-local").removeAttr("onkeyup");
                                         $('#e-' + spanId).addClass(mandatoryClass).val(moment(site_dynamic_list).format('YYYY-MM-DD HH:mm:ss'));
                                         // $('#e-' + spanId).datetimepicker({dateFormat: 'yy-mm-dd H:i:s', endDate: "today", maxDate: oneYearFromToday});
                                     } else {
 
-                                        $('#a-' + spanId).attr("type", "datetime-local");
+                                        $('#a-' + spanId).attr("type", "datetime-local").removeAttr("onkeyup");
                                         $('#a-' + spanId).addClass(mandatoryClass).val();
                                         // $('#a-' + spanId).datetimepicker({dateFormat: 'yy-mm-dd H:i:s', endDate: "today", maxDate: oneYearFromToday});
                                     }
@@ -719,10 +727,11 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
 async function generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, splitByField, fieldValue, field_to_save_by_includes) {
     for (var field in matches) {
         var singleField = $('span#' + matches[field] + '_pos_' + thisValId).html();
-        if (!singleField || singleField && singleField.trim() === "") {
+        if (!singleField || (singleField && Array.isArray(singleField) && singleField.length > 0) || (singleField && !Array.isArray(singleField) && singleField.trim() === "")) {
             singleField = $('#e-' + matches[field].toLowerCase()).val();
         }
-        if (!singleField || singleField && singleField.trim() === "") {
+
+        if (!singleField || (singleField && Array.isArray(singleField) && singleField.length > 0) || (singleField && !Array.isArray(singleField) && singleField.trim() === "")) {
             singleField = $('#a-' + matches[field].toLowerCase()).val();
         }
 
@@ -747,8 +756,10 @@ async function generate_fields_to_link(publication_names, headColumns, fieldsToL
                 singleField = $('span#' + matchingColumn[2].toLowerCase() + '_pos_' + thisValId).html();
             }
 
-            singleField = extractMonthAndDay(singleField, matches[field]);
-            singleField = singleField.toString();
+            if (singleField) {
+                singleField = extractMonthAndDay(singleField, matches[field]);
+                singleField = singleField.toString();
+            }
         }
 
         // if (singleField) {
@@ -770,7 +781,7 @@ async function generate_fields_to_link(publication_names, headColumns, fieldsToL
     return getFileUrlPath(fieldsToLink_base, page_extension)
 }
 
-async function publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, justPreview, lastEntry, field_to_save_by = false, field_to_save_by_includes = false, thisButton, userId = false, task = false) {
+async function publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, justPreview, lastEntry, field_to_save_by = false, field_to_save_by_includes = false, thisButton, userId = false, task = false, adding_item = false) {
 
     accountId = escapeHtml(accountId);
     reference = escapeHtml(reference);
@@ -880,9 +891,8 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
             $('#editDynamicListSuccessNotification').toast('show');
             if (env !== "saveOnly" && env !== "preview" && !justPreview) {
                 location.reload(true);
-                //doRedrawTable(true, updated.lists, true);
             } else {
-                // doRedrawTable(true, updated.lists, false);
+                //doRedrawTable(true, updated.lists, true, adding_item);
                 cleanUpActionButtons();
             }
         },
@@ -1132,7 +1142,7 @@ async function getFormData(formid, userId = false, preview_server) {
     let formdata = {};
 
     var mandatoryElementsNotCompleted = [];
-    
+
     for (const element of allFormElements) {
         if (element.classList.value.includes('mandatoryField') || (element.closest('textarea') && element.closest('textarea').classList.value.includes('mandatoryField'))) {
             mandatoryElementsNotCompleted.push(element.id);
@@ -1190,7 +1200,7 @@ async function getFormData(formid, userId = false, preview_server) {
                 }
             }
         } else if (element.type === 'datetime-local') {
-            formdata[element.name] = moment(element.value).format('YYYY-MM-DD HH:mm:ss');
+            formdata[element.name] = (element.value != "" ? moment(element.value).format('YYYY-MM-DD HH:mm:ss') : element.value);
         
         } else if (element.options) {
             var selected = [...element.selectedOptions].map(option => option.value);
@@ -1342,9 +1352,9 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
                 }
 
                 if (field_to_save_by && field_to_save_by !== '' && field_to_save_by.length > 0) {
-                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, updated.lastEntry, field_to_save_by, thisFieldsIncludes, thisButton, userId);
+                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, updated.lastEntry, field_to_save_by, thisFieldsIncludes, thisButton, userId, true);
                 } else {
-                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, updated.lastEntry, false, false, thisButton, userId);
+                    publishDynamicList(accountId, reference, env, preview_server, dynamic_path, save_by_field, false, updated.lastEntry, false, false, thisButton, userId, true);
                 }
 
             },
@@ -1496,7 +1506,7 @@ async function populateDropdowns(accountId, reference, listsDropdown, fields, is
             thisElementToEdit.classList.add('mb-3');
             thisElementToEdit.classList.add('mb-container');
             thisElementToEdit.classList.add('s-' + thisField + '-container');
-            thisElementToEdit.innerHTML = '<div class="row"><div class="form-group col-md-5"><label for="s-' + thisField + '" class="col-form-label">' + thisField + ':</label>' + '<select name="selectItem_' + thisField + '" class="form-select form-select-md connection" id="s-' + thisField + '"><option value="null" selected>Static Field</option></select></div><div class="form-group col-md-4"><label for="typeSelectItem_' + thisField + '" class="col-form-label">Field Type:</label><select name="typeSelectItem_' + thisField + '" id="typeSelectItem_' + thisField + '" class="form-select form-select-md field_type typeSelectItem_Item"><option value="input">Input</option><option value="text_area">Text Area</option><option value="wysiwyg">Wysiwyg Editor</option><option value="select">Single Select</option><option value="multiselect">Multi Select</option><option value="multi_checkbox">Check Box</option><option value="date">Date</option><option value="image">Image</option><option value="pdf">PDF</option><option value="hidde-it">Hidden Field</option><option value="autoGenerated">Auto Generated</option><option value="disabledField">Disabled</option></select></div><div class="form-group col-md-3"><label for="displaySettingsItem_' + thisField + '" class="col-form-label">Visible in list:</label><select name="displaySettingsItem_' + thisField + '" id="dsi_' + thisField + '" class="form-select form-select-md"><option value="1">Yes</option><option value="0">No</option></select></div></div>';
+            thisElementToEdit.innerHTML = '<div class="row"><div class="form-group col-md-5"><label for="s-' + thisField + '" class="col-form-label">' + thisField + ':</label>' + '<select name="selectItem_' + thisField + '" class="form-select form-select-md connection" id="s-' + thisField + '"><option value="null" selected>Static Field</option></select></div><div class="form-group col-md-4"><label for="typeSelectItem_' + thisField + '" class="col-form-label">Field Type:</label><select name="typeSelectItem_' + thisField + '" id="typeSelectItem_' + thisField + '" class="form-select form-select-md field_type typeSelectItem_Item"><option value="input">Input</option><option value="text_area">Text Area</option><option value="wysiwyg">Wysiwyg Editor</option><option value="select">Single Select</option><option value="multiselect">Multi Select</option><option value="multi_checkbox">Check Box</option><option value="date">Date / Time</option><option value="image">Image</option><option value="pdf">PDF</option><option value="hidde-it">Hidden Field</option><option value="autoGenerated">Page Url</option><option value="disabledField">Disabled</option></select></div><div class="form-group col-md-3"><label for="displaySettingsItem_' + thisField + '" class="col-form-label">Visible in list:</label><select name="displaySettingsItem_' + thisField + '" id="dsi_' + thisField + '" class="form-select form-select-md"><option value="1">Yes</option><option value="0">No</option></select></div></div>';
 
             document.getElementById("setField-" + reference).appendChild(thisElementToEdit);
 
@@ -1721,7 +1731,7 @@ async function uploadSetFieldsDynamicList(accountId, reference, action) {
             setTimeout(function () {
                 location.reload(true);
             }, 400);
-            //doRedrawTable(false, false, true);
+            //doRedrawTable(false, false, true, false);
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
             $('#errorModal').modal('show');
@@ -1752,7 +1762,7 @@ async function uploadDynamicList(accountId, reference) {
             success: function (response) {
                 $("#upload-file-btn").removeClass("loadingBtn").prop("disabled", false);
                 $('#uploadDynamicList').modal('hide');
-                doRedrawTable(true, response, false);
+                doRedrawTable(true, response, false, false);
                 $('#addDynamicListSuccessNotification').toast('show');
             },
             error: function (XMLHttpRequest, textStatus, errorThrown) {
@@ -1863,7 +1873,7 @@ async function setConfigurationDynamicList(accountId, reference, action) {
 
                 $('#addDynamicListSuccessNotification').toast('show');
 
-                doRedrawTable(false, false, true);
+                doRedrawTable(false, false, true, false);
             },
             error: function (XMLHttpRequest, textStatus, errorThrown) {
                 $('#errorModal').modal('show');
@@ -1998,7 +2008,7 @@ async function setTemplateDynamicList(accountId, reference, action) {
 
                 $('#addDynamicListSuccessNotification').toast('show');
 
-                doRedrawTable(false, false, true);
+                doRedrawTable(false, false, true, false);
             },
             error: function (XMLHttpRequest, textStatus, errorThrown) {
                 $('#errorModal').modal('show');
@@ -2030,16 +2040,18 @@ async function getAvailableFields(accountId, reference) {
 }
 
 window.addEventListener('DOMContentLoaded', async function main() {
-    doRedrawTable(false, false, true);
+    doRedrawTable(false, false, false, false);
 })
 
-async function doRedrawTable(doSetUpTable = false, responseFields = false, isEditing = false) {
+async function doRedrawTable(doSetUpTable = false, responseFields = false, isEditing = false, adding_item = false) {
     var localEnv = window.location.hostname;
     var rootPath = window.location;
     rootPath = rootPath.href.split('/list/')[0];
 
-    $('#editDynamicList form .mb-3').html('');
-    $('#addDynamicList form .mb-3').html('');
+    if (adding_item != true && !isEditing) {
+        $('#editDynamicList form .mb-3').html('');
+        $('#addDynamicList form .mb-3').html('');
+    }
     $('#table.table_' + reference).DataTable().clear().draw();
     $('#table.table_' + reference).DataTable().destroy();
 
@@ -2233,39 +2245,42 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
                     defaultContent: "<i style='color: #CCC;'>No data</i>",
                     sClass: (headColumns[xx][7] !== 0 ? ((xx === 0 || hideIt === true) ? 'hidden ' : '') : 'hidden ') + 'center'
                 });
+    
+                if (adding_item != true && !isEditing) {
 
-                var thisElementToEdit = document.createElement('div');
-                thisElementToEdit.classList.add('mb-3');
-                if (checkHeaderClass === "id") {
-                    thisElementToEdit.classList.add('hide');
+                    var thisElementToEdit = document.createElement('div');
+                    thisElementToEdit.classList.add('mb-3');
+                    if (checkHeaderClass === "id") {
+                        thisElementToEdit.classList.add('hide');
+                    }
+                    var thisElementToAdd = document.createElement('div');
+                    thisElementToAdd.classList.add('mb-3');
+                    if (checkHeaderClass === "id") {
+                        thisElementToAdd.classList.add('hide');
+                    }
+
+                    var removeButtonForFilesAdd = '';
+                    var removeButtonForFilesEdit = '';
+
+                    var scriptForFilesAdd = '';
+                    var scriptForFilesEdit = '';
+
+                    if (isDocument || isImage) {
+                        scriptForFilesAdd = "<script type=\"text/javascript\">$('#a-clear-" + checkHeaderClass + "').on('click', function(){$('#a-" + checkHeaderClass + "').val('');})</script>";
+                        scriptForFilesEdit = "<script type=\"text/javascript\">$('#e-clear-" + checkHeaderClass + "').on('click', function(){$('#e-" + checkHeaderClass + "').val('');})</script>";
+
+                        removeButtonForFilesAdd = '<input id="a-clear-' + checkHeaderClass + '" class="btn btn-small btn-secondary clear-btn" value="clear" />';
+                        removeButtonForFilesEdit = '<input id="e-clear-' + checkHeaderClass + '" class="btn btn-small btn-secondary clear-btn" value="clear" />';
+                    }
+
+                    thisElementToEdit.innerHTML = removeButtonForFilesEdit + '<label for="e-' + checkHeaderClass + '" class="col-form-label">' + checkHeaderClass + ':</label>' + '<input type="text" class="form-control" name="e-' + checkHeaderClass + '" id="e-' + checkHeaderClass + '" value="" onkeyup="sanitizeInput(event)" />';
+                    thisElementToAdd.innerHTML = removeButtonForFilesAdd + '<label for="a-' + checkHeaderClass + '" class="col-form-label">' + checkHeaderClass + ':</label>' + '<input type="text" class="form-control" name="a-' + checkHeaderClass + '" id="a-' + checkHeaderClass + '" value="" onkeyup="sanitizeInput(event)" />';
+
+                    document.getElementById("edit-" + reference).appendChild(thisElementToEdit);
+                    $("#edit-" + reference + " .mb-3").find("#e-" + checkHeaderClass).parent().append(scriptForFilesEdit);
+                    document.getElementById("add-" + reference).appendChild(thisElementToAdd);
+                    $("#add-" + reference + " .mb-3").find("#a-" + checkHeaderClass).parent().append(scriptForFilesAdd);
                 }
-                var thisElementToAdd = document.createElement('div');
-                thisElementToAdd.classList.add('mb-3');
-                if (checkHeaderClass === "id") {
-                    thisElementToAdd.classList.add('hide');
-                }
-
-                var removeButtonForFilesAdd = '';
-                var removeButtonForFilesEdit = '';
-
-                var scriptForFilesAdd = '';
-                var scriptForFilesEdit = '';
-
-                if (isDocument || isImage) {
-                    scriptForFilesAdd = "<script type=\"text/javascript\">$('#a-clear-" + checkHeaderClass + "').on('click', function(){$('#a-" + checkHeaderClass + "').val('');})</script>";
-                    scriptForFilesEdit = "<script type=\"text/javascript\">$('#e-clear-" + checkHeaderClass + "').on('click', function(){$('#e-" + checkHeaderClass + "').val('');})</script>";
-
-                    removeButtonForFilesAdd = '<input id="a-clear-' + checkHeaderClass + '" class="btn btn-small btn-secondary clear-btn" value="clear" />';
-                    removeButtonForFilesEdit = '<input id="e-clear-' + checkHeaderClass + '" class="btn btn-small btn-secondary clear-btn" value="clear" />';
-                }
-
-                thisElementToEdit.innerHTML = removeButtonForFilesEdit + '<label for="e-' + checkHeaderClass + '" class="col-form-label">' + checkHeaderClass + ':</label>' + '<input type="text" class="form-control" name="e-' + checkHeaderClass + '" id="e-' + checkHeaderClass + '" value="" onkeyup="sanitizeInput(event)" />';
-                thisElementToAdd.innerHTML = removeButtonForFilesAdd + '<label for="a-' + checkHeaderClass + '" class="col-form-label">' + checkHeaderClass + ':</label>' + '<input type="text" class="form-control" name="a-' + checkHeaderClass + '" id="a-' + checkHeaderClass + '" value="" onkeyup="sanitizeInput(event)" />';
-
-                document.getElementById("edit-" + reference).appendChild(thisElementToEdit);
-                $("#edit-" + reference + " .mb-3").find("#e-" + checkHeaderClass).parent().append(scriptForFilesEdit);
-                document.getElementById("add-" + reference).appendChild(thisElementToAdd);
-                $("#add-" + reference + " .mb-3").find("#a-" + checkHeaderClass).parent().append(scriptForFilesAdd);
 
                 if ((xx + 1) === headColumns.length) {
                     $('#table.table_' + reference + ' thead tr').append('<th class="center not_export_col">Actions</th>');
@@ -2279,15 +2294,16 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
                         orderable: false,
                         sClass: "center"
                     });
-                    getResume(allColumns, accountId, doSetUpTable, responseFields, isEditing, columnsToAddToShowHide);
+                    getResume(allColumns, accountId, doSetUpTable, responseFields, isEditing, columnsToAddToShowHide, adding_item);
                 }
             }, 1000);
         }
     }
 }
 
-async function getResume(allColumns, accountId, doSetUpTable, responseFields, isEditing, columnsToAddToShowHide) {
+async function getResume(allColumns, accountId, doSetUpTable, responseFields, isEditing, columnsToAddToShowHide, adding_item = false) {
 
+    $('#table.table_' + reference + ' thead tr .filters').remove();
     // Setup - add a text input to each header cell
     $('#table.table_' + reference + ' thead tr').clone(true).addClass('filters').appendTo('#table.table_' + reference + ' thead');
 
@@ -2397,29 +2413,33 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
                 api.draw();
             }
 
-            var queryString = window.location.search;
-            var urlParams = new URLSearchParams(queryString);
-            var itemId = "";
-            if (urlParams.get('id')) {
-                itemId = parseInt(urlParams.get('id'));
-                $('#search_col_index_1').val(itemId);
-                $('#search_col_index_1').keyup();
-                $('input[type="checkbox"]#entry_' + itemId).prop('checked', true);
-                if ($('input[type="checkbox"]#entry_' + itemId + ':checked')) {
-                    $('#editDynamicList').modal('show');//.addClass('loadingBg');
+            if (adding_item != true && !isEditing) {
+                var queryString = window.location.search;
+                var urlParams = new URLSearchParams(queryString);
+                var itemId = "";
+                if (urlParams.get('id')) {
+                    itemId = parseInt(urlParams.get('id'));
+                    $('#search_col_index_1').val(itemId);
+                    $('#search_col_index_1').keyup();
+                    $('input[type="checkbox"]#entry_' + itemId).prop('checked', true);
+                    if ($('input[type="checkbox"]#entry_' + itemId + ':checked')) {
+                        
+                        $('#editDynamicList').modal('show');//.addClass('loadingBg');
 
-                    populateEditDynamicListDialog(accountId, reference, 'edit', itemId, userId);
+                        populateEditDynamicListDialog(accountId, reference, 'edit', itemId, userId);
+                    }
+                    $('#editDynamicList .btn.publish-btn').remove();
                 }
-                $('#editDynamicList .btn.publish-btn').remove();
+
+                $('#search_col_index_1').val("");
+                $('#search_col_index_1').keyup();
+
+                if (doSetUpTable === true) {
+                    populateUploadFieldsDynamicListDialog(accountId, reference, responseFields, isEditing, false);
+                }
             }
-
-            $('#search_col_index_1').val("");
-            $('#search_col_index_1').keyup();
-
             $(".loadingBg").removeClass("show");
-            if (doSetUpTable === true) {
-                populateUploadFieldsDynamicListDialog(accountId, reference, responseFields, isEditing, false);
-            }
+            
         }
     });
     $('#table_wrapper > .dt-buttons').appendTo("div.header-btns .actions_container");
