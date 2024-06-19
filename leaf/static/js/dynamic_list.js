@@ -855,64 +855,92 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
         field_to_save_by = $('.table_' + reference + ' input[type="checkbox"]:checked').parent().parent().find('span.' + field_to_save_by + ' pre .hidden').html().trim();
         field_to_save_by = field_to_save_by.replace(/,/g, ';');
     }
-    $.ajax({
-        type: "POST",
-        url: "/publish/account_" + accountId + "_list_" + reference + '/' + accountId + '/' + reference + '/' + env,
-        data: JSON.stringify({
-            "save_by_field": save_by_field,
-            "field_to_save_by": field_to_save_by,
-            "field_to_save_by_includes": field_to_save_by_includes,
-            "file_url_path": fieldsToLink,
-            "list_template_id": listTemplateId,
-            "list_item_id": selectedItem,
-            "split_by_field": save_by_field,
-            "task": task
-        }),
-        contentType: 'application/json',
-        dataType: 'json',
-        cache: false,
-        processData: false,
-        success: async function (updated) {
+    if (selectedItem) {
+        $.ajax({
+            type: "POST",
+            url: "/publish/account_" + accountId + "_list_" + reference + '/' + accountId + '/' + reference + '/' + env,
+            data: JSON.stringify({
+                "save_by_field": save_by_field,
+                "field_to_save_by": field_to_save_by,
+                "field_to_save_by_includes": field_to_save_by_includes,
+                "file_url_path": fieldsToLink,
+                "list_template_id": listTemplateId,
+                "list_item_id": selectedItem,
+                "split_by_field": save_by_field,
+                "task": task
+            }),
+            contentType: 'application/json',
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            success: async function (updated) {
 
-            // $('#publishDynamicListSuccessNotification').toast('show');
+                // $('#publishDynamicListSuccessNotification').toast('show');
 
-            if ((env !== 'saveOnly' && env !== 'save')) {
-                if (thisTemplate !== '') {
-                    if (!preview_server.endsWith("/")) {
-                        preview_server += "/";
-                    }
-
-                    var fieldsToLink = new Array();
-                    if (field_to_save_by) {
-                        var splitByFieldValues = save_by_field.split(",");
-                        for (fieldValue in splitByFieldValues) {
-                            fieldsToLink.push(await generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, field_to_save_by, splitByFieldValues[fieldValue], field_to_save_by_includes));
+                if ((env !== 'saveOnly' && env !== 'save')) {
+                    if (thisTemplate !== '') {
+                        if (!preview_server.endsWith("/")) {
+                            preview_server += "/";
                         }
+
+                        var fieldsToLink = new Array();
+                        if (field_to_save_by) {
+                            var splitByFieldValues = save_by_field.split(",");
+                            for (fieldValue in splitByFieldValues) {
+                                fieldsToLink.push(await generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, field_to_save_by, splitByFieldValues[fieldValue], field_to_save_by_includes));
+                            }
+                        } else {
+                            fieldsToLink.push(await generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, false, false, false));
+                        }
+
+                        openInNewTab(preview_server + getFileUrlPath(fieldsToLink[0], page_extension));
                     } else {
-                        fieldsToLink.push(await generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, false, false, false));
+                        alert("There is no preview setting for this List yet. Please add one to preview this type.")
                     }
-
-                    openInNewTab(preview_server + getFileUrlPath(fieldsToLink[0], page_extension));
-                } else {
-                    alert("There is no preview setting for this List yet. Please add one to preview this type.")
                 }
-            }
 
-            $('#editDynamicListSuccessNotification').toast('show');
-            if (env !== "saveOnly" && env !== "preview" && !justPreview) {
-                location.reload(true);
-            } else {
-                //doRedrawTable(true, updated.lists, true, adding_item);
+                $('#editDynamicListSuccessNotification').toast('show');
+                if (env !== "saveOnly" && env !== "preview" && !justPreview) {
+                    location.reload(true);
+                } else {
+                    //doRedrawTable(true, updated.lists, true, adding_item);
+                    cleanUpActionButtons();
+                }
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                $('#publishDynamicList').modal('hide');
+                $('#errorModal').modal('show');
+
                 cleanUpActionButtons();
             }
-        },
-        error: function (XMLHttpRequest, textStatus, errorThrown) {
-            $('#publishDynamicList').modal('hide');
-            $('#errorModal').modal('show');
+        });
+    } else {
 
-            cleanUpActionButtons();
+        if ((env !== 'saveOnly' && env !== 'save')) {
+            if (thisTemplate !== '') {
+                if (!preview_server.endsWith("/")) {
+                    preview_server += "/";
+                }
+
+                var fieldsToLink = new Array();
+                if (field_to_save_by) {
+                    var splitByFieldValues = save_by_field.split(",");
+                    for (fieldValue in splitByFieldValues) {
+                        fieldsToLink.push(await generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, field_to_save_by, splitByFieldValues[fieldValue], field_to_save_by_includes));
+                    }
+                } else {
+                    fieldsToLink.push(await generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, false, false, false));
+                }
+
+                openInNewTab(preview_server + getFileUrlPath(fieldsToLink[0], page_extension));
+            } else {
+                alert("There is no preview setting for this List yet. Please add one to preview this type.")
+            }
+        } else {
+            location.reload(true);
         }
-    });
+
+    }
 }
 
 async function saveJsonsByFields(accountId, reference) {

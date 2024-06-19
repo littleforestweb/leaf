@@ -1298,12 +1298,12 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         file_url_paths = this_request.get("file_url_path")
         list_template_id = werkzeug.utils.escape(this_request.get("list_template_id"))
         list_item_id = werkzeug.utils.escape(this_request.get("list_item_id"))
+        current_app.logger.debug("list_item_id:")
+        current_app.logger.debug(list_item_id)
 
         mycursor.execute(f"SELECT * FROM {account_list} WHERE id = %s", (list_item_id,))
         selected_item_id = mycursor.fetchone()
 
-        current_app.logger.debug(row_headers)
-        current_app.logger.debug(selected_item_id)
         # Combine column names with fetched row values
         selected_item_data = dict(zip(row_headers, selected_item_id))
 
