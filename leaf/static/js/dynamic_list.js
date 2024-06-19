@@ -882,7 +882,7 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
                 location.reload(true);
                 //doRedrawTable(true, updated.lists, true);
             } else {
-                doRedrawTable(true, updated.lists, false);
+                // doRedrawTable(true, updated.lists, false);
                 cleanUpActionButtons();
             }
         },
@@ -2038,17 +2038,15 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
     var rootPath = window.location;
     rootPath = rootPath.href.split('/list/')[0];
 
-    if (isEditing != false) {
-        $('#editDynamicList form .mb-3').html('');
-        $('#addDynamicList form .mb-3').html('');
-        $('#table.table_' + reference).DataTable().clear().draw();
-        $('#table.table_' + reference).DataTable().destroy();
+    $('#editDynamicList form .mb-3').html('');
+    $('#addDynamicList form .mb-3').html('');
+    $('#table.table_' + reference).DataTable().clear().draw();
+    $('#table.table_' + reference).DataTable().destroy();
 
-        $('#table.table_' + reference + ' thead .filters').remove();
-        $('#table.table_' + reference + ' thead tr').html('<th class="center not_export_col">Select</th>');
-        $('#table.table_' + reference + ' tbody').html('');
-        $('#table.table_' + reference + ' tfoot tr').html('<th class="center not_export_col">Select</th>');
-    }
+    $('#table.table_' + reference + ' thead .filters').remove();
+    $('#table.table_' + reference + ' thead tr').html('<th class="center not_export_col">Select</th>');
+    $('#table.table_' + reference + ' tbody').html('');
+    $('#table.table_' + reference + ' tfoot tr').html('<th class="center not_export_col">Select</th>');
 
     // Get list columns
     let jsonColumns = await $.get("/api/get_list_columns/" + accountId + "/" + reference, function (result) {
