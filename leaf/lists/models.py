@@ -1375,8 +1375,8 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
                     out_file_by_field.write(json_data_to_write_by_field)
 
     except Exception as e:
-        print("publish_dynamic_lists model")
-        print(e)
+        current_app.logger.debug("publish_dynamic_lists model")
+        current_app.logger.debug(e)
     finally:
         mydb.close()
         return jsonify({"full_list": full_list})

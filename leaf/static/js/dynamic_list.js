@@ -881,6 +881,17 @@ async function publishDynamicList(accountId, reference, env, preview_server, dyn
                     if (!preview_server.endsWith("/")) {
                         preview_server += "/";
                     }
+
+                    var fieldsToLink = new Array();
+                    if (field_to_save_by) {
+                        var splitByFieldValues = save_by_field.split(",");
+                        for (fieldValue in splitByFieldValues) {
+                            fieldsToLink.push(await generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, field_to_save_by, splitByFieldValues[fieldValue], field_to_save_by_includes));
+                        }
+                    } else {
+                        fieldsToLink.push(await generate_fields_to_link(publication_names, headColumns, fieldsToLink_base, matches, thisValId, false, false, false));
+                    }
+                    
                     openInNewTab(preview_server + getFileUrlPath(fieldsToLink[0], page_extension));
                 } else {
                     alert("There is no preview setting for this List yet. Please add one to preview this type.")
