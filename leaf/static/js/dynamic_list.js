@@ -548,15 +548,15 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                         oneYearFromToday.setFullYear(todaysDate.getFullYear() + 1);
                                     if (type === 'edit') {
                                         var formatFound = getFormat(site_dynamic_list);
-                                        // if(formatFound !==null){
-                                        //    console.log(formatFound);
-                                        // }
 
-                                        $('#e-' + spanId).addClass(mandatoryClass).val(site_dynamic_list);
-                                        $('#e-' + spanId).datepicker({dateFormat: 'yy-mm-dd', endDate: "today", maxDate: oneYearFromToday});
+                                        $('#e-' + spanId).attr("type", "datetime-local");
+                                        $('#e-' + spanId).addClass(mandatoryClass).val(moment(site_dynamic_list).format('YYYY-MM-DD HH:mm:ss'));
+                                        // $('#e-' + spanId).datetimepicker({dateFormat: 'yy-mm-dd H:i:s', endDate: "today", maxDate: oneYearFromToday});
                                     } else {
+
+                                        $('#a-' + spanId).attr("type", "datetime-local");
                                         $('#a-' + spanId).addClass(mandatoryClass).val();
-                                        $('#a-' + spanId).datepicker({dateFormat: 'yy-mm-dd', endDate: "today", maxDate: oneYearFromToday});
+                                        // $('#a-' + spanId).datetimepicker({dateFormat: 'yy-mm-dd H:i:s', endDate: "today", maxDate: oneYearFromToday});
                                     }
                                 } else if (allAccountSettings[f][6] && allAccountSettings[f][6] === "password") {
                                     if (type === 'edit') {
@@ -1188,7 +1188,10 @@ async function getFormData(formid, userId = false, preview_server) {
                     formdata[element.name] = '';
                 }
             }
-
+        } else if (element.type === 'datetime-local') {
+            console.log(element.value);
+            formdata[element.name] = moment(element.value).format('YYYY-MM-DD HH:mm:ss');
+        
         } else if (element.options) {
             var selected = [...element.selectedOptions].map(option => option.value);
             //var selected = [...element.options].filter(option => option.selected).map(option => option.value);
@@ -2467,6 +2470,7 @@ function stopPropagation(evt) {
 var dateFormats = {
     "iso_int": "YYYY-MM-DD",
     "short_date": "DD/MM/YYYY",
+    "iso_date_time_clean": "YYYY-MM-DD HH:mm:ss",
     "iso_date_time": "YYYY-MM-DDTHH:MM:SS",
     "iso_date_time_utc": "YYYY-MM-DDTHH:MM:SSZ"
     //define other well known formats if you want
