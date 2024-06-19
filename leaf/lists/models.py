@@ -1311,9 +1311,8 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         for key, value in selected_item_data.items():
             html_placeholder = '{{' + key + '}}'
             if html_placeholder in list_template_html:
-                current_app.logger.debug("Test value")
-                current_app.logger.debug(value)
-                list_template_html = list_template_html.replace(html_placeholder, unescape_html(value))
+                if value is not None:
+                    list_template_html = list_template_html.replace(html_placeholder, unescape_html(value))
 
         # Remove any HTML elements that contain html_placeholders that do not exist in the selected_item_data
         html_placeholders = re.findall(r'{{(.*?)}}', list_template_html)
