@@ -305,6 +305,8 @@ def process_type_3_or_8(workflow_data, mycursor):
                             for key, value in result.items():
                                 if key.lower() in publication_names:
                                     publication_date = value
+                                    if publication_date == "Invalid date":
+                                        publication_date = ""
                                 elif key.lower() == field_to_split_by:
                                     list_page_url_template = list_page_url_template.replace("{" + key + "}", str(field_in_result))
                                 else:
@@ -1038,7 +1040,7 @@ def proceed_action_workflow(request, not_real_request=None):
             return {"error": "Forbidden"}
 
     target_date = False
-    if publication_date:
+    if publication_date and publication_date != False and publication_date != "False":
         target_date = datetime.datetime.strptime(publication_date, "%Y-%m-%d %H:%M:%S").date()
     current_date = datetime.datetime.now().date()
 
@@ -1085,7 +1087,7 @@ def proceed_action_workflow(request, not_real_request=None):
     if not listName and thisType == 1:
 
         # Check for pubDate
-        if target_date > current_date:
+        if target_date and target_date > current_date:
             mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", ("7", workflow_id))
             mydb.commit()
             return {"message": "waiting", "action": action}
@@ -1196,7 +1198,7 @@ def proceed_action_workflow(request, not_real_request=None):
                     scp.put(local_path, remote_path)
 
     elif listName:
-        if target_date <= current_date or thisType == 8:
+        if target_date and target_date <= current_date or thisType == 8:
 
             if not_real_request is None:
                 accountId = session['accountId']
@@ -1489,7 +1491,7 @@ def proceed_action_workflow(request, not_real_request=None):
     else:
         pass
 
-    if not listName or (listName and target_date <= current_date):
+    if not listName or ((listName and target_date and target_date <= current_date) or (listName and not target_date)):
         # Update on DB
         mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", (action, workflow_id))
         mydb.commit()
