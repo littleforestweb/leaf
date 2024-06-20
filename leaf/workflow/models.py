@@ -78,6 +78,8 @@ def get_workflow_details(workflow_id):
         workflow_data["startUser"], workflow_data["startUserEmail"] = user["username"], user["email"]
         workflow_data["assignEditor"] = get_user_details(workflow_data["assignEditor"], mycursor)["email"]
         process_specific_workflow_type(workflow_data, mycursor)
+        if workflow_data["type"] == 3:
+            workflow_data["publication_date"] = workflow_data["publication_date"] + " 00:00:00" if ":" not in workflow_data["publication_date"] else workflow_data["publication_date"]
 
         # Get workflow folder
         if workflow_data["type"] in [1, 5, 6, 7]:
@@ -1310,7 +1312,10 @@ def proceed_action_workflow(request, not_real_request=None):
                                     except Exception as e:
                                         pass
 
-                full_query = f"SELECT * FROM {account_list} WHERE ({date_conditions})"
+                if date_conditions == "":
+                    full_query = f"SELECT * FROM {account_list}"
+                else:
+                    full_query = f"SELECT * FROM {account_list} WHERE ({date_conditions})"
                 full_params = (current_date_to_compare_in_db,) * len(existing_publication_names)
                 mycursor.execute(full_query, full_params)
 
@@ -1346,72 +1351,73 @@ def proceed_action_workflow(request, not_real_request=None):
                             pass
 
             # LOOP THROUGH list_item_url_path TO PUBLISH FILE IN MULTIPLE LOCATIONS
-            list_items_url_path = request.form.get("list_item_url_path")
-            list_items_url_path = ast.literal_eval(list_items_url_path)
-            for list_item_url_path in list_items_url_path:
-                HTMLPath = werkzeug.utils.escape(list_item_url_path.strip("/"))
-                local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
-                list_feed_path = werkzeug.utils.escape(request.form.get("list_feed_path").strip("/"))
-                rss_ids = werkzeug.utils.escape(request.form.get("rss_ids"))
+            if int(thisType) != 4:
+                list_items_url_path = request.form.get("list_item_url_path")
+                list_items_url_path = ast.literal_eval(list_items_url_path)
+                for list_item_url_path in list_items_url_path:
+                    HTMLPath = werkzeug.utils.escape(list_item_url_path.strip("/"))
+                    local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
+                    list_feed_path = werkzeug.utils.escape(request.form.get("list_feed_path").strip("/"))
+                    rss_ids = werkzeug.utils.escape(request.form.get("rss_ids"))
 
-                if thisType != 8:
-                    for srv in Config.DEPLOYMENTS_SERVERS:
+                    if thisType != 8:
+                        for srv in Config.DEPLOYMENTS_SERVERS:
 
-                        # Replace Preview Reference with Live webserver references
-                        with open(local_path) as inFile:
-                            data = inFile.read()
+                            # Replace Preview Reference with Live webserver references
+                            with open(local_path) as inFile:
+                                data = inFile.read()
 
-                        original_content = data
-                        original_content_changed = data.replace(Config.LEAFCMS_SERVER, Config.PREVIEW_SERVER + Config.DYNAMIC_PATH.strip('/') + '/leaf')
-                        data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf')
-                        with open(local_path, "w") as outFile:
-                            outFile.write(data)
+                            original_content = data
+                            original_content_changed = data.replace(Config.LEAFCMS_SERVER, Config.PREVIEW_SERVER + Config.DYNAMIC_PATH.strip('/') + '/leaf')
+                            data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf')
+                            with open(local_path, "w") as outFile:
+                                outFile.write(data)
 
-                        assets = find_page_assets(original_content_changed)
+                            assets = find_page_assets(original_content_changed)
 
-                        # SCP Files
-                        remote_path = os.path.join(srv["remote_path"], HTMLPath)
-                        ssh = paramiko.SSHClient()
-                        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                        if srv["pkey"] != "":
-                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                            if srv["pw"] == "":
-                                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                            # SCP Files
+                            remote_path = os.path.join(srv["remote_path"], HTMLPath)
+                            ssh = paramiko.SSHClient()
+                            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                            if srv["pkey"] != "":
+                                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                                if srv["pw"] == "":
+                                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                                else:
+                                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
                             else:
-                                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                        else:
-                            ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-                        with ssh.open_sftp() as scp:
-                            actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
-                            for asset in assets:
-                                assetFilename = asset.split("/")[-1].strip('/')
-                                assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
-                                assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
-                                actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
-                                if not actionResultAsset:
+                                ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                            with ssh.open_sftp() as scp:
+                                actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                                for asset in assets:
+                                    assetFilename = asset.split("/")[-1].strip('/')
+                                    assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
+                                    assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                                    actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
+                                    if not actionResultAsset:
+                                        try:
+                                            raise Exception("Failed to SCP - " + lp + " - " + rp)
+                                        except Exception as e:
+                                            pass
+                                if not actionResult:
                                     try:
                                         raise Exception("Failed to SCP - " + lp + " - " + rp)
                                     except Exception as e:
                                         pass
-                            if not actionResult:
-                                try:
-                                    raise Exception("Failed to SCP - " + lp + " - " + rp)
-                                except Exception as e:
-                                    pass
 
-                        with open(local_path, "w") as outFile:
-                            outFile.write(original_content)
+                            with open(local_path, "w") as outFile:
+                                outFile.write(original_content)
 
-                # Regenerate Feed
-                if not isMenu:
-                    # This will generate a global feed for all items using the same template
-                    if list_feed_path and list_feed_path != "":
-                        gen_feed(mycursor, account_list, list_feed_path, listName, accountId)
-                    
-                    if rss_ids and rss_ids != "":
-                        update_feed_lists_and_or_delete_from_directory(mycursor, account_list, rss_ids, listName, accountId, site_ids, thisType, pages_to_delete_from_feed)
-                    else:
-                        update_feed_lists_and_or_delete_from_directory(mycursor, account_list, False, listName, accountId, site_ids, thisType, pages_to_delete_from_feed)
+                    # Regenerate Feed
+                    if not isMenu:
+                        # This will generate a global feed for all items using the same template
+                        if list_feed_path and list_feed_path != "":
+                            gen_feed(mycursor, account_list, list_feed_path, listName, accountId)
+
+                        if rss_ids and rss_ids != "":
+                            update_feed_lists_and_or_delete_from_directory(mycursor, account_list, rss_ids, listName, accountId, site_ids, thisType, pages_to_delete_from_feed)
+                        else:
+                            update_feed_lists_and_or_delete_from_directory(mycursor, account_list, False, listName, accountId, site_ids, thisType, pages_to_delete_from_feed)
 
         else:
             print("Publication date in the future: " + str(target_date) + "; current date: " + str(current_date))
@@ -1995,7 +2001,7 @@ def delete_item_from_disk(item_path):
 
 
 def format_pub_date(date_str):
-    date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+    date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
     return date_obj.strftime('%a, %d %b %Y %H:%M:%S +0000')
 
 
