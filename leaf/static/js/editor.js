@@ -147,15 +147,6 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 // Get the CKEditor instance
                 let editor = evt.editor;
 
-                // Define element selectors to be blocked from editing
-                let selectorsToBlock = ["head"];
-                selectorsToBlock.forEach(function (selector) {
-                    let elements = editor.editable().$.querySelectorAll(selector);
-                    elements.forEach(function (element) {
-                        element.setAttribute("contenteditable", "false");
-                    });
-                });
-
                 editor.on('beforeCommandExec', function (event) {
                     if (editor.mode === 'wysiwyg') {
                         // Trying to prevent the undo JUMP that breaks the tabs
