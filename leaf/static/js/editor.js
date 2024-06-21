@@ -3,218 +3,9 @@
     Author     : xhico
 */
 
-async function savePage() {
-    // Get HTML Code
-    let sourceCode = CKEDITOR.instances.htmlCode.getData();
-
-    return $.ajax({
-        type: "POST",
-        url: "/api/editor/save",
-        data: {
-            "data": sourceCode,
-            "page_id": page_id
-        },
-        success: function (entry) {
-            console.log("save success");
-
-            let previewBtn = document.getElementById("previewPage");
-            previewBtn.href = entry.previewURL;
-            previewBtn.target = "_blank";
-
-            startInactivityTimer(page_id);
-
-            // Reset the timer on user actions
-            // document.addEventListener('mousemove', function() { startInactivityTimer(page_id); });
-            // document.addEventListener('keypress', function() { startInactivityTimer(page_id); });
-
-            $('#savedNotification').toast('show');
-        }, error: function (XMLHttpRequest, textStatus, errorThrown) {
-            console.log("save error");
-        }
-    });
-}
-
-async function publishPage() {
-    console.log("publishPage");
-}
-
-window.addEventListener('DOMContentLoaded', async function main() {
-    // Load page html code
-    let data = await $.get("/editor/getPageCode?page_id=" + page_id, function (htmlContent) {
-        return htmlContent;
-    });
-    data = data.data;
-
-    // Set html code to ckeditor textarea
-    document.getElementById("htmlCode").value = data;
-
-    // Add AnchorPlugin Btn
-    CKEDITOR.plugins.add("anchor", {
-        init: function (editor) {
-            editor.ui.addButton("anchorPluginButton", {
-                label: "Anchor",
-                command: "anchorPluginCommand",
-                icon: "/static/images/anchor-icon.svg",
-                state: function () {
-                    if (editor.mode === 'source') {
-                        return CKEDITOR.TRISTATE_DISABLED;
-                    }
-                    return CKEDITOR.TRISTATE_OFF;
-                }
-            });
-            editor.addCommand("anchorPluginCommand", {
-                exec: function (editor) {
-                    var anchorName = prompt('Enter anchor name:'); // Prompt the user for anchor name
-                    if (anchorName) {
-                        var selectedText = editor.getSelection().getNative().toString().trim();
-
-                        var newElement = new CKEDITOR.dom.element('a');
-                        newElement.setText(' ');
-                        newElement.setAttribute('name', anchorName);
-                        newElement.setAttribute('class', "anchor-item-inline");
-
-                        var range = editor.getSelection().getRanges()[0];
-                        // if ((range.endOffset - range.startOffset) > 0) {
-                        var newRange = range.clone();
-                        newRange.collapse(true);
-                        newRange.insertNode(newElement);
-                        // range.deleteContents();
-                        // range.insertNode(newElement);
-                        // } else {
-                        //    alert('You have to select some text to be able to create an anchor!');
-                        // }
-                    }
-                }
-            });
-        }
-    });
-
-    // Add Save Btn
-    CKEDITOR.plugins.add("saveBtn", {
-        init: function (editor) {
-            editor.ui.addButton("SaveBtn", {
-                label: "Save",
-                command: "saveBtn",
-                icon: "save"
-            });
-            editor.addCommand("saveBtn", {
-                exec: async function () {
-                    await savePage();
-                }
-            });
-        }
-    });
-
-    // Add Publish Btn
-    CKEDITOR.plugins.add("publishBtn", {
-        init: function (editor) {
-            editor.ui.addButton("PublishBtn", {
-                label: "Publish",
-                command: "publishBtn",
-                icon: "checkbox"
-            });
-            editor.addCommand("publishBtn", {
-                exec: async function () {
-                    await publishPage();
-                }
-            });
-        }
-    });
-
-    // Init CKEditor
-    ckeditorConfig = {
-        toolbar: [
-            {name: "clipboard", items: ["Cut", "Copy", "Paste", "PasteText", "PasteFromWord", "-", "Undo", "Redo"]},
-            {name: "basicstyles", items: ["Bold", "Italic", "Underline", "Strike"]},
-            {name: "paragraph", items: ["NumberedList", "BulletedList", "-", "Outdent", "Indent", "-", "Blockquote", "CreateDiv", "-", "JustifyLeft", "JustifyCenter", "JustifyRight", "JustifyBlock"]},
-            {name: "links", items: ["Link", "Unlink", "anchorPluginButton"]},
-            {name: "insert", items: ["Image", "Embed", "Table", "HorizontalRule", "SpecialChar", "inserthtml4x"]},
-            {name: "styles", items: ["Styles", "Format"]},
-            {name: "colors", items: ["TextColor", "BGColor"]},
-            {name: "actions", items: ["Preview", "SaveBtn", "PublishBtn"]}
-        ],
-        extraPlugins: "anchor, inserthtml4x, embed, saveBtn, pastefromword",
-        codeSnippet_theme: 'prism',
-        filebrowserUploadUrl: "/api/upload?name=fileupload",
-        embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}',
-        on: {
-            setData: async function (event) {
-                // Regex to find empty <a> tags
-                var emptyAnchorRegex = /<a([^>]*?)>\s*<\/a>/g;
-                event.data.dataValue = event.data.dataValue.replace(emptyAnchorRegex, '<a$1>&nbsp;</a>');
-            },
-            instanceReady: async function (evt) {
-                // Get the CKEditor instance
-                let editor = evt.editor;
-
-                editor.on('beforeCommandExec', function (event) {
-                    if (editor.mode === 'wysiwyg') {
-                        // Trying to prevent the undo JUMP that breaks the tabs
-                    }
-                });
-
-                await check_if_page_is_locked(page_id);
-
-                var is_locked = false;
-                // Usage with CKEditor change event
-                editor.on('change', debounce(function () {
-                    if (is_locked != true) {
-                        lockPage(page_id, "lock");
-                        is_locked = true;
-                    }
-                }, 250)); // Adjust debounce time as necessary
-
-                window.addEventListener('beforeunload', async function (event) {
-                    // Perform any necessary actions before showing the confirmation dialog
-                    console.log('User attempted to leave the page.');
-
-                    // Show a confirmation dialog
-                    event.preventDefault();
-                    event.returnValue = ''; // This triggers the default confirmation dialog in most browsers
-
-                    if (page_is_locked_by_me) {
-
-                        let site_id = await $.get("/api/get_site_id?page_id=" + page_id, function (site_id) {
-                            return site_id;
-                        });
-
-                        // Data to be sent to the server
-                        var data = JSON.stringify({
-                            page_id: page_id,
-                            site_id: site_id,
-                            action: "unlock"
-                        });
-
-                        fetch('/api/lock_unlock_page', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: data,
-                            keepalive: true // This is important to allow the request to complete
-                        });
-                        return null;
-                    }
-                });
-            }
-        }
-    };
-
-    // Conditionally add "Source" button if is_source_editor is true
-    if (is_source_editor === 1 || is_admin === 1) {
-        ckeditorConfig.toolbar.forEach(function (toolbarGroup) {
-            if (toolbarGroup.name === "actions") {
-                toolbarGroup.items.push("Source");
-            }
-        });
-    }
-
-    // Initialize CKEditor with the configuration
-    CKEDITOR.replace("htmlCode", ckeditorConfig);
-
-    // Remove loadingBg
-    $(".loadingBg").removeClass("show");
-});
+let unlockTimeout;
+let isLeavingPage = false;
+let page_is_locked_by_me = false;
 
 function debounce(func, wait, immediate) {
     var timeout;
@@ -231,8 +22,6 @@ function debounce(func, wait, immediate) {
     };
 }
 
-var unlockTimeout;
-
 function startInactivityTimer(page_id) {
     // Clear existing timeout to reset the timer whenever user activity is detected
     clearTimeout(unlockTimeout);
@@ -243,9 +32,6 @@ function startInactivityTimer(page_id) {
         console.log("Page unlocked due to inactivity.");
     }, 14400000); // 14400000 milliseconds = 3h
 }
-
-let isLeavingPage = false;
-let page_is_locked_by_me = false;
 
 async function lockPage(page_id, action) {
     let site_id = await $.get("/api/get_site_id?page_id=" + page_id, function (site_id) {
@@ -347,3 +133,197 @@ async function check_if_page_is_locked(page_id) {
         }
     });
 }
+
+async function savePage() {
+    // Get HTML Code
+    let sourceCode = CKEDITOR.instances.htmlCode.getData();
+
+    return $.ajax({
+        type: "POST",
+        url: "/api/editor/save",
+        data: {
+            "data": sourceCode,
+            "page_id": page_id
+        },
+        success: function (entry) {
+            console.log("save success");
+
+            let previewBtn = document.getElementById("previewPage");
+            previewBtn.href = entry.previewURL;
+            previewBtn.target = "_blank";
+
+            startInactivityTimer(page_id);
+
+            // Reset the timer on user actions
+            // document.addEventListener('mousemove', function() { startInactivityTimer(page_id); });
+            // document.addEventListener('keypress', function() { startInactivityTimer(page_id); });
+
+            $('#savedNotification').toast('show');
+        }, error: function (XMLHttpRequest, textStatus, errorThrown) {
+            console.log("save error");
+        }
+    });
+}
+
+window.addEventListener('DOMContentLoaded', async function main() {
+    // Load page html code
+    let data = await $.get("/editor/getPageCode?page_id=" + page_id, function (htmlContent) {
+        return htmlContent;
+    });
+    data = data.data;
+
+    // Set html code to ckeditor textarea
+    document.getElementById("htmlCode").value = data;
+
+    // Add AnchorPlugin Btn
+    CKEDITOR.plugins.add("anchor", {
+        init: function (editor) {
+            editor.ui.addButton("anchorPluginButton", {
+                label: "Anchor",
+                command: "anchorPluginCommand",
+                icon: "/static/images/anchor-icon.svg",
+                state: function () {
+                    if (editor.mode === 'source') {
+                        return CKEDITOR.TRISTATE_DISABLED;
+                    }
+                    return CKEDITOR.TRISTATE_OFF;
+                }
+            });
+            editor.addCommand("anchorPluginCommand", {
+                exec: function (editor) {
+                    var anchorName = prompt('Enter anchor name:'); // Prompt the user for anchor name
+                    if (anchorName) {
+                        var selectedText = editor.getSelection().getNative().toString().trim();
+
+                        var newElement = new CKEDITOR.dom.element('a');
+                        newElement.setText(' ');
+                        newElement.setAttribute('name', anchorName);
+                        newElement.setAttribute('class', "anchor-item-inline");
+
+                        var range = editor.getSelection().getRanges()[0];
+                        // if ((range.endOffset - range.startOffset) > 0) {
+                        var newRange = range.clone();
+                        newRange.collapse(true);
+                        newRange.insertNode(newElement);
+                        // range.deleteContents();
+                        // range.insertNode(newElement);
+                        // } else {
+                        //    alert('You have to select some text to be able to create an anchor!');
+                        // }
+                    }
+                }
+            });
+        }
+    });
+
+    // Add Save Btn
+    CKEDITOR.plugins.add("saveBtn", {
+        init: function (editor) {
+            editor.ui.addButton("SaveBtn", {
+                label: "Save",
+                command: "saveBtn",
+                icon: "save"
+            });
+            editor.addCommand("saveBtn", {
+                exec: async function () {
+                    await savePage();
+                }
+            });
+        }
+    });
+
+    // Init CKEditor
+    ckeditorConfig = {
+        toolbar: [
+            {name: "clipboard", items: ["Cut", "Copy", "Paste", "PasteText", "PasteFromWord", "-", "Undo", "Redo"]},
+            {name: "basicstyles", items: ["Bold", "Italic", "Underline", "Strike"]},
+            {name: "paragraph", items: ["NumberedList", "BulletedList", "-", "Outdent", "Indent", "-", "Blockquote", "CreateDiv", "-", "JustifyLeft", "JustifyCenter", "JustifyRight", "JustifyBlock"]},
+            {name: "links", items: ["Link", "Unlink", "anchorPluginButton"]},
+            {name: "insert", items: ["Image", "Embed", "Table", "HorizontalRule", "SpecialChar", "inserthtml4x"]},
+            {name: "styles", items: ["Styles", "Format"]},
+            {name: "colors", items: ["TextColor", "BGColor"]},
+            {name: "actions", items: ["Preview", "SaveBtn", "PublishBtn"]}
+        ],
+        extraPlugins: "anchor, inserthtml4x, embed, saveBtn, pastefromword",
+        codeSnippet_theme: 'prism',
+        filebrowserUploadUrl: "/api/upload?name=fileupload",
+        embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}',
+        on: {
+            setData: async function (event) {
+                // Regex to find empty <a> tags
+                var emptyAnchorRegex = /<a([^>]*?)>\s*<\/a>/g;
+                event.data.dataValue = event.data.dataValue.replace(emptyAnchorRegex, '<a$1>&nbsp;</a>');
+            },
+            instanceReady: async function (evt) {
+                // Get the CKEditor instance
+                let editor = evt.editor;
+
+                editor.on('beforeCommandExec', function (event) {
+                    if (editor.mode === 'wysiwyg') {
+                        // Trying to prevent the undo JUMP that breaks the tabs
+                    }
+                });
+
+                await check_if_page_is_locked(page_id);
+
+                var is_locked = false;
+                // Usage with CKEditor change event
+                editor.on('change', debounce(function () {
+                    if (is_locked != true) {
+                        lockPage(page_id, "lock");
+                        is_locked = true;
+                    }
+                }, 250)); // Adjust debounce time as necessary
+
+                window.addEventListener('beforeunload', async function (event) {
+                    // Perform any necessary actions before showing the confirmation dialog
+                    console.log('User attempted to leave the page.');
+
+                    // Show a confirmation dialog
+                    event.preventDefault();
+                    event.returnValue = ''; // This triggers the default confirmation dialog in most browsers
+
+                    if (page_is_locked_by_me) {
+
+                        let site_id = await $.get("/api/get_site_id?page_id=" + page_id, function (site_id) {
+                            return site_id;
+                        });
+
+                        // Data to be sent to the server
+                        var data = JSON.stringify({
+                            page_id: page_id,
+                            site_id: site_id,
+                            action: "unlock"
+                        });
+
+                        fetch('/api/lock_unlock_page', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: data,
+                            keepalive: true // This is important to allow the request to complete
+                        });
+                        return null;
+                    }
+                });
+            }
+        }
+    };
+
+    // Conditionally add "Source" button if is_source_editor is true
+    if (is_source_editor === 1 || is_admin === 1) {
+        ckeditorConfig.toolbar.forEach(function (toolbarGroup) {
+            if (toolbarGroup.name === "actions") {
+                toolbarGroup.items.push("Source");
+            }
+        });
+    }
+
+    // Initialize CKEditor with the configuration
+    CKEDITOR.replace("htmlCode", ckeditorConfig);
+
+    // Remove loadingBg
+    $(".loadingBg").removeClass("show");
+});
+
