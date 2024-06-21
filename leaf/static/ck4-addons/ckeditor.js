@@ -17,7 +17,7 @@ For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
                 }
                 -1 == b.indexOf(":/") && "//" != b.slice(0, 2) && (b = 0 === b.indexOf("/") ? location.href.match(/^.*?:\/\/[^\/]*/)[0] +
                     b : location.href.match(/^[^\?]*\/(?:)/)[0] + b);
-                if (!b) throw'The CKEditor installation path could not be automatically detected. Please set the global variable "CKEDITOR_BASEPATH" before creating editor instances.';
+                if (!b) throw 'The CKEditor installation path could not be automatically detected. Please set the global variable "CKEDITOR_BASEPATH" before creating editor instances.';
                 return b
             }(), getUrl: function (a) {
                 -1 == a.indexOf(":/") && 0 !== a.indexOf("/") && (a = this.basePath + a);
@@ -15284,7 +15284,7 @@ For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
             }
         })
     })();
-    CKEDITOR.config.iframe_attributes = {sandbox: ""};
+    CKEDITOR.config.iframe_attributes = {};
     (function () {
         function v(a) {
             function e(a) {
