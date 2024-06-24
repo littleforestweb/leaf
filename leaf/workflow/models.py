@@ -1276,7 +1276,7 @@ def proceed_action_workflow(request, not_real_request=None):
                                 by_field_params = tuple(singleItem) + (current_date_to_compare_in_db,) * len(existing_publication_names)
                                 mycursor.execute(by_field_query, by_field_params)
 
-                                current_app.logger.debug(by_field_params)
+                                current_app.logger.debug(by_field_query, by_field_params)
 
                                 row_headers = [x[0] for x in mycursor.description]
                                 fullListByField = mycursor.fetchall()
