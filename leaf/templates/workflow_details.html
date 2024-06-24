@@ -56,8 +56,8 @@
                                     <div class="row">
                                         {% if data.listName and data.listName != "None" %}
                                             {% for siteTitle in data.siteTitles %}
-                                                <div class="col-12">Preview: <span><a class="decoration_none" target="_blank" href="{{ data.siteUrl[loop.index0] }}">{{ siteTitle }} <i class="fal fa-external-link small"></i></a></span></div>
-                                                <div class="col-12">Edit: <span><a class="decoration_none" target="_blank" href="/list/{{ data.listName }}?id={{ data.siteIds }}">{{ siteTitle }} <i class="fal fa-external-link small"></i></a></span></div>
+                                                <div class="col-12">Preview: <span><a class="decoration_none" target="_blank" href="{{ data.siteUrl[loop.index0] }}">/{{ siteTitle }} <i class="fal fa-external-link small"></i></a></span></div>
+                                                <div class="col-12">Edit: <span><a class="decoration_none" target="_blank" href="/list/{{ data.listName }}?id={{ data.siteIds }}">/{{ siteTitle }} <i class="fal fa-external-link small"></i></a></span></div>
                                             {% endfor %}
                                         {% else %}
                                             <div class="col-4"><img src="/get_screenshot?id={{ data.siteIds }}" width="100%" height="auto" alt="Page Screenshot Image"></div>
