@@ -2160,12 +2160,17 @@ def check_if_should_publish_pages(workflow):
         with ssh.open_sftp() as scp:
             actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
             for asset in assets:
+                current_app.logger.debug("asset:")
+                current_app.logger.debug(asset)
                 assetFilename = asset.split("/")[-1].strip('/')
                 assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
+                current_app.logger.debug(assetLocalPath)
                 assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                current_app.logger.debug(assetRemotePath)
                 actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
                 if not actionResultAsset:
                     try:
+                        current_app.logger.debug("Failed to SCP - " + lp + " - " + rp)
                         raise Exception("Failed to SCP - " + lp + " - " + rp)
                     except Exception as e:
                         pass
