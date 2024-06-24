@@ -1365,12 +1365,16 @@ def proceed_action_workflow(request, not_real_request=None):
                             # Replace Preview Reference with Live webserver references
                             with open(local_path) as inFile:
                                 data = inFile.read()
-                                original_content = data
-                            data = data.replace(str(os.path.join(Config.LEAFCMS_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
+
+                            assets = find_page_assets(data)
+
+                            original_content = data
+                            original_content_changed = data.replace(Config.LEAFCMS_SERVER, Config.PREVIEW_SERVER + Config.DYNAMIC_PATH.strip('/') + '/leaf/')
+                            current_app.logger.debug(srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf/')
+                            current_app.logger.debug(Config.LEAFCMS_SERVER)
+                            data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf/')
                             with open(local_path, "w") as outFile:
                                 outFile.write(data)
-
-                            assets = find_page_assets(original_content)
 
                             # SCP Files
                             remote_path = os.path.join(srv["remote_path"], HTMLPath)
