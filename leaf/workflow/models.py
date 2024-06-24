@@ -1355,15 +1355,12 @@ def proceed_action_workflow(request, not_real_request=None):
                 list_items_url_path = request.form.get("list_item_url_path")
                 list_items_url_path = ast.literal_eval(list_items_url_path)
                 for list_item_url_path in list_items_url_path:
-                    # HTMLPath = werkzeug.utils.escape(list_item_url_path.strip("/"))
-                    # local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
+                    HTMLPath = werkzeug.utils.escape(list_item_url_path.strip("/"))
+                    local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
                     list_feed_path = werkzeug.utils.escape(request.form.get("list_feed_path").strip("/"))
                     rss_ids = werkzeug.utils.escape(request.form.get("rss_ids"))
                     if thisType != 8:
                         for srv in Config.DEPLOYMENTS_SERVERS:
-
-                            HTMLPath = HTMLPath.strip("/")
-                            local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
 
                             # Replace Preview Reference with Live webserver references
                             with open(local_path) as inFile:
