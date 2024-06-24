@@ -1359,7 +1359,8 @@ def proceed_action_workflow(request, not_real_request=None):
                     local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
                     list_feed_path = werkzeug.utils.escape(request.form.get("list_feed_path").strip("/"))
                     rss_ids = werkzeug.utils.escape(request.form.get("rss_ids"))
-
+                    current_app.logger.debug("TYPE:")
+                    current_app.logger.debug(thisType)
                     if thisType != 8:
                         for srv in Config.DEPLOYMENTS_SERVERS:
 
@@ -1402,6 +1403,7 @@ def proceed_action_workflow(request, not_real_request=None):
                                     actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
                                     if not actionResultAsset:
                                         try:
+                                            current_app.logger.debug("Failed to SCP - " + lp + " - " + rp)
                                             raise Exception("Failed to SCP - " + lp + " - " + rp)
                                         except Exception as e:
                                             pass
