@@ -13,7 +13,7 @@ from urllib.parse import unquote, urljoin
 import paramiko
 import werkzeug.utils
 from bs4 import BeautifulSoup
-from flask import session
+from flask import session, current_app
 from git import Actor
 from werkzeug.datastructures import MultiDict
 
