@@ -1108,7 +1108,7 @@ def proceed_action_workflow(request, not_real_request=None):
             with open(local_path) as inFile:
                 data = inFile.read()
                 original_content = data
-            data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH)
+            data = data.replace(Config.LEAFCMS_SERVER.rstrip("/") + "/" + Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"), "/" + Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))
             with open(local_path, "w") as outFile:
                 outFile.write(data)
 
@@ -1131,7 +1131,7 @@ def proceed_action_workflow(request, not_real_request=None):
                 for asset in assets:
                     assetFilename = asset.split("/")[-1].strip('/')
                     assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
-                    assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                    assetRemotePath = os.path.join(srv["remote_path"], Config.REMOTE_UPLOADS_FOLDER, assetFilename)
                     actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
                     if not actionResultAsset:
                         try:
@@ -1811,8 +1811,8 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
 def find_page_assets(original_content):
     # Get all assets on the page
     soup = BeautifulSoup(original_content, "html5lib")
-    imgAssets = [asset["src"] for asset in soup.find_all("img", {"src": lambda src: src and Config.IMAGES_WEBPATH in src})]
-    pdfAssets = [asset["href"] for asset in soup.find_all("a", {"href": lambda href: href and href.endswith(".pdf") and Config.IMAGES_WEBPATH in href})]
+    imgAssets = [asset["src"] for asset in soup.find_all("img", {"src": lambda src: src and Config.LEAFCMS_SERVER in src})]
+    pdfAssets = [asset["href"] for asset in soup.find_all("a", {"href": lambda href: href and href.endswith(".pdf") and Config.LEAFCMS_SERVER in href})]
     assets = imgAssets + pdfAssets
 
     return assets

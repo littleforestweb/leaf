@@ -250,3 +250,4 @@ class Config:
     ENV_PATH = TEMP_UPLOAD_FOLDER
     TEMPLATES_FOLDER = os.path.join(LEAFCMS_FOLDER, "templates_folder")
     os.makedirs(TEMPLATES_FOLDER, exist_ok=True)
+    REMOTE_UPLOADS_FOLDER = os.path.join("leaf_content", "uploads")
