@@ -1357,7 +1357,7 @@ def proceed_action_workflow(request, not_real_request=None):
                 for list_item_url_path in list_items_url_path:
                     HTMLPath = werkzeug.utils.escape(list_item_url_path.strip("/"))
                     local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
-                    list_feed_path = werkzeug.utils.escape(request.form.get("list_feed_path"))
+                    list_feed_path = werkzeug.utils.escape(request.form.get("list_feed_path").strip("/"))
                     rss_ids = werkzeug.utils.escape(request.form.get("rss_ids"))
                     current_app.logger.debug("TYPE:")
                     current_app.logger.debug(thisType)
@@ -1368,13 +1368,14 @@ def proceed_action_workflow(request, not_real_request=None):
                             with open(local_path) as inFile:
                                 data = inFile.read()
 
+                            current_app.logger.debug(data)
                             assets = find_page_assets(data)
                             current_app.logger.debug("Testing assets: ")
                             current_app.logger.debug(assets)
 
                             original_content = data
                             original_content_changed = data.replace(Config.LEAFCMS_SERVER, Config.PREVIEW_SERVER + Config.DYNAMIC_PATH.strip('/') + '/leaf')
-                            data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf')
+                            data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH + '/leaf')
                             with open(local_path, "w") as outFile:
                                 outFile.write(data)
 
