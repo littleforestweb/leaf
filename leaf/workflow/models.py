@@ -1375,6 +1375,8 @@ def proceed_action_workflow(request, not_real_request=None):
                                 outFile.write(data)
 
                             assets = find_page_assets(original_content_changed)
+                            current_app.logger.debug("Testing assets: ")
+                            current_app.logger.debug(assets)
 
                             # SCP Files
                             remote_path = os.path.join(srv["remote_path"], HTMLPath)
