@@ -2161,11 +2161,14 @@ def check_if_should_publish_pages(workflow):
             actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
             for asset in assets:
                 current_app.logger.debug("asset:")
-                current_app.logger.debug(asset)
                 assetFilename = asset.split("/")[-1].strip('/')
+                current_app.logger.debug("assetFilename:")
+                current_app.logger.debug(assetFilename)
                 assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
+                current_app.logger.debug("assetLocalPath:")
                 current_app.logger.debug(assetLocalPath)
                 assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                current_app.logger.debug("assetRemotePath:")
                 current_app.logger.debug(assetRemotePath)
                 actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
                 if not actionResultAsset:
