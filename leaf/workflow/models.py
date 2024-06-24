@@ -1223,7 +1223,10 @@ def proceed_action_workflow(request, not_real_request=None):
             # Check which publication date fields actually exist in the table
             existing_publication_names = [name for name in publication_names if column_exists(mycursor, account_list, name)]
             date_conditions = " AND ".join([f"({field} IS NULL OR {field} <= %s)" for field in existing_publication_names])
-            current_date_to_compare_in_db = datetime.datetime.now().strftime('%Y-%m-%d')
+            current_date_to_compare_in_db = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            current_app.logger.debug(field)
+            current_app.logger.debug(current_date_to_compare_in_db)
 
             site_ids = werkzeug.utils.escape(request.form.get("site_ids"))
 
@@ -1273,6 +1276,8 @@ def proceed_action_workflow(request, not_real_request=None):
                                 by_field_query = f"SELECT {fieldsToSaveByIncludes} FROM {account_list} WHERE {by_field_conditions} AND ({date_conditions})"
                                 by_field_params = tuple(singleItem) + (current_date_to_compare_in_db,) * len(existing_publication_names)
                                 mycursor.execute(by_field_query, by_field_params)
+
+                                current_app.logger.debug(by_field_params)
 
                                 row_headers = [x[0] for x in mycursor.description]
                                 fullListByField = mycursor.fetchall()
