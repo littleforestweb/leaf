@@ -2144,6 +2144,8 @@ def check_if_should_publish_pages(workflow):
             outFile.write(data)
 
         assets = find_page_assets(original_content)
+        current_app.logger.debug("ALL ASSETS:")
+        current_app.logger.debug(assets)
 
         # SCP Files
         remote_path = os.path.join(srv["remote_path"], HTMLPath)
