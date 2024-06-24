@@ -136,6 +136,29 @@ async function doActionBtn(action) {
     $('#publishModal').modal('show');
 }
 
+async function doMainButtons() {
+    $('table').on('change', 'input[type="checkbox"]', function () {
+        var checkboxes = document.querySelectorAll("input[type='checkbox'].dt-checkboxes");
+        if (this.checked) {
+            for (var i = 0; i < checkboxes.length; i++) {
+                if (checkboxes[i] !== this) {
+                    checkboxes[i].checked = false;
+                }
+            }
+        }
+
+        $(".publish_file_btn").prop('disabled', true);
+        if ($('input[type="checkbox"]:checked').length === 1) {
+            $(".publish_file_btn").prop('disabled', false);
+        }
+
+        $(".remove_file_btn").prop('disabled', true);
+        if ($('input[type="checkbox"]:checked').length === 1) {
+            $(".remove_file_btn").prop('disabled', false);
+        }
+    })
+}
+
 async function createTicket(accountId, type = 6) {
     document.querySelector("#publishModal > div > div > div.modal-footer > button").disabled = true;
 
@@ -321,6 +344,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 });
             });
 
+            doMainButtons();
             $(".loadingBg").removeClass("show");
         }
     });

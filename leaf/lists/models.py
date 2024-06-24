@@ -11,6 +11,7 @@ import pandas as pd
 import werkzeug.utils
 from flask import current_app
 from markupsafe import Markup
+import traceback
 
 from leaf.sites.models import get_user_access_folder
 from leaf.template_editor.models import *
@@ -1297,6 +1298,8 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         file_url_paths = this_request.get("file_url_path")
         list_template_id = werkzeug.utils.escape(this_request.get("list_template_id"))
         list_item_id = werkzeug.utils.escape(this_request.get("list_item_id"))
+        current_app.logger.debug("list_item_id:")
+        current_app.logger.debug(list_item_id)
 
         mycursor.execute(f"SELECT * FROM {account_list} WHERE id = %s", (list_item_id,))
         selected_item_id = mycursor.fetchone()
@@ -1310,7 +1313,8 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         for key, value in selected_item_data.items():
             html_placeholder = '{{' + key + '}}'
             if html_placeholder in list_template_html:
-                list_template_html = list_template_html.replace(html_placeholder, unescape_html(value))
+                if value is not None:
+                    list_template_html = list_template_html.replace(html_placeholder, unescape_html(value))
 
         # Remove any HTML elements that contain html_placeholders that do not exist in the selected_item_data
         html_placeholders = re.findall(r'{{(.*?)}}', list_template_html)
@@ -1344,13 +1348,15 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         save_by_field = werkzeug.utils.escape(this_request.get("save_by_field"))
         field_to_save_by = werkzeug.utils.escape(this_request.get("field_to_save_by"))
         field_to_save_by_includes = werkzeug.utils.escape(this_request.get("field_to_save_by_includes"))
-        if field_to_save_by != "False":
+
+        if field_to_save_by != "False" and save_by_field != "false":
             # Query to retrieve data filtered by field (using parameterized query)
             # Convert to string if it is Markup
             if isinstance(save_by_field, Markup):
                 save_by_field = str(save_by_field)
             # Split the save_by_field into individual paths
             save_by_field = save_by_field.split(",")
+
             for this_field_to_save in save_by_field:
                 this_field_to_save = this_field_to_save.split(",")
                 # Construct the SQL query with multiple FIND_IN_SET conditions
@@ -1373,8 +1379,9 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
                     out_file_by_field.write(json_data_to_write_by_field)
 
     except Exception as e:
-        print("publish_dynamic_lists model")
-        print(e)
+        current_app.logger.debug("publish_dynamic_lists model")
+        current_app.logger.debug(e)
+        current_app.logger.debug(traceback.format_exc())
     finally:
         mydb.close()
         return jsonify({"full_list": full_list})
