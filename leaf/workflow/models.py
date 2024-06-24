@@ -1359,8 +1359,6 @@ def proceed_action_workflow(request, not_real_request=None):
                     local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
                     list_feed_path = werkzeug.utils.escape(request.form.get("list_feed_path").strip("/"))
                     rss_ids = werkzeug.utils.escape(request.form.get("rss_ids"))
-                    current_app.logger.debug("TYPE:")
-                    current_app.logger.debug(thisType)
                     if thisType != 8:
                         for srv in Config.DEPLOYMENTS_SERVERS:
 
@@ -1368,14 +1366,13 @@ def proceed_action_workflow(request, not_real_request=None):
                             with open(local_path) as inFile:
                                 data = inFile.read()
 
-                            current_app.logger.debug(data)
                             assets = find_page_assets(data)
-                            current_app.logger.debug("Testing assets: ")
-                            current_app.logger.debug(assets)
 
                             original_content = data
                             original_content_changed = data.replace(Config.LEAFCMS_SERVER, Config.PREVIEW_SERVER + Config.DYNAMIC_PATH.strip('/') + '/leaf')
-                            data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH + '/leaf')
+                            current_app.logger.debug(srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf')
+                            current_app.logger.debug(Config.LEAFCMS_SERVER)
+                            data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf')
                             with open(local_path, "w") as outFile:
                                 outFile.write(data)
 
