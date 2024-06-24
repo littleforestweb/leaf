@@ -91,7 +91,7 @@
                                         {% for singleRss in data.leaf_selected_rss %}
                                             {% if singleRss[0] %}
                                                 <div class="row">
-                                                    <div class="col-12"><span><a target="_blank" href="{{ data.preview_server }}{{ singleRss[0][2] }}">{{ data.preview_server }}{{ singleRss[0][2] }}</a></span></div>
+                                                    <div class="col-12"><span><a target="_blank" href="{{ data.preview_server.rstrip("/") }}/{{ singleRss[0][2] }}">{{ data.preview_server.rstrip("/") }}/{{ singleRss[0][2] }}</a></span></div>
                                                 </div>
                                             {% endif %}
                                         {% endfor %}
