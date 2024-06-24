@@ -1949,10 +1949,19 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
                     tree.write(os.path.join(Config.WEBSERVER_FOLDER, file_path), encoding='UTF-8', xml_declaration=True)
 
                     # Write the RSS Feed in Remote Server
-                    rss_directory = os.path.dirname(os.path.join(srv["remote_path"], file_path))
-                    if not os.path.exists(rss_directory):
-                        os.makedirs(rss_directory)
-                    tree.write(os.path.join(srv["remote_path"], file_path), encoding='UTF-8', xml_declaration=True)
+                    ssh = paramiko.SSHClient()
+                    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                    if srv["pkey"] != "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                        if srv["pw"] == "":
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                        else:
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                    else:
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                    with ssh.open_sftp() as scp:
+                        create_remote_folder(scp, os.path.dirname(os.path.join(srv["remote_path"], file_path)))
+                        scp.put(os.path.join(Config.WEBSERVER_FOLDER, file_path), os.path.join(srv["remote_path"], file_path))
 
                     if thisType == 8:
                         print("Existing item deleted in RSS feed.")
@@ -1975,11 +1984,19 @@ def add_item_to_channel(tree, root, new_item, file_path, account_id, list_name, 
     # Write the RSS Feed in Preview Server
     tree.write(os.path.join(Config.WEBSERVER_FOLDER, file_path), encoding='UTF-8', xml_declaration=True)
 
-    # Write the RSS Feed in Remote Server
-    rss_directory = os.path.dirname(os.path.join(srv["remote_path"], file_path))
-    if not os.path.exists(rss_directory):
-        os.makedirs(rss_directory)
-    tree.write(os.path.join(srv["remote_path"], file_path), encoding='UTF-8', xml_declaration=True)
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    if srv["pkey"] != "":
+        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+        if srv["pw"] == "":
+            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+        else:
+            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+    else:
+        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+    with ssh.open_sftp() as scp:
+        create_remote_folder(scp, os.path.dirname(os.path.join(srv["remote_path"], file_path)))
+        scp.put(os.path.join(Config.WEBSERVER_FOLDER, file_path), os.path.join(srv["remote_path"], file_path))
 
 
 def delete_item_from_disk(item_path):
