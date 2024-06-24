@@ -1374,7 +1374,7 @@ def proceed_action_workflow(request, not_real_request=None):
                             with open(local_path, "w") as outFile:
                                 outFile.write(data)
 
-                            assets = find_page_assets(original_content_changed)
+                            assets = find_page_assets(original_content)
                             current_app.logger.debug("Testing assets: ")
                             current_app.logger.debug(assets)
 
