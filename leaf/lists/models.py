@@ -1339,7 +1339,7 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         # json_data_to_write = json.dumps(json_data, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
 
         # # Write JSON data to a file with the specified reference identifier (sanitize reference)
-        # sanitized_reference = ''.join(e for e in reference if e.isalnum())
+        sanitized_reference = ''.join(e for e in reference if e.isalnum())
         # os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH), exist_ok=True)
         # with open(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH, sanitized_reference + 'List.json'), 'w') as out_file:
         #     out_file.write(json_data_to_write)
