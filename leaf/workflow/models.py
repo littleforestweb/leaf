@@ -1108,7 +1108,7 @@ def proceed_action_workflow(request, not_real_request=None):
             with open(local_path) as inFile:
                 data = inFile.read()
                 original_content = data
-            data = data.replace(Config.LEAFCMS_SERVER.rstrip("/") + "/" + Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"), "/" + Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))
+            data = data.replace(str(os.path.join(Config.LEAFCMS_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
             with open(local_path, "w") as outFile:
                 outFile.write(data)
 
