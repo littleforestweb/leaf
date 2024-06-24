@@ -1225,7 +1225,6 @@ def proceed_action_workflow(request, not_real_request=None):
             date_conditions = " AND ".join([f"({field} IS NULL OR {field} <= %s)" for field in existing_publication_names])
             current_date_to_compare_in_db = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-            current_app.logger.debug(field)
             current_app.logger.debug(current_date_to_compare_in_db)
 
             site_ids = werkzeug.utils.escape(request.form.get("site_ids"))
