@@ -1355,24 +1355,25 @@ def proceed_action_workflow(request, not_real_request=None):
                 list_items_url_path = request.form.get("list_item_url_path")
                 list_items_url_path = ast.literal_eval(list_items_url_path)
                 for list_item_url_path in list_items_url_path:
-                    HTMLPath = werkzeug.utils.escape(list_item_url_path.strip("/"))
-                    local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
+                    # HTMLPath = werkzeug.utils.escape(list_item_url_path.strip("/"))
+                    # local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
                     list_feed_path = werkzeug.utils.escape(request.form.get("list_feed_path").strip("/"))
                     rss_ids = werkzeug.utils.escape(request.form.get("rss_ids"))
                     if thisType != 8:
                         for srv in Config.DEPLOYMENTS_SERVERS:
 
+                            HTMLPath = HTMLPath.strip("/")
+                            local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
+
                             # Replace Preview Reference with Live webserver references
                             with open(local_path) as inFile:
                                 data = inFile.read()
-
-                            assets = find_page_assets(data)
-
-                            original_content = data
-                            # data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf/')
-                            original_content_changed = data.replace(str(os.path.join(Config.LEAFCMS_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
+                                original_content = data
+                            data = data.replace(str(os.path.join(Config.LEAFCMS_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
                             with open(local_path, "w") as outFile:
-                                outFile.write(original_content_changed)
+                                outFile.write(data)
+
+                            assets = find_page_assets(original_content)
 
                             # SCP Files
                             remote_path = os.path.join(srv["remote_path"], HTMLPath)
