@@ -1391,8 +1391,14 @@ def proceed_action_workflow(request, not_real_request=None):
                                 actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
                                 for asset in assets:
                                     assetFilename = asset.split("/")[-1].strip('/')
+                                    current_app.logger.debug("asset:")
+                                    current_app.logger.debug(assetFilename)
                                     assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
+                                    current_app.logger.debug("assetLocalPath:")
+                                    current_app.logger.debug(assetLocalPath)
                                     assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                                    current_app.logger.debug("assetRemotePath:")
+                                    current_app.logger.debug(assetRemotePath)
                                     actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
                                     if not actionResultAsset:
                                         try:
@@ -2144,8 +2150,6 @@ def check_if_should_publish_pages(workflow):
             outFile.write(data)
 
         assets = find_page_assets(original_content)
-        current_app.logger.debug("ALL ASSETS:")
-        current_app.logger.debug(assets)
 
         # SCP Files
         remote_path = os.path.join(srv["remote_path"], HTMLPath)
@@ -2162,20 +2166,12 @@ def check_if_should_publish_pages(workflow):
         with ssh.open_sftp() as scp:
             actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
             for asset in assets:
-                current_app.logger.debug("asset:")
                 assetFilename = asset.split("/")[-1].strip('/')
-                current_app.logger.debug("assetFilename:")
-                current_app.logger.debug(assetFilename)
                 assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
-                current_app.logger.debug("assetLocalPath:")
-                current_app.logger.debug(assetLocalPath)
                 assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
-                current_app.logger.debug("assetRemotePath:")
-                current_app.logger.debug(assetRemotePath)
                 actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
                 if not actionResultAsset:
                     try:
-                        current_app.logger.debug("Failed to SCP - " + lp + " - " + rp)
                         raise Exception("Failed to SCP - " + lp + " - " + rp)
                     except Exception as e:
                         pass
