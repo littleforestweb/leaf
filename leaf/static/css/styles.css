@@ -1216,6 +1216,10 @@ table.dataTable tbody tr.isYellow {
     padding: 10px 1rem;
 }
 
+.col-form-label strong {
+    text-transform: capitalize;
+}
+
 @media (min-width: 576px) {
     .modal-dialog {
         max-width: 1120px;
