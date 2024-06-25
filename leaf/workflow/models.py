@@ -1392,7 +1392,6 @@ def proceed_action_workflow(request, not_real_request=None):
                             #     outFile.write(data)
 
                             assets = find_page_assets(original_content)
-                            current_app.logger.debug(assets)
 
                             # SCP Files
                             remote_path = os.path.join(srv["remote_path"], HTMLPath)
@@ -1412,6 +1411,7 @@ def proceed_action_workflow(request, not_real_request=None):
                                     assetFilename = asset.split("/")[-1].strip('/')
                                     assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
                                     assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH, Config.IMAGES_WEBPATH, assetFilename)
+                                    current_app.logger.debug(assetRemotePath)
                                     actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
                                     if not actionResultAsset:
                                         try:
