@@ -81,6 +81,7 @@ def get_workflow_details(workflow_id):
         current_app.logger.debug(workflow_data)
         if workflow_data["type"] == 3:
             workflow_data["publication_date"] = workflow_data["publication_date"] + " 00:00:00" if ":" not in workflow_data["publication_date"] else workflow_data["publication_date"]
+        current_app.logger.debug(workflow_data)
 
         # Get workflow folder
         if workflow_data["type"] in [1, 5, 6, 7]:
