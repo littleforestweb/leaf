@@ -233,7 +233,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
     });
 
     // Init CKEditor
-    ckeditorConfig = {
+    let ckeditorConfig = {
         toolbar: [
             {name: "clipboard", items: ["Cut", "Copy", "Paste", "PasteText", "PasteFromWord", "-", "Undo", "Redo"]},
             {name: "basicstyles", items: ["Bold", "Italic", "Underline", "Strike"]},
@@ -251,7 +251,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
         on: {
             setData: async function (event) {
                 // Regex to find empty <a> tags
-                var emptyAnchorRegex = /<a([^>]*?)>\s*<\/a>/g;
+                let emptyAnchorRegex = /<a([^>]*?)>\s*<\/a>/g;
                 event.data.dataValue = event.data.dataValue.replace(emptyAnchorRegex, '<a$1>&nbsp;</a>');
             },
             instanceReady: async function (evt) {
@@ -266,10 +266,10 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
                 await check_if_page_is_locked(page_id);
 
-                var is_locked = false;
                 // Usage with CKEditor change event
+                let is_locked = false;
                 editor.on('change', debounce(function () {
-                    if (is_locked != true) {
+                    if (is_locked !== true) {
                         lockPage(page_id, "lock");
                         is_locked = true;
                     }

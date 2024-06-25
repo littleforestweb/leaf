@@ -1335,14 +1335,14 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
                 out_file.write(list_template_html)
 
         # Convert data to a JSON format
-        json_data = [dict(zip(row_headers, result)) for result in full_list]
-        json_data_to_write = json.dumps(json_data, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
+        # json_data = [dict(zip(row_headers, result)) for result in full_list]
+        # json_data_to_write = json.dumps(json_data, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
 
-        # Write JSON data to a file with the specified reference identifier (sanitize reference)
+        # # Write JSON data to a file with the specified reference identifier (sanitize reference)
         sanitized_reference = ''.join(e for e in reference if e.isalnum())
-        os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH), exist_ok=True)
-        with open(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH, sanitized_reference + 'List.json'), 'w') as out_file:
-            out_file.write(json_data_to_write)
+        # os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH), exist_ok=True)
+        # with open(os.path.join(Config.WEBSERVER_FOLDER, Config.DYNAMIC_PATH, sanitized_reference + 'List.json'), 'w') as out_file:
+        #     out_file.write(json_data_to_write)
 
         # Additional logic to save data by field (sanitize user input)
         save_by_field = werkzeug.utils.escape(this_request.get("save_by_field"))

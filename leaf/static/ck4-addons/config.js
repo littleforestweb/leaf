@@ -14,7 +14,6 @@ CKEDITOR.editorConfig = function (config) {
 
     // You can uncomment these lines if you want to remove protection for anchor tags.
     // WARNING: This can expose your application to XSS attacks if not properly handled.
-
     config.removeEmptyElements = false;
     config.extraAllowedContent = '*(*);*{*}';
 

@@ -224,6 +224,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                     $('#e-' + thisSpanList).replaceWith(fieldsDropdown);
                                     for (single_item in getUserFolderAccess) {
                                         var single_item_clean = (getUserFolderAccess[single_item] + (reference == "seminars" || reference == "events" ? "news/" + reference : reference)).replace(/^\/|\/$/g, '');
+                                        single_item_clean = single_item_clean.replace("news/news", "news");
                                         $('select#e-' + thisSpanList).append('<option value="' + single_item_clean + '" ' + (thisFieldValue.includes(single_item_clean) ? " selected" : "") + '>' + single_item_clean.toLowerCase() + '</option>');
                                     }
                                 } else {
@@ -231,6 +232,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                     $('#a-' + thisSpanList).replaceWith(fieldsDropdown);
                                     for (single_item in getUserFolderAccess) {
                                         var single_item_clean = (getUserFolderAccess[single_item] + (reference == "seminars" || reference == "events" ? "news/" + reference : reference)).replace(/^\/|\/$/g, '');
+                                        single_item_clean = single_item_clean.replace("news/news", "news");
                                         $('select#a-' + thisSpanList).append('<option value="' + single_item_clean + '" ' + (thisFieldValue.includes(single_item_clean) ? " selected" : "") + '>' + single_item_clean.toLowerCase() + '</option>');
                                     }
                                 }
@@ -2311,8 +2313,8 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
                         removeButtonForFilesEdit = '<input id="e-clear-' + checkHeaderClass + '" class="btn btn-small btn-secondary clear-btn" value="clear" />';
                     }
 
-                    thisElementToEdit.innerHTML = removeButtonForFilesEdit + '<label for="e-' + checkHeaderClass + '" class="col-form-label">' + checkHeaderClass + ':</label>' + '<input type="text" class="form-control" name="e-' + checkHeaderClass + '" id="e-' + checkHeaderClass + '" value="" onkeyup="sanitizeInput(event)" />';
-                    thisElementToAdd.innerHTML = removeButtonForFilesAdd + '<label for="a-' + checkHeaderClass + '" class="col-form-label">' + checkHeaderClass + ':</label>' + '<input type="text" class="form-control" name="a-' + checkHeaderClass + '" id="a-' + checkHeaderClass + '" value="" onkeyup="sanitizeInput(event)" />';
+                    thisElementToEdit.innerHTML = removeButtonForFilesEdit + '<label for="e-' + checkHeaderClass + '" class="col-form-label"><strong>' + checkHeaderClass.replace(/_/g, " ") + ':</strong></label>' + '<input type="text" class="form-control" name="e-' + checkHeaderClass + '" id="e-' + checkHeaderClass + '" value="" onkeyup="sanitizeInput(event)" />';
+                    thisElementToAdd.innerHTML = removeButtonForFilesAdd + '<label for="a-' + checkHeaderClass + '" class="col-form-label"><strong>' + checkHeaderClass.replace(/_/g, " ") + ':</strong></label>' + '<input type="text" class="form-control" name="a-' + checkHeaderClass + '" id="a-' + checkHeaderClass + '" value="" onkeyup="sanitizeInput(event)" />';
 
                     document.getElementById("edit-" + reference).appendChild(thisElementToEdit);
                     $("#edit-" + reference + " .mb-3").find("#e-" + checkHeaderClass).parent().append(scriptForFilesEdit);

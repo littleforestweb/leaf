@@ -13,7 +13,7 @@ from urllib.parse import unquote, urljoin
 import paramiko
 import werkzeug.utils
 from bs4 import BeautifulSoup
-from flask import session
+from flask import session, current_app
 from git import Actor
 from werkzeug.datastructures import MultiDict
 
@@ -1108,7 +1108,7 @@ def proceed_action_workflow(request, not_real_request=None):
             with open(local_path) as inFile:
                 data = inFile.read()
                 original_content = data
-            data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH)
+            data = data.replace(str(os.path.join(Config.LEAFCMS_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
             with open(local_path, "w") as outFile:
                 outFile.write(data)
 
@@ -1131,7 +1131,7 @@ def proceed_action_workflow(request, not_real_request=None):
                 for asset in assets:
                     assetFilename = asset.split("/")[-1].strip('/')
                     assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
-                    assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                    assetRemotePath = os.path.join(srv["remote_path"], Config.REMOTE_UPLOADS_FOLDER, assetFilename)
                     actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
                     if not actionResultAsset:
                         try:
@@ -1223,7 +1223,9 @@ def proceed_action_workflow(request, not_real_request=None):
             # Check which publication date fields actually exist in the table
             existing_publication_names = [name for name in publication_names if column_exists(mycursor, account_list, name)]
             date_conditions = " AND ".join([f"({field} IS NULL OR {field} <= %s)" for field in existing_publication_names])
-            current_date_to_compare_in_db = datetime.datetime.now().strftime('%Y-%m-%d')
+            current_date_to_compare_in_db = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            current_app.logger.debug(current_date_to_compare_in_db)
 
             site_ids = werkzeug.utils.escape(request.form.get("site_ids"))
 
@@ -1257,6 +1259,8 @@ def proceed_action_workflow(request, not_real_request=None):
 
                     pages_to_delete_from_feed = False
                     if thisType == 8:
+                        current_app.logger.debug("thisType:")
+                        current_app.logger.debug(thisType)
                         query_list = f"SELECT * FROM {account_list} WHERE id=%s"
                         params_list = (site_ids,)
                         mycursor.execute(query_list, params_list)
@@ -1273,6 +1277,8 @@ def proceed_action_workflow(request, not_real_request=None):
                                 by_field_query = f"SELECT {fieldsToSaveByIncludes} FROM {account_list} WHERE {by_field_conditions} AND ({date_conditions})"
                                 by_field_params = tuple(singleItem) + (current_date_to_compare_in_db,) * len(existing_publication_names)
                                 mycursor.execute(by_field_query, by_field_params)
+
+                                current_app.logger.debug(by_field_query, by_field_params)
 
                                 row_headers = [x[0] for x in mycursor.description]
                                 fullListByField = mycursor.fetchall()
@@ -1312,43 +1318,43 @@ def proceed_action_workflow(request, not_real_request=None):
                                     except Exception as e:
                                         pass
 
-                if date_conditions == "":
-                    full_query = f"SELECT * FROM {account_list}"
-                else:
-                    full_query = f"SELECT * FROM {account_list} WHERE ({date_conditions})"
-                full_params = (current_date_to_compare_in_db,) * len(existing_publication_names)
-                mycursor.execute(full_query, full_params)
+                # if date_conditions == "":
+                #     full_query = f"SELECT * FROM {account_list}"
+                # else:
+                #     full_query = f"SELECT * FROM {account_list} WHERE ({date_conditions})"
+                # full_params = (current_date_to_compare_in_db,) * len(existing_publication_names)
+                # mycursor.execute(full_query, full_params)
 
-                row_headers = [x[0] for x in mycursor.description]
-                fullList = mycursor.fetchall()
+                # row_headers = [x[0] for x in mycursor.description]
+                # fullList = mycursor.fetchall()
 
-                json_data = [dict(zip(row_headers, result)) for result in fullList]
-                json_data_to_write = json.dumps(json_data, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
+                # json_data = [dict(zip(row_headers, result)) for result in fullList]
+                # json_data_to_write = json.dumps(json_data, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
 
-                os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH), exist_ok=True)
-                with open(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, completeListName), "w") as outFile:
-                    outFile.write(json_data_to_write)
+                # os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH), exist_ok=True)
+                # with open(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, completeListName), "w") as outFile:
+                #     outFile.write(json_data_to_write)
 
-                # do scp for LISTS
-                local_path = os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, completeListName)
-                remote_path = os.path.join(srv["remote_path"], DYNAMIC_PATH, completeListName)
-                ssh = paramiko.SSHClient()
-                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                if srv["pkey"] != "":
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                    if srv["pw"] == "":
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                    else:
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                else:
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-                with ssh.open_sftp() as scp:
-                    actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
-                    if not actionResult:
-                        try:
-                            raise Exception("Failed to SCP - " + lp + " - " + rp)
-                        except Exception as e:
-                            pass
+                # # do scp for LISTS
+                # local_path = os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, completeListName)
+                # remote_path = os.path.join(srv["remote_path"], DYNAMIC_PATH, completeListName)
+                # ssh = paramiko.SSHClient()
+                # ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                # if srv["pkey"] != "":
+                #     ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                #     if srv["pw"] == "":
+                #         ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                #     else:
+                #         ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                # else:
+                #     ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                # with ssh.open_sftp() as scp:
+                #     actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                #     if not actionResult:
+                #         try:
+                #             raise Exception("Failed to SCP - " + lp + " - " + rp)
+                #         except Exception as e:
+                #             pass
 
             # LOOP THROUGH list_item_url_path TO PUBLISH FILE IN MULTIPLE LOCATIONS
             if int(thisType) != 4:
@@ -1359,7 +1365,6 @@ def proceed_action_workflow(request, not_real_request=None):
                     local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
                     list_feed_path = werkzeug.utils.escape(request.form.get("list_feed_path").strip("/"))
                     rss_ids = werkzeug.utils.escape(request.form.get("rss_ids"))
-
                     if thisType != 8:
                         for srv in Config.DEPLOYMENTS_SERVERS:
 
@@ -1367,13 +1372,25 @@ def proceed_action_workflow(request, not_real_request=None):
                             with open(local_path) as inFile:
                                 data = inFile.read()
 
+                            assets = find_page_assets(data)
+
                             original_content = data
-                            original_content_changed = data.replace(Config.LEAFCMS_SERVER, Config.PREVIEW_SERVER + Config.DYNAMIC_PATH.strip('/') + '/leaf')
-                            data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf')
+                            original_content_changed = data.replace(Config.LEAFCMS_SERVER, Config.PREVIEW_SERVER + Config.DYNAMIC_PATH.strip('/') + '/leaf/')
+                            current_app.logger.debug(srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf/')
+                            current_app.logger.debug(Config.LEAFCMS_SERVER)
+                            data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf/')
                             with open(local_path, "w") as outFile:
                                 outFile.write(data)
 
-                            assets = find_page_assets(original_content_changed)
+                            # Replace Preview Reference with Live webserver references
+                            # with open(local_path) as inFile:
+                            #     data = inFile.read()
+                            #     original_content = data
+                            # data = data.replace(str(os.path.join(Config.LEAFCMS_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
+                            # with open(local_path, "w") as outFile:
+                            #     outFile.write(data)
+
+                            # assets = find_page_assets(original_content)
 
                             # SCP Files
                             remote_path = os.path.join(srv["remote_path"], HTMLPath)
@@ -1396,6 +1413,7 @@ def proceed_action_workflow(request, not_real_request=None):
                                     actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
                                     if not actionResultAsset:
                                         try:
+                                            current_app.logger.debug("Failed to SCP - " + lp + " - " + rp)
                                             raise Exception("Failed to SCP - " + lp + " - " + rp)
                                         except Exception as e:
                                             pass
@@ -1801,8 +1819,8 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
 def find_page_assets(original_content):
     # Get all assets on the page
     soup = BeautifulSoup(original_content, "html5lib")
-    imgAssets = [asset["src"] for asset in soup.find_all("img", {"src": lambda src: src and Config.IMAGES_WEBPATH in src})]
-    pdfAssets = [asset["href"] for asset in soup.find_all("a", {"href": lambda href: href and href.endswith(".pdf") and Config.IMAGES_WEBPATH in href})]
+    imgAssets = [asset["src"] for asset in soup.find_all("img", {"src": lambda src: src and Config.LEAFCMS_SERVER in src})]
+    pdfAssets = [asset["href"] for asset in soup.find_all("a", {"href": lambda href: href and href.endswith(".pdf") and Config.LEAFCMS_SERVER in href})]
     assets = imgAssets + pdfAssets
 
     return assets
