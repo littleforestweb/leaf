@@ -1356,6 +1356,8 @@ def proceed_action_workflow(request, not_real_request=None):
                                 ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
                             with ssh.open_sftp() as scp:
                                 actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                                current_app.logger.debug("assets: ")
+                                current_app.logger.debug(assets)
                                 for asset in assets:
                                     assetFilename = asset.split("/")[-1].strip('/')
                                     assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
