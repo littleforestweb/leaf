@@ -1423,7 +1423,7 @@ def proceed_action_workflow(request, not_real_request=None):
                                         pass
 
                             with open(local_path, "w") as outFile:
-                                outFile.write(data)
+                                outFile.write(original_content)
 
                     # Regenerate Feed
                     if not isMenu:
