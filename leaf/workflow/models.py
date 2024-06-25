@@ -1087,6 +1087,10 @@ def proceed_action_workflow(request, not_real_request=None):
     if not listName and thisType == 1:
 
         # Check for pubDate
+        current_app.logger.debug("target_date:")
+        current_app.logger.debug(target_date)
+        current_app.logger.debug("current_date:")
+        current_app.logger.debug(current_date)
         if target_date and target_date > current_date:
             mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", ("7", workflow_id))
             mydb.commit()
