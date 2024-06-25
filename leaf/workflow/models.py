@@ -1375,10 +1375,10 @@ def proceed_action_workflow(request, not_real_request=None):
                             assets = find_page_assets(data)
 
                             original_content = data
-                            original_content_changed = data.replace(Config.LEAFCMS_SERVER, urljoin(Config.PREVIEW_SERVER, Config.DYNAMIC_PATH, '/leaf/'))
+                            original_content_changed = data.replace(Config.LEAFCMS_SERVER, urljoin(Config.PREVIEW_SERVER, Config.DYNAMIC_PATH + '/leaf/'))
                             current_app.logger.debug(srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf/')
                             current_app.logger.debug(Config.LEAFCMS_SERVER)
-                            data = data.replace(Config.LEAFCMS_SERVER, urljoin(srv["webserver_url"], Config.DYNAMIC_PATH, '/leaf/'))
+                            data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH + '/leaf/')
                             with open(local_path, "w") as outFile:
                                 outFile.write(data)
 
