@@ -1390,7 +1390,7 @@ def proceed_action_workflow(request, not_real_request=None):
                             # with open(local_path, "w") as outFile:
                             #     outFile.write(data)
 
-                            # assets = find_page_assets(original_content)
+                            assets = find_page_assets(original_content)
 
                             # SCP Files
                             remote_path = os.path.join(srv["remote_path"], HTMLPath)
