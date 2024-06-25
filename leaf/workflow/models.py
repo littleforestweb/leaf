@@ -1373,11 +1373,12 @@ def proceed_action_workflow(request, not_real_request=None):
                                 data = inFile.read()
 
                             assets = find_page_assets(data)
+                            current_app.logger.debug(assets)
 
                             original_content = data
                             original_content_changed = data.replace(Config.LEAFCMS_SERVER, Config.PREVIEW_SERVER + Config.DYNAMIC_PATH + '/leaf/')
-                            current_app.logger.debug(srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf/')
-                            current_app.logger.debug(Config.LEAFCMS_SERVER)
+                            # current_app.logger.debug(srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf/')
+                            # current_app.logger.debug(Config.LEAFCMS_SERVER)
                             data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH + '/leaf/')
                             with open(local_path, "w") as outFile:
                                 outFile.write(data)
@@ -1391,6 +1392,7 @@ def proceed_action_workflow(request, not_real_request=None):
                             #     outFile.write(data)
 
                             assets = find_page_assets(original_content)
+                            current_app.logger.debug(assets)
 
                             # SCP Files
                             remote_path = os.path.join(srv["remote_path"], HTMLPath)
