@@ -1318,44 +1318,6 @@ def proceed_action_workflow(request, not_real_request=None):
                                     except Exception as e:
                                         pass
 
-                # if date_conditions == "":
-                #     full_query = f"SELECT * FROM {account_list}"
-                # else:
-                #     full_query = f"SELECT * FROM {account_list} WHERE ({date_conditions})"
-                # full_params = (current_date_to_compare_in_db,) * len(existing_publication_names)
-                # mycursor.execute(full_query, full_params)
-
-                # row_headers = [x[0] for x in mycursor.description]
-                # fullList = mycursor.fetchall()
-
-                # json_data = [dict(zip(row_headers, result)) for result in fullList]
-                # json_data_to_write = json.dumps(json_data, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
-
-                # os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH), exist_ok=True)
-                # with open(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, completeListName), "w") as outFile:
-                #     outFile.write(json_data_to_write)
-
-                # # do scp for LISTS
-                # local_path = os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, completeListName)
-                # remote_path = os.path.join(srv["remote_path"], DYNAMIC_PATH, completeListName)
-                # ssh = paramiko.SSHClient()
-                # ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                # if srv["pkey"] != "":
-                #     ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                #     if srv["pw"] == "":
-                #         ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                #     else:
-                #         ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                # else:
-                #     ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-                # with ssh.open_sftp() as scp:
-                #     actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
-                #     if not actionResult:
-                #         try:
-                #             raise Exception("Failed to SCP - " + lp + " - " + rp)
-                #         except Exception as e:
-                #             pass
-
             # LOOP THROUGH list_item_url_path TO PUBLISH FILE IN MULTIPLE LOCATIONS
             if int(thisType) != 4:
                 list_items_url_path = request.form.get("list_item_url_path")
@@ -1375,20 +1337,10 @@ def proceed_action_workflow(request, not_real_request=None):
                             assets = find_page_assets(data)
 
                             original_content = data
-                            original_content_changed = data.replace(Config.LEAFCMS_SERVER, urljoin(Config.PREVIEW_SERVER, Config.DYNAMIC_PATH.strip('/'), '/leaf/'))
-                            data = data.replace(Config.LEAFCMS_SERVER, urljoin(srv["webserver_url"], Config.DYNAMIC_PATH.strip('/'), '/leaf/'))
+                            # data = data.replace(Config.LEAFCMS_SERVER, urljoin(srv["webserver_url"], Config.DYNAMIC_PATH.strip('/'), '/leaf/'))
+                            data = data.replace(str(os.path.join(Config.LEAFCMS_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
                             with open(local_path, "w") as outFile:
                                 outFile.write(data)
-
-                            # Replace Preview Reference with Live webserver references
-                            # with open(local_path) as inFile:
-                            #     data = inFile.read()
-                            #     original_content = data
-                            # data = data.replace(str(os.path.join(Config.LEAFCMS_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
-                            # with open(local_path, "w") as outFile:
-                            #     outFile.write(data)
-
-                            # assets = find_page_assets(original_content)
 
                             # SCP Files
                             remote_path = os.path.join(srv["remote_path"], HTMLPath)
@@ -1407,7 +1359,8 @@ def proceed_action_workflow(request, not_real_request=None):
                                 for asset in assets:
                                     assetFilename = asset.split("/")[-1].strip('/')
                                     assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
-                                    assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                                    # assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                                    assetRemotePath = os.path.join(srv["remote_path"], Config.REMOTE_UPLOADS_FOLDER, assetFilename)
                                     current_app.logger.debug(assetRemotePath)
                                     actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
                                     if not actionResultAsset:
