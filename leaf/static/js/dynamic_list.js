@@ -1164,7 +1164,8 @@ async function getUserFolderAccessByValue() {
     let getUserFolderAccess = await $.get("/api/get_single_user_folder_access", function (result) {
         return result;
     });
-    return getUserFolderAccess
+    const uniqueArray = [...new Set(getUserFolderAccess)];
+    return uniqueArray
 }
 
 async function getFormData(formid, userId = false, preview_server) {
