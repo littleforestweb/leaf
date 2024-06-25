@@ -1373,13 +1373,12 @@ def proceed_action_workflow(request, not_real_request=None):
                                 data = inFile.read()
 
                             assets = find_page_assets(data)
-                            current_app.logger.debug(assets)
 
                             original_content = data
-                            original_content_changed = data.replace(Config.LEAFCMS_SERVER, Config.PREVIEW_SERVER + Config.DYNAMIC_PATH + '/leaf/')
-                            # current_app.logger.debug(srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf/')
-                            # current_app.logger.debug(Config.LEAFCMS_SERVER)
-                            data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH + '/leaf/')
+                            original_content_changed = data.replace(Config.LEAFCMS_SERVER, Config.PREVIEW_SERVER + Config.DYNAMIC_PATH.strip('/') + '/leaf/')
+                            current_app.logger.debug(srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf/')
+                            current_app.logger.debug(Config.LEAFCMS_SERVER)
+                            data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf/')
                             with open(local_path, "w") as outFile:
                                 outFile.write(data)
 
@@ -1391,7 +1390,7 @@ def proceed_action_workflow(request, not_real_request=None):
                             # with open(local_path, "w") as outFile:
                             #     outFile.write(data)
 
-                            assets = find_page_assets(original_content)
+                            # assets = find_page_assets(original_content)
 
                             # SCP Files
                             remote_path = os.path.join(srv["remote_path"], HTMLPath)
@@ -1410,7 +1409,7 @@ def proceed_action_workflow(request, not_real_request=None):
                                 for asset in assets:
                                     assetFilename = asset.split("/")[-1].strip('/')
                                     assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
-                                    assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH, Config.IMAGES_WEBPATH, assetFilename)
+                                    assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
                                     current_app.logger.debug(assetRemotePath)
                                     actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
                                     if not actionResultAsset:
