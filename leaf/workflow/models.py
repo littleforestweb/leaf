@@ -78,8 +78,6 @@ def get_workflow_details(workflow_id):
         workflow_data["startUser"], workflow_data["startUserEmail"] = user["username"], user["email"]
         workflow_data["assignEditor"] = get_user_details(workflow_data["assignEditor"], mycursor)["email"]
         process_specific_workflow_type(workflow_data, mycursor)
-        # if workflow_data["type"] == 3:
-        #     workflow_data["publication_date"] = workflow_data["publication_date"] + " 00:00:00" if ":" not in workflow_data["publication_date"] else workflow_data["publication_date"]
 
         # Get workflow folder
         if workflow_data["type"] in [1, 5, 6, 7]:
@@ -134,7 +132,6 @@ def extract_workflow_data(results):
         "publication_date": results[15]
     }
 
-    current_app.logger.debug(workflow_data)
     return workflow_data
 
 
