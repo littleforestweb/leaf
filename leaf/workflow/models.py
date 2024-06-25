@@ -361,7 +361,7 @@ def process_type_3_or_8(workflow_data, mycursor):
 
                 clean_url = []
                 for list_page_url_single in list_page_url:
-                    workflow_data_temporary_url = Config.PREVIEW_SERVER + list_page_url_single
+                    workflow_data_temporary_url = urljoin(Config.PREVIEW_SERVER, list_page_url_single)
                     protocol = "https://" if "https://" in workflow_data_temporary_url else "http://"
                     clean_url.append(protocol + workflow_data_temporary_url.replace(protocol, "").replace("//", "/"))
 
@@ -1409,7 +1409,7 @@ def proceed_action_workflow(request, not_real_request=None):
                                 for asset in assets:
                                     assetFilename = asset.split("/")[-1].strip('/')
                                     assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
-                                    assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                                    assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH, assetFilename)
                                     actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
                                     if not actionResultAsset:
                                         try:

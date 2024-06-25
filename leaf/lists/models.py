@@ -1293,6 +1293,7 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
 
         # Fetch all rows from the database table
         full_list = mycursor.fetchall()
+        full_list_by_field = []
 
         this_request = request.get_json()
         file_url_paths = this_request.get("file_url_path")
@@ -1384,7 +1385,7 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         current_app.logger.debug(traceback.format_exc())
     finally:
         mydb.close()
-        return jsonify({"full_list": full_list})
+        return jsonify({"full_list": full_list_by_field})
 
 
 def add_column_if_not_exists(cursor, table_name, column_name, column_definition, after_column):
