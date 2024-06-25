@@ -1374,9 +1374,6 @@ def proceed_action_workflow(request, not_real_request=None):
 
                             assets = find_page_assets(data)
 
-                            if not srv["webserver_url"].endswith('/'):
-                                srv["webserver_url"] += '/'
-
                             original_content = data
                             original_content_changed = data.replace(Config.LEAFCMS_SERVER, Config.PREVIEW_SERVER + Config.DYNAMIC_PATH.strip('/') + '/leaf/')
                             current_app.logger.debug(srv["webserver_url"] + Config.DYNAMIC_PATH.strip('/') + '/leaf/')
@@ -1412,7 +1409,8 @@ def proceed_action_workflow(request, not_real_request=None):
                                 for asset in assets:
                                     assetFilename = asset.split("/")[-1].strip('/')
                                     assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
-                                    assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH, assetFilename)
+                                    assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                                    current_app.logger.debug(assetRemotePath)
                                     actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
                                     if not actionResultAsset:
                                         try:
