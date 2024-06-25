@@ -1409,7 +1409,7 @@ def proceed_action_workflow(request, not_real_request=None):
                                 for asset in assets:
                                     assetFilename = asset.split("/")[-1].strip('/')
                                     assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
-                                    assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                                    assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH, assetFilename)
                                     actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
                                     if not actionResultAsset:
                                         try:
