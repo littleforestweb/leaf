@@ -1164,7 +1164,9 @@ async function getUserFolderAccessByValue() {
     let getUserFolderAccess = await $.get("/api/get_single_user_folder_access", function (result) {
         return result;
     });
-    const uniqueArray = [...new Set(getUserFolderAccess)];
+    const normalize = (url) => url.replace(/\/$/, ''); // Function to remove trailing slash
+
+    const uniqueArray = [...new Set(getUserFolderAccess.map(normalize))];
     return uniqueArray
 }
 
