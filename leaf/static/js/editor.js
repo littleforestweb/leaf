@@ -253,6 +253,9 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 // Regex to find empty <a> tags
                 let emptyAnchorRegex = /<a([^>]*?)>\s*<\/a>/g;
                 event.data.dataValue = event.data.dataValue.replace(emptyAnchorRegex, '<a$1>&nbsp;</a>');
+
+                let emptyITagsRegex = /<i([^>]*?)>\s*<\/i>/g;
+                event.data.dataValue = event.data.dataValue.replace(emptyITagsRegex, '<i$1>&nbsp;</i>');
             },
             instanceReady: async function (evt) {
                 // Get the CKEditor instance
