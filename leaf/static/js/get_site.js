@@ -419,7 +419,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 }
 
                 // On every keypress in this input
-                $("input", $('.filters th').eq($(api.column(colIdx).header()).index())).on("keyup", function (e) {
+                $('input:not([type="checkbox"])', $('.filters th').eq($(api.column(colIdx).header()).index())).on("keyup", function (e) {
                     e.stopPropagation();
                     // Get the search value
                     $(this).attr("title", $(this).val());

@@ -2428,7 +2428,7 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
                 }
 
                 // On every keypress in this input
-                $('input', $('.filters th').eq($(api.column(colIdx).header()).index())).off('keyup change').on('keyup change', function (e) {
+                $('input:not([type="checkbox"])', $('.filters th').eq($(api.column(colIdx).header()).index())).off('keyup change').on('keyup change', function (e) {
                     e.stopPropagation();
                     // Get the search value
                     $(this).attr('title', $(this).val());
