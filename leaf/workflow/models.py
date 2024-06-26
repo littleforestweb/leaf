@@ -1263,10 +1263,15 @@ def proceed_action_workflow(request, not_real_request=None):
                     if thisType == 8:
                         current_app.logger.debug("thisType:")
                         current_app.logger.debug(thisType)
-                        query_list = f"SELECT * FROM {account_list} WHERE id=%s"
+                        if fieldsToSaveByIncludes:
+                            query_list = f"SELECT {fieldsToSaveByIncludes} FROM {account_list} WHERE id=%s"
+                        else:
+                            query_list = f"SELECT * FROM {account_list} WHERE id=%s"
                         params_list = (site_ids,)
                         mycursor.execute(query_list, params_list)
                         pages_to_delete_from_feed = mycursor.fetchall()
+                        current_app.logger.debug("Testing pages_to_delete_from_feed:")
+                        current_app.logger.debug(pages_to_delete_from_feed)
                         mycursor.execute(f"DELETE FROM {account_list} WHERE id=%s", (site_ids,))
                         mydb.commit()
 
@@ -1382,6 +1387,16 @@ def proceed_action_workflow(request, not_real_request=None):
                             with open(local_path, "w") as outFile:
                                 outFile.write(original_content)
 
+                    else:
+                        for srv in Config.DEPLOYMENTS_SERVERS:
+                            remote_path = os.path.join(srv["remote_path"], HTMLPath)
+                            delete_file_from_server(local_path, remote_path, srv)
+                            try:
+                                os.remove(local_path)
+                                current_app.logger.debug(f"Deleted local file: {local_path}")
+                            except Exception as e:
+                                current_app.logger.error(f"Failed to delete local file: {local_path} - {e}")
+
                     # Regenerate Feed
                     if not isMenu:
                         # This will generate a global feed for all items using the same template
@@ -1488,6 +1503,25 @@ def proceed_action_workflow(request, not_real_request=None):
             print("No need to Set Status as it's already set to 'Waiting'")
 
         return {"message": "waiting", "action": action}
+
+
+def delete_file_from_server(local_path, remote_path, srv):
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    if srv["pkey"] != "":
+        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+        if srv["pw"] == "":
+            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+        else:
+            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+    else:
+        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+    with ssh.open_sftp() as scp:
+        try:
+            scp.remove(remote_path)
+            current_app.logger.debug(f"Deleted remote file: {remote_path}")
+        except Exception as e:
+            current_app.logger.error(f"Failed to delete remote file: {remote_path} - {e}")
 
 
 # Function to check if a column exists in the table
