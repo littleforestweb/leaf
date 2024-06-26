@@ -1041,8 +1041,8 @@ def proceed_action_workflow(request, not_real_request=None):
 
     target_date = False
     if publication_date and publication_date != False and publication_date != "False":
-        target_date = datetime.datetime.strptime(publication_date, "%Y-%m-%d %H:%M:%S").date()
-    current_date = datetime.datetime.now().date()
+        target_date = datetime.datetime.strptime(publication_date, "%Y-%m-%d %H:%M:%S")
+    current_date = datetime.datetime.now()
 
     thisType = 1
     if werkzeug.utils.escape(request.form.get("type")):
