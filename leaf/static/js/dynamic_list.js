@@ -1198,9 +1198,9 @@ async function getFormData(formid, userId = false, preview_server) {
             if (preview_server) {
                 formdata[element.name] = formdata[element.name].replace('<base href="' + preview_server + '" />', '');
             }
-            formdata[element.name] = formdata[element.name].replace(/<[^>]+style="[^"]*"[^>]*>/g, function (match) {
-                return match.replace(/style="[^"]*"/g, '');
-            });
+            // formdata[element.name] = formdata[element.name].replace(/<[^>]+style="[^"]*"[^>]*>/g, function (match) {
+            //     return match.replace(/style="[^"]*"/g, '');
+            // });
         } else if (element.type === 'checkbox') {
             formdata[element.name] = escapeHtml(element.checked);
         } else if (element.type === 'file') {
