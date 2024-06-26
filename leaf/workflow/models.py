@@ -1882,6 +1882,10 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
                         guid_found = True
 
                     if key.lower() in publication_names:
+                        current_app.logger.debug("This is the key:")
+                        current_app.logger.debug(key.lower())
+                        current_app.logger.debug("This is the publication_names:")
+                        current_app.logger.debug(publication_names)
                         publication_date = value
                         current_app.logger.debug("test date:")
                         current_app.logger.debug(value)
