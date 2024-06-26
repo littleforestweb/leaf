@@ -1041,8 +1041,8 @@ def proceed_action_workflow(request, not_real_request=None):
 
     target_date = False
     if publication_date and publication_date != False and publication_date != "False":
-        target_date = datetime.datetime.strptime(publication_date, "%Y-%m-%d %H:%M:%S").date()
-    current_date = datetime.datetime.now().date()
+        target_date = datetime.datetime.strptime(publication_date, "%Y-%m-%d %H:%M:%S")
+    current_date = datetime.datetime.now()
 
     thisType = 1
     if werkzeug.utils.escape(request.form.get("type")):
@@ -1543,18 +1543,21 @@ def update_feed_lists_and_or_delete_from_directory(mycursor, account_list, rss_i
             pages = mycursor.fetchall()
 
         # Get column headers from the cursor description
-        headers = [description[0] for description in mycursor.description]
+        if mycursor.description is not None:
+            headers = [description[0] for description in mycursor.description]
 
-        # Combine headers and data
-        results = [dict(zip(headers, row)) for row in pages]
-        result = results[0]
+            # Combine headers and data
+            results = [dict(zip(headers, row)) for row in pages]
+            result = results[0]
 
-        if rss_ids:
-            for rss_item in rss_ids:
-                rss_data = get_rss_feed_by_id(rss_item)
-                update_rss_feed(mycursor, accountId, list_name, rss_data[0][2], result, thisType)
+            if rss_ids:
+                for rss_item in rss_ids:
+                    rss_data = get_rss_feed_by_id(rss_item)
+                    update_rss_feed(mycursor, accountId, list_name, rss_data[0][2], result, thisType)
+            else:
+                update_rss_feed(mycursor, accountId, list_name, False, result, thisType)
         else:
-            update_rss_feed(mycursor, accountId, list_name, False, result, thisType)
+            current_app.logger.debug("No description available. Check your query.")
 
 
 def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):

@@ -510,11 +510,6 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                         CKEDITOR.replace(document.querySelector('#e-' + spanId), {
                                             fullPage: false,
                                             allowedContent: true,
-                                            // on: {
-                                            //     instanceReady: function (ev) {
-                                            //         ev.editor.setData(site_dynamic_list);
-                                            //     }
-                                            // },
                                             toolbar: [
                                                 {name: "clipboard", items: ["Cut", "Copy", "Paste", "PasteText", "-", "Undo", "Redo"]},
                                                 {name: "basicstyles", items: ["Bold", "Italic", "Underline", "Strike", "-", "RemoveFormat"]},
@@ -555,7 +550,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                 } else if (allAccountSettings[f][6] && allAccountSettings[f][6] === "date") {
                                     var todaysDate = new Date();
                                     let oneYearFromToday = new Date(todaysDate);
-                                        oneYearFromToday.setFullYear(todaysDate.getFullYear() + 1);
+                                    oneYearFromToday.setFullYear(todaysDate.getFullYear() + 1);
                                     if (type === 'edit') {
                                         var formatFound = getFormat(site_dynamic_list);
 
@@ -666,7 +661,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                             }
                         }
                         if ((x + 1) === spans.length && (f + 1) === allAccountSettings.length) {
-                            
+
                             $('form#' + type + '-' + reference).find("#list-rss-container").remove();
 
                             let rss_list = await $.get("/files/list_rss_files", function (result) {
@@ -711,7 +706,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                             }
                         } else {
                             $('#a-' + spanId).parent().addClass("hidden");
-                        } 
+                        }
                     }
                 }
             }
@@ -776,7 +771,7 @@ async function generate_fields_to_link(publication_names, headColumns, fieldsToL
             } else {
                 fieldsToLink_base = fieldsToLink_base.replace("{" + matches[field] + "}", singleField);
             }
-            
+
         }
     }
 
@@ -1074,7 +1069,7 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
             if (!autoGen || autoGen === '' || autoGen === null || autoGen === 'null' || autoGen === undefined || autoGen === 'undefined' || autoGen === NaN || autoGen === 'nan') {
                 timestamp = time.time()
                 unique_number = int(timestamp * 1000000)
-                autoGen = reference + '-' + escapeHtml($('#e-id').val()  + '-' + unique_number);
+                autoGen = reference + '-' + escapeHtml($('#e-id').val() + '-' + unique_number);
             }
             autoGen = replaceSpecialCharacters(autoGen.toLowerCase());
             autoGen = autoGen.replace(/[^a-zA-Z0-9\s]/g, '');
@@ -1203,9 +1198,9 @@ async function getFormData(formid, userId = false, preview_server) {
             if (preview_server) {
                 formdata[element.name] = formdata[element.name].replace('<base href="' + preview_server + '" />', '');
             }
-            formdata[element.name] = formdata[element.name].replace(/<[^>]+style="[^"]*"[^>]*>/g, function (match) {
-                return match.replace(/style="[^"]*"/g, '');
-            });
+            // formdata[element.name] = formdata[element.name].replace(/<[^>]+style="[^"]*"[^>]*>/g, function (match) {
+            //     return match.replace(/style="[^"]*"/g, '');
+            // });
         } else if (element.type === 'checkbox') {
             formdata[element.name] = escapeHtml(element.checked);
         } else if (element.type === 'file') {
@@ -1242,7 +1237,7 @@ async function getFormData(formid, userId = false, preview_server) {
             }
         } else if (element.type === 'datetime-local') {
             formdata[element.name] = (element.value != "" ? moment(element.value).format('YYYY-MM-DD HH:mm:ss') : element.value);
-        
+
         } else if (element.options) {
             var selected = [...element.selectedOptions].map(option => option.value);
             //var selected = [...element.options].filter(option => option.selected).map(option => option.value);
@@ -1340,7 +1335,7 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
             if (!autoGen || autoGen === '' || autoGen === null || autoGen === 'null' || autoGen === undefined || autoGen === 'undefined' || autoGen === NaN || autoGen === 'nan') {
                 timestamp = time.time()
                 unique_number = int(timestamp * 1000000)
-                autoGen = reference + '-' + escapeHtml($('#a-id').val()  + '-' + unique_number);
+                autoGen = reference + '-' + escapeHtml($('#a-id').val() + '-' + unique_number);
             }
             autoGen = replaceSpecialCharacters(autoGen.toLowerCase());
             autoGen = autoGen.replace(/[^a-zA-Z0-9\s]/g, '');
@@ -1385,7 +1380,7 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
             cache: false,
             processData: false,
             success: function (updated) {
-                
+
                 if (parseInt(field_to_save_by) !== 0) {
                     field_to_save_by = thisFields;
                 } else {
@@ -2286,7 +2281,7 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
                     defaultContent: "<i style='color: #CCC;'>No data</i>",
                     sClass: (headColumns[xx][7] !== 0 ? ((xx === 0 || hideIt === true) ? 'hidden ' : '') : 'hidden ') + 'center'
                 });
-    
+
                 if (adding_item != true && !isEditing) {
 
                     var thisElementToEdit = document.createElement('div');
@@ -2350,7 +2345,7 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
 
     let searchColumns = [];
     for (x = 0; x < allColumns.length; x++) {
-        if (x != 0 && x != (allColumns.length -1)) {
+        if (x != 0 && x != (allColumns.length - 1)) {
             searchColumns.push(x);
         }
     }
@@ -2464,7 +2459,7 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
                     $('#search_col_index_1').keyup();
                     $('input[type="checkbox"]#entry_' + itemId).prop('checked', true);
                     if ($('input[type="checkbox"]#entry_' + itemId + ':checked')) {
-                        
+
                         $('#editDynamicList').modal('show');//.addClass('loadingBg');
 
                         populateEditDynamicListDialog(accountId, reference, 'edit', itemId, userId);
@@ -2480,7 +2475,7 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
                 }
             }
             $(".loadingBg").removeClass("show");
-            
+
         }
     });
     $('#table_wrapper > .dt-buttons').appendTo("div.header-btns .actions_container");
@@ -2596,11 +2591,11 @@ function clickIt(thisSpanList, thisValue, thisValueBeautified, type) {
 
 // Function to set file_url_path conditionally
 function getFileUrlPath(fieldsToLink, page_extension) {
-  if (fieldsToLink.endsWith(page_extension)) {
-    return fieldsToLink;
-  } else {
-    return fieldsToLink + page_extension;
-  }
+    if (fieldsToLink.endsWith(page_extension)) {
+        return fieldsToLink;
+    } else {
+        return fieldsToLink + page_extension;
+    }
 }
 
 function addFieldToPattern(field_name) {
@@ -2704,22 +2699,22 @@ function extractMonthAndDay(dateString, field) {
 }
 
 function replaceExtensions(url) {
-  // Define the replacements for the file extensions
-  const replacements = {
-    '.JPG': '.jpg',
-    '.JPEG': '.jpeg',
-    '.PNG': '.png',
-    '.PDF': '.pdf',
-    '.GIF': '.gif'
-  };
+    // Define the replacements for the file extensions
+    const replacements = {
+        '.JPG': '.jpg',
+        '.JPEG': '.jpeg',
+        '.PNG': '.png',
+        '.PDF': '.pdf',
+        '.GIF': '.gif'
+    };
 
-  // Create a regex pattern to match any of the extensions at the end of the string
-  const pattern = /\.(JPG|JPEG|PNG|PDF|GIF)$/i;
+    // Create a regex pattern to match any of the extensions at the end of the string
+    const pattern = /\.(JPG|JPEG|PNG|PDF|GIF)$/i;
 
-  // Function to perform the replacement
-  return url.replace(pattern, (match) => {
-    return replacements[match.toUpperCase()];
-  });
+    // Function to perform the replacement
+    return url.replace(pattern, (match) => {
+        return replacements[match.toUpperCase()];
+    });
 }
 
 const addLeadingZero = (value) => {
