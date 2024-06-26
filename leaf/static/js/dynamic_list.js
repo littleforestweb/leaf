@@ -2449,8 +2449,6 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
                         $('input', $('.filters th')[colIdx]).val(colSearch.search.replace('((((', '').slice(0, -4));
                     }
                 });
-            } else {
-                api.draw();
             }
 
             if (adding_item != true && !isEditing) {

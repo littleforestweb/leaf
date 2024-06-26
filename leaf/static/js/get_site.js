@@ -440,8 +440,6 @@ window.addEventListener('DOMContentLoaded', async function main() {
                         $('input', $('.filters th')[colIdx]).val(colSearch.search);
                     }
                 });
-            } else {
-                api.draw();
             }
 
             doMainButtons();
