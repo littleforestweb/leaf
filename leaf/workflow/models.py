@@ -1872,7 +1872,8 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
             guid_key_value = False
             list_page_url = list_template
             image_element = None  # Track the image element to attach captions
-
+            current_app.logger.debug("This is the item date:")
+            current_app.logger.debug(new_item_data)
             if tree:
                 for key, value in new_item_data.items():
                     # Check if this field can serve as a GUID
