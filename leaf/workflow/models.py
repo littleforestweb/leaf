@@ -1267,6 +1267,8 @@ def proceed_action_workflow(request, not_real_request=None):
                         params_list = (site_ids,)
                         mycursor.execute(query_list, params_list)
                         pages_to_delete_from_feed = mycursor.fetchall()
+                        current_app.logger.debug("Testing pages_to_delete_from_feed:")
+                        current_app.logger.debug(pages_to_delete_from_feed)
                         mycursor.execute(f"DELETE FROM {account_list} WHERE id=%s", (site_ids,))
                         mydb.commit()
 
@@ -1543,9 +1545,6 @@ def update_feed_lists_and_or_delete_from_directory(mycursor, account_list, rss_i
         # Combine headers and data
         results = [dict(zip(headers, row)) for row in pages]
         result = results[0]
-        current_app.logger.debug("Testing item headers and result:")
-        current_app.logger.debug(headers)
-        current_app.logger.debug(result)
 
         if rss_ids:
             for rss_item in rss_ids:
