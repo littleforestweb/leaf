@@ -1543,6 +1543,9 @@ def update_feed_lists_and_or_delete_from_directory(mycursor, account_list, rss_i
         # Combine headers and data
         results = [dict(zip(headers, row)) for row in pages]
         result = results[0]
+        current_app.logger.debug("Testing item headers and result:")
+        current_app.logger.debug(headers)
+        current_app.logger.debug(result)
 
         if rss_ids:
             for rss_item in rss_ids:
@@ -1872,8 +1875,7 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
             guid_key_value = False
             list_page_url = list_template
             image_element = None  # Track the image element to attach captions
-            current_app.logger.debug("This is the item date:")
-            current_app.logger.debug(new_item_data)
+
             if tree:
                 for key, value in new_item_data.items():
                     # Check if this field can serve as a GUID
@@ -1883,13 +1885,7 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
                         guid_found = True
 
                     if key.lower() in publication_names:
-                        current_app.logger.debug("This is the key:")
-                        current_app.logger.debug(key.lower())
-                        current_app.logger.debug("This is the publication_names:")
-                        current_app.logger.debug(publication_names)
                         publication_date = value
-                        current_app.logger.debug("test date:")
-                        current_app.logger.debug(value)
                         value = format_pub_date(value)
                     else:
                         list_page_url = list_page_url.replace("{" + key + "}", str(value))
