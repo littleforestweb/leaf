@@ -1883,6 +1883,8 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
 
                     if key.lower() in publication_names:
                         publication_date = value
+                        current_app.logger.debug("test date:")
+                        current_app.logger.debug(value)
                         value = format_pub_date(value)
                     else:
                         list_page_url = list_page_url.replace("{" + key + "}", str(value))
