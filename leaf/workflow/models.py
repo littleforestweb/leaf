@@ -1263,7 +1263,10 @@ def proceed_action_workflow(request, not_real_request=None):
                     if thisType == 8:
                         current_app.logger.debug("thisType:")
                         current_app.logger.debug(thisType)
-                        query_list = f"SELECT * FROM {account_list} WHERE id=%s"
+                        if fieldsToSaveByIncludes:
+                            query_list = f"SELECT {fieldsToSaveByIncludes} FROM {account_list} WHERE id=%s"
+                        else:
+                            query_list = f"SELECT * FROM {account_list} WHERE id=%s"
                         params_list = (site_ids,)
                         mycursor.execute(query_list, params_list)
                         pages_to_delete_from_feed = mycursor.fetchall()
