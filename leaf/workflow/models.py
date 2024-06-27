@@ -1213,11 +1213,11 @@ def proceed_action_workflow(request, not_real_request=None):
 
             jsonR = {"message": "success", "action": action}
 
-            listName = ''.join(e for e in listName if e.isalnum())
             if isMenu:
                 completeListName = listName + "Menu.json"
                 account_list = f"account_{str(accountId)}_menu_{listName}"
             else:
+                listName = ''.join(e for e in listName if e.isalnum())
                 completeListName = listName + "List.json"
                 account_list = f"account_{str(accountId)}_list_{listName}"
 
@@ -1324,6 +1324,48 @@ def proceed_action_workflow(request, not_real_request=None):
                                         raise Exception("Failed to SCP - " + lp + " - " + rp)
                                     except Exception as e:
                                         pass
+
+                if isMenu:
+                    if date_conditions == "":
+                        full_query = f"SELECT * FROM {account_list}"
+                    else:
+                        full_query = f"SELECT * FROM {account_list} WHERE ({date_conditions})"
+                    full_params = (current_date_to_compare_in_db,) * len(existing_publication_names)
+                    mycursor.execute(full_query, full_params)
+
+                    row_headers = [x[0] for x in mycursor.description]
+                    fullList = mycursor.fetchall()
+
+                    json_data = [dict(zip(row_headers, result)) for result in fullList]
+                    json_data_to_write = json.dumps(json_data, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
+
+                    os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH), exist_ok=True)
+                    with open(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, completeListName), "w") as outFile:
+                        outFile.write(json_data_to_write)
+
+                    # do scp for LISTS
+                    completeListName = completeListName.replace(".json", "leafdotjson")
+                    completeListName = ''.join(e for e in completeListName if e.isalnum())
+                    completeListName = completeListName.replace("leafdotjson", ".json")
+                    local_path = os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, completeListName)
+                    remote_path = os.path.join(srv["remote_path"], DYNAMIC_PATH, completeListName)
+                    ssh = paramiko.SSHClient()
+                    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                    if srv["pkey"] != "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                        if srv["pw"] == "":
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                        else:
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                    else:
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                    with ssh.open_sftp() as scp:
+                        actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                        if not actionResult:
+                            try:
+                                raise Exception("Failed to SCP - " + lp + " - " + rp)
+                            except Exception as e:
+                                pass
 
             # LOOP THROUGH list_item_url_path TO PUBLISH FILE IN MULTIPLE LOCATIONS
             if int(thisType) != 4:
