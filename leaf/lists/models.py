@@ -1263,6 +1263,30 @@ def generate_all_json_files_by_fields(request, account_list: str, accountId: str
         mydb.close()
         return jsonify({"full_list": full_list})
 
+def ensure_canonical_link(html_str, canonical_url):
+    soup = BeautifulSoup(html_str, 'html.parser')
+
+    # Check if there's a rel="canonical" link tag
+    canonical_tag = soup.find('link', rel='canonical')
+
+    if canonical_tag:
+        # Update the href attribute to the correct canonical URL
+        canonical_tag['href'] = canonical_url
+    else:
+        # Create a new link tag with rel="canonical"
+        new_tag = soup.new_tag('link', rel='canonical', href=canonical_url)
+
+        # Insert the new tag into the head of the document
+        if soup.head:
+            soup.head.append(new_tag)
+        else:
+            # If there's no head tag, create one and insert the new link tag
+            head_tag = soup.new_tag('head')
+            head_tag.append(new_tag)
+            soup.insert(0, head_tag)
+    
+    return str(soup)
+
 def publish_dynamic_lists(request, account_list: str, accountId: str, reference: str, env: str):
     """
     Publish dynamic list data to JSON files and optionally by field.
@@ -1329,11 +1353,16 @@ def publish_dynamic_lists(request, account_list: str, accountId: str, reference:
         # Save new page in the correct folder based on template
         for file_url_path in file_url_paths:
             file_url_path = werkzeug.utils.escape(file_url_path)
+
+            # Ensure we save with the correct canonical link
+            canonical_url = os.path.join(Config.PREVIEW_SERVER, file_url_path.strip("/"))
+            list_template_html_updated = ensure_canonical_link(list_template_html, canonical_url)
+
             file_to_save = os.path.join(Config.WEBSERVER_FOLDER, file_url_path.strip("/"))
             folder_to_save_item = os.path.dirname(file_to_save)
             os.makedirs(folder_to_save_item, exist_ok=True)
             with open(file_to_save, 'w') as out_file:
-                out_file.write(list_template_html)
+                out_file.write(list_template_html_updated)
 
         # Convert data to a JSON format
         # json_data = [dict(zip(row_headers, result)) for result in full_list]

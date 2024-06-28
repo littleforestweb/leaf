@@ -20,7 +20,7 @@ from werkzeug.datastructures import MultiDict
 from leaf import Config
 from leaf import decorators
 from leaf.files_manager.models import get_rss_feed_by_id
-from leaf.lists.models import get_list_configuration, custom_serializer, get_list_columns_with_properties
+from leaf.lists.models import get_list_configuration, custom_serializer, get_list_columns_with_properties, ensure_canonical_link
 from leaf.users.models import get_user_permission_level
 
 
@@ -1198,10 +1198,6 @@ def proceed_action_workflow(request, not_real_request=None):
                     scp.put(local_path, remote_path)
 
     elif listName:
-        current_app.logger.debug("target_date:")
-        current_app.logger.debug(target_date)
-        current_app.logger.debug("current_date:")
-        current_app.logger.debug(current_date)
         if target_date and target_date <= current_date or thisType == 8:
 
             if not_real_request is None:
@@ -1284,8 +1280,6 @@ def proceed_action_workflow(request, not_real_request=None):
                                 by_field_query = f"SELECT {fieldsToSaveByIncludes} FROM {account_list} WHERE {by_field_conditions} AND ({date_conditions})"
                                 by_field_params = tuple(singleItem) + (current_date_to_compare_in_db,) * len(existing_publication_names)
                                 mycursor.execute(by_field_query, by_field_params)
-
-                                current_app.logger.debug(by_field_query, by_field_params)
 
                                 row_headers = [x[0] for x in mycursor.description]
                                 fullListByField = mycursor.fetchall()
@@ -1388,9 +1382,7 @@ def proceed_action_workflow(request, not_real_request=None):
                             original_content = data
                             # data = data.replace(Config.LEAFCMS_SERVER, urljoin(srv["webserver_url"], Config.DYNAMIC_PATH.strip('/'), '/leaf/'))
                             data = data.replace(str(os.path.join(Config.LEAFCMS_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
-                            with open(local_path, "w") as outFile:
-                                outFile.write(data)
-
+                            
                             # SCP Files
                             remote_path = os.path.join(srv["remote_path"], HTMLPath)
                             ssh = paramiko.SSHClient()
@@ -1404,9 +1396,16 @@ def proceed_action_workflow(request, not_real_request=None):
                             else:
                                 ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
                             with ssh.open_sftp() as scp:
+
+                                # Ensure we save with the correct canonical link
+                                canonical_url = os.path.join(srv["webserver_url"], list_item_url_path.strip("/"))
+                                list_html_updated = ensure_canonical_link(data, canonical_url)
+
+                                with open(local_path, "w") as outFile:
+                                    outFile.write(list_html_updated)
+
                                 actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
-                                current_app.logger.debug("assets: ")
-                                current_app.logger.debug(assets)
+
                                 for asset in assets:
                                     assetFilename = asset.split("/")[-1].strip('/')
                                     assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
