@@ -1073,7 +1073,7 @@ async function updateDynamicList(accountId, reference, env, preview_server, dyna
             }
             autoGen = replaceSpecialCharacters(autoGen.toLowerCase());
             autoGen = autoGen.replace(/[^a-zA-Z0-9\s]/g, '');
-            autoGen = autoGen.replace(/\s+/g, '_');
+            autoGen = autoGen.replace(/\s+/g, '-');
             $(this).find('input[type="hidden"]').val(autoGen + page_extension);
         }
     })
@@ -1339,7 +1339,7 @@ async function addDynamicList(accountId, reference, env, preview_server, dynamic
             }
             autoGen = replaceSpecialCharacters(autoGen.toLowerCase());
             autoGen = autoGen.replace(/[^a-zA-Z0-9\s]/g, '');
-            autoGen = autoGen.replace(/\s+/g, '_');
+            autoGen = autoGen.replace(/\s+/g, '-');
             $(this).find('input[type="hidden"]').val(autoGen + page_extension);
         }
     })
