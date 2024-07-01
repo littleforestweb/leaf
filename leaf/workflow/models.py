@@ -1107,11 +1107,11 @@ def proceed_action_workflow(request, not_real_request=None):
                 data = inFile.read()
                 original_content = data
             data = data.replace(str(os.path.join(Config.LEAFCMS_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
-            
+
             # Ensure we save with the correct canonical link
             canonical_url = os.path.join(srv["webserver_url"], HTMLPath)
-            list_html_updated = ensure_canonical_link(data, canonical_url)
-            
+            data = ensure_canonical_link(data, canonical_url)
+
             with open(local_path, "w") as outFile:
                 outFile.write(data)
 
@@ -1387,7 +1387,7 @@ def proceed_action_workflow(request, not_real_request=None):
                             original_content = data
                             # data = data.replace(Config.LEAFCMS_SERVER, urljoin(srv["webserver_url"], Config.DYNAMIC_PATH.strip('/'), '/leaf/'))
                             data = data.replace(str(os.path.join(Config.LEAFCMS_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
-                            
+
                             # SCP Files
                             remote_path = os.path.join(srv["remote_path"], HTMLPath)
                             ssh = paramiko.SSHClient()

@@ -3,6 +3,7 @@
 import csv
 import html
 import json
+import traceback
 from datetime import datetime
 from typing import Tuple
 
@@ -11,7 +12,6 @@ import pandas as pd
 import werkzeug.utils
 from flask import current_app
 from markupsafe import Markup
-import traceback
 
 from leaf.sites.models import get_user_access_folder
 from leaf.template_editor.models import *
@@ -1181,6 +1181,7 @@ def get_all_lists(accountId: str):
         mydb.close()
         return jsonify(json_response)
 
+
 def generate_all_json_files_by_fields(request, account_list: str, accountId: str, reference: str):
     """
     Generate dynamic list data to JSON files by field.
@@ -1263,6 +1264,7 @@ def generate_all_json_files_by_fields(request, account_list: str, accountId: str
         mydb.close()
         return jsonify({"full_list": full_list})
 
+
 def ensure_canonical_link(html_str, canonical_url):
     soup = BeautifulSoup(html_str, 'html.parser')
 
@@ -1284,8 +1286,9 @@ def ensure_canonical_link(html_str, canonical_url):
             head_tag = soup.new_tag('head')
             head_tag.append(new_tag)
             soup.insert(0, head_tag)
-    
+
     return str(soup)
+
 
 def publish_dynamic_lists(request, account_list: str, accountId: str, reference: str, env: str):
     """
