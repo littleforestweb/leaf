@@ -6,6 +6,7 @@
 let unlockTimeout;
 let isLeavingPage = false;
 let page_is_locked_by_me = false;
+let anchorPositions = {};
 
 function debounce(func, wait, immediate) {
     var timeout;
@@ -134,7 +135,34 @@ async function check_if_page_is_locked(page_id) {
     });
 }
 
+function adjustAnchorPosition(editor, itemPosition) {
+    let editable = editor.editable();
+    editable.find('a').toArray().forEach(function (anchor) {
+        if (anchor.getHtml().trim() === "&nbsp;" || anchor.getHtml().trim() === "" || anchor.getHtml().trim() === "Area link. Click here to edit.") {
+            if (!itemPosition) {
+                anchor.setAttribute("class", anchor.getAttribute("class").replace(" leaf_ck_position_defined", ""));
+                anchor.setAttribute("style", anchor.getAttribute("style").replace(" position:relative!important;background:#fff", ""));
+                anchor.setHtml("&nbsp;");
+            } else {
+                let originalPosition = anchor.getStyle("position");
+                anchor.setHtml("Area link. Click here to edit.")
+                anchor.setAttribute("style", (anchor.getAttribute("style") ? anchor.getAttribute("style") : "") + " position:relative!important;background:#fff");
+                anchor.setAttribute("class", anchor.getAttribute("class") + " leaf_ck_position_defined");
+                if (originalPosition.trim() !== "") {
+                    anchorPositions[anchor.getOuterHtml()] = originalPosition;
+                } else {
+                    anchorPositions[anchor.getOuterHtml()] = false;
+                }
+            }
+        }
+    });
+}
+
+
 async function savePage() {
+    // Adjust Anchor Position
+    await adjustAnchorPosition(CKEDITOR.instances.htmlCode, false);
+
     // Get HTML Code
     let sourceCode = CKEDITOR.instances.htmlCode.getData();
 
@@ -258,7 +286,14 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 // Get the CKEditor instance
                 let editor = evt.editor;
 
-                editor.on('beforeCommandExec', function (event) {
+                editor.on('focus', function () {
+                    adjustAnchorPosition(editor, "relative!important");
+                });
+                editor.on('blur', function () {
+                    adjustAnchorPosition(editor, false);
+                });
+
+                editor.on('beforeCommandExec', function () {
                     if (editor.mode === 'wysiwyg') {
                         // Trying to prevent the undo JUMP that breaks the tabs
                     }
