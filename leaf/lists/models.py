@@ -2504,4 +2504,34 @@ def extract_content(soup, selector):
         if '>' in selector and ']' in selector:
             attribute = selector.split('[')[-1].split(']')[0]
             selector = selector.rsplit('>', 1)[0].strip()
-            elements = soup.select(sele
+            elements = soup.select(selector)
+            this_element_attr = ""
+            for element in elements:
+                if element.get(attribute):
+                    this_element_attr = element.get(attribute)
+            return this_element_attr
+
+        else:
+            element = soup.select_one(selector.strip())
+            return element.decode_contents().strip() if element and not is_only_linebreaks(element.text) else None
+            # return element.text.strip() if element and not is_only_linebreaks(element.text) else None
+    except Exception as e:
+        print(f"Error processing selector '{selector}': {e}")
+        return None
+
+
+def is_only_linebreaks(s):
+    # Strip all whitespace characters including newlines
+    stripped_string = s.strip()
+    # Check if the resulting string is empty
+    return stripped_string == ''
+
+
+# Function to unescape HTML entities
+def unescape_html(html):
+    return (html.replace('&gt;', '>')
+            .replace('&lt;', '<')
+            .replace('&quot;', '"')
+            .replace('&#39;', "'")
+            .replace('&amp;', '&')
+            .replace('&comma;', ','))
