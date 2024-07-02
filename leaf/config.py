@@ -82,7 +82,7 @@ def checkConfig(loaded_json):
         "XMLSEC_BINARY": "",
         "SITE_NOTICE": "This is a site notice that you can control on your config.json file. Keep it empty to remove the notice!",
         "PAGES_EXTENSION": ".page",
-        "EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS": "",
+        "EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS": [],
     }
 
     # Update the loaded JSON with the expected structure
