@@ -1379,7 +1379,7 @@ def proceed_action_workflow(request, not_real_request=None):
                         for srv in Config.DEPLOYMENTS_SERVERS:
 
                             # Replace Preview Reference with Live webserver references
-                            with open(str(local_path)) as inFile:
+                            with open(local_path) as inFile:
                                 data = inFile.read()
 
                             assets = find_page_assets(data)
