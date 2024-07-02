@@ -81,7 +81,8 @@ def checkConfig(loaded_json):
         "SOURCE_EDITOR_USER_GROUP": "source_editor",
         "XMLSEC_BINARY": "",
         "SITE_NOTICE": "This is a site notice that you can control on your config.json file. Keep it empty to remove the notice!",
-        "PAGES_EXTENSION": ".page"
+        "PAGES_EXTENSION": ".page",
+        "EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS": "",
     }
 
     # Update the loaded JSON with the expected structure
@@ -251,3 +252,4 @@ class Config:
     TEMPLATES_FOLDER = os.path.join(LEAFCMS_FOLDER, "templates_folder")
     os.makedirs(TEMPLATES_FOLDER, exist_ok=True)
     REMOTE_UPLOADS_FOLDER = os.path.join("leaf_content", "uploads")
+    EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS = "|".join(config["EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS"])
