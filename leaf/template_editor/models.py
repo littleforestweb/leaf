@@ -61,7 +61,7 @@ def add_tempalte_base_href(template_html):
     try:
         if template_html and template_html != "":
             # Open and read the HTML file
-            soup = BeautifulSoup(str(template_html), "html5lib")
+            soup = BeautifulSoup(str(template_html), "html.parser")
 
             # Find the head tag and add base tag
             head_tag = soup.find("head")
@@ -89,7 +89,7 @@ def remove_template_base_href(data):
     """
     try:
         # Parse the HTML content
-        soup = BeautifulSoup(data, "html5lib")
+        soup = BeautifulSoup(data, "html.parser")
 
         # Find and remove the base tag
         base_tag = soup.find("base")
@@ -261,7 +261,7 @@ def remove_base_href_from_template(data):
     """
     try:
         # Parse the HTML content
-        soup = BeautifulSoup(data, "html5lib")
+        soup = BeautifulSoup(data, "html.parser")
 
         # Find and remove the base tag
         base_tag = soup.find("base")

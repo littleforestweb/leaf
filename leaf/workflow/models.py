@@ -1857,7 +1857,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
 
 def find_page_assets(original_content):
     # Get all assets on the page
-    soup = BeautifulSoup(original_content, "html5lib")
+    soup = BeautifulSoup(original_content, "html.parser")
     imgAssets = [asset["src"] for asset in soup.find_all("img", {"src": lambda src: src and Config.LEAFCMS_SERVER in src})]
     pdfAssets = [asset["href"] for asset in soup.find_all("a", {"href": lambda href: href and href.endswith(".pdf") and Config.LEAFCMS_SERVER in href})]
     assets = imgAssets + pdfAssets
