@@ -2391,9 +2391,6 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
             //console.log(data);
             //delete data.search;
         },
-        stateLoaded: function (settings, data) {
-            console.log(data);
-        },
         fnDrawCallback: function (oSettings) {
 
             $('input[type="checkbox"]').on('click', function () {

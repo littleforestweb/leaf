@@ -58,10 +58,19 @@ def get_lists_data(accountId: int, userId: str, isAdmin: str):
 def build_folder_access_where_clause(folder_access_field, user_access_folder):
     where_clauses = []
     for path in user_access_folder:
-        my_path_value = path[1:]
+        if (path == "/"):
+            my_path_value = ".*"
+        else:
+            my_path_value = path[1:]
+
         if my_path_value.endswith('/'):
             my_path_value = my_path_value.rstrip('/')
-        clause = "SUBSTRING_INDEX(value, '/', 1) LIKE %s"
+
+        if my_path_value == ".*":
+            clause = "SUBSTRING_INDEX(value, '/', 1) REGEXP %s"
+        else:
+            clause = "SUBSTRING_INDEX(value, '/', 1) LIKE %s"
+
         where_clauses.append((clause, my_path_value))
     return where_clauses
 
@@ -137,6 +146,7 @@ def get_list_data(request, accountId: str, reference: str):
 
             # Combine where clauses if both exist
             query_params = []
+            where_clause = ""
             if field_list and has_folder_access_defined and session["is_admin"] != 1:
                 where_clause = f"({' AND '.join(field_list)}) AND ({folder_where_clause})"
                 query_params = [f"%{searchColumnsField['value']}%" for searchColumnsField in searchColumnsFields] + folder_where_params
@@ -146,8 +156,6 @@ def get_list_data(request, accountId: str, reference: str):
             elif has_folder_access_defined and session["is_admin"] != 1:
                 where_clause = folder_where_clause
                 query_params = folder_where_params
-            else:
-                where_clause = ""
 
             if where_clause != "":
                 where_clause = f"WHERE {where_clause}"
