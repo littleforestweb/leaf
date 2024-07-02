@@ -158,7 +158,6 @@ function adjustAnchorPosition(editor, itemPosition) {
     });
 }
 
-
 async function savePage() {
     // Adjust Anchor Position
     await adjustAnchorPosition(CKEDITOR.instances.htmlCode, false);
@@ -276,10 +275,11 @@ window.addEventListener('DOMContentLoaded', async function main() {
         codeSnippet_theme: 'prism',
         filebrowserUploadUrl: "/api/upload?name=fileupload",
         embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}',
+        protectedSource: new RegExp(`<script(?![^>]*src=["'][^"']*(${editor_allow_scripts_regex_patters})[^"']*["'])[^>]*>[\\s\\S]*?(<\\/script>|$)`, 'gi'),
         on: {
             setData: async function (event) {
                 // Regex to find any empty tags
-                let emptyTagsRegex = /<(\w+)([^>]*?)>\s*<\/\1>/g;
+                let emptyTagsRegex = /<(?!script)(\w+)([^>]*?)>\s*<\/\1>/gi;
                 event.data.dataValue = event.data.dataValue.replace(emptyTagsRegex, '<$1$2>&nbsp;</$1>');
             },
             instanceReady: async function (evt) {
