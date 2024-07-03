@@ -32,7 +32,7 @@ async function populateUserList() {
         }
     });
 
-    $('#users-with-access-search').on('keyup', function (e) {
+    $('#users-with-access-search').on('input', function () {
         let tagElems = $('.users-with-access');
         $(tagElems).hide();
         for (let i = 0; i < tagElems.length; i++) {
@@ -269,7 +269,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                     }
                                 });
 
-                                $('#' + thisFieldItem + '-list-search').on('keyup', function (e) {
+                                $('#' + thisFieldItem + '-list-search').on('input', function () {
                                     $(tagElems).hide();
                                     for (let i = 0; i < tagElems.length; i++) {
                                         let tag = $(tagElems).eq(i);
@@ -745,7 +745,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                 }
                             });
 
-                            $('#rss-list-search').on('keyup', function (e) {
+                            $('#rss-list-search').on('input', function () {
                                 let tagElems = $('.rss_feed_entry');
                                 $(tagElems).hide();
                                 for (let i = 0; i < tagElems.length; i++) {
