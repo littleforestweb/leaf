@@ -99,7 +99,7 @@ async function populateUserList() {
         }
     });
 
-    $('#users-with-access-search').on('keyup', function (e) {
+    $('#users-with-access-search').on('input', function (e) {
         let tagElems = $('.users-with-access');
         $(tagElems).hide();
         for (let i = 0; i < tagElems.length; i++) {

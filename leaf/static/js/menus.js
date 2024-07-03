@@ -84,7 +84,7 @@ async function populateEditMenuModal(accountId) {
         $(".users-with-access-container").prepend('<label for="thisUserId_' + thisUser["id"] + '" class="form-control users-with-access users-with-access_' + thisUser["id"] + '">' + userImage + '<span class="userName">' + thisUser["username"] + '</span><input type="checkbox" class="form-check-input pull-right this-user-id" name="thisUserId_' + thisUser["id"] + '" id="thisUserId_' + thisUser["id"] + '" ' + (list_users_with_access.includes(thisUser["id"]) ? "checked" : "") + '/></span>');
     }
 
-    $('#users-with-access-search').on('keyup', function (e) {
+    $('#users-with-access-search').on('input', function (e) {
         var tagElems = $('.users-with-access');
         $(tagElems).hide();
         for (var i = 0; i < tagElems.length; i++) {
