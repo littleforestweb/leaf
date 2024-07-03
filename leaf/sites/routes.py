@@ -535,3 +535,13 @@ def api_get_single_user_folder_access():
         # Log the exception or handle it as appropriate for your application
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
+
+@sites.route('/api/get_single_user_folder_access_for_lists')
+@login_required
+def api_get_single_user_folder_access_for_lists():
+    try:
+        return models.get_user_access_folder_for_lists()
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code

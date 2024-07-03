@@ -98,6 +98,7 @@ def list_all_files(site_id, archive):
         mydb.close()
         return access_files
 
+
 def list_rss_files(site_id, archive):
     """
     Retrieve rss files from the specified site.
@@ -225,6 +226,7 @@ def is_rss_feed(file_path):
         current_app.logger.debug(f"Error reading file {full_file_path}: {e}")
         return False
 
+
 def insert_file_into_db(accountId, site_id, filename, folder, mime_type, status):
     """
     Insert file for a specific site in the database.
@@ -349,3 +351,30 @@ def validate_files_entries_to_delete(entries_to_delete, accountId):
         if not entry.isdigit() or ";" in entry:
             print("validate_files_entries_to_delete model")
             raise ValueError("Invalid parameter: contains invalid characters or not all digits.")
+
+
+def restore_deleted_assets(assetId):
+    """
+    Restore a deleted asset in the database.
+
+    This function updates the status of an asset in the database to indicate that it is no longer deleted.
+
+    Parameters:
+    - assetId (int): The ID of the asset to be restored.
+
+    Returns:
+    None
+    """
+
+    # Establish a database connection and get a cursor object
+    mydb, mycursor = decorators.db_connection()
+
+    # SQL query to update the status of the asset to "200" (indicating restored)
+    query = "UPDATE site_assets SET status = %s WHERE id = %s"
+    params = ("200", assetId)
+
+    # Execute the query with the provided parameters
+    mycursor.execute(query, params)
+
+    # Commit the transaction to save the changes in the database
+    mydb.commit()

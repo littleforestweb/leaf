@@ -129,6 +129,38 @@ def get_user_access_folder(mycursor=None):
     return [folder_path[0] for folder_path in mycursor.fetchall()]
 
 
+def get_user_access_folder_for_lists(mycursor=None):
+    """
+    Retrieve the folder paths that a user has access to.
+
+    Parameters:
+    - mycursor: MySQL cursor object used to execute queries.
+
+    Returns:
+    - List of folder paths (strings) that the user has access to.
+    """
+
+    # Get a database connection using the 'db_connection' decorator
+    if mycursor is None:
+        mydb, mycursor = decorators.db_connection()
+
+    # Get User Access folders
+    if session["is_admin"] == 1:
+        query = "SELECT ua.folder_path FROM leaf.user_access ua"
+        mycursor.execute(query)
+        folders_access = mycursor.fetchall()
+    else:
+        query = "SELECT ua.folder_path FROM leaf.user_access ua JOIN leaf.user_groups ug ON ua.group_id = ug.group_id JOIN leaf.group_member gm ON ug.group_id = gm.group_id WHERE gm.user_id = %s"
+        mycursor.execute(query, (session["id"],))
+
+        folders_access = mycursor.fetchall()
+        if any(folder_path[0] == "/" for folder_path in folders_access):
+            query = "SELECT ua.folder_path FROM leaf.user_access ua"
+            mycursor.execute(query)
+
+    return [folder_path[0] for folder_path in folders_access]
+
+
 def check_if_page_locked_by_me(page_id):
     """
     Checks if the specified page is locked by the current session user. It queries the database to find the user 

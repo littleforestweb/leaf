@@ -91,7 +91,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
         $("#job-assignEditor").prepend('<label for="thisUserId_ALLEDITORS" class="form-control users-with-access users-with-access_ALLEDITORS"><span class="logo_image" style="background-color:#176713">ED</span><span class="userName">All Editors</span><input type="checkbox" class="form-check-input pull-right this-user-id" name="thisUserId_ALLEDITORS" id="thisUserId_ALLEDITORS" value="ALLEDITORS" onclick="uncheckAllExcept(this)" /></span>');
         $("#job-assignEditor").prepend('<label for="thisUserId_ALLADMINS" class="form-control users-with-access users-with-access_ALLADMINS"><span class="logo_image" style="background-color:#176713">PU</span><span class="userName">All Power Users</span><input type="checkbox" class="form-check-input pull-right this-user-id" name="thisUserId_ALLADMINS" id="thisUserId_ALLADMINS" value="ALLADMINS" onclick="uncheckAllExcept(this)" /></span>');
 
-        $('#job-assignEditor-search').on('keyup', function (e) {
+        $('#job-assignEditor-search').on('input', function (e) {
             var tagElems = $('.users-with-access');
             $(tagElems).hide();
             for (var i = 0; i < tagElems.length; i++) {

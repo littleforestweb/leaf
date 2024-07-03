@@ -3,6 +3,20 @@
     Author     : joao
 */
 
+async function restoreDeletedAsset(assetId) {
+    $.ajax({
+        type: "POST",
+        url: "/files/restore_deleted_assets",
+        data: {"assetId": assetId},
+        success: function (entry) {
+            window.location.reload();
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+            console.log("ERROR");
+        }
+    });
+}
+
 function stopPropagation(evt) {
     if (evt.stopPropagation !== undefined) {
         evt.preventDefault();
@@ -85,7 +99,7 @@ async function populateUserList() {
         }
     });
 
-    $('#users-with-access-search').on('keyup', function (e) {
+    $('#users-with-access-search').on('input', function (e) {
         let tagElems = $('.users-with-access');
         $(tagElems).hide();
         for (let i = 0; i < tagElems.length; i++) {
@@ -303,7 +317,11 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [6],
                 mData: function (source, type, val) {
-                    return "<a class='btn btn-sm' style='margin-left:5px' href='/versions?file_type=asset&file_id=" + source["id"] + "'>Versions</a>";
+                    let actionsButtons = "<a class='btn btn-sm' href='/versions?file_type=asset&file_id=" + source["id"] + "'>Versions</a>";
+                    if (archive && archive === "1") {
+                        actionsButtons += "<button onclick='restoreDeletedAsset(" + source["id"] + ")' class='btn btn-sm btn-red' style='margin-left:5px'>Restore</button>";
+                    }
+                    return actionsButtons;
                 }
             }
         ],
