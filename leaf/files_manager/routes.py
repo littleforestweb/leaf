@@ -8,9 +8,11 @@ from flask import render_template, Blueprint, jsonify, request, session
 from leaf.config import Config
 from leaf.decorators import login_required
 from leaf.files_manager import models
+from leaf.pages import models as pages_models
 from leaf.serverside import table_schemas
 from leaf.serverside.serverside_table import ServerSideTable
 from leaf.sites import models as site_models
+from leaf.sites.models import get_user_access_folder
 
 files_manager = Blueprint('files_manager', __name__)
 
@@ -156,6 +158,7 @@ def files_list_all_files():
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
 
+
 @files_manager.route("/files/list_rss_files", methods=["GET"])
 @login_required
 def files_list_rss_files():
@@ -190,5 +193,44 @@ def files_list_rss_files():
 
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
+
+
+@files_manager.route("/files/restore_deleted_assets", methods=["POST"])
+@login_required
+def restore_deleted_assets():
+    """
+    Restore a deleted asset based on the provided asset ID.
+
+    This endpoint handles the restoration of a deleted asset. It requires the user to be authenticated
+    and ensures the user has access to the folder containing the asset. If the user does not have access
+    or if any other error occurs, an appropriate error message and status code are returned.
+
+    Request Parameters:
+    - assetId (str): The ID of the asset to be restored.
+
+    Returns:
+    - JSON response indicating success or error message.
+    """
+
+    try:
+        # Retrieve and sanitize the assetId from the POST request
+        assetId = int(werkzeug.utils.escape(request.form.get("assetId", type=str)))
+
+        # Fetch asset details using the assetId
+        asset_details = pages_models.get_asset_details(assetId)
+        user_access_folder = get_user_access_folder()
+
+        # Check if the asset path belongs to any of the folders the user has access to
+        if not any(("/" + asset_details["path"]).startswith(folder) for folder in user_access_folder):
+            return {"error": "Forbidden"}, 403
+
+        # Restore the deleted asset
+        models.restore_deleted_assets(assetId)
+        return jsonify({"message": "success"})
+
+    except Exception as e:
+        # Handle exceptions and log the error if necessary
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
