@@ -89,6 +89,14 @@ CKEDITOR.plugins.add("anchor", {
     }
 });
 
+function removeAddItemFromListFolder(action, item) {
+    if (action === 'remove') {
+        let labelId = "selected_item_folder_" + item.replace("/", "_");
+        $('#' + labelId).remove();
+        $('#e-folder option[value="' + item + '"]').prop('selected', false).trigger('change');
+    }
+}
+
 async function populateEditDynamicListDialog(accountId, reference, type, itemToSelect = false, userId = false) {
 
     accountId = escapeHtml(accountId);
@@ -199,9 +207,10 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                 }
 
                             } else if (allAccountSettings[f][3] === '-_leaf_access_folders_-') {
-
                                 let getUserFolderAccess = await getUserFolderAccessByValue();
-                                let thisLabel = getUserFolderAccess;
+                                getUserFolderAccess = getUserFolderAccess.filter(function(item) {
+                                    return item !== "/";
+                                });
 
                                 var thisSpanList = (spans[x] ? spans[x].getAttribute("id").split('_pos_')[0] : '');
                                 var thisSpanId = (spans[x] ? spans[x].getAttribute("id").split('_pos_')[1] : '');
@@ -220,7 +229,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                 }
 
                                 if (type === 'edit') {
-                                    var fieldsDropdown = '<select multiple name="e-' + thisSpanList + '" class="form-select form-select-md toCapitalize ' + mandatoryClass + '" id="e-' + thisSpanList + '"><option value="" disabled ' + (thisFieldValue && thisFieldValue.length > 0 ? "" : " selected") + '>Select option</option></select>';
+                                    var fieldsDropdown = '<select style="margin-top:10px" multiple name="e-' + thisSpanList + '" class="form-select form-select-md toCapitalize ' + mandatoryClass + '" id="e-' + thisSpanList + '"><option value="" disabled ' + (thisFieldValue && thisFieldValue.length > 0 ? "" : " selected") + '>Select option</option></select>';
                                     $('#e-' + thisSpanList).replaceWith(fieldsDropdown);
                                     for (single_item in getUserFolderAccess) {
                                         var single_item_clean = (getUserFolderAccess[single_item] + (reference == "seminars" || reference == "events" ? "news/" + reference : reference)).replace(/^\/|\/$/g, '');
@@ -236,6 +245,60 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                         $('select#a-' + thisSpanList).append('<option value="' + single_item_clean + '" ' + (thisFieldValue.includes(single_item_clean) ? " selected" : "") + '>' + single_item_clean.toLowerCase() + '</option>');
                                     }
                                 }
+                                
+                                if (type === 'edit') {
+                                    var findFolderLabel = $('#e-' + thisFieldItem).parent().find("label.col-form-label");
+                                } else {
+                                    var findFolderLabel = $('#a-' + thisFieldItem).parent().find("label.col-form-label");
+                                }
+                                findFolderLabel.replaceWith('<div class="row form-row"><div class="form-group col-md-8"><label for="e-' + thisFieldItem + '" class="col-form-label"><strong>' + thisFieldItem + ':</strong></label></div><div class="form-group col-md-4"><input type="search" name="' + thisFieldItem + '-list-search" id="' + thisFieldItem + '-list-search" class="form-control" placeholder="Search ' + thisFieldItem + '..." aria-label="Search for..." autocomplete="off" spellcheck="false"></div></div>');
+                                var list_search_input = $('#' + thisFieldItem + '-list-search');
+                                if (type === 'edit') {
+                                    var tagElems = $('#e-' + thisFieldItem).find('option');
+                                    var list_container = $('#e-' + thisFieldItem);
+                                } else {
+                                    var tagElems = $('#a-' + thisFieldItem).find('option');
+                                    var list_container = $('#a-' + thisFieldItem);
+                                }
+
+                                // Disable Enter
+                                $('#' + thisFieldItem + '-list-search').on('keypress', function (e) {
+                                    if (e.keyCode === 13) {
+                                        e.preventDefault(); // Prevent default behavior of return key
+                                        return false; // Stop further execution
+                                    }
+                                });
+
+                                $('#' + thisFieldItem + '-list-search').on('keyup', function (e) {
+                                    $(tagElems).hide();
+                                    for (let i = 0; i < tagElems.length; i++) {
+                                        let tag = $(tagElems).eq(i);
+                                        if (($(tag).text().toLowerCase()).indexOf($(this).val().toLowerCase()) !== -1) {
+                                            $(tag).show();
+                                        }
+                                    }
+                                });
+
+                                for (var thisIndexValue in thisFieldValue) {
+                                    list_container.parent().find("label.col-form-label").append('<label id="selected_item_folder_' + thisFieldValue[thisIndexValue].replace("/", "_") + '" class="form-control pre_selected-items"><button type="button" class="btn-close" onclick="removeAddItemFromListFolder(\'remove\', \'' + thisFieldValue[thisIndexValue] + '\')"></button> ' + thisFieldValue[thisIndexValue] + '</label>');
+                                }
+
+                                list_container.change(function() {
+                                    let selectedOptions = $(this).val() || [];
+
+                                    $('.pre_selected-items').remove();
+
+                                    selectedOptions.forEach(function(option) {
+                                        let labelId = "selected_item_folder_" + option.replace("/", "_");
+                                        if (!$('#' + labelId).length) {
+                                            list_container.parent().find("label.col-form-label").append(`
+                                                <label id="${labelId}" class="form-control pre_selected-items">
+                                                    <button type="button" class="btn-close" onclick="removeAddItemFromListFolder('remove', '${option}')"></button> ${option}
+                                                </label>
+                                            `);
+                                        }
+                                    })
+                                });
 
                             } else if (allAccountSettings[f][6] && (allAccountSettings[f][6] === "select" || allAccountSettings[f][6] === "multiselect" || allAccountSettings[f][6] === "multi_checkbox")) {
 
@@ -668,7 +731,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                 return result;
                             });
 
-                            $('form#' + type + '-' + reference + " #" + (type === "add" ? "a" : "e") + "-modified_by").parent().before('<div id="list-rss-container" class="mb-3 list-rss"><div class="row form-row"><div class="form-group col-md-8"><label for="e-list-rss" class="col-form-label">RSS List:</label></div><div class="form-group col-md-4"><input type="search" name="rss-list-search" id="rss-list-search" class="form-control" placeholder="Search RSS Feeds..." aria-label="Search for..." autocomplete="off" spellcheck="false"></div></div><div class="rss-list-container"></div></div>');
+                            $('form#' + type + '-' + reference + " #" + (type === "add" ? "a" : "e") + "-modified_by").parent().before('<div id="list-rss-container" class="mb-3 list-rss"><div class="row form-row"><div class="form-group col-md-8"><label for="e-list-rss" class="col-form-label"><strong>RSS List:</strong></label></div><div class="form-group col-md-4"><input type="search" name="rss-list-search" id="rss-list-search" class="form-control" placeholder="Search RSS Feeds..." aria-label="Search for..." autocomplete="off" spellcheck="false"></div></div><div class="rss-list-container"></div></div>');
                             for (var single in rss_list) {
                                 var rss_single = rss_list[single];
                                 $('form#' + type + '-' + reference + ' .rss-list-container').append('<label for="this_rss_id_' + rss_single["id"] + '" class="form-control rss_feed_entry"><span class="rss_file">' + rss_single["Filename"] + '</span><span class="rss_file_location">' + rss_single["Path"] + '</span><input type="checkbox" class="form-check-input pull-right this-rss-id" name="this_rss_id_' + rss_single["id"] + '" id="this_rss_id_' + rss_single["id"] + '"></label>');
@@ -1156,7 +1219,7 @@ async function getUserDetailsByValue(id, label) {
 }
 
 async function getUserFolderAccessByValue() {
-    let getUserFolderAccess = await $.get("/api/get_single_user_folder_access", function (result) {
+    let getUserFolderAccess = await $.get("/api/get_single_user_folder_access_for_lists", function (result) {
         return result;
     });
     const uniqueArray = [...new Set(getUserFolderAccess)];

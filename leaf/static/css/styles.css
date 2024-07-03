@@ -751,6 +751,16 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
     display: block;
 }
 
+.form-control.pre_selected-items {
+    display: inline;
+    padding: 3px 5px;
+    margin: 0 5px;
+}
+.form-control.pre_selected-items .btn-close {
+    margin: 0;
+    padding: 1px;
+}
+
 div.dt-button-collection > :last-child > * {
     width: 100%;
     box-shadow: none;
