@@ -150,6 +150,39 @@ async function doActionBtn(action) {
     $('#publishModal').modal('show');
 }
 
+function removeFiles() {
+    accountId = escapeHtml(accountId);
+    var entriesToDelete = $('#files_table').find('input[type="checkbox"]:checked').map(function () {
+        return $(this).val();
+    }).get();
+
+    form_data = {
+        account_id: accountId,
+        entries_to_delete: entriesToDelete
+    }
+
+    $.ajax({
+        type: "POST",
+        url: "/files/remove_files",
+        contentType: 'application/json',
+        data: JSON.stringify(form_data),
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        success: function (status) {
+            setTimeout(function () {
+                window.location.reload();
+            }, 500);
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+            console.log("ERROR");
+            setTimeout(function () {
+                window.location.reload();
+            }, 500);
+        }
+    });
+}
+
 async function doMainButtons() {
     $('table').on('change', 'input[type="checkbox"]', function () {
         var checkboxes = document.querySelectorAll("input[type='checkbox'].dt-checkboxes");
