@@ -253,5 +253,3 @@ class Config:
     os.makedirs(TEMPLATES_FOLDER, exist_ok=True)
     REMOTE_UPLOADS_FOLDER = os.path.join("leaf_content", "uploads")
     EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS = "|".join(config["EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS"])
-
-    
