@@ -81,7 +81,11 @@ def get_workflow_details(workflow_id):
 
         # Get workflow folder
         if workflow_data["type"] in [1, 5, 6, 7]:
-            query = "SELECT sm.HTMLPath FROM site_meta sm WHERE sm.id=%s"
+            if workflow_data["type"] in [1, 5]:
+                query = "SELECT sm.HTMLPath FROM site_meta sm WHERE sm.id=%s"
+            else:
+                query = "SELECT sm.path FROM site_assets sm WHERE sm.id=%s"
+
             params = (workflow_data["siteIds"],)
             mycursor.execute(query, params)
             workflow_folder_path = f"/{mycursor.fetchone()[0].lstrip('/')}"
@@ -1073,7 +1077,10 @@ def proceed_action_workflow(request, not_real_request=None):
 
     # Check if the user has permission
     if thisType in [1, 5, 6, 7]:
-        query = "SELECT site_meta.HTMLPath FROM site_meta JOIN workflow ON site_meta.id = workflow.siteIds WHERE workflow.id = %s"
+        if thisType in [1, 5]:
+            query = "SELECT site_meta.HTMLPath FROM site_meta JOIN workflow ON site_meta.id = workflow.siteIds WHERE workflow.id = %s"
+        else:
+            query = "SELECT site_assets.path FROM site_assets JOIN workflow ON site_assets.id = workflow.siteIds WHERE workflow.id = %s"
         params = (workflow_id,)
         mycursor.execute(query, params)
         workflow_folder_path = f"/{mycursor.fetchone()[0].lstrip('/')}"
