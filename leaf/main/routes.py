@@ -721,7 +721,7 @@ def api_upload():
     extension = uploaded_file_name.split('.')[-1].lower()
 
     # Check if the extension is allowed
-    if extension.lower() not in ['jpg', 'gif', 'png', 'jpeg', 'pdf']:
+    if extension.lower() not in ['jpg', 'gif', 'png', 'jpeg', 'pdf', 'webp']:
         return jsonify(message='Image or PDF only!')
 
     # Prepare paths for saving the file

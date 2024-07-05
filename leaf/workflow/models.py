@@ -1235,8 +1235,6 @@ def proceed_action_workflow(request, not_real_request=None):
             date_conditions = " AND ".join([f"({field} IS NULL OR {field} <= %s)" for field in existing_publication_names])
             current_date_to_compare_in_db = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-            current_app.logger.debug(current_date_to_compare_in_db)
-
             site_ids = werkzeug.utils.escape(request.form.get("site_ids"))
 
             for srv in Config.DEPLOYMENTS_SERVERS:
@@ -1269,8 +1267,6 @@ def proceed_action_workflow(request, not_real_request=None):
 
                     pages_to_delete_from_feed = False
                     if thisType == 8:
-                        current_app.logger.debug("thisType:")
-                        current_app.logger.debug(thisType)
                         if fieldsToSaveByIncludes:
                             query_list = f"SELECT {fieldsToSaveByIncludes} FROM {account_list} WHERE id=%s"
                         else:
@@ -1278,8 +1274,6 @@ def proceed_action_workflow(request, not_real_request=None):
                         params_list = (site_ids,)
                         mycursor.execute(query_list, params_list)
                         pages_to_delete_from_feed = mycursor.fetchall()
-                        current_app.logger.debug("Testing pages_to_delete_from_feed:")
-                        current_app.logger.debug(pages_to_delete_from_feed)
                         mycursor.execute(f"DELETE FROM {account_list} WHERE id=%s", (site_ids,))
                         mydb.commit()
 
@@ -1423,11 +1417,9 @@ def proceed_action_workflow(request, not_real_request=None):
                                     assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
                                     # assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
                                     assetRemotePath = os.path.join(srv["remote_path"], Config.REMOTE_UPLOADS_FOLDER, assetFilename)
-                                    current_app.logger.debug(assetRemotePath)
                                     actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
                                     if not actionResultAsset:
                                         try:
-                                            current_app.logger.debug("Failed to SCP - " + lp + " - " + rp)
                                             raise Exception("Failed to SCP - " + lp + " - " + rp)
                                         except Exception as e:
                                             pass
@@ -1446,9 +1438,8 @@ def proceed_action_workflow(request, not_real_request=None):
                             delete_file_from_server(local_path, remote_path, srv)
                             try:
                                 os.remove(local_path)
-                                current_app.logger.debug(f"Deleted local file: {local_path}")
                             except Exception as e:
-                                current_app.logger.error(f"Failed to delete local file: {local_path} - {e}")
+                                raise Exception(f"Failed to delete local file: {local_path} - {e}")
 
                     # Regenerate Feed
                     if not isMenu:
@@ -1572,9 +1563,8 @@ def delete_file_from_server(local_path, remote_path, srv):
     with ssh.open_sftp() as scp:
         try:
             scp.remove(remote_path)
-            current_app.logger.debug(f"Deleted remote file: {remote_path}")
         except Exception as e:
-            current_app.logger.error(f"Failed to delete remote file: {remote_path} - {e}")
+            raise Exception(f"Failed to delete remote file: {remote_path} - {e}")
 
 
 # Function to check if a column exists in the table
@@ -1610,7 +1600,7 @@ def update_feed_lists_and_or_delete_from_directory(mycursor, account_list, rss_i
             else:
                 update_rss_feed(mycursor, accountId, list_name, False, result, thisType)
         else:
-            current_app.logger.debug("No description available. Check your query.")
+            print("No description available. Check your query.")
 
 
 def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
