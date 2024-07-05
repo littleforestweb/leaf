@@ -34,7 +34,79 @@ function sanitizeFilePath(filePath) {
     return filePath.replace(/[^a-zA-Z0-9\-._\/]/g, '_').toLowerCase();
 }
 
-const validExtensions = ['.xml', '.page', '.html', '.txt', '.jpg', '.png', '.pdf']; // Add more as needed
+const validExtensions = [
+    // Documents
+    '.doc', '.docx', '.pdf', '.txt', '.odt', '.rtf', '.tex', '.wpd', '.wps', 
+    '.xls', '.xlsx', '.csv', '.ods', '.tsv', '.ppt', '.pptx', '.odp',
+
+    // Images
+    '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.tif', '.svg', '.eps', 
+    '.raw', '.ico', '.webp',
+
+    // Videos
+    '.mp4', '.mov', '.wmv', '.flv', '.avi', '.mkv', '.webm', '.mpeg', '.mpg', 
+    '.3gp', '.m4v', '.ogv',
+
+    // Audio
+    '.mp3', '.wav', '.aac', '.flac', '.ogg', '.m4a', '.wma', '.aiff', '.amr', 
+    '.opus',
+
+    // Archives
+    '.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz', '.iso', '.tgz',
+
+    // Code and Markup
+    '.html', '.htm', '.xml', '.json', '.yaml', '.yml', '.md', '.js', '.ts', 
+    '.css', '.scss', '.sass', '.less', '.php', '.py', '.rb', '.java', 
+    '.c', '.cpp', '.h', '.hpp', '.cs', '.swift', '.kt', '.go', '.sh', 
+    '.bat', '.cmd', '.pl', '.cgi', '.jsp', '.asp', '.aspx', '.sql', 
+    '.db', '.sqlite', '.log',
+
+    // Miscellaneous
+    '.page', '.key', '.numbers', '.ics', '.vcf', '.torrent', '.exe', 
+    '.msi', '.dmg', '.apk', '.bat', '.bin', '.dll', '.so', '.deb', '.rpm', 
+    '.psd', '.ai', '.indd', '.sketch', '.fig', '.xd',
+
+    // System and Configuration
+    '.ini', '.cfg', '.conf', '.sys', '.drv', '.reg',
+
+    // Firmware and Microcontroller
+    '.hex', '.bin', '.elf', '.srec',
+
+    // Hardware Design
+    '.vhd', '.vhdl', '.ucf', '.bit', '.brd', '.sch', '.pcb', '.dxf', 
+    '.gbr', '.kicad_pcb', '.fpd', '.dsn', '.bsm', '.bdoc',
+
+    // CAD and 3D Modeling
+    '.dwg', '.dxf', '.stl', '.obj', '.3ds', '.step', '.stp', '.iges', '.igs',
+
+    // Virtualization and Disk Images
+    '.vhd', '.vhdx', '.vmdk', '.vdi', '.qcow2', '.iso',
+
+    // Scientific and Data Analysis
+    '.mat', '.sav', '.spss', '.rdata', '.rda', '.dta', '.sas7bdat', '.xpt',
+
+    // Game Files
+    '.pak', '.sav', '.rom', '.iso', '.nes', '.gba', '.sfc', '.smc',
+
+    // Fonts
+    '.ttf', '.otf', '.woff', '.woff2', '.eot',
+
+    // Web
+    '.htaccess', '.htpasswd', '.php', '.asp', '.aspx',
+
+    // Text and Script
+    '.sh', '.bat', '.cmd', '.py', '.rb', '.js', '.pl', '.lua', '.ps1', '.r', 
+    '.m', '.vbs',
+
+    // Backup
+    '.bak', '.old', '.bkp',
+
+    // Email
+    '.eml', '.msg', '.pst', '.ost', '.mbox',
+
+    // Others
+    '.crx', '.xpi', '.vsix'
+];
 
 function getFileNameAndExtension(fileName) {
     // Split the file name by dots to check each part
@@ -66,12 +138,12 @@ async function setFull_pathSpan() {
     const fullFileName = document.getElementById("file").value.split('\\').pop();
 
     // Get the file name and extension using the helper function
-    const {name, extension} = getFileNameAndExtension(fullFileName);
-    const final_extension = extension.trim().split(".")[1]
+    // const {name, extension} = getFileNameAndExtension(fullFileName);
+    // const final_extension = extension.trim().split(".")[1]
 
-    // Sanitize only the base name part, preserving the original extension
-    const sanitizedFileName = sanitizeFilePath(name) + "." + final_extension;
-    document.getElementById("full_path").value = joinPath(folder, sanitizedFileName);
+    // // Sanitize only the base name part, preserving the original extension
+    // const sanitizedFileName = sanitizeFilePath(name) + "." + final_extension;
+    document.getElementById("full_path").value = joinPath(folder, fullFileName);
 }
 
 async function populateUserList() {
@@ -419,15 +491,15 @@ window.addEventListener('DOMContentLoaded', async function main() {
             const fullFileName = document.getElementById("file").value.split('\\').pop();
 
             // Get the file name and extension using the helper function
-            const {name, extension} = getFileNameAndExtension(fullFileName);
-            const final_extension = extension.trim().split(".")[1]
+            // const {name, extension} = getFileNameAndExtension(fullFileName);
+            // const final_extension = extension.trim().split(".")[1]
 
-            // Sanitize only the base name part, preserving the original extension
-            const sanitizedFileName = sanitizeFilePath(name) + "." + final_extension;
+            // // Sanitize only the base name part, preserving the original extension
+            // const sanitizedFileName = sanitizeFilePath(name) + "." + final_extension;
             const originalFile = fileInput.files[0];
 
             // Create a new File object with the desired name
-            const newFile = new File([originalFile], sanitizedFileName, {
+            const newFile = new File([originalFile], fullFileName, {
                 type: originalFile.type,
                 lastModified: originalFile.lastModified
             });
