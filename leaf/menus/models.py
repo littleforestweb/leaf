@@ -162,7 +162,6 @@ def get_menu_data(request, accountId: str, reference: str):
                 mycursor.execute(query, (skip, limit))
 
             menus = mycursor.fetchall()
-            menus = [entry[:-1] + (index + 1,) for index, entry in enumerate(menus)]
             mycursor.execute(f"SELECT COUNT(*) FROM {tableName}")
             menuCount = mycursor.fetchone()[0]
 
