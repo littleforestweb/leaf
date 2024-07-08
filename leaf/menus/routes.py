@@ -442,3 +442,21 @@ def delete_menu():
     """
     if request.method == 'POST':
         return delete_single_menu(request)
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
+@menus.route('/api_menu/reorder_menu_items/<accountId>/<reference>', methods=['POST'])
+@login_required
+def api_reorder_menu_items(accountId: str, reference: str):
+    """
+    Reorders data for a single menu based on account and reference.
+
+    Args:
+        accountId (str): Account ID.
+        reference (str): Menu reference.
+
+    Returns:
+        JSON response with data for the specified menu.
+    """
+    return reorder_menu_items(request, accountId, reference)

@@ -157,6 +157,7 @@ def get_user_access_folder_for_lists(mycursor=None):
         if any(folder_path[0] == "/" for folder_path in folders_access):
             query = "SELECT ua.folder_path FROM leaf.user_access ua"
             mycursor.execute(query)
+            folders_access = mycursor.fetchall()
 
     return [folder_path[0] for folder_path in folders_access]
 
