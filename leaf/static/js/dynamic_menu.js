@@ -1436,7 +1436,7 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
             return "<input type='checkbox' id='entry_" + escapeHtml(source[0]) + "' value='" + escapeHtml(source[0]) + "' />";
         },
         width: "5%",
-        orderable: true,
+        orderable: false,
         sClass: "center"
     }];
 
@@ -1642,7 +1642,7 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
         aoColumns: allColumns,
         dom: 'Brltip',
         language: {"emptyTable": "No data available"},
-        order: [7, "asc"],
+        order: [8, "asc"],
         pageLength: 100,
         aLengthMenu: [[50, 100, 200, 300, 500, 1000], [50, 100, 200, 300, 500, 1000]],
         autoWidth: true,
@@ -1759,7 +1759,7 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
             }
         }
     });
-    
+
     menu_table.on('row-reorder', function (e, diff, edit) {
 
         // Prepare the data to be sent to the backend

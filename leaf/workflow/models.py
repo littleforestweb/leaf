@@ -13,7 +13,7 @@ from urllib.parse import unquote, urljoin
 import paramiko
 import werkzeug.utils
 from bs4 import BeautifulSoup
-from flask import session, current_app
+from flask import session
 from git import Actor
 from werkzeug.datastructures import MultiDict
 
@@ -1327,9 +1327,9 @@ def proceed_action_workflow(request, not_real_request=None):
 
                 if isMenu:
                     if date_conditions == "":
-                        full_query = f"SELECT * FROM {account_list}"
+                        full_query = f"SELECT * FROM {account_list} ORDER BY readingOrder ASC"
                     else:
-                        full_query = f"SELECT * FROM {account_list} WHERE ({date_conditions})"
+                        full_query = f"SELECT * FROM {account_list} WHERE ({date_conditions}) ORDER BY readingOrder ASC"
                     full_params = (current_date_to_compare_in_db,) * len(existing_publication_names)
                     mycursor.execute(full_query, full_params)
 
@@ -1340,13 +1340,13 @@ def proceed_action_workflow(request, not_real_request=None):
                     json_data_to_write = json.dumps(json_data, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
 
                     os.makedirs(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH), exist_ok=True)
+                    completeListName = completeListName.replace(".json", "leafdotjson")
+                    completeListName = ''.join(e for e in completeListName if e.isalnum())
+                    completeListName = completeListName.replace("leafdotjson", ".json")
                     with open(os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, completeListName), "w") as outFile:
                         outFile.write(json_data_to_write)
 
                     # do scp for LISTS
-                    completeListName = completeListName.replace(".json", "leafdotjson")
-                    completeListName = ''.join(e for e in completeListName if e.isalnum())
-                    completeListName = completeListName.replace("leafdotjson", ".json")
                     local_path = os.path.join(Config.WEBSERVER_FOLDER, DYNAMIC_PATH, completeListName)
                     remote_path = os.path.join(srv["remote_path"], DYNAMIC_PATH, completeListName)
                     ssh = paramiko.SSHClient()

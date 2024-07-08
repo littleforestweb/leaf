@@ -237,7 +237,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                         $('select#e-' + thisSpanList).append('<option value="' + single_item_clean + '" ' + (thisFieldValue.includes(single_item_clean) ? " selected" : "") + '>' + single_item_clean.toLowerCase() + '</option>');
                                     }
                                 } else {
-                                    var fieldsDropdown = '<select multiple name="a-' + thisSpanList + '" class="form-select form-select-md toCapitalize ' + mandatoryClass + '" id="a-' + thisSpanList + '"><option value="" disabled selected>Select option</option></select>';
+                                    var fieldsDropdown = '<select style="margin-top:10px" multiple name="a-' + thisSpanList + '" class="form-select form-select-md toCapitalize ' + mandatoryClass + '" id="a-' + thisSpanList + '"><option value="" disabled selected>Select option</option></select>';
                                     $('#a-' + thisSpanList).replaceWith(fieldsDropdown);
                                     for (single_item in getUserFolderAccess) {
                                         var single_item_clean = (getUserFolderAccess[single_item] + (reference == "seminars" || reference == "events" ? "news/" + reference : reference)).replace(/^\/|\/$/g, '');
@@ -279,8 +279,10 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                     }
                                 });
 
-                                for (var thisIndexValue in thisFieldValue) {
-                                    list_container.parent().find("label.col-form-label").append('<label id="selected_item_folder_' + thisFieldValue[thisIndexValue].replace("/", "_") + '" class="form-control pre_selected-items"><button type="button" class="btn-close" onclick="removeAddItemFromListFolder(\'remove\', \'' + thisFieldValue[thisIndexValue] + '\')"></button> ' + thisFieldValue[thisIndexValue] + '</label>');
+                                if (type === 'edit') {
+                                    for (var thisIndexValue in thisFieldValue) {
+                                        list_container.parent().find("label.col-form-label").append('<label id="selected_item_folder_' + thisFieldValue[thisIndexValue].replace("/", "_") + '" class="form-control pre_selected-items"><button type="button" class="btn-close" onclick="removeAddItemFromListFolder(\'remove\', \'' + thisFieldValue[thisIndexValue] + '\')"></button> ' + thisFieldValue[thisIndexValue] + '</label>');
+                                    }
                                 }
 
                                 list_container.change(function() {

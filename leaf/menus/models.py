@@ -12,7 +12,6 @@ from flask import jsonify, session
 from leaf.config import Config
 from leaf.decorators import db_connection
 from leaf.sites.models import get_user_access_folder
-from leaf.lists.models import add_column_if_not_exists
 
 
 def get_menus_data(accountId: int, userId: str, isAdmin: str):
@@ -162,7 +161,6 @@ def get_menu_data(request, accountId: str, reference: str):
                 mycursor.execute(query, (skip, limit))
 
             menus = mycursor.fetchall()
-            menus = [entry[:-1] + (index + 1,) for index, entry in enumerate(menus)]
             mycursor.execute(f"SELECT COUNT(*) FROM {tableName}")
             menuCount = mycursor.fetchone()[0]
 
@@ -792,7 +790,7 @@ def publish_dynamic_menus(request, account_menu: str, accountId: str, reference:
 
     try:
         # Query to retrieve all data from the specified database table (using parameterized query)
-        mycursor.execute(f"SELECT * FROM {account_menu}")
+        mycursor.execute(f"SELECT * FROM {account_menu} ORDER BY readingOrder ASC")
 
         # Fetch column headers
         row_headers = [x[0] for x in mycursor.description]
@@ -1376,6 +1374,7 @@ def reorder_menu_items(request, accountId: str, reference: str):
         mydb.close()
         return jsonify(jsonR)
 
+
 def add_reorder_column_if_not_exists(cursor, db_connection, table_name, column_name, column_definition, after_column):
     try:
         # Check if the column exists
@@ -1412,6 +1411,7 @@ def add_reorder_column_if_not_exists(cursor, db_connection, table_name, column_n
     except Exception as e:
         print("add_reorder_column_if_not_exists model")
         print(e)
+
 
 def validate_input_data_to_delete(menu_to_delete, accountId):
     """
