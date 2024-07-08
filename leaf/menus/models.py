@@ -11,6 +11,7 @@ from flask import jsonify, session
 
 from leaf.config import Config
 from leaf.decorators import db_connection
+from leaf.lists.models import add_column_if_not_exists
 from leaf.sites.models import get_user_access_folder
 
 
@@ -132,6 +133,7 @@ def get_menu_data(request, accountId: str, reference: str):
 
         if isinstance(int(accountId), int):
             tableName = f"account_{accountId}_menu_{reference}"
+            add_column_if_not_exists(mycursor, tableName, "readingOrder", "INT(11)", False)
             showColumnsQuery = f"SHOW COLUMNS FROM {tableName}"
             mycursor.execute(showColumnsQuery, )
             menuColumns = mycursor.fetchall()
@@ -159,7 +161,7 @@ def get_menu_data(request, accountId: str, reference: str):
                 mycursor.execute(query, (skip, limit))
 
             menus = mycursor.fetchall()
-
+            menus = [entry[:-1] + (index + 1,) for index, entry in enumerate(menus)]
             mycursor.execute(f"SELECT COUNT(*) FROM {tableName}")
             menuCount = mycursor.fetchone()[0]
 

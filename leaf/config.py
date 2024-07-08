@@ -252,4 +252,10 @@ class Config:
     TEMPLATES_FOLDER = os.path.join(LEAFCMS_FOLDER, "templates_folder")
     os.makedirs(TEMPLATES_FOLDER, exist_ok=True)
     REMOTE_UPLOADS_FOLDER = os.path.join("leaf_content", "uploads")
-    EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS = "|".join(config["EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS"])
+    EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS = (
+        config["EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS"][0]
+        if len(config["EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS"]) == 1
+        else "|".join(config["EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS"])
+        if len(config["EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS"]) > 1
+        else ""
+    )

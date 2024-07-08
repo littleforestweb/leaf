@@ -1603,27 +1603,40 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
                 $("#add-" + reference + " .mb-3").find("#a-" + checkHeaderClass).parent().append(scriptForFilesAdd);
 
                 if ((xx + 1) === headColumns.length) {
-                    getResume(allColumns, accountId, doSetUpTable, responseFields, isEditing, columnsToAddToShowHide);
+
+                    getResume(allColumns, accountId, doSetUpTable, responseFields, isEditing, columnsToAddToShowHide, headColumns);
                 }
             }, 1000);
         }
     }
 }
 
-async function getResume(allColumns, accountId, doSetUpTable, responseFields, isEditing, columnsToAddToShowHide) {
+async function getResume(allColumns, accountId, doSetUpTable, responseFields, isEditing, columnsToAddToShowHide, headColumns) {
 
     // Setup - add a text input to each header cell
     $('#table.table_' + reference + ' thead tr').clone(true).addClass('filters').appendTo('#table.table_' + reference + ' thead');
 
     let searchColumns = [];
     for (x = 0; x < allColumns.length; x++) {
-        if (x != 0) {
+        if (x !== 0 && x !== (allColumns.length - 1)) {
             searchColumns.push(x);
         }
     }
 
+    let columnFields = []
+    for (let columnEntry of headColumns) {
+        let columnName = columnEntry[0];
+        columnFields.push({"label": columnName, "name": columnName});
+    }
+
+    let menu_editor = $('#table.table_' + reference).DataTable.Editor({
+        ajax: "/api_menu/get_menu/" + accountId + "/" + reference,
+        fields: columnFields,
+        table: '#table.table_' + reference
+    });
+
     // Initialize Table
-    $('#table.table_' + reference).DataTable({
+    let menu_table = $('#table.table_' + reference).DataTable({
         bProcessing: false,
         bServerSide: true,
         sAjaxSource: "/api_menu/get_menu/" + accountId + "/" + reference,
@@ -1635,6 +1648,11 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
         aLengthMenu: [[50, 100, 200, 300, 500, 1000], [50, 100, 200, 300, 500, 1000]],
         autoWidth: true,
         stateSave: true,
+        rowReorder: {
+            dataSrc: 'readingOrder',
+            editor: menu_editor
+        },
+        select: true,
         buttons: {
             buttons: [
                 {
@@ -1664,7 +1682,6 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
             //delete data.search;
         },
         fnDrawCallback: function (oSettings) {
-
             $('input[type="checkbox"]').on('click', function () {
                 $(".deleteButton").prop('disabled', true);
                 if ($('input[type="checkbox"]:checked').length > 0) {
@@ -1674,8 +1691,7 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
                 $(".editButton").prop('disabled', true);
                 $('input[type="checkbox"]').not(this).prop('checked', false);
                 $(".editButton").prop('disabled', false);
-            })
-
+            });
         },
         initComplete: function () {
             // For each column
@@ -1741,6 +1757,27 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
             }
         }
     });
+    menu_editor
+        .on('postCreate postRemove', function () {
+            // After create or edit, a number of other rows might have been effected -
+            // so we need to reload the table, keeping the paging in the current position
+            table.ajax.reload(null, false);
+        })
+        .on('initCreate', function () {
+            // Enable order for create
+            editor
+                .field('readingOrder')
+                .fieldInfo('Leave empty to insert as next in list.')
+                .enable();
+        })
+        .on('initEdit', function () {
+            // Disable for edit (re-ordering is performed by click and drag)
+            editor
+                .field('readingOrder')
+                .fieldInfo('This field can only be edited via click and drag row reordering.')
+                .disable();
+        });
+
     $('#table_wrapper > .dt-buttons').appendTo("div.header-btns .actions_container");
     if ($("div.header-btns .dataTables_length").length > 0) {
         $("div.header-btns .dataTables_length").remove();
