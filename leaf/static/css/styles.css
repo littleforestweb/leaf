@@ -1229,6 +1229,10 @@ table.dataTable tbody tr.isYellow {
 .col-form-label strong {
     text-transform: capitalize;
 }
+th.sorting_disabled:after,
+th.sorting_disabled:before {
+    display: none!important;
+}
 
 @media (min-width: 576px) {
     .modal-dialog {

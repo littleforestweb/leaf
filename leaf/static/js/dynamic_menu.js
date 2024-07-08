@@ -1436,7 +1436,7 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
             return "<input type='checkbox' id='entry_" + escapeHtml(source[0]) + "' value='" + escapeHtml(source[0]) + "' />";
         },
         width: "5%",
-        orderable: false,
+        orderable: true,
         sClass: "center"
     }];
 
@@ -1456,6 +1456,7 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
                 var isWysiwyg = false;
                 var isDocument = false;
                 var isImage = false;
+                var toReorder = false;
 
                 getAccountSettings.settings.filter(function (e) {
 
@@ -1477,6 +1478,10 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
                         isDocument = true;
                     }
                 })
+
+                // if (headColumns[xx][0] === "readingOrder") {
+                //     toReorder = true;
+                // }
 
                 $('#table.table_' + reference + " thead tr").append('<th class="' + (headColumns[xx][7] !== 0 ? ((xx === 0 || hideIt === true) ? 'hidden ' : '') : 'hidden ') + 'center sorting the_reference" id="theReferenceHead_' + xx + '">' + headColumns[xx][0] + '</th>');
                 $('#table.table_' + reference + " tfoot tr").append('<th class="' + (headColumns[xx][7] !== 0 ? ((xx === 0 || hideIt === true) ? 'hidden ' : '') : 'hidden ') + 'center sorting the_reference" id="theReferenceFoot_' + xx + '">' + headColumns[xx][0] + '</th>');
@@ -1566,7 +1571,7 @@ async function doRedrawTable(doSetUpTable = false, responseFields = false, isEdi
                         return val;
                     },
                     defaultContent: "<i style='color: #CCC;'>No data</i>",
-                    sClass: (headColumns[xx][7] !== 0 ? ((xx === 0 || hideIt === true) ? 'hidden ' : '') : 'hidden ') + 'center'
+                    sClass: (headColumns[xx][7] !== 0 ? ((xx === 0 || hideIt === true) ? 'hidden ' : '') : 'hidden ') + 'center reorder'
                 });
 
                 var thisElementToEdit = document.createElement('div');
@@ -1629,12 +1634,6 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
         columnFields.push({"label": columnName, "name": columnName});
     }
 
-    let menu_editor = $('#table.table_' + reference).DataTable.Editor({
-        ajax: "/api_menu/get_menu/" + accountId + "/" + reference,
-        fields: columnFields,
-        table: '#table.table_' + reference
-    });
-
     // Initialize Table
     let menu_table = $('#table.table_' + reference).DataTable({
         bProcessing: false,
@@ -1643,15 +1642,18 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
         aoColumns: allColumns,
         dom: 'Brltip',
         language: {"emptyTable": "No data available"},
-        order: [1, "asc"],
+        order: [7, "asc"],
         pageLength: 100,
         aLengthMenu: [[50, 100, 200, 300, 500, 1000], [50, 100, 200, 300, 500, 1000]],
         autoWidth: true,
-        stateSave: true,
+        stateSave: false,
         rowReorder: {
-            dataSrc: 'readingOrder',
-            editor: menu_editor
+            //dataSrc: 'readingOrder',
+            selector: 'tr td:not(:first-child())'
+            //selector: 'tr td:last-child()'
+            // editor: menu_editor
         },
+        // rowReorder: true,
         select: true,
         buttons: {
             buttons: [
@@ -1757,26 +1759,32 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
             }
         }
     });
-    menu_editor
-        .on('postCreate postRemove', function () {
-            // After create or edit, a number of other rows might have been effected -
-            // so we need to reload the table, keeping the paging in the current position
-            table.ajax.reload(null, false);
-        })
-        .on('initCreate', function () {
-            // Enable order for create
-            editor
-                .field('readingOrder')
-                .fieldInfo('Leave empty to insert as next in list.')
-                .enable();
-        })
-        .on('initEdit', function () {
-            // Disable for edit (re-ordering is performed by click and drag)
-            editor
-                .field('readingOrder')
-                .fieldInfo('This field can only be edited via click and drag row reordering.')
-                .disable();
+    
+    menu_table.on('row-reorder', function (e, diff, edit) {
+
+        // Prepare the data to be sent to the backend
+        const dataToSend = diff.map(item => ({
+            rowIndex: item.node._DT_RowIndex,
+            oldData: item.oldData,
+            newData: item.newData,
+            newPosition: item.newPosition,
+            oldPosition: item.oldPosition
+        }));
+
+        // Send the data to the backend using AJAX
+        $.ajax({
+            url: '/api_menu/reorder_menu_items/' + accountId + '/' + reference, // Replace with your backend endpoint
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(dataToSend),
+            success: function (response) {
+                console.log('Positions updated successfully', response);
+            },
+            error: function (error) {
+                console.error('Error updating positions', error);
+            }
         });
+    });
 
     $('#table_wrapper > .dt-buttons').appendTo("div.header-btns .actions_container");
     if ($("div.header-btns .dataTables_length").length > 0) {

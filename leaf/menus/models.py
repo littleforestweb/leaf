@@ -11,8 +11,8 @@ from flask import jsonify, session
 
 from leaf.config import Config
 from leaf.decorators import db_connection
-from leaf.lists.models import add_column_if_not_exists
 from leaf.sites.models import get_user_access_folder
+from leaf.lists.models import add_column_if_not_exists
 
 
 def get_menus_data(accountId: int, userId: str, isAdmin: str):
@@ -133,7 +133,8 @@ def get_menu_data(request, accountId: str, reference: str):
 
         if isinstance(int(accountId), int):
             tableName = f"account_{accountId}_menu_{reference}"
-            add_column_if_not_exists(mycursor, tableName, "readingOrder", "INT(11)", False)
+            add_reorder_column_if_not_exists(mycursor, mydb, tableName, "readingOrder", "INT(11)", False)
+            # add_column_if_not_exists(mycursor, tableName, "readingOrder", "INT(11)", False)
             showColumnsQuery = f"SHOW COLUMNS FROM {tableName}"
             mycursor.execute(showColumnsQuery, )
             menuColumns = mycursor.fetchall()
@@ -1337,6 +1338,80 @@ def delete_single_menu(request):
         mydb.close()
         return jsonify(json_response)
 
+
+def reorder_menu_items(request, accountId: str, reference: str):
+    jsonR = {'updated': False}
+
+    if not int(accountId) == int(session["accountId"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    mydb, mycursor = db_connection()
+
+    try:
+
+        data = request.get_json()
+
+        if isinstance(int(accountId), int):
+
+            tableName = f"account_{accountId}_menu_{reference}"
+
+            for single_entry in data:
+                new_id = int(single_entry["newPosition"] + 1)
+                item_id = int(single_entry["oldData"])  # Use the temporary unique value
+                # Update the temporary value to the new position
+                mycursor.execute(f"UPDATE {tableName} SET readingOrder = %s WHERE id = %s", (new_id, item_id))
+                mydb.commit()
+
+            # Create json response
+            jsonR = {"updated": True}
+            return jsonify(jsonR), 200
+
+        else:
+            print("Invalid accountId")
+
+    except Exception as e:
+        print("reorder_menu_items model")
+        print(e)
+    finally:
+        mydb.close()
+        return jsonify(jsonR)
+
+def add_reorder_column_if_not_exists(cursor, db_connection, table_name, column_name, column_definition, after_column):
+    try:
+        # Check if the column exists
+        cursor.execute(f"""
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_NAME = '{table_name}' AND COLUMN_NAME = '{column_name}'
+        """)
+        column_exists = cursor.fetchone()[0] > 0
+
+        if not column_exists:
+            # Column does not exist, so add it
+            if after_column:
+                cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition} AFTER {after_column}")
+            else:
+                cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition}")
+
+            if column_name == "readingOrder":
+                # Populate the new column with incremented values
+                cursor.execute("SET @row_number = 0;")
+                cursor.execute(f"UPDATE {table_name} SET {column_name} = (@row_number := @row_number + 1);")
+        else:
+            if column_name == "readingOrder":
+                # Ensure the column is not NULL and has incremented values
+                cursor.execute("SET @row_number = 0;")
+                cursor.execute(f"""
+                    UPDATE {table_name}
+                    SET {column_name} = COALESCE({column_name}, (@row_number := @row_number + 1))
+                    ORDER BY id;
+                """)
+
+        # Commit the changes to the database
+        db_connection.commit()
+    except Exception as e:
+        print("add_reorder_column_if_not_exists model")
+        print(e)
 
 def validate_input_data_to_delete(menu_to_delete, accountId):
     """
