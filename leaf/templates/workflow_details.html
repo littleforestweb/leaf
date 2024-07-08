@@ -61,7 +61,7 @@
                                             {% endfor %}
                                         {% else %}
                                             <div class="col-4"><img src="/get_screenshot?id={{ data.siteIds }}" width="100%" height="auto" alt="Page Screenshot Image"></div>
-                                            <div class="col-8">Preview - <span><a target="_blank" href="{{ data.siteUrl }}">{{ data.siteTitles }}</a></span><br>Live - <span><a target="_blank" href="{{ data.liveUrl }}">{{ data.siteTitles }}</a></span></div>
+                                            <div class="col-8">Preview: <span><a target="_blank" href="{{ data.siteUrl }}">{{ data.siteTitles }}</a></span><br>Live - <span><a target="_blank" href="{{ data.liveUrl }}">{{ data.siteTitles }}</a></span></div>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -75,7 +75,7 @@
                                 <div class="card-body">
                                     {% for singleFile in data.files_details %}
                                         <div class="row">
-                                            <div class="col-12"><span><a target="_blank" href="{{ data.preview_server }}{{ singleFile[0] }}">{{ data.preview_server }}{{ singleFile[0] }}</a></span></div>
+                                            <div class="col-12">Preview: <span><a target="_blank" href="{% if data.preview_server.endswith('/') %}{{ data.preview_server }}{{ singleFile[0] }}{% else %}{{ data.preview_server }}/{{ singleFile[0] }}{% endif %}">{% if data.preview_server.endswith('/') %}{{ data.preview_server }}{{ singleFile[0] }}{% else %}{{ data.preview_server }}/{{ singleFile[0] }}{% endif %}</a></span></div>
                                         </div>
                                     {% endfor %}
                                 </div>
