@@ -1642,7 +1642,7 @@ async function getResume(allColumns, accountId, doSetUpTable, responseFields, is
         aoColumns: allColumns,
         dom: 'Brltip',
         language: {"emptyTable": "No data available"},
-        order: [8, "asc"],
+        order: [allColumns.length - 1, "asc"],
         pageLength: 100,
         aLengthMenu: [[50, 100, 200, 300, 500, 1000], [50, 100, 200, 300, 500, 1000]],
         autoWidth: true,

@@ -139,11 +139,11 @@ function adjustAnchorPosition(editor, itemPosition) {
     let editable = editor.editable();
     editable.find('a').toArray().forEach(function (anchor) {
         if (anchor.getHtml().trim() === "&nbsp;" || anchor.getHtml().trim() === "" || anchor.getHtml().trim() === "Area link. Click here to edit.") {
-            if (!itemPosition) {
+            if (!itemPosition && anchor.getAttribute("class") && anchor.getAttribute("style")) {
                 anchor.setAttribute("class", anchor.getAttribute("class").replace(" leaf_ck_position_defined", ""));
                 anchor.setAttribute("style", anchor.getAttribute("style").replace(" position:relative!important;background:#fff", ""));
                 anchor.setHtml("&nbsp;");
-            } else {
+            } else if (anchor.getAttribute("class") && anchor.getAttribute("style")) {
                 let originalPosition = anchor.getStyle("position");
                 anchor.setHtml("Area link. Click here to edit.")
                 anchor.setAttribute("style", (anchor.getAttribute("style") ? anchor.getAttribute("style") : "") + " position:relative!important;background:#fff");

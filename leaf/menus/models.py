@@ -205,6 +205,9 @@ def get_menu_columns(accountId: str, reference: str):
             mycursor.execute(create_table_query, )
             mydb.commit()
 
+            # Check if Reorder Column exists -> add
+            add_reorder_column_if_not_exists(mycursor, mydb, tableName, "readingOrder", "INT(11)", False)
+
             # Retrieve column information
             show_columns_query = f"SHOW COLUMNS FROM {tableName}"
             mycursor.execute(show_columns_query, )
