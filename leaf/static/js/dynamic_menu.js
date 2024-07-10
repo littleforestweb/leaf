@@ -963,7 +963,7 @@ async function addDynamicMenu(accountId, reference, env, preview_server, dynamic
                 $('#addDynamicList').modal('hide');
                 $('#addDynamicListSuccessNotification').toast('show');
 
-                publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink);
+                publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path);
 
                 const buttons_to_add_container = document.getElementById('buttons_to_add');
                 const allActionButtons = buttons_to_add_container.getElementsByTagName('button');
@@ -1051,8 +1051,8 @@ async function deleteDynamicMenuEntries(accountId, reference, env, preview_serve
             "entries_to_delete": checked_entries_str
         },
         success: function (entry) {
-
-            publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path, thisTemplate, thisParameters, fieldsToLink);
+            
+            publishDynamicMenu(accountId, reference, env, preview_server, dynamic_path);
 
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
