@@ -1280,15 +1280,22 @@ def proceed_action_workflow(request, not_real_request=None):
                     for singleListItemList in final_list:
                         for singleListItem in singleListItemList:
                             singleListItemToSearch = singleListItem.split(",")
+                            fullListByField = list()
                             for singleItem in singleListItemToSearch:
                                 singleItem = singleItem.split(",")
                                 by_field_conditions = " OR ".join([f"FIND_IN_SET(%s, `{singleFieldToSaveBy}`)" for _ in singleItem])
-                                by_field_query = f"SELECT {fieldsToSaveByIncludes} FROM {account_list} WHERE {by_field_conditions} AND ({date_conditions})"
+                                
+                                if fieldsToSaveByIncludes:
+                                    by_field_query = f"SELECT {fieldsToSaveByIncludes} FROM {account_list} WHERE {by_field_conditions} AND ({date_conditions})"
+                                else:
+                                    by_field_query = f"SELECT * FROM {account_list} WHERE {by_field_conditions} AND ({date_conditions})"
+                                
                                 by_field_params = tuple(singleItem) + (current_date_to_compare_in_db,) * len(existing_publication_names)
-                                mycursor.execute(by_field_query, by_field_params)
+                                if by_field_params is not None:
+                                    mycursor.execute(by_field_query, by_field_params)
 
-                                row_headers = [x[0] for x in mycursor.description]
-                                fullListByField = mycursor.fetchall()
+                                    row_headers = [x[0] for x in mycursor.description]
+                                    fullListByField = mycursor.fetchall()
 
                                 json_data_by_field = [dict(zip(row_headers, result)) for result in fullListByField]
                                 json_data_to_write_by_field = json.dumps(json_data_by_field, default=custom_serializer).replace('__BACKSLASH__TO_REPLACE__', '\\')
@@ -2276,6 +2283,7 @@ def check_if_should_publish_list(workflow):
             items = re.findall(pattern, list_template)
 
             site_ids = workflow['siteIds']
+
             query_list = f"SELECT * FROM account_{workflow['accountId']}_list_{workflow['listName']} WHERE id=%s"
             params_list = (site_ids,)
             mycursor.execute(query_list, params_list)
@@ -2286,6 +2294,8 @@ def check_if_should_publish_list(workflow):
 
             # Combine headers and data
             results = [dict(zip(headers, row)) for row in fields_to_link]
+
+            rss_ids = False
 
             publication_date = False
 
@@ -2298,6 +2308,9 @@ def check_if_should_publish_list(workflow):
                             publication_date = value
                         else:
                             list_page_url = list_page_url.replace("{" + key + "}", str(value))
+
+                        if key.lower() == "leaf_selected_rss" and value is not None:
+                            rss_ids = value
 
                 if publication_date:
                     for field in items:
@@ -2315,12 +2328,15 @@ def check_if_should_publish_list(workflow):
                     # Process the JSON response
                     jsonConfigSaveByFields = None
                     jsonConfigFieldsToSaveBy = None
+                    jsonConfigFieldsToSaveByIncludes = None
 
                     if 'columns' in jsonConfig and len(jsonConfig['columns']) > 0:
                         if len(jsonConfig['columns'][0]) > 3:
                             jsonConfigSaveByFields = jsonConfig['columns'][0][3]
                         if len(jsonConfig['columns'][0]) > 4:
                             jsonConfigFieldsToSaveBy = jsonConfig['columns'][0][4]
+                        if len(jsonConfig['columns'][0]) > 5:
+                            jsonConfigFieldsToSaveByIncludes = jsonConfig['columns'][0][5]
 
                     new_request_data = {
                         "id": workflow['id'],
@@ -2329,10 +2345,12 @@ def check_if_should_publish_list(workflow):
                         "listName": workflow['listName'],
                         "saveByFields": jsonConfigSaveByFields,
                         "fieldsToSaveBy": jsonConfigFieldsToSaveBy,
+                        "fieldsToSaveByIncludes": jsonConfigFieldsToSaveByIncludes,
                         "files_details": "",
                         "site_ids": site_ids,
-                        "list_item_url_path": list_page_url,
+                        "list_item_url_path": f'["{list_page_url}"]',
                         "list_feed_path": list_feed,
+                        "rss_ids": rss_ids,
                         "publication_date": publication_date,
                         "accountId": int(workflow['accountId']),
                         "user_id": workflow['assignEditor']
@@ -2343,7 +2361,6 @@ def check_if_should_publish_list(workflow):
                         def __init__(self, form_data):
                             self.form = MultiDict(form_data)
 
-                    # print(new_request_data)
                     # Create a mock request object
                     mock_request = MockRequest(new_request_data)
                     new_action_workflow = proceed_action_workflow(mock_request, True)
