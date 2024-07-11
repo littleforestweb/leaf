@@ -82,7 +82,7 @@
                             </div>
                         </div>
                     {% endif %}
-                    {% if data.leaf_selected_rss %}
+                    {% if data.leaf_selected_rss and data.leaf_selected_rss | select | map('length') | sum > 0 %}
                         <div class="mb-2 col-sm-12">
                             <div class="card">
                                 <h5 class="card-header">RSS Feeds</h5>
