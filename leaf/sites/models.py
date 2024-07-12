@@ -316,36 +316,6 @@ def get_site_data(site_id):
         raise RuntimeError(f"An error occurred while fetching sites: {str(e)}")
 
 
-def get_site_name(site_id):
-    """
-    Retrieve the name of a site based on its ID from the database.
-
-    Args:
-        site_id (int): The ID of the site to retrieve the name for.
-
-    Returns:
-        str: The name of the site.
-
-    Raises:
-        RuntimeError: If an error occurs during database access.
-    """
-    
-    try:
-        # Get a database connection using the 'db_connection' decorator
-        mydb, mycursor = decorators.db_connection()
-
-        # Get Site name from the site
-        query = "SELECT base_folder FROM sites WHERE id = %s"
-        mycursor.execute(query, [site_id])
-        site_name = mycursor.fetchone()[0]
-
-        return site_name
-
-    except Exception as e:
-        # Log the exception or handle it as appropriate for your application
-        raise RuntimeError(f"An error occurred while fetching site name: {str(e)}")
-
-
 def get_site_log(site_id):
     """
     Retrieve the crawl log of a specified site.
