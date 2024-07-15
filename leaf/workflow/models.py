@@ -1493,25 +1493,22 @@ def proceed_action_workflow(request, not_real_request=None):
 
         # Remove from Deployment servers
         for srv in Config.DEPLOYMENTS_SERVERS:
-            remote_path = os.path.join(srv["remote_path"], HTMLPath)
-            if os.path.exists(remote_path):
-                try:
-                    ssh = paramiko.SSHClient()
-                    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                    if srv["pkey"] != "":
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                        if srv["pw"] == "":
-                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                        else:
-                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+            try:
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                if srv["pkey"] != "":
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                    if srv["pw"] == "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
                     else:
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-                    with ssh.open_sftp() as scp:
-                        scp.remove(remote_path)
-                except Exception as e:
-                    pass
-            else:
-                print("File none existing on the remote server.")
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                else:
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                with ssh.open_sftp() as scp:
+                    remote_path = os.path.join(srv["remote_path"], HTMLPath)
+                    scp.remove(remote_path)
+            except Exception as e:
+                pass
 
         # Regenerate Sitemap
         query = "SELECT site_id FROM site_meta WHERE HTMLPath = %s"
@@ -1535,25 +1532,22 @@ def proceed_action_workflow(request, not_real_request=None):
 
         # Remove from Deployment servers
         for srv in Config.DEPLOYMENTS_SERVERS:
-            remote_path = os.path.join(srv["remote_path"], path)
-            if os.path.exists(remote_path):
-                try:
-                    ssh = paramiko.SSHClient()
-                    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                    if srv["pkey"] != "":
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                        if srv["pw"] == "":
-                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                        else:
-                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+            try:
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                if srv["pkey"] != "":
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                    if srv["pw"] == "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
                     else:
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-                    with ssh.open_sftp() as scp:
-                        scp.remove(remote_path)
-                except Exception as e:
-                    pass
-            else:
-                print("File none existing on the remote server.")
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                else:
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                with ssh.open_sftp() as scp:
+                    remote_path = os.path.join(srv["remote_path"], path)
+                    scp.remove(remote_path)
+            except Exception as e:
+                pass
 
     else:
         pass
@@ -1578,24 +1572,21 @@ def proceed_action_workflow(request, not_real_request=None):
 
 
 def delete_file_from_server(local_path, remote_path, srv):
-    if os.path.exists(remote_path):
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        if srv["pkey"] != "":
-            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-            if srv["pw"] == "":
-                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-            else:
-                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    if srv["pkey"] != "":
+        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+        if srv["pw"] == "":
+            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
         else:
-            ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-        with ssh.open_sftp() as scp:
-            try:
-                scp.remove(remote_path)
-            except Exception as e:
-                raise Exception(f"Failed to delete remote file: {remote_path} - {e}")
+            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
     else:
-        print("File none existing on the remote server.")
+        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+    with ssh.open_sftp() as scp:
+        try:
+            scp.remove(remote_path)
+        except Exception as e:
+            raise Exception(f"Failed to delete remote file: {remote_path} - {e}")
 
 
 # Function to check if a column exists in the table
