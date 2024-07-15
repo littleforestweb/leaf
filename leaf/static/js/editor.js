@@ -271,7 +271,16 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {name: "colors", items: ["TextColor", "BGColor"]},
             {name: "actions", items: ["Preview", "SaveBtn", "PublishBtn"]}
         ],
-        extraPlugins: "anchor, inserthtml4x, embed, saveBtn, pastefromword",
+        extraPlugins: "anchor, inserthtml4x, embed, saveBtn, pastefromword, codemirror",
+        codemirror: {
+            mode: 'htmlmixed',
+            theme: 'default',
+            // theme: 'darcula',
+            lineNumbers: true,
+            lineWrapping: true,
+            styleActiveLine: true,
+            keyMap: 'sublime'
+        },
         codeSnippet_theme: 'prism',
         filebrowserUploadUrl: "/api/upload?name=fileupload",
         embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}',
@@ -354,6 +363,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             }
         });
     }
+    CKEDITOR.plugins.addExternal('codemirror', '/static/ck4-addons/plugins/codemirror/', 'plugin.js');
 
     // Initialize CKEditor with the configuration
     CKEDITOR.replace("htmlCode", ckeditorConfig);
