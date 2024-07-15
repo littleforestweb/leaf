@@ -1105,70 +1105,76 @@ def proceed_action_workflow(request, not_real_request=None):
         mycursor.execute(query, params)
         HTMLPath = mycursor.fetchone()[0]
 
-        for srv in Config.DEPLOYMENTS_SERVERS:
-            HTMLPath = HTMLPath.strip("/")
-            local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
+        HTMLPath = HTMLPath.strip("/")
+        local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
 
-            # Replace Preview Reference with Live webserver references
-            with open(local_path) as inFile:
-                data = inFile.read()
-                original_content = data
-            data = data.replace(str(os.path.join(Config.LEAFCMS_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
+        if os.path.exists(local_path):
+            for srv in Config.DEPLOYMENTS_SERVERS:
 
-            # Ensure we save with the correct canonical link
-            canonical_url = os.path.join(srv["webserver_url"], HTMLPath)
-            data = ensure_canonical_link(data, canonical_url)
+                # Replace Preview Reference with Live webserver references
+                with open(local_path) as inFile:
+                    data = inFile.read()
+                    original_content = data
+                data = data.replace(str(os.path.join(Config.LEAFCMS_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
 
-            with open(local_path, "w") as outFile:
-                outFile.write(data)
+                # Ensure we save with the correct canonical link
+                canonical_url = os.path.join(srv["webserver_url"], HTMLPath)
+                data = ensure_canonical_link(data, canonical_url)
 
-            assets = find_page_assets(original_content)
+                with open(local_path, "w") as outFile:
+                    outFile.write(data)
 
-            # SCP Files
-            remote_path = os.path.join(srv["remote_path"], HTMLPath)
-            ssh = paramiko.SSHClient()
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            if srv["pkey"] != "":
-                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                if srv["pw"] == "":
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                assets = find_page_assets(original_content)
+
+                # SCP Files
+                remote_path = os.path.join(srv["remote_path"], HTMLPath)
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                if srv["pkey"] != "":
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                    if srv["pw"] == "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                    else:
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
                 else:
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-            else:
-                ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-            with ssh.open_sftp() as scp:
-                actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
-                for asset in assets:
-                    assetFilename = asset.split("/")[-1].strip('/')
-                    assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
-                    assetRemotePath = os.path.join(srv["remote_path"], Config.REMOTE_UPLOADS_FOLDER, assetFilename)
-                    actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
-                    if not actionResultAsset:
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                with ssh.open_sftp() as scp:
+                    actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                    for asset in assets:
+                        assetFilename = asset.split("/")[-1].strip('/')
+                        assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
+                        assetRemotePath = os.path.join(srv["remote_path"], Config.REMOTE_UPLOADS_FOLDER, assetFilename)
+                        actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
+                        if not actionResultAsset:
+                            try:
+                                raise Exception("Failed to SCP - " + lp + " - " + rp)
+                            except Exception as e:
+                                pass
+                    if not actionResult:
                         try:
                             raise Exception("Failed to SCP - " + lp + " - " + rp)
                         except Exception as e:
                             pass
-                if not actionResult:
-                    try:
-                        raise Exception("Failed to SCP - " + lp + " - " + rp)
-                    except Exception as e:
-                        pass
 
-            with open(local_path, "w") as outFile:
-                outFile.write(original_content)
+                with open(local_path, "w") as outFile:
+                    outFile.write(original_content)
 
-        # Regenerate Sitemap
-        query = "SELECT id, site_id FROM site_meta WHERE HTMLPath = %s"
-        mycursor.execute(query, [HTMLPath])
-        page_id, site_id = mycursor.fetchone()
-        gen_sitemap(mycursor, site_id, thisType)
+            # Regenerate Sitemap
+            query = "SELECT id, site_id FROM site_meta WHERE HTMLPath = %s"
+            mycursor.execute(query, [HTMLPath])
+            page_id, site_id = mycursor.fetchone()
+            gen_sitemap(mycursor, site_id, thisType)
 
-        # Git operations
-        query = "SELECT workflow.comments FROM workflow WHERE id = %s"
-        mycursor.execute(query, [workflow_id])
-        workflow_comment = mycursor.fetchone()[0]
-        Config.GIT_REPO.index.add([os.path.join(Config.WEBSERVER_FOLDER, HTMLPath), os.path.join(Config.WEBSERVER_FOLDER, "sitemap.xml")])
-        Config.GIT_REPO.index.commit(workflow_comment, author=Actor(session["username"], session["email"]))
+            # Git operations
+            query = "SELECT workflow.comments FROM workflow WHERE id = %s"
+            mycursor.execute(query, [workflow_id])
+            workflow_comment = mycursor.fetchone()[0]
+            Config.GIT_REPO.index.add([os.path.join(Config.WEBSERVER_FOLDER, HTMLPath), os.path.join(Config.WEBSERVER_FOLDER, "sitemap.xml")])
+            Config.GIT_REPO.index.commit(workflow_comment, author=Actor(session["username"], session["email"]))
+
+        else:
+            mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", ("Reject", workflow_id))
+            mydb.commit()
 
     elif not listName and thisType == 2:
         # do something with TASK
@@ -1381,83 +1387,92 @@ def proceed_action_workflow(request, not_real_request=None):
                 for list_item_url_path in list_items_url_path:
                     HTMLPath = werkzeug.utils.escape(list_item_url_path.strip("/"))
                     local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
-                    list_feed_path = werkzeug.utils.escape(request.form.get("list_feed_path").strip("/"))
-                    rss_ids = werkzeug.utils.escape(request.form.get("rss_ids"))
-                    if thisType != 8:
-                        for srv in Config.DEPLOYMENTS_SERVERS:
 
-                            # Replace Preview Reference with Live webserver references
-                            with open(local_path) as inFile:
-                                data = inFile.read()
+                    if os.path.exists(local_path):
 
-                            assets = find_page_assets(data)
+                        list_feed_path = werkzeug.utils.escape(request.form.get("list_feed_path").strip("/"))
+                        rss_ids = werkzeug.utils.escape(request.form.get("rss_ids"))
 
-                            original_content = data
-                            # data = data.replace(Config.LEAFCMS_SERVER, urljoin(srv["webserver_url"], Config.DYNAMIC_PATH.strip('/'), '/leaf/'))
-                            data = data.replace(str(os.path.join(Config.LEAFCMS_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
+                        if thisType != 8:
+                            for srv in Config.DEPLOYMENTS_SERVERS:
 
-                            # SCP Files
-                            remote_path = os.path.join(srv["remote_path"], HTMLPath)
-                            ssh = paramiko.SSHClient()
-                            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                            if srv["pkey"] != "":
-                                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                                if srv["pw"] == "":
-                                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                                # Replace Preview Reference with Live webserver references
+                                with open(local_path) as inFile:
+                                    data = inFile.read()
+
+                                assets = find_page_assets(data)
+
+                                original_content = data
+                                # data = data.replace(Config.LEAFCMS_SERVER, urljoin(srv["webserver_url"], Config.DYNAMIC_PATH.strip('/'), '/leaf/'))
+                                data = data.replace(str(os.path.join(Config.LEAFCMS_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
+
+                                # SCP Files
+                                remote_path = os.path.join(srv["remote_path"], HTMLPath)
+                                ssh = paramiko.SSHClient()
+                                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                                if srv["pkey"] != "":
+                                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                                    if srv["pw"] == "":
+                                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                                    else:
+                                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
                                 else:
-                                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                            else:
-                                ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-                            with ssh.open_sftp() as scp:
+                                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                                with ssh.open_sftp() as scp:
 
-                                # Ensure we save with the correct canonical link
-                                canonical_url = os.path.join(srv["webserver_url"], list_item_url_path.strip("/"))
-                                list_html_updated = ensure_canonical_link(data, canonical_url)
+                                    # Ensure we save with the correct canonical link
+                                    canonical_url = os.path.join(srv["webserver_url"], list_item_url_path.strip("/"))
+                                    list_html_updated = ensure_canonical_link(data, canonical_url)
 
-                                with open(local_path, "w") as outFile:
-                                    outFile.write(list_html_updated)
+                                    with open(local_path, "w") as outFile:
+                                        outFile.write(list_html_updated)
 
-                                actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                                    actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
 
-                                for asset in assets:
-                                    assetFilename = asset.split("/")[-1].strip('/')
-                                    assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
-                                    # assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
-                                    assetRemotePath = os.path.join(srv["remote_path"], Config.REMOTE_UPLOADS_FOLDER, assetFilename)
-                                    actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
-                                    if not actionResultAsset:
+                                    for asset in assets:
+                                        assetFilename = asset.split("/")[-1].strip('/')
+                                        assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
+                                        # assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                                        assetRemotePath = os.path.join(srv["remote_path"], Config.REMOTE_UPLOADS_FOLDER, assetFilename)
+                                        actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
+                                        if not actionResultAsset:
+                                            try:
+                                                raise Exception("Failed to SCP - " + lp + " - " + rp)
+                                            except Exception as e:
+                                                pass
+                                    if not actionResult:
                                         try:
                                             raise Exception("Failed to SCP - " + lp + " - " + rp)
                                         except Exception as e:
                                             pass
-                                if not actionResult:
-                                    try:
-                                        raise Exception("Failed to SCP - " + lp + " - " + rp)
-                                    except Exception as e:
-                                        pass
 
-                            with open(local_path, "w") as outFile:
-                                outFile.write(original_content)
+                                with open(local_path, "w") as outFile:
+                                    outFile.write(original_content)
+
+                        else:
+                            for srv in Config.DEPLOYMENTS_SERVERS:
+                                remote_path = os.path.join(srv["remote_path"], HTMLPath)
+                                delete_file_from_server(local_path, remote_path, srv)
+                                try:
+                                    os.remove(local_path)
+                                except Exception as e:
+                                    raise Exception(f"Failed to delete local file: {local_path} - {e}")
+
+                        # Regenerate Feed
+                        if not isMenu:
+                            # This will generate a global feed for all items using the same template
+                            if list_feed_path and list_feed_path != "":
+                                gen_feed(mycursor, account_list, list_feed_path, listName, accountId)
+
+                            if rss_ids and rss_ids != "":
+                                update_feed_lists_and_or_delete_from_directory(mycursor, account_list, rss_ids, listName, accountId, site_ids, thisType, pages_to_delete_from_feed)
+                            else:
+                                update_feed_lists_and_or_delete_from_directory(mycursor, account_list, False, listName, accountId, site_ids, thisType, pages_to_delete_from_feed)
 
                     else:
-                        for srv in Config.DEPLOYMENTS_SERVERS:
-                            remote_path = os.path.join(srv["remote_path"], HTMLPath)
-                            delete_file_from_server(local_path, remote_path, srv)
-                            try:
-                                os.remove(local_path)
-                            except Exception as e:
-                                raise Exception(f"Failed to delete local file: {local_path} - {e}")
-
-                    # Regenerate Feed
-                    if not isMenu:
-                        # This will generate a global feed for all items using the same template
-                        if list_feed_path and list_feed_path != "":
-                            gen_feed(mycursor, account_list, list_feed_path, listName, accountId)
-
-                        if rss_ids and rss_ids != "":
-                            update_feed_lists_and_or_delete_from_directory(mycursor, account_list, rss_ids, listName, accountId, site_ids, thisType, pages_to_delete_from_feed)
-                        else:
-                            update_feed_lists_and_or_delete_from_directory(mycursor, account_list, False, listName, accountId, site_ids, thisType, pages_to_delete_from_feed)
+                        print("Item does not exists! Changing Workflow status to Rejected...")
+                        mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", ("Reject", workflow_id))
+                        mydb.commit()
 
         else:
             print("Publication date in the future: " + str(target_date) + "; current date: " + str(current_date))
@@ -1478,22 +1493,25 @@ def proceed_action_workflow(request, not_real_request=None):
 
         # Remove from Deployment servers
         for srv in Config.DEPLOYMENTS_SERVERS:
-            try:
-                ssh = paramiko.SSHClient()
-                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                if srv["pkey"] != "":
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                    if srv["pw"] == "":
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+            remote_path = os.path.join(srv["remote_path"], HTMLPath)
+            if os.path.exists(remote_path):
+                try:
+                    ssh = paramiko.SSHClient()
+                    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                    if srv["pkey"] != "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                        if srv["pw"] == "":
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                        else:
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
                     else:
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                else:
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-                with ssh.open_sftp() as scp:
-                    remote_path = os.path.join(srv["remote_path"], HTMLPath)
-                    scp.remove(remote_path)
-            except Exception as e:
-                pass
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                    with ssh.open_sftp() as scp:
+                        scp.remove(remote_path)
+                except Exception as e:
+                    pass
+            else:
+                print("File none existing on the remote server.")
 
         # Regenerate Sitemap
         query = "SELECT site_id FROM site_meta WHERE HTMLPath = %s"
@@ -1517,22 +1535,25 @@ def proceed_action_workflow(request, not_real_request=None):
 
         # Remove from Deployment servers
         for srv in Config.DEPLOYMENTS_SERVERS:
-            try:
-                ssh = paramiko.SSHClient()
-                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                if srv["pkey"] != "":
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                    if srv["pw"] == "":
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+            remote_path = os.path.join(srv["remote_path"], path)
+            if os.path.exists(remote_path):
+                try:
+                    ssh = paramiko.SSHClient()
+                    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                    if srv["pkey"] != "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                        if srv["pw"] == "":
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                        else:
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
                     else:
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                else:
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-                with ssh.open_sftp() as scp:
-                    remote_path = os.path.join(srv["remote_path"], path)
-                    scp.remove(remote_path)
-            except Exception as e:
-                pass
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                    with ssh.open_sftp() as scp:
+                        scp.remove(remote_path)
+                except Exception as e:
+                    pass
+            else:
+                print("File none existing on the remote server.")
 
     else:
         pass
@@ -1557,21 +1578,24 @@ def proceed_action_workflow(request, not_real_request=None):
 
 
 def delete_file_from_server(local_path, remote_path, srv):
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    if srv["pkey"] != "":
-        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-        if srv["pw"] == "":
-            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+    if os.path.exists(remote_path):
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        if srv["pkey"] != "":
+            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+            if srv["pw"] == "":
+                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+            else:
+                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
         else:
-            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+            ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+        with ssh.open_sftp() as scp:
+            try:
+                scp.remove(remote_path)
+            except Exception as e:
+                raise Exception(f"Failed to delete remote file: {remote_path} - {e}")
     else:
-        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-    with ssh.open_sftp() as scp:
-        try:
-            scp.remove(remote_path)
-        except Exception as e:
-            raise Exception(f"Failed to delete remote file: {remote_path} - {e}")
+        print("File none existing on the remote server.")
 
 
 # Function to check if a column exists in the table
@@ -2192,72 +2216,77 @@ def check_if_should_publish_pages(workflow):
     mycursor.execute(query, params)
     HTMLPath = mycursor.fetchone()[0]
 
-    for srv in Config.DEPLOYMENTS_SERVERS:
-        HTMLPath = HTMLPath.strip("/")
-        local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
+    HTMLPath = HTMLPath.strip("/")
+    local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
+    
+    if os.path.exists(local_path):
+        for srv in Config.DEPLOYMENTS_SERVERS:
+            # Replace Preview Reference with Live webserver references
+            with open(local_path) as inFile:
+                data = inFile.read()
+                original_content = data
+            data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH)
+            with open(local_path, "w") as outFile:
+                outFile.write(data)
 
-        # Replace Preview Reference with Live webserver references
-        with open(local_path) as inFile:
-            data = inFile.read()
-            original_content = data
-        data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH)
-        with open(local_path, "w") as outFile:
-            outFile.write(data)
+            assets = find_page_assets(original_content)
 
-        assets = find_page_assets(original_content)
-
-        # SCP Files
-        remote_path = os.path.join(srv["remote_path"], HTMLPath)
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        if srv["pkey"] != "":
-            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-            if srv["pw"] == "":
-                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+            # SCP Files
+            remote_path = os.path.join(srv["remote_path"], HTMLPath)
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            if srv["pkey"] != "":
+                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                if srv["pw"] == "":
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                else:
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
             else:
-                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-        else:
-            ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-        with ssh.open_sftp() as scp:
-            actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
-            for asset in assets:
-                assetFilename = asset.split("/")[-1].strip('/')
-                assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
-                assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
-                actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
-                if not actionResultAsset:
+                ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+            with ssh.open_sftp() as scp:
+                actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                for asset in assets:
+                    assetFilename = asset.split("/")[-1].strip('/')
+                    assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
+                    assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                    actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
+                    if not actionResultAsset:
+                        try:
+                            raise Exception("Failed to SCP - " + lp + " - " + rp)
+                        except Exception as e:
+                            pass
+                if not actionResult:
                     try:
                         raise Exception("Failed to SCP - " + lp + " - " + rp)
                     except Exception as e:
                         pass
-            if not actionResult:
-                try:
-                    raise Exception("Failed to SCP - " + lp + " - " + rp)
-                except Exception as e:
-                    pass
 
-        with open(local_path, "w") as outFile:
-            outFile.write(original_content)
+            with open(local_path, "w") as outFile:
+                outFile.write(original_content)
 
-    # Regenerate Sitemap
-    query = "SELECT id, site_id FROM site_meta WHERE HTMLPath = %s"
-    mycursor.execute(query, [HTMLPath])
-    page_id, site_id = mycursor.fetchone()
-    gen_sitemap(mycursor, site_id, 1)
+        # Regenerate Sitemap
+        query = "SELECT id, site_id FROM site_meta WHERE HTMLPath = %s"
+        mycursor.execute(query, [HTMLPath])
+        page_id, site_id = mycursor.fetchone()
+        gen_sitemap(mycursor, site_id, 1)
 
-    # Get Assign User Info
-    editorInfo = get_user_details(workflow["assignEditor"], mycursor)
+        # Get Assign User Info
+        editorInfo = get_user_details(workflow["assignEditor"], mycursor)
 
-    # Git operations
-    query = "SELECT workflow.comments FROM workflow WHERE id = %s"
-    mycursor.execute(query, [workflow_id])
-    workflow_comment = mycursor.fetchone()[0]
-    Config.GIT_REPO.index.add([os.path.join(Config.WEBSERVER_FOLDER, HTMLPath), os.path.join(Config.WEBSERVER_FOLDER, "sitemap.xml")])
-    Config.GIT_REPO.index.commit(workflow_comment, author=Actor(editorInfo["username"], editorInfo["email"]))
+        # Git operations
+        query = "SELECT workflow.comments FROM workflow WHERE id = %s"
+        mycursor.execute(query, [workflow_id])
+        workflow_comment = mycursor.fetchone()[0]
+        Config.GIT_REPO.index.add([os.path.join(Config.WEBSERVER_FOLDER, HTMLPath), os.path.join(Config.WEBSERVER_FOLDER, "sitemap.xml")])
+        Config.GIT_REPO.index.commit(workflow_comment, author=Actor(editorInfo["username"], editorInfo["email"]))
 
-    # Update DB Status
-    mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", ("Approved", workflow_id))
-    mydb.commit()
+        # Update DB Status
+        mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", ("Approved", workflow_id))
+        mydb.commit()
+
+    else:
+        mycursor.execute("UPDATE workflow SET status = %s WHERE id = %s", ("Reject", workflow_id))
+        mydb.commit()
 
 
 def check_if_should_publish_list(workflow):
