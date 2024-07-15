@@ -572,6 +572,8 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                         var base_url_to_add = '<base href="' + preview_server + '" />';
                                         document.getElementById('e-' + spanId).innerHTML = base_url_to_add + site_dynamic_list;
 
+                                        CKEDITOR.plugins.addExternal('codemirror', '/static/ck4-addons/plugins/codemirror/', 'plugin.js');
+
                                         CKEDITOR.replace(document.querySelector('#e-' + spanId), {
                                             fullPage: false,
                                             allowedContent: true,
@@ -585,7 +587,16 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                                 {name: "styles", items: ["Styles", "Format"]},
                                                 {name: "document", items: ["Source"]}//, "-", "Preview"
                                             ],
-                                            extraPlugins: "anchor, inserthtml4x, embed",
+                                            extraPlugins: "anchor, inserthtml4x, embed, codemirror",
+                                            codemirror: {
+                                                mode: 'htmlmixed',
+                                                theme: 'default',
+                                                // theme: 'darcula',
+                                                lineNumbers: true,
+                                                lineWrapping: true,
+                                                styleActiveLine: true,
+                                                keyMap: 'sublime'
+                                            },
                                             filebrowserUploadUrl: "/api/upload?name=fileupload",
                                             embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}'
                                         });
@@ -593,6 +604,8 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
 
                                         $('#a-' + spanId).parent().find("div.ck-editor").remove();
                                         $('#a-' + spanId).replaceWith($('<textarea name="a-' + spanId + '" class="form-control text-editor ' + mandatoryClass + '" id="a-' + spanId + '"></textarea>'));
+
+                                        CKEDITOR.plugins.addExternal('codemirror', '/static/ck4-addons/plugins/codemirror/', 'plugin.js');
 
                                         CKEDITOR.replace(document.querySelector('#a-' + spanId), {
                                             fullPage: false,
@@ -607,7 +620,16 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                                 {name: "styles", items: ["Styles", "Format"]},
                                                 {name: "document", items: ["Source"]}
                                             ],
-                                            extraPlugins: "anchor, inserthtml4x, embed",
+                                            extraPlugins: "anchor, inserthtml4x, embed, codemirror",
+                                            codemirror: {
+                                                mode: 'htmlmixed',
+                                                theme: 'default',
+                                                // theme: 'darcula',
+                                                lineNumbers: true,
+                                                lineWrapping: true,
+                                                styleActiveLine: true,
+                                                keyMap: 'sublime'
+                                            },
                                             filebrowserUploadUrl: "/api/upload?name=fileupload",
                                             embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}'
                                         });
