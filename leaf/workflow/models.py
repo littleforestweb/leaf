@@ -999,21 +999,25 @@ def gen_sitemap(mycursor, site_id, thisType):
         remote_path = os.path.join(srv["remote_path"], "sitemap.xml")
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        if srv["pkey"] != "":
-            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-            if srv["pw"] == "":
-                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+        try:
+            if srv["pkey"] != "":
+                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                if srv["pw"] == "":
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                else:
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
             else:
-                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-        else:
-            ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-        with ssh.open_sftp() as scp:
-            actionResult, lp, rp = upload_file_with_retry(sitemap_path, remote_path, scp)
-            if not actionResult:
-                try:
-                    raise Exception("Failed to SCP - " + lp + " - " + rp)
-                except Exception as e:
-                    pass
+                ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+            with ssh.open_sftp() as scp:
+                actionResult, lp, rp = upload_file_with_retry(sitemap_path, remote_path, scp)
+                if not actionResult:
+                    try:
+                        raise Exception("Failed to SCP - " + lp + " - " + rp)
+                    except Exception as e:
+                        pass
+        finally:
+            # Ensure SSH connection is closed
+            ssh.close()
 
     # Gen Local Sitemap File
     urlset = ET.Element("urlset")
@@ -1130,31 +1134,35 @@ def proceed_action_workflow(request, not_real_request=None):
                 remote_path = os.path.join(srv["remote_path"], HTMLPath)
                 ssh = paramiko.SSHClient()
                 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                if srv["pkey"] != "":
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                    if srv["pw"] == "":
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                try:
+                    if srv["pkey"] != "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                        if srv["pw"] == "":
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                        else:
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
                     else:
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                else:
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-                with ssh.open_sftp() as scp:
-                    actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
-                    for asset in assets:
-                        assetFilename = asset.split("/")[-1].strip('/')
-                        assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
-                        assetRemotePath = os.path.join(srv["remote_path"], Config.REMOTE_UPLOADS_FOLDER, assetFilename)
-                        actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
-                        if not actionResultAsset:
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                    with ssh.open_sftp() as scp:
+                        actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                        for asset in assets:
+                            assetFilename = asset.split("/")[-1].strip('/')
+                            assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
+                            assetRemotePath = os.path.join(srv["remote_path"], Config.REMOTE_UPLOADS_FOLDER, assetFilename)
+                            actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
+                            if not actionResultAsset:
+                                try:
+                                    raise Exception("Failed to SCP - " + lp + " - " + rp)
+                                except Exception as e:
+                                    pass
+                        if not actionResult:
                             try:
                                 raise Exception("Failed to SCP - " + lp + " - " + rp)
                             except Exception as e:
                                 pass
-                    if not actionResult:
-                        try:
-                            raise Exception("Failed to SCP - " + lp + " - " + rp)
-                        except Exception as e:
-                            pass
+                finally:
+                    # Ensure SSH connection is closed
+                    ssh.close()
 
                 with open(local_path, "w") as outFile:
                     outFile.write(original_content)
@@ -1205,15 +1213,21 @@ def proceed_action_workflow(request, not_real_request=None):
             for srv in Config.DEPLOYMENTS_SERVERS:
                 ssh = paramiko.SSHClient()
                 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-                with ssh.open_sftp() as scp:
-                    remote_path = os.path.join(srv["remote_path"], file_path)
-                    remote_paths.append(remote_path)
-                    webserver_url = srv["webserver_url"] + "/" if not srv["webserver_url"].endswith("/") else srv["webserver_url"]
-                    live_urls.append(webserver_url + os.path.join(file_path))
-                    folder_path = os.path.dirname(remote_path)
-                    ssh.exec_command("if not exist \"" + folder_path + "\" mkdir \"" + folder_path + "\" else mkdir -p " + folder_path)
-                    scp.put(local_path, remote_path)
+                
+                try:
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                    with ssh.open_sftp() as scp:
+                        remote_path = os.path.join(srv["remote_path"], file_path)
+                        remote_paths.append(remote_path)
+                        webserver_url = srv["webserver_url"] + "/" if not srv["webserver_url"].endswith("/") else srv["webserver_url"]
+                        live_urls.append(webserver_url + os.path.join(file_path))
+                        folder_path = os.path.dirname(remote_path)
+                        ssh.exec_command("if not exist \"" + folder_path + "\" mkdir \"" + folder_path + "\" else mkdir -p " + folder_path)
+                        scp.put(local_path, remote_path)
+
+                finally:
+                    # Ensure SSH connection is closed
+                    ssh.close()
 
     elif listName:
         if target_date and target_date <= current_date or thisType == 8:
@@ -1322,21 +1336,25 @@ def proceed_action_workflow(request, not_real_request=None):
                                 remote_path = os.path.join(srv["remote_path"], DYNAMIC_PATH, "json_by_field", completeListNameByField)
                                 ssh = paramiko.SSHClient()
                                 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                                if srv["pkey"] != "":
-                                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                                    if srv["pw"] == "":
-                                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                                try:
+                                    if srv["pkey"] != "":
+                                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                                        if srv["pw"] == "":
+                                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                                        else:
+                                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
                                     else:
-                                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                                else:
-                                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-                                with ssh.open_sftp() as scp:
-                                    actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
-                                if not actionResult:
-                                    try:
-                                        raise Exception("Failed to SCP - " + lp + " - " + rp)
-                                    except Exception as e:
-                                        pass
+                                        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                                    with ssh.open_sftp() as scp:
+                                        actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                                    if not actionResult:
+                                        try:
+                                            raise Exception("Failed to SCP - " + lp + " - " + rp)
+                                        except Exception as e:
+                                            pass
+                                finally:
+                                    # Ensure SSH connection is closed
+                                    ssh.close()
 
                 if isMenu:
                     if date_conditions == "":
@@ -1364,21 +1382,26 @@ def proceed_action_workflow(request, not_real_request=None):
                     remote_path = os.path.join(srv["remote_path"], DYNAMIC_PATH, completeListName)
                     ssh = paramiko.SSHClient()
                     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                    if srv["pkey"] != "":
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                        if srv["pw"] == "":
-                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                    try:
+                        if srv["pkey"] != "":
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                            if srv["pw"] == "":
+                                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                            else:
+                                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
                         else:
-                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                    else:
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-                    with ssh.open_sftp() as scp:
-                        actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
-                        if not actionResult:
-                            try:
-                                raise Exception("Failed to SCP - " + lp + " - " + rp)
-                            except Exception as e:
-                                pass
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                        with ssh.open_sftp() as scp:
+                            actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                            if not actionResult:
+                                try:
+                                    raise Exception("Failed to SCP - " + lp + " - " + rp)
+                                except Exception as e:
+                                    pass
+
+                    finally:
+                        # Ensure SSH connection is closed
+                        ssh.close()
 
             # LOOP THROUGH list_item_url_path TO PUBLISH FILE IN MULTIPLE LOCATIONS
             if int(thisType) != 4:
@@ -1410,41 +1433,46 @@ def proceed_action_workflow(request, not_real_request=None):
                                 remote_path = os.path.join(srv["remote_path"], HTMLPath)
                                 ssh = paramiko.SSHClient()
                                 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                                if srv["pkey"] != "":
-                                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                                    if srv["pw"] == "":
-                                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                                try:
+                                    if srv["pkey"] != "":
+                                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                                        if srv["pw"] == "":
+                                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                                        else:
+                                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
                                     else:
-                                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                                else:
-                                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-                                with ssh.open_sftp() as scp:
+                                        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                                    with ssh.open_sftp() as scp:
 
-                                    # Ensure we save with the correct canonical link
-                                    canonical_url = os.path.join(srv["webserver_url"], list_item_url_path.strip("/"))
-                                    list_html_updated = ensure_canonical_link(data, canonical_url)
+                                        # Ensure we save with the correct canonical link
+                                        canonical_url = os.path.join(srv["webserver_url"], list_item_url_path.strip("/"))
+                                        list_html_updated = ensure_canonical_link(data, canonical_url)
 
-                                    with open(local_path, "w") as outFile:
-                                        outFile.write(list_html_updated)
+                                        with open(local_path, "w") as outFile:
+                                            outFile.write(list_html_updated)
 
-                                    actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                                        actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
 
-                                    for asset in assets:
-                                        assetFilename = asset.split("/")[-1].strip('/')
-                                        assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
-                                        # assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
-                                        assetRemotePath = os.path.join(srv["remote_path"], Config.REMOTE_UPLOADS_FOLDER, assetFilename)
-                                        actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
-                                        if not actionResultAsset:
+                                        for asset in assets:
+                                            assetFilename = asset.split("/")[-1].strip('/')
+                                            assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
+                                            # assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                                            assetRemotePath = os.path.join(srv["remote_path"], Config.REMOTE_UPLOADS_FOLDER, assetFilename)
+                                            actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
+                                            if not actionResultAsset:
+                                                try:
+                                                    raise Exception("Failed to SCP - " + lp + " - " + rp)
+                                                except Exception as e:
+                                                    pass
+                                        if not actionResult:
                                             try:
                                                 raise Exception("Failed to SCP - " + lp + " - " + rp)
                                             except Exception as e:
                                                 pass
-                                    if not actionResult:
-                                        try:
-                                            raise Exception("Failed to SCP - " + lp + " - " + rp)
-                                        except Exception as e:
-                                            pass
+
+                                finally:
+                                    # Ensure SSH connection is closed
+                                    ssh.close()
 
                                 with open(local_path, "w") as outFile:
                                     outFile.write(original_content)
@@ -1493,9 +1521,9 @@ def proceed_action_workflow(request, not_real_request=None):
 
         # Remove from Deployment servers
         for srv in Config.DEPLOYMENTS_SERVERS:
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             try:
-                ssh = paramiko.SSHClient()
-                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                 if srv["pkey"] != "":
                     ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
                     if srv["pw"] == "":
@@ -1507,8 +1535,10 @@ def proceed_action_workflow(request, not_real_request=None):
                 with ssh.open_sftp() as scp:
                     remote_path = os.path.join(srv["remote_path"], HTMLPath)
                     scp.remove(remote_path)
-            except Exception as e:
-                pass
+            
+            finally:
+                # Ensure SSH connection is closed
+                ssh.close()
 
         # Regenerate Sitemap
         query = "SELECT site_id FROM site_meta WHERE HTMLPath = %s"
@@ -1532,9 +1562,9 @@ def proceed_action_workflow(request, not_real_request=None):
 
         # Remove from Deployment servers
         for srv in Config.DEPLOYMENTS_SERVERS:
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             try:
-                ssh = paramiko.SSHClient()
-                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                 if srv["pkey"] != "":
                     ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
                     if srv["pw"] == "":
@@ -1546,8 +1576,10 @@ def proceed_action_workflow(request, not_real_request=None):
                 with ssh.open_sftp() as scp:
                     remote_path = os.path.join(srv["remote_path"], path)
                     scp.remove(remote_path)
-            except Exception as e:
-                pass
+            
+            finally:
+                # Ensure SSH connection is closed
+                ssh.close()
 
     else:
         pass
@@ -1574,19 +1606,24 @@ def proceed_action_workflow(request, not_real_request=None):
 def delete_file_from_server(local_path, remote_path, srv):
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    if srv["pkey"] != "":
-        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-        if srv["pw"] == "":
-            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+    try:
+        if srv["pkey"] != "":
+            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+            if srv["pw"] == "":
+                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+            else:
+                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
         else:
-            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-    else:
-        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-    with ssh.open_sftp() as scp:
-        try:
-            scp.remove(remote_path)
-        except Exception as e:
-            raise Exception(f"Failed to delete remote file: {remote_path} - {e}")
+            ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+        with ssh.open_sftp() as scp:
+            try:
+                scp.remove(remote_path)
+            except Exception as e:
+                raise Exception(f"Failed to delete remote file: {remote_path} - {e}")
+
+    finally:
+        # Ensure SSH connection is closed
+        ssh.close()
 
 
 # Function to check if a column exists in the table
@@ -1755,21 +1792,25 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
             remote_path = os.path.join(srv["remote_path"], list_feed_path)
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            if srv["pkey"] != "":
-                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                if srv["pw"] == "":
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+            try:
+                if srv["pkey"] != "":
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                    if srv["pw"] == "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                    else:
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
                 else:
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-            else:
-                ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-            with ssh.open_sftp() as scp:
-                actionResult, lp, rp = upload_file_with_retry(sitemap_path, remote_path, scp)
-                if not actionResult:
-                    try:
-                        raise Exception("Failed to SCP - " + lp + " - " + rp)
-                    except Exception as e:
-                        pass
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                with ssh.open_sftp() as scp:
+                    actionResult, lp, rp = upload_file_with_retry(sitemap_path, remote_path, scp)
+                    if not actionResult:
+                        try:
+                            raise Exception("Failed to SCP - " + lp + " - " + rp)
+                        except Exception as e:
+                            pass
+            finally:
+                # Ensure SSH connection is closed
+                ssh.close()
 
         # Gen Local RSS Feed File
         rss = ET.Element("rss", version="2.0")
@@ -2027,17 +2068,22 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
                     # Write the RSS Feed in Remote Server
                     ssh = paramiko.SSHClient()
                     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                    if srv["pkey"] != "":
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                        if srv["pw"] == "":
-                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                    try:
+                        if srv["pkey"] != "":
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                            if srv["pw"] == "":
+                                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                            else:
+                                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
                         else:
-                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                    else:
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-                    with ssh.open_sftp() as scp:
-                        create_remote_folder(scp, os.path.dirname(os.path.join(srv["remote_path"], file_path)))
-                        scp.put(os.path.join(Config.WEBSERVER_FOLDER, file_path), os.path.join(srv["remote_path"], file_path))
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                        with ssh.open_sftp() as scp:
+                            create_remote_folder(scp, os.path.dirname(os.path.join(srv["remote_path"], file_path)))
+                            scp.put(os.path.join(Config.WEBSERVER_FOLDER, file_path), os.path.join(srv["remote_path"], file_path))
+
+                    finally:
+                        # Ensure SSH connection is closed
+                        ssh.close()
 
                     if thisType == 8:
                         print("Existing item deleted in RSS feed.")
@@ -2062,17 +2108,22 @@ def add_item_to_channel(tree, root, new_item, file_path, account_id, list_name, 
 
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    if srv["pkey"] != "":
-        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-        if srv["pw"] == "":
-            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+    try:
+        if srv["pkey"] != "":
+            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+            if srv["pw"] == "":
+                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+            else:
+                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
         else:
-            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-    else:
-        ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-    with ssh.open_sftp() as scp:
-        create_remote_folder(scp, os.path.dirname(os.path.join(srv["remote_path"], file_path)))
-        scp.put(os.path.join(Config.WEBSERVER_FOLDER, file_path), os.path.join(srv["remote_path"], file_path))
+            ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+        with ssh.open_sftp() as scp:
+            create_remote_folder(scp, os.path.dirname(os.path.join(srv["remote_path"], file_path)))
+            scp.put(os.path.join(Config.WEBSERVER_FOLDER, file_path), os.path.join(srv["remote_path"], file_path))
+
+    finally:
+        # Ensure SSH connection is closed
+        ssh.close()
 
 
 def delete_item_from_disk(item_path):
@@ -2226,31 +2277,35 @@ def check_if_should_publish_pages(workflow):
             remote_path = os.path.join(srv["remote_path"], HTMLPath)
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            if srv["pkey"] != "":
-                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                if srv["pw"] == "":
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+            try:
+                if srv["pkey"] != "":
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
+                    if srv["pw"] == "":
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                    else:
+                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
                 else:
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-            else:
-                ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-            with ssh.open_sftp() as scp:
-                actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
-                for asset in assets:
-                    assetFilename = asset.split("/")[-1].strip('/')
-                    assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
-                    assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
-                    actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
-                    if not actionResultAsset:
+                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
+                with ssh.open_sftp() as scp:
+                    actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
+                    for asset in assets:
+                        assetFilename = asset.split("/")[-1].strip('/')
+                        assetLocalPath = os.path.join(Config.FILES_UPLOAD_FOLDER, assetFilename)
+                        assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
+                        actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
+                        if not actionResultAsset:
+                            try:
+                                raise Exception("Failed to SCP - " + lp + " - " + rp)
+                            except Exception as e:
+                                pass
+                    if not actionResult:
                         try:
                             raise Exception("Failed to SCP - " + lp + " - " + rp)
                         except Exception as e:
                             pass
-                if not actionResult:
-                    try:
-                        raise Exception("Failed to SCP - " + lp + " - " + rp)
-                    except Exception as e:
-                        pass
+            finally:
+                # Ensure SSH connection is closed
+                ssh.close()
 
             with open(local_path, "w") as outFile:
                 outFile.write(original_content)
