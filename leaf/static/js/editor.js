@@ -243,6 +243,188 @@ window.addEventListener('DOMContentLoaded', async function main() {
         }
     });
 
+    CKEDITOR.plugins.add('extendedImage2', {
+        requires: 'image2',
+        init: function(editor) {
+            // Get predefined classes from the configuration
+            const captionedClass = editor.config.image2_captionedClass;
+            const predefinedClasses = [captionedClass, 'cke_widget_element'];
+            const alignmentClasses = editor.config.image2_alignClasses;
+
+            // Helper function to get custom classes
+            function getCustomClasses(classList) {
+                return classList.filter(cls => !predefinedClasses.includes(cls) && !alignmentClasses.includes(cls)).join(' ');
+            }
+
+            // Helper function to get alignment class
+            function getAlignmentClass(classList) {
+                return classList.find(cls => alignmentClasses.includes(cls)) || '';
+            }
+
+            // Helper function to get all classes
+            function getAllClasses(customClasses, alignmentClass) {
+                return [captionedClass, alignmentClass, ...customClasses.split(' ')].filter(Boolean).join(' ');
+            }
+
+            // Capture and Commit Custom Data on Dialog Hide
+            editor.on('dialogHide', function(evt) {
+                var dialog = evt.data;
+                if (dialog._.name === 'image2') {
+                    var image2Widget = editor.widgets.selected[0];
+                    if (image2Widget) {
+                        var dialogData = image2Widget.data;
+
+                        // Get values from the dialog
+                        dialogData.advId = dialog.getValueOf('advanced', 'advId');
+                        dialogData.advClasses = dialog.getValueOf('advanced', 'advClasses');
+                        dialogData.advLongDesc = dialog.getValueOf('advanced', 'advLongDesc');
+                        dialogData.advStyles = dialog.getValueOf('advanced', 'advStyles');
+
+                        // Commit the custom data to the widget
+                        image2Widget.setData('advId', dialogData.advId);
+                        image2Widget.setData('advClasses', dialogData.advClasses);
+                        image2Widget.setData('advLongDesc', dialogData.advLongDesc);
+                        image2Widget.setData('advStyles', dialogData.advStyles);
+
+                        // Update widget element attributes
+                        var element = image2Widget.element;
+                        var currentClasses = element.getAttribute('class').split(' ');
+                        var alignmentClass = getAlignmentClass(currentClasses);
+
+                        if (dialogData.advId) {
+                            element.setAttribute('id', dialogData.advId);
+                        } else {
+                            element.removeAttribute('id');
+                        }
+
+                        if (dialogData.advClasses || alignmentClass) {
+                            element.setAttribute('class', getAllClasses(dialogData.advClasses, alignmentClass));
+                        } else {
+                            element.setAttribute('class', getAllClasses('', alignmentClass));
+                        }
+
+                        if (dialogData.advLongDesc) {
+                            element.setAttribute('longdesc', dialogData.advLongDesc);
+                        } else {
+                            element.removeAttribute('longdesc');
+                        }
+
+                        if (dialogData.advStyles) {
+                            element.setAttribute('style', dialogData.advStyles);
+                        } else {
+                            element.removeAttribute('style');
+                        }
+                    }
+                }
+            });
+
+            // Modify the dialog definition to include custom fields
+            CKEDITOR.on('dialogDefinition', function(ev) {
+                var dialogName = ev.data.name;
+                var dialogDefinition = ev.data.definition;
+
+                if (dialogName === 'image2') {
+                    dialogDefinition.width = 600;
+
+                    // Check if the "Advanced" tab has already been added
+                    var alreadyExists = dialogDefinition.contents.some(content => content.id === 'advanced');
+                    if (!alreadyExists) {
+                        dialogDefinition.addContents({
+                            id: 'advanced',
+                            label: 'Advanced',
+                            elements: [
+                                {
+                                    type: 'text',
+                                    id: 'advId',
+                                    label: 'Id',
+                                    setup: function(widget) {
+                                        this.setValue(widget.element.getAttribute('id') || '');
+                                    },
+                                    commit: function(widget) {
+                                        widget.setData('advId', this.getValue());
+                                    }
+                                },
+                                {
+                                    type: 'text',
+                                    id: 'advClasses',
+                                    label: 'Classes',
+                                    setup: function(widget) {
+                                        var classList = widget.element.getAttribute('class').split(' ');
+                                        this.setValue(getCustomClasses(classList));
+                                    },
+                                    commit: function(widget) {
+                                        widget.setData('advClasses', this.getValue());
+                                    }
+                                },
+                                {
+                                    type: 'text',
+                                    id: 'advLongDesc',
+                                    label: 'Long Description',
+                                    setup: function(widget) {
+                                        this.setValue(widget.element.getAttribute('longdesc') || '');
+                                    },
+                                    commit: function(widget) {
+                                        widget.setData('advLongDesc', this.getValue());
+                                    }
+                                },
+                                {
+                                    type: 'text',
+                                    id: 'advStyles',
+                                    label: 'Styles',
+                                    setup: function(widget) {
+                                        this.setValue(widget.element.getAttribute('style') || '');
+                                    },
+                                    commit: function(widget) {
+                                        widget.setData('advStyles', this.getValue());
+                                    }
+                                }
+                            ]
+                        });
+                    }
+                }
+            });
+
+            // Handle data synchronization when switching modes
+            editor.on('beforeCommandExec', function(event) {
+                if (event.data.name === 'source') {
+                    for (var widgetId in editor.widgets.instances) {
+                        if (editor.widgets.instances.hasOwnProperty(widgetId)) {
+                            var widget = editor.widgets.instances[widgetId];
+                            var currentClasses = widget.element.getAttribute('class').split(' ');
+                            widget.setData('advId', widget.element.getAttribute('id') || '');
+                            widget.setData('advClasses', getCustomClasses(currentClasses));
+                            widget.setData('advLongDesc', widget.element.getAttribute('longdesc') || '');
+                            widget.setData('advStyles', widget.element.getAttribute('style') || '');
+                        }
+                    }
+                }
+            });
+
+            editor.on('afterCommandExec', function(event) {
+                if (event.data.name === 'source') {
+                    for (var widgetId in editor.widgets.instances) {
+                        if (editor.widgets.instances.hasOwnProperty(widgetId)) {
+                            var widget = editor.widgets.instances[widgetId];
+                            if (widget.element.getAttribute('id')) {
+                                widget.setData('advId', widget.element.getAttribute('id'));
+                            }
+                            if (widget.element.getAttribute('class')) {
+                                var currentClasses = widget.element.getAttribute('class').split(' ');
+                                widget.setData('advClasses', getCustomClasses(currentClasses));
+                            }
+                            if (widget.element.getAttribute('longdesc')) {
+                                widget.setData('advLongDesc', widget.element.getAttribute('longdesc'));
+                            }
+                            if (widget.element.getAttribute('style')) {
+                                widget.setData('advStyles', widget.element.getAttribute('style'));
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+
     // Add Save Btn
     CKEDITOR.plugins.add("saveBtn", {
         init: function (editor) {
@@ -263,7 +445,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
     let ckeditorConfig = {
         toolbar: [
             {name: "clipboard", items: ["Cut", "Copy", "Paste", "PasteText", "PasteFromWord", "-", "Undo", "Redo"]},
-            {name: "basicstyles", items: ["Bold", "Italic", "Underline", "Strike"]},
+            {name: "basicstyles", items: ["Bold", "Italic", "Underline", "Strike", 'Subscript', 'Superscript', "-", "RemoveFormat"]},
             {name: "paragraph", items: ["NumberedList", "BulletedList", "-", "Outdent", "Indent", "-", "Blockquote", "CreateDiv", "-", "JustifyLeft", "JustifyCenter", "JustifyRight", "JustifyBlock"]},
             {name: "links", items: ["Link", "Unlink", "anchorPluginButton"]},
             {name: "insert", items: ["Image", "Embed", "Table", "HorizontalRule", "SpecialChar", "inserthtml4x"]},
@@ -271,7 +453,11 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {name: "colors", items: ["TextColor", "BGColor"]},
             {name: "actions", items: ["Preview", "SaveBtn", "PublishBtn"]}
         ],
-        extraPlugins: "anchor, inserthtml4x, embed, saveBtn, pastefromword, codemirror",
+        extraPlugins: "anchor,inserthtml4x,embed,saveBtn,pastefromword,codemirror,image2,extendedImage2",
+        removePlugins: 'image',
+        image2_captionedClass: 'uos-component-image',
+        image2_alignClasses: ['uos-component-image-left', 'uos-component-image-center', 'uos-component-image-right'],
+        image2_disableResizer: true,
         codemirror: {
             mode: 'htmlmixed',
             theme: 'default',
