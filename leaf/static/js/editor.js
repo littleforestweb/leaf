@@ -279,12 +279,16 @@ window.addEventListener('DOMContentLoaded', async function main() {
                         dialogData.advClasses = dialog.getValueOf('advanced', 'advClasses');
                         dialogData.advLongDesc = dialog.getValueOf('advanced', 'advLongDesc');
                         dialogData.advStyles = dialog.getValueOf('advanced', 'advStyles');
+                        dialogData.linkUrl = dialog.getValueOf('link', 'linkUrl');
+                        dialogData.linkTarget = dialog.getValueOf('link', 'linkTarget');
 
                         // Commit the custom data to the widget
                         image2Widget.setData('advId', dialogData.advId);
                         image2Widget.setData('advClasses', dialogData.advClasses);
                         image2Widget.setData('advLongDesc', dialogData.advLongDesc);
                         image2Widget.setData('advStyles', dialogData.advStyles);
+                        image2Widget.setData('linkUrl', dialogData.linkUrl);
+                        image2Widget.setData('linkTarget', dialogData.linkTarget);
 
                         // Update widget element attributes
                         var element = image2Widget.element;
@@ -313,6 +317,51 @@ window.addEventListener('DOMContentLoaded', async function main() {
                             element.setAttribute('style', dialogData.advStyles);
                         } else {
                             element.removeAttribute('style');
+                        }
+
+                        if (dialogData.linkUrl) {
+                            let imgElement = element.findOne('img');
+                            if (imgElement) {
+                                let parentElement = imgElement.getParent();
+                                if (parentElement && parentElement.is('a')) {
+                                    // Update the existing link
+                                    parentElement.setAttribute('href', dialogData.linkUrl);
+                                    if (dialogData.linkTarget) {
+                                        parentElement.setAttribute('target', dialogData.linkTarget);
+                                    } else {
+                                        parentElement.removeAttribute('target');
+                                    }
+                                } else {
+                                    // Create a new link and wrap the image
+                                    let link = new CKEDITOR.dom.element('a');
+                                    link.setAttribute('href', dialogData.linkUrl);
+                                    if (dialogData.linkTarget) {
+                                        link.setAttribute('target', dialogData.linkTarget);
+                                    }
+
+                                    // Clone the img element to preserve its attributes
+                                    let newImgElement = imgElement.clone(true);
+
+                                    // Append the new img to the link
+                                    link.append(newImgElement);
+
+                                    // Insert the new link before the original img and remove the original img
+                                    imgElement.insertBeforeMe(link);
+                                    imgElement.remove();
+                                }
+                            }
+                        } else {
+                            let imgElement = element.findOne('img');
+                            if (imgElement) {
+                                let anchorElement = imgElement.getParent();
+                                if (anchorElement && anchorElement.is('a')) {
+                                    let grandParent = anchorElement.getParent();
+                                    // Insert the img before the parent link and then remove the link
+                                    anchorElement.remove();
+                                    captionElement = grandParent.findOne('figcaption');
+                                    imgElement.insertBefore(captionElement);
+                                }
+                            }
                         }
                     }
                 }
@@ -380,6 +429,44 @@ window.addEventListener('DOMContentLoaded', async function main() {
                                 }
                             ]
                         });
+
+                        dialogDefinition.addContents({
+                            id: 'link',
+                            label: 'Link',
+                            elements: [
+                                {
+                                    type: 'text',
+                                    id: 'linkUrl',
+                                    label: 'URL',
+                                    setup: function(widget) {
+                                        let link = widget.element.findOne('a');
+                                        this.setValue(link ? link.getAttribute('href') : '');
+                                    },
+                                    commit: function(widget) {
+                                        widget.setData('linkUrl', this.getValue());
+                                    }
+                                },
+                                {
+                                    type: 'select',
+                                    id: 'linkTarget',
+                                    label: 'Target',
+                                    items: [
+                                        ['None', ''],
+                                        ['New Window (_blank)', '_blank'],
+                                        ['Same Window (_self)', '_self'],
+                                        ['Parent Window (_parent)', '_parent'],
+                                        ['Topmost Window (_top)', '_top']
+                                    ],
+                                    setup: function(widget) {
+                                        let link = widget.element.findOne('a');
+                                        this.setValue(link ? link.getAttribute('target') : '');
+                                    },
+                                    commit: function(widget) {
+                                        widget.setData('linkTarget', this.getValue());
+                                    }
+                                }
+                            ]
+                        });
                     }
                 }
             });
@@ -395,6 +482,9 @@ window.addEventListener('DOMContentLoaded', async function main() {
                             widget.setData('advClasses', getCustomClasses(currentClasses));
                             widget.setData('advLongDesc', widget.element.getAttribute('longdesc') || '');
                             widget.setData('advStyles', widget.element.getAttribute('style') || '');
+                            let link = widget.element.findOne('a');
+                            widget.setData('linkUrl', link ? link.getAttribute('href') : '');
+                            widget.setData('linkTarget', link ? link.getAttribute('target') : '');
                         }
                     }
                 }
@@ -417,6 +507,11 @@ window.addEventListener('DOMContentLoaded', async function main() {
                             }
                             if (widget.element.getAttribute('style')) {
                                 widget.setData('advStyles', widget.element.getAttribute('style'));
+                            }
+                            let link = element.findOne('a');
+                            if (link) {
+                                widget.setData('linkUrl', link.getAttribute('href'));
+                                widget.setData('linkTarget', link.getAttribute('target'));
                             }
                         }
                     }
@@ -443,6 +538,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
     // Init CKEditor
     let ckeditorConfig = {
+        allowedContent: true,
         toolbar: [
             {name: "clipboard", items: ["Cut", "Copy", "Paste", "PasteText", "PasteFromWord", "-", "Undo", "Redo"]},
             {name: "basicstyles", items: ["Bold", "Italic", "Underline", "Strike", 'Subscript', 'Superscript', "-", "RemoveFormat"]},
