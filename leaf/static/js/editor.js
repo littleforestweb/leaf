@@ -774,6 +774,14 @@ window.addEventListener('DOMContentLoaded', async function main() {
             '}' +
             'div.uos-component-image-right {' +
             '    float: none;' +
+            '}' +
+            '.uos-component-image-center {' +
+            '    width: 100%;' +
+            '    float: left;' +
+            '    text-align: center;' +
+            '}' +
+            '.uos-component-image-center figure {' +
+            '    float: none' +
             '}'
         );
     });
