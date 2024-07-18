@@ -34,28 +34,15 @@
       }
 
       var CKEditorFuncNum = getUrlParameter('CKEditorFuncNum');
+      var allFiles = []; // Variable to store all files
 
       $(document).ready(function() {
         $.ajax({
           url: '/files/list_img_files',
           method: 'GET',
           success: function(data) {
-            var files = data.slice(0, 1000);
-            var fileBrowser = $('#file-browser');
-            files.forEach(function(file) {
-              var fileElement = `
-                <div class="single-image-container" data-filename="${file.Filename}">
-                  <a href="{{preview_webserver}}${file.Path}" data-fancybox="gallery" data-caption="${file.Filename}">
-                    <div class="single-image-img-container"><img src="{{preview_webserver}}${file.Path}" alt="${file.Filename}"></div>
-                  </a>
-                  <span class="single-image-name">${file.Filename}</span>
-                  <button type="button" style="width:100%" class="btn btn-sm" onclick="selectImage('{{preview_webserver}}${file.Path}')">Select</button>
-                </div>`;
-              fileBrowser.append(fileElement);
-            });
-            $('[data-fancybox]').fancybox();
-
-            $(".loadingBgImages").removeClass("show");
+            allFiles = data;
+            renderFiles(allFiles); // Render initial set of files
           },
           error: function() {
             alert('Error loading files');
@@ -65,16 +52,30 @@
         // Search functionality for images
         $('#imageSearchBox').on('keyup', function() {
           var searchText = $(this).val().toLowerCase();
-          $('#file-browser .single-image-container').each(function() {
-            var filename = $(this).data('filename').toLowerCase();
-            if (filename.includes(searchText)) {
-              $(this).show();
-            } else {
-              $(this).hide();
-            }
+          var filteredFiles = allFiles.filter(function(file) {
+            return file.Filename.toLowerCase().includes(searchText);
           });
+          renderFiles(filteredFiles);
         });
       });
+
+      function renderFiles(files) {
+        var fileBrowser = $('#file-browser');
+        fileBrowser.empty(); // Clear existing images
+        files.slice(0, 1000).forEach(function(file) { // Slice to handle client-side rendering issues
+          var fileElement = `
+            <div class="single-image-container" data-filename="${file.Filename}">
+              <a href="{{preview_webserver}}${file.Path}" data-fancybox="gallery" data-caption="${file.Filename}">
+                <div class="single-image-img-container"><img src="{{preview_webserver}}${file.Path}" alt="${file.Filename}"></div>
+              </a>
+              <span class="single-image-name">${file.Filename}</span>
+              <button type="button" style="width:100%" class="btn btn-sm" onclick="selectImage('{{preview_webserver}}${file.Path}')">Select</button>
+            </div>`;
+          fileBrowser.append(fileElement);
+        });
+        $('[data-fancybox]').fancybox();
+        $(".loadingBgImages").removeClass("show");
+      }
 
       function selectImage(url) {
         // Send the selected URL back to CKEditor
