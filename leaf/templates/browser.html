@@ -38,7 +38,7 @@
               url: '/files/list_img_files',
               method: 'GET',
               success: function(data) {
-                  var files = data.slice(0, 30);
+                  var files = data.slice(0, 500);
                   var fileBrowser = $('#file-browser');
                   files.forEach(function(file) {
                       var fileElement = `
@@ -47,7 +47,7 @@
                                   <img src="{{preview_webserver}}${file.Path}" alt="${file.Filename}" style="width:100px;">
                               </a>
                               <br>
-                              <button type="button" class="btn btn-secondary" onclick="selectImage('{{preview_webserver}}${file.Path}')">Select</button>
+                              <button type="button" style="width:100%" class="btn btn-sm" onclick="selectImage('{{preview_webserver}}${file.Path}')">Select</button>
                           </div>`;
                       fileBrowser.append(fileElement);
                   });
