@@ -948,7 +948,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                         editor.config.filebrowserLinkBrowseUrl = '/files/browser_all_files?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Files';
 
                                         editor.document.appendStyleText(
-                                            'div > .cke_widget_wrapper.cke_widget_image {' +
+                                            'div > span.cke_widget_wrapper.cke_widget_image {' +
                                             '    width: 100%;' +
                                             '}'
                                         );
