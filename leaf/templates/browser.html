@@ -1,58 +1,54 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>File Browser</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js"></script>
-</head>
-<body>
+{% extends 'base.html' %}
+
+{% block title %}Deployments{% endblock %}
+
+{% block content %}
     <div id="file-browser">
         <!-- File thumbnails will be inserted here -->
     </div>
+{% endblock %}
+{% block script %}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+  <script>
+      function getUrlParameter(name) {
+          name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+          var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+          var results = regex.exec(location.search);
+          return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+      }
 
-    <script>
-        function getUrlParameter(name) {
-            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
-            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-            var results = regex.exec(location.search);
-            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
-        }
+      var CKEditorFuncNum = getUrlParameter('CKEditorFuncNum');
 
-        var CKEditorFuncNum = getUrlParameter('CKEditorFuncNum');
+      $(document).ready(function() {
+          $.ajax({
+              url: '/files/list_img_files',
+              method: 'GET',
+              success: function(data) {
+                  var files = data.slice(0, 300);
+                  var fileBrowser = $('#file-browser');
+                  files.forEach(function(file) {
+                      var fileElement = `
+                          <div style="display:inline-block; margin:10px;">
+                              <a href="{{preview_webserver}}${file.Path}" data-fancybox="gallery" data-caption="${file.Filename}">
+                                  <img src="{{preview_webserver}}${file.Path}" alt="${file.Filename}" style="width:100px;">
+                              </a>
+                              <br>
+                              <button type="button" class="btn btn-secondary" onclick="selectImage('{{preview_webserver}}${file.Path}')">Select</button>
+                          </div>`;
+                      fileBrowser.append(fileElement);
+                  });
+                  $('[data-fancybox]').fancybox();
+              },
+              error: function() {
+                  alert('Error loading files');
+              }
+          });
+      });
 
-        $(document).ready(function() {
-            $.ajax({
-                url: '/files/list_img_files',
-                method: 'GET',
-                success: function(data) {
-                    var files = data;
-                    var fileBrowser = $('#file-browser');
-                    files.forEach(function(file) {
-                        var fileElement = `
-                            <div style="display:inline-block; margin:10px;">
-                                <a href="{{preview_webserver}}${file.Path}" data-fancybox="gallery" data-caption="${file.Filename}">
-                                    <img src="{{preview_webserver}}${file.Path}" alt="${file.Filename}" style="width:100px;">
-                                </a>
-                                <br>
-                                <button onclick="selectImage('{{preview_webserver}}${file.Path}')">Select</button>
-                            </div>`;
-                        fileBrowser.append(fileElement);
-                    });
-                    $('[data-fancybox]').fancybox();
-                },
-                error: function() {
-                    alert('Error loading files');
-                }
-            });
-        });
-
-        function selectImage(url) {
-            // Send the selected URL back to CKEditor
-            window.opener.CKEDITOR.tools.callFunction(CKEditorFuncNum, url);
-            window.close();
-        }
-    </script>
-</body>
-</html>
+      function selectImage(url) {
+          // Send the selected URL back to CKEditor
+          window.opener.CKEDITOR.tools.callFunction(CKEditorFuncNum, url);
+          window.close();
+      }
+  </script>
+{% endblock %}
