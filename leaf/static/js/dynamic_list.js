@@ -892,7 +892,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                                 styleActiveLine: true,
                                                 keyMap: 'sublime'
                                             },
-                                            contentsCss: '/static/css/custom_ckeditor.css'
+                                            contentsCss: '/static/css/custom_ckeditor.css',
                                             filebrowserUploadUrl: "/api/upload?name=fileupload",
                                             embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}'
                                         });
@@ -928,7 +928,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                                 styleActiveLine: true,
                                                 keyMap: 'sublime'
                                             },
-                                            contentsCss: '/static/css/custom_ckeditor.css'
+                                            contentsCss: '/static/css/custom_ckeditor.css',
                                             filebrowserUploadUrl: "/api/upload?name=fileupload",
                                             embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}'
                                         });
