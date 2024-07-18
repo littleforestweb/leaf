@@ -1234,6 +1234,16 @@ th.sorting_disabled:before {
     display: none!important;
 }
 
+.form-control {
+    border: var(--bs-border-width) solid #8b8b8b;
+}
+
+.form-control#imageSearchBox {
+    margin: 10px 10px 0;
+    width: calc(100% - 20px);
+    padding: 10px;
+}
+
 @media (min-width: 576px) {
     .modal-dialog {
         max-width: 1120px;
