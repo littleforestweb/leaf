@@ -44,7 +44,7 @@
                       var fileElement = `
                           <div style="display:inline-block; margin:10px;">
                               <a href="{{preview_webserver}}${file.Path}" data-fancybox="gallery" data-caption="${file.Filename}">
-                                  <div style="position:relative;width:100%;height:100px;overflow:hidden;"><img src="{{preview_webserver}}${file.Path}" alt="${file.Filename}" style="width:100px;"></div>
+                                  <div style="position:relative;width:100%;height:100px;overflow:hidden;"><img src="{{preview_webserver}}${file.Path}" alt="${file.Filename}" style="width:100%;height:100%;object-fit:cover;"></div>
                               </a>
                               <button type="button" style="width:100%" class="btn btn-sm" onclick="selectImage('{{preview_webserver}}${file.Path}')">Select</button>
                           </div>`;
