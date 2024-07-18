@@ -764,6 +764,16 @@ window.addEventListener('DOMContentLoaded', async function main() {
         editor.config.filebrowserBrowseUrl = '/files/browser_img?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Images&site_id=' + site_id;
         editor.config.filebrowserImageBrowseUrl = '/files/browser_img?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Images&site_id=' + site_id;
         editor.config.filebrowserLinkBrowseUrl = '/files/browser_all_files?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Files&site_id=' + site_id;
+    
+        editor.document.appendStyleText(
+            'div > span.cke_widget_wrapper.cke_widget_image {' +
+            '    width: 100%;' +
+            '}' +
+            '.uos-component-image-right figure,' +
+            '.uos-component-image-right {' +
+            '    float: right;' +
+            '}'
+        );
     });
 
     CKEDITOR.config.contentsCss = '/static/css/ckeditor_custom_styles.css';
