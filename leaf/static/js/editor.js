@@ -248,11 +248,15 @@ window.addEventListener('DOMContentLoaded', async function main() {
         init: function(editor) {
             // Get predefined classes from the configuration
             const captionedClass = editor.config.image2_captionedClass;
-            const predefinedClasses = [captionedClass, 'cke_widget_element'];
             const alignmentClasses = editor.config.image2_alignClasses;
 
             // Helper function to get custom classes
-            function getCustomClasses(classList) {
+            function getCustomClasses(classList, type) {
+                console.log(type);
+                let predefinedClasses = ['cke_widget_element'];
+                if (type === "figure") {
+                    predefinedClasses = [captionedClass, 'cke_widget_element'];
+                }
                 return classList.filter(cls => !predefinedClasses.includes(cls) && !alignmentClasses.includes(cls)).join(' ');
             }
 
@@ -262,8 +266,12 @@ window.addEventListener('DOMContentLoaded', async function main() {
             }
 
             // Helper function to get all classes
-            function getAllClasses(customClasses, alignmentClass) {
-                return [captionedClass, alignmentClass, ...customClasses.split(' ')].filter(Boolean).join(' ');
+            function getAllClasses(customClasses, alignmentClass, type) {
+                if (type === "figure") {
+                    return [captionedClass, alignmentClass, ...customClasses.split(' ')].filter(Boolean).join(' ');
+                } else {
+                    return [alignmentClass, ...customClasses.split(' ')].filter(Boolean).join(' ');
+                }
             }
 
             // Capture and Commit Custom Data on Dialog Hide
@@ -300,11 +308,11 @@ window.addEventListener('DOMContentLoaded', async function main() {
                         } else {
                             element.removeAttribute('id');
                         }
-
+                        var tagName = element.getName();
                         if (dialogData.advClasses || alignmentClass) {
-                            element.setAttribute('class', getAllClasses(dialogData.advClasses, alignmentClass));
+                            element.setAttribute('class', getAllClasses(dialogData.advClasses, alignmentClass, tagName));
                         } else {
-                            element.setAttribute('class', getAllClasses('', alignmentClass));
+                            element.setAttribute('class', getAllClasses('', alignmentClass, tagName));
                         }
 
                         if (dialogData.advLongDesc) {
@@ -399,7 +407,8 @@ window.addEventListener('DOMContentLoaded', async function main() {
                                     label: 'Classes',
                                     setup: function(widget) {
                                         var classList = widget.element.getAttribute('class').split(' ');
-                                        this.setValue(getCustomClasses(classList));
+                                        var tagName = widget.element.getName();
+                                        this.setValue(getCustomClasses(classList, tagName));
                                     },
                                     commit: function(widget) {
                                         widget.setData('advClasses', this.getValue());
@@ -478,8 +487,9 @@ window.addEventListener('DOMContentLoaded', async function main() {
                         if (editor.widgets.instances.hasOwnProperty(widgetId)) {
                             var widget = editor.widgets.instances[widgetId];
                             var currentClasses = widget.element.getAttribute('class').split(' ');
+                            var tagName = widget.element.getName();
                             widget.setData('advId', widget.element.getAttribute('id') || '');
-                            widget.setData('advClasses', getCustomClasses(currentClasses));
+                            widget.setData('advClasses', getCustomClasses(currentClasses, tagName));
                             widget.setData('advLongDesc', widget.element.getAttribute('longdesc') || '');
                             widget.setData('advStyles', widget.element.getAttribute('style') || '');
                             let link = widget.element.getParent();
@@ -499,8 +509,9 @@ window.addEventListener('DOMContentLoaded', async function main() {
                                 widget.setData('advId', widget.element.getAttribute('id'));
                             }
                             if (widget.element.getAttribute('class')) {
+                                var tagName = widget.element.getName();
                                 var currentClasses = widget.element.getAttribute('class').split(' ');
-                                widget.setData('advClasses', getCustomClasses(currentClasses));
+                                widget.setData('advClasses', getCustomClasses(currentClasses, tagName));
                             }
                             if (widget.element.getAttribute('longdesc')) {
                                 widget.setData('advLongDesc', widget.element.getAttribute('longdesc'));
@@ -667,4 +678,3 @@ window.addEventListener('DOMContentLoaded', async function main() {
     // Remove loadingBg
     $(".loadingBg").removeClass("show");
 });
-
