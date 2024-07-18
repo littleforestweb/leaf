@@ -576,7 +576,6 @@ window.addEventListener('DOMContentLoaded', async function main() {
             styleActiveLine: true,
             keyMap: 'sublime'
         },
-        contentsCss: '/static/css/custom_ckeditor.css',
         codeSnippet_theme: 'prism',
         filebrowserUploadUrl: "/api/upload?name=fileupload",
         embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}',
@@ -673,6 +672,9 @@ window.addEventListener('DOMContentLoaded', async function main() {
         editor.config.filebrowserBrowseUrl = '/files/browser_img?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Images&site_id=' + site_id;
         editor.config.filebrowserImageBrowseUrl = '/files/browser_img?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Images&site_id=' + site_id;
         editor.config.filebrowserLinkBrowseUrl = '/files/browser_all_files?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Files&site_id=' + site_id;
+
+        editor.config.contentsCss = '/static/css/custom_ckeditor.css';
+        // editor.addContentsCss('/static/css/custom_ckeditor.css');
     });
 
     // Remove loadingBg

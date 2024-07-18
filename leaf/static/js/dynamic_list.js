@@ -892,7 +892,6 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                                 styleActiveLine: true,
                                                 keyMap: 'sublime'
                                             },
-                                            contentsCss: '/static/css/custom_ckeditor.css',
                                             filebrowserUploadUrl: "/api/upload?name=fileupload",
                                             embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}'
                                         });
@@ -928,7 +927,6 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                                 styleActiveLine: true,
                                                 keyMap: 'sublime'
                                             },
-                                            contentsCss: '/static/css/custom_ckeditor.css',
                                             filebrowserUploadUrl: "/api/upload?name=fileupload",
                                             embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}'
                                         });
@@ -936,7 +934,12 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
 
                                     CKEDITOR.on('instanceReady', function (evt) {
                                         var editor = evt.editor;
-                                        editor.config.filebrowserBrowseUrl = '/files/browser?CKEditorFuncNum=' + editor._.filebrowserFn;
+                                        editor.config.filebrowserBrowseUrl = '/files/browser_img?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Images';
+                                        editor.config.filebrowserImageBrowseUrl = '/files/browser_img?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Images';
+                                        editor.config.filebrowserLinkBrowseUrl = '/files/browser_all_files?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Files';
+
+                                        editor.config.contentsCss = '/static/css/custom_ckeditor.css';
+                                        // editor.addContentsCss('/static/css/custom_ckeditor.css');
                                     });
                                     
                                 } else if (allAccountSettings[f][6] && allAccountSettings[f][6] === "date") {
