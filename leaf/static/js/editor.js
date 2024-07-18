@@ -244,14 +244,12 @@ window.addEventListener('DOMContentLoaded', async function main() {
     });
 
     CKEDITOR.plugins.add('extendedImage2', {
-        requires: 'image2',
+        requires: 'widget,dialog,image2',
         init: function(editor) {
-            // Get predefined classes from the configuration
-            const captionedImageClass = editor.config.image2_captionedImageClass;
-            const captionedClass = editor.config.image2_captionedClass;
-            const alignmentClasses = editor.config.image2_alignClasses;
+            const captionedImageClass = editor.config.image2_captionedImageClass || 'image-captioned';
+            const captionedClass = editor.config.image2_captionedClass || 'caption';
+            const alignmentClasses = editor.config.image2_alignClasses || ['align-left', 'align-right', 'align-center'];
 
-            // Helper function to get custom classes
             function getCustomClasses(classList, type) {
                 let predefinedClasses = ['cke_widget_element'];
                 if (type === "figure") {
@@ -260,29 +258,125 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 return classList.filter(cls => !predefinedClasses.includes(cls) && !alignmentClasses.includes(cls)).join(' ');
             }
 
-            // Helper function to get alignment class
             function getAlignmentClass(classList) {
                 return classList.find(cls => alignmentClasses.includes(cls)) || '';
             }
 
-            // Helper function to get all classes
             function getAllClasses(customClasses, alignmentClass, type) {
-                if (type === "figure") {
-                    return [captionedImageClass, alignmentClass, ...customClasses.split(' ')].filter(Boolean).join(' ');
+                if (customClasses) {
+                    if (type === "figure") {
+                        return [captionedImageClass, alignmentClass, ...customClasses.split(' ')].filter(Boolean).join(' ');
+                    } else {
+                        return [alignmentClass, ...customClasses.split(' ')].filter(Boolean).join(' ');
+                    }
                 } else {
-                    return [alignmentClass, ...customClasses.split(' ')].filter(Boolean).join(' ');
+                    if (type === "figure") {
+                        return [captionedImageClass, alignmentClass].filter(Boolean).join(' ');
+                    } else {
+                        return [alignmentClass].filter(Boolean).join(' ');
+                    }
                 }
+                
             }
 
-            // Capture and Commit Custom Data on Dialog Hide
-            editor.on('dialogHide', function(evt) {
-                var dialog = evt.data;
-                if (dialog._.name === 'image2') {
-                    var image2Widget = editor.widgets.selected[0];
-                    if (image2Widget) {
-                        var dialogData = image2Widget.data;
+            editor.widgets.add('image', {
+                requiredContent: 'figure(img,figcaption)',
+                template: '<figure class="image"><img/><figcaption></figcaption></figure>',
+                upcast: function(element) {
+                    return element.name === 'figure' && element.hasClass(captionedImageClass);
+                },
+                init: function() {
+                    const imgElement = this.element.findOne('img');
+                    const captionElement = this.element.findOne('figcaption');
 
-                        // Get values from the dialog
+                    if (captionElement) {
+                        this.setData('caption', captionElement.getText());
+                    }
+                    this.setData('src', imgElement.getAttribute('src'));
+                },
+                data: function() {
+                    const imgElement = this.element.findOne('img');
+                    const captionElement = this.element.findOne('figcaption');
+
+                    if (this.data.src) {
+                        imgElement.setAttribute('src', this.data.src);
+                    }
+                    if (this.data.caption) {
+                        captionElement.setText(this.data.caption);
+                    }
+
+                    const element = this.element;
+                    const currentClasses = element.getAttribute('class').split(' ');
+                    const alignmentClass = getAlignmentClass(currentClasses);
+                    const tagName = element.getName();
+
+                    if (this.data.advId) {
+                        element.setAttribute('id', this.data.advId);
+                    } else {
+                        element.removeAttribute('id');
+                    }
+                    if (this.data.classes && alignmentClass) {
+                        const classesStr = Object.keys(this.data.classes).join(' ');
+                        element.setAttribute('class', getAllClasses(classesStr, alignmentClass, tagName));
+                    } else {
+                        element.setAttribute('class', getAllClasses('', alignmentClass, tagName));
+                    }
+
+                    if (this.data.advLongDesc) {
+                        element.setAttribute('longdesc', this.data.advLongDesc);
+                    } else {
+                        element.removeAttribute('longdesc');
+                    }
+
+                    if (this.data.advStyles) {
+                        element.setAttribute('style', this.data.advStyles);
+                    } else {
+                        element.removeAttribute('style');
+                    }
+
+                    if (tagName === "figure" && captionElement) {
+                        captionElement.setAttribute('class', captionedClass);
+                    }
+
+                    if (this.data.linkUrl) {
+                        let parentElement = imgElement.getParent();
+                        if (parentElement && parentElement.is('a')) {
+                            parentElement.setAttribute('href', this.data.linkUrl);
+                            if (this.data.linkTarget) {
+                                parentElement.setAttribute('target', this.data.linkTarget);
+                            } else {
+                                parentElement.removeAttribute('target');
+                            }
+                        } else {
+                            let link = new CKEDITOR.dom.element('a');
+                            link.setAttribute('href', this.data.linkUrl);
+                            if (this.data.linkTarget) {
+                                link.setAttribute('target', this.data.linkTarget);
+                            }
+                            let newImgElement = imgElement.clone(true);
+                            link.append(newImgElement);
+                            imgElement.insertBeforeMe(link);
+                            imgElement.remove();
+                        }
+                    } else {
+                        let parentElement = imgElement.getParent();
+                        if (parentElement && parentElement.is('a')) {
+                            let grandParent = parentElement.getParent();
+                            parentElement.remove();
+                            imgElement.insertBefore(grandParent.findOne('figcaption'));
+                        }
+                    }
+                }
+            });
+
+            // Add a listener to capture and commit data on dialog hide
+            editor.on('dialogHide', function(evt) {
+                const dialog = evt.data;
+                if (dialog._.name === 'image2') {
+                    const image2Widget = editor.widgets.selected[0];
+                    if (image2Widget) {
+                        const dialogData = image2Widget.data;
+
                         dialogData.advId = dialog.getValueOf('advanced', 'advId');
                         dialogData.advClasses = dialog.getValueOf('advanced', 'advClasses');
                         dialogData.advLongDesc = dialog.getValueOf('advanced', 'advLongDesc');
@@ -290,7 +384,6 @@ window.addEventListener('DOMContentLoaded', async function main() {
                         dialogData.linkUrl = dialog.getValueOf('link', 'linkUrl');
                         dialogData.linkTarget = dialog.getValueOf('link', 'linkTarget');
 
-                        // Commit the custom data to the widget
                         image2Widget.setData('advId', dialogData.advId);
                         image2Widget.setData('advClasses', dialogData.advClasses);
                         image2Widget.setData('advLongDesc', dialogData.advLongDesc);
@@ -298,17 +391,16 @@ window.addEventListener('DOMContentLoaded', async function main() {
                         image2Widget.setData('linkUrl', dialogData.linkUrl);
                         image2Widget.setData('linkTarget', dialogData.linkTarget);
 
-                        // Update widget element attributes
-                        var element = image2Widget.element;
-                        var currentClasses = element.getAttribute('class').split(' ');
-                        var alignmentClass = getAlignmentClass(currentClasses);
+                        const element = image2Widget.element;
+                        const currentClasses = element.getAttribute('class').split(' ');
+                        const alignmentClass = getAlignmentClass(currentClasses);
 
                         if (dialogData.advId) {
                             element.setAttribute('id', dialogData.advId);
                         } else {
                             element.removeAttribute('id');
                         }
-                        var tagName = element.getName();
+                        const tagName = element.getName();
                         if (dialogData.advClasses || alignmentClass) {
                             element.setAttribute('class', getAllClasses(dialogData.advClasses, alignmentClass, tagName));
                         } else {
@@ -329,7 +421,9 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
                         if (tagName === "figure") {
                             let captionElement = element.findOne('figcaption');
-                            captionElement.setAttribute('class', captionedClass);
+                            if (captionElement) {
+                                captionElement.setAttribute('class', captionedClass);
+                            }
                         }
 
                         if (dialogData.linkUrl) {
@@ -337,7 +431,6 @@ window.addEventListener('DOMContentLoaded', async function main() {
                             if (imgElement) {
                                 let parentElement = imgElement.getParent();
                                 if (parentElement && parentElement.is('a')) {
-                                    // Update the existing link
                                     parentElement.setAttribute('href', dialogData.linkUrl);
                                     if (dialogData.linkTarget) {
                                         parentElement.setAttribute('target', dialogData.linkTarget);
@@ -345,20 +438,13 @@ window.addEventListener('DOMContentLoaded', async function main() {
                                         parentElement.removeAttribute('target');
                                     }
                                 } else {
-                                    // Create a new link and wrap the image
                                     let link = new CKEDITOR.dom.element('a');
                                     link.setAttribute('href', dialogData.linkUrl);
                                     if (dialogData.linkTarget) {
                                         link.setAttribute('target', dialogData.linkTarget);
                                     }
-
-                                    // Clone the img element to preserve its attributes
                                     let newImgElement = imgElement.clone(true);
-
-                                    // Append the new img to the link
                                     link.append(newImgElement);
-
-                                    // Insert the new link before the original img and remove the original img
                                     imgElement.insertBeforeMe(link);
                                     imgElement.remove();
                                 }
@@ -369,7 +455,6 @@ window.addEventListener('DOMContentLoaded', async function main() {
                                 let anchorElement = imgElement.getParent();
                                 if (anchorElement && anchorElement.is('a')) {
                                     let grandParent = anchorElement.getParent();
-                                    // Insert the img before the parent link and then remove the link
                                     anchorElement.remove();
                                     let captionElement = grandParent.findOne('figcaption');
                                     imgElement.insertBefore(captionElement);
@@ -524,7 +609,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                             if (widget.element.getAttribute('style')) {
                                 widget.setData('advStyles', widget.element.getAttribute('style'));
                             }
-                            let link = element.getParent();
+                            let link = widget.element.getParent();
                             if (link && link.is('a')) {
                                 widget.setData('linkUrl', link.getAttribute('href'));
                                 widget.setData('linkTarget', link.getAttribute('target'));
@@ -679,13 +764,9 @@ window.addEventListener('DOMContentLoaded', async function main() {
         editor.config.filebrowserBrowseUrl = '/files/browser_img?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Images&site_id=' + site_id;
         editor.config.filebrowserImageBrowseUrl = '/files/browser_img?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Images&site_id=' + site_id;
         editor.config.filebrowserLinkBrowseUrl = '/files/browser_all_files?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Files&site_id=' + site_id;
-
-        editor.document.appendStyleText(
-            'div > span.cke_widget_wrapper.cke_widget_image {' +
-            '    width: 100%;' +
-            '}'
-        );
     });
+
+    CKEDITOR.config.contentsCss = '/static/css/ckeditor_custom_styles.css';
 
     // Remove loadingBg
     $(".loadingBg").removeClass("show");
