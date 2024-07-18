@@ -45,7 +45,7 @@
               var fileElement = `
                 <div class="single-image-container" data-filename="${file.Filename}">
                   <a href="{{preview_webserver}}${file.Path}" data-fancybox="gallery" data-caption="${file.Filename}">
-                    <div style="position:relative;width:100%;height:100px;overflow:hidden;"><img src="{{preview_webserver}}${file.Path}" alt="${file.Filename}" style="max-width:200px;width:100%;height:100%;object-fit:cover;"></div>
+                    <div class="single-image-img-container"><img src="{{preview_webserver}}${file.Path}" alt="${file.Filename}"></div>
                   </a>
                     <button type="button" style="width:100%" class="btn btn-sm" onclick="selectImage('{{preview_webserver}}${file.Path}')">Select</button>
                 </div>`;
@@ -78,23 +78,5 @@
         window.close();
       }
   </script>
-  <style type="text/css">
-  	.single-image-container {
-  		display: inline-block;
-	    margin: 1%;
-	    width: 14.6%;
-	    float: left;
-  	}
-  	@media (max-width: 756px) {
-  		.single-image-container {
-  			width: 23%;
-  		}
-  	}
-  	@media (max-width: 400px) {
-  		.single-image-container {
-  			width: 48%;
-  		}
-  	}
-  </style>
 </body>
 </html>
