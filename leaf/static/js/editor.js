@@ -769,9 +769,11 @@ window.addEventListener('DOMContentLoaded', async function main() {
             'div > span.cke_widget_wrapper.cke_widget_image {' +
             '    width: 100%;' +
             '}' +
-            '.uos-component-image-right figure,' +
-            '.uos-component-image-right {' +
+            '.uos-component-image-right figure {' +
             '    float: right;' +
+            '}' +
+            'div.uos-component-image-right {' +
+            '    float: none;' +
             '}'
         );
     });
