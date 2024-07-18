@@ -385,7 +385,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             },
             {
                 aTargets: [3],
-                sClass: "truncate",
+                //sClass: "truncate",
                 mData: function (source, type, val) {
                     var imageURLClean = source["URL"].replace(preview_webserver, "/").replace(/\/+/g, "/");
                     var linkHTML = "<a class='green-link' href='" + source["URL"] + "' target='_blank'>" + imageURLClean + "</a>";
