@@ -36,6 +36,22 @@ def files_view_upload():
     archive = werkzeug.utils.escape(request.args.get("archive", type=str))
     return render_template("files_manager.html", userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], id=site_id, archive=archive, preview_webserver=Config.PREVIEW_SERVER.strip("/"), site_notice=Config.SITE_NOTICE)
 
+@files_manager.route("/files/browser", methods=['GET'])
+@login_required
+def files_browser():
+    """
+    Render the template for files view.
+
+    This route renders the HTML template "browser.html" when accessed via
+    a GET request. The route requires the user to be logged in.
+
+    Returns:
+    - Response: The rendered template for the temporary file upload view.
+    """
+    site_id = werkzeug.utils.escape(request.args.get("siteId", type=str))
+    archive = werkzeug.utils.escape(request.args.get("archive", type=str))
+    return render_template("browser.html", userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], id=site_id, archive=archive, preview_webserver=Config.PREVIEW_SERVER.strip("/"), site_notice=Config.SITE_NOTICE)
+
 
 @files_manager.route("/files/fileupload_api", methods=["POST"])
 @login_required
@@ -188,6 +204,43 @@ def files_list_rss_files():
 
         # Get files from the site using a parameterized query
         files = models.list_rss_files(site_id, archive)
+
+        return jsonify(files)
+
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
+
+@files_manager.route("/files/list_img_files", methods=["GET"])
+@login_required
+def files_list_img_files():
+    """
+    API endpoint to retrieve site img files.
+
+    Requires the user to be logged in. Retrieves the 'id' parameter from the request
+    arguments, checks if the specified site belongs to the user's account, and then
+    retrieves files from the site using a parameterized query. Returns the site files
+    in JSON format.
+
+    Returns:
+        flask.Response: JSON response containing site data.
+    """
+    try:
+        # Retrieve the 'id' parameter from the request arguments
+        site_id = False
+        if request.args.get("id"):
+            site_id = werkzeug.utils.escape(request.args.get("id", type=str))
+        # Retrieve the 'archive' parameter from the request arguments
+        archive = werkzeug.utils.escape(request.args.get("archive", type=str))
+
+        if site_id != False:
+            # Check if the specified site belongs to the user's account
+            if not site_models.site_belongs_to_account(int(site_id)):
+                return jsonify({"error": "Forbidden"}), 403
+
+        # Get files from the site using a parameterized query
+        files = models.list_img_files(site_id, archive)
 
         return jsonify(files)
 

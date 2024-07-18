@@ -440,7 +440,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                                     label: 'URL',
                                     setup: function(widget) {
                                         let link = widget.element.findOne('a');
-                                        this.setValue(link ? link.getAttribute('href') : '');
+                                        this.setValue(link && link.is('a') ? link.getAttribute('href') : '');
                                     },
                                     commit: function(widget) {
                                         widget.setData('linkUrl', this.getValue());
@@ -459,7 +459,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                                     ],
                                     setup: function(widget) {
                                         let link = widget.element.findOne('a');
-                                        this.setValue(link ? link.getAttribute('target') : '');
+                                        this.setValue(link && link.is('a') ? link.getAttribute('target') : '');
                                     },
                                     commit: function(widget) {
                                         widget.setData('linkTarget', this.getValue());
@@ -482,9 +482,9 @@ window.addEventListener('DOMContentLoaded', async function main() {
                             widget.setData('advClasses', getCustomClasses(currentClasses));
                             widget.setData('advLongDesc', widget.element.getAttribute('longdesc') || '');
                             widget.setData('advStyles', widget.element.getAttribute('style') || '');
-                            let link = widget.element.findOne('a');
-                            widget.setData('linkUrl', link ? link.getAttribute('href') : '');
-                            widget.setData('linkTarget', link ? link.getAttribute('target') : '');
+                            let link = widget.element.getParent();
+                            widget.setData('linkUrl', link && link.is('a') ? link.getAttribute('href') : '');
+                            widget.setData('linkTarget', link && link.is('a') ? link.getAttribute('target') : '');
                         }
                     }
                 }
@@ -508,10 +508,13 @@ window.addEventListener('DOMContentLoaded', async function main() {
                             if (widget.element.getAttribute('style')) {
                                 widget.setData('advStyles', widget.element.getAttribute('style'));
                             }
-                            let link = element.findOne('a');
-                            if (link) {
+                            let link = element.getParent();
+                            if (link && link.is('a')) {
                                 widget.setData('linkUrl', link.getAttribute('href'));
                                 widget.setData('linkTarget', link.getAttribute('target'));
+                            } else {
+                                widget.setData('linkUrl', '');
+                                widget.setData('linkTarget', '');
                             }
                         }
                     }
@@ -540,16 +543,16 @@ window.addEventListener('DOMContentLoaded', async function main() {
     let ckeditorConfig = {
         allowedContent: true,
         toolbar: [
-            {name: "clipboard", items: ["Cut", "Copy", "Paste", "PasteText", "PasteFromWord", "-", "Undo", "Redo"]},
+            {name: "clipboard", items: ["Cut", "Copy", "Paste", "PasteText", "-", "Undo", "Redo"]}, // "PasteFromWord",
             {name: "basicstyles", items: ["Bold", "Italic", "Underline", "Strike", 'Subscript', 'Superscript', "-", "RemoveFormat"]},
             {name: "paragraph", items: ["NumberedList", "BulletedList", "-", "Outdent", "Indent", "-", "Blockquote", "CreateDiv", "-", "JustifyLeft", "JustifyCenter", "JustifyRight", "JustifyBlock"]},
             {name: "links", items: ["Link", "Unlink", "anchorPluginButton"]},
-            {name: "insert", items: ["Image", "Embed", "Table", "HorizontalRule", "SpecialChar", "inserthtml4x"]},
+            {name: "insert", items: ["Image", "Embed", "Table", "HorizontalRule", "SpecialChar", "inserthtml4x", "Slideshow"]},
             {name: "styles", items: ["Styles", "Format"]},
-            {name: "colors", items: ["TextColor", "BGColor"]},
+            // {name: "colors", items: ["TextColor", "BGColor"]},
             {name: "actions", items: ["Preview", "SaveBtn", "PublishBtn"]}
         ],
-        extraPlugins: "anchor,inserthtml4x,embed,saveBtn,pastefromword,codemirror,image2,extendedImage2",
+        extraPlugins: "anchor,inserthtml4x,embed,saveBtn,codemirror,image2,extendedImage2,slideshow", // ,pastefromword
         removePlugins: 'image',
         image2_captionedClass: 'uos-component-image',
         image2_alignClasses: ['uos-component-image-left', 'uos-component-image-center', 'uos-component-image-right'],
@@ -649,6 +652,11 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
     // Initialize CKEditor with the configuration
     CKEDITOR.replace("htmlCode", ckeditorConfig);
+
+    CKEDITOR.on('instanceReady', function (evt) {
+        var editor = evt.editor;
+        editor.config.filebrowserBrowseUrl = '/files/browser?CKEditorFuncNum=' + editor._.filebrowserFn;
+    });
 
     // Remove loadingBg
     $(".loadingBg").removeClass("show");
