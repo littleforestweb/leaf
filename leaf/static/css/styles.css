@@ -1252,14 +1252,19 @@ th.sorting_disabled:before {
     position: relative;
 }
 .single-image-name {
-    font-size: 12px;
+    font-size: 11px;
     position: absolute;
     width: 100%;
     line-height: initial;
     text-align: center;
     bottom: 32px;
-    padding: 4px;
+    padding: 4px 5px;
     background: #f4ecec;
+    height: auto;
+    min-height: 40px;
+    overflow: hidden;
+    overflow-wrap: break-word;
+    max-height: 100px;
 }
 .single-image-img-container {
     position:relative;
