@@ -252,7 +252,6 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
             // Helper function to get custom classes
             function getCustomClasses(classList, type) {
-                console.log(type);
                 let predefinedClasses = ['cke_widget_element'];
                 if (type === "figure") {
                     predefinedClasses = [captionedClass, 'cke_widget_element'];
