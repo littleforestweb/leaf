@@ -1,3 +1,3 @@
-div > .cke_image_nocaption {
+div > .cke_widget_wrapper.cke_widget_image {
 	width: 100%;
 }
