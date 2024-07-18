@@ -191,8 +191,8 @@ CKEDITOR.plugins.add( 'slideshow', {
 							fakeStyle = fakeElement.attributes.style = fakeStyle + ' background-size:contain; ';
 							fakeStyle = fakeElement.attributes.style = fakeStyle + ' background-repeat:no-repeat; ';
 							fakeStyle = fakeElement.attributes.style = fakeStyle + ' background-position:center; ';
-							fakeStyle = fakeElement.attributes.style = fakeStyle + ' width:64px; ';
-							fakeStyle = fakeElement.attributes.style = fakeStyle + ' height:64px; ';
+							fakeStyle = fakeElement.attributes.style = fakeStyle + ' width:100%; ';
+							fakeStyle = fakeElement.attributes.style = fakeStyle + ' height:150px; ';
 							fakeStyle = fakeElement.attributes.style = fakeStyle + ' display:block; ';
 							fakeStyle = fakeElement.attributes.style = fakeStyle + ' border:1px solid black; ';
 
