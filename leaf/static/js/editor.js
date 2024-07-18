@@ -247,7 +247,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
         requires: 'image2',
         init: function(editor) {
             // Get predefined classes from the configuration
-            const captionedImageClass = editor.config.image2_captionedClass;
+            const captionedImageClass = editor.config.image2_captionedImageClass;
             const captionedClass = editor.config.image2_captionedClass;
             const alignmentClasses = editor.config.image2_alignClasses;
 
