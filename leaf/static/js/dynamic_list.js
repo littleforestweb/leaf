@@ -172,6 +172,12 @@ CKEDITOR.plugins.add('extendedImage2', {
                         element.removeAttribute('style');
                     }
 
+                    if (tagName === "figure") {
+                        let captionElement = element.findOne('figcaption');
+                        console.log(captionElement);
+                        captionElement.setAttribute('class', captionedClass);
+                    }
+
                     if (dialogData.linkUrl) {
                         let imgElement = element.findOne('img');
                         if (imgElement) {
@@ -211,7 +217,7 @@ CKEDITOR.plugins.add('extendedImage2', {
                                 let grandParent = anchorElement.getParent();
                                 // Insert the img before the parent link and then remove the link
                                 anchorElement.remove();
-                                captionElement = grandParent.findOne('figcaption');
+                                let captionElement = grandParent.findOne('figcaption');
                                 imgElement.insertBefore(captionElement);
                             }
                         }

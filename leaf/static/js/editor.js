@@ -141,7 +141,7 @@ function adjustAnchorPosition(editor, itemPosition) {
         if (anchor.getHtml().trim() === "&nbsp;" || anchor.getHtml().trim() === "" || anchor.getHtml().trim() === "Area link. Click here to edit.") {
             if (!itemPosition && anchor.getAttribute("class") && anchor.getAttribute("style")) {
                 anchor.setAttribute("class", anchor.getAttribute("class").replace(" leaf_ck_position_defined", ""));
-                anchor.setAttribute("style", anchor.getAttribute("style").replace(" position:relative!important;background:#fff", ""));
+                anchor.setAttribute("style", anchor.getAttribute("style").replace(/ position:relative!important;background:#fff/g, ""));
                 anchor.setHtml("&nbsp;");
             } else { // if (anchor.getAttribute("class") && anchor.getAttribute("style"))
                 let originalPosition = anchor.getStyle("position");
@@ -326,6 +326,12 @@ window.addEventListener('DOMContentLoaded', async function main() {
                             element.removeAttribute('style');
                         }
 
+                        if (tagName === "figure") {
+                            let captionElement = element.findOne('figcaption');
+                            console.log(captionElement);
+                            captionElement.setAttribute('class', captionedClass);
+                        }
+
                         if (dialogData.linkUrl) {
                             let imgElement = element.findOne('img');
                             if (imgElement) {
@@ -365,7 +371,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                                     let grandParent = anchorElement.getParent();
                                     // Insert the img before the parent link and then remove the link
                                     anchorElement.remove();
-                                    captionElement = grandParent.findOne('figcaption');
+                                    let captionElement = grandParent.findOne('figcaption');
                                     imgElement.insertBefore(captionElement);
                                 }
                             }
