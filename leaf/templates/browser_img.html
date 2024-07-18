@@ -19,7 +19,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js"></script>
     <link href="{{ url_for("static", filename="css/styles.css") }}" rel="stylesheet" type="text/css" />
 </head>
-<body>
+<body style="padding: 0;">
+  <input type="text" id="imageSearchBox" class="form-control form-control-sm" placeholder="Search for images...">
   <div id="file-browser">
       <!-- File thumbnails will be inserted here -->
   </div>
@@ -34,34 +35,47 @@
       var CKEditorFuncNum = getUrlParameter('CKEditorFuncNum');
 
       $(document).ready(function() {
-          $.ajax({
-              url: '/files/list_img_files',
-              method: 'GET',
-              success: function(data) {
-                  var files = data.slice(0, 1000);
-                  var fileBrowser = $('#file-browser');
-                  files.forEach(function(file) {
-                      var fileElement = `
-                          <div class="single-image-container">
-                              <a href="{{preview_webserver}}${file.Path}" data-fancybox="gallery" data-caption="${file.Filename}">
-                                  <div style="position:relative;width:100%;height:100px;overflow:hidden;"><img src="{{preview_webserver}}${file.Path}" alt="${file.Filename}" style="max-width:200px;width:100%;height:100%;object-fit:cover;"></div>
-                              </a>
-                              <button type="button" style="width:100%" class="btn btn-sm" onclick="selectImage('{{preview_webserver}}${file.Path}')">Select</button>
-                          </div>`;
-                      fileBrowser.append(fileElement);
-                  });
-                  $('[data-fancybox]').fancybox();
-              },
-              error: function() {
-                  alert('Error loading files');
-              }
+        $.ajax({
+          url: '/files/list_img_files',
+          method: 'GET',
+          success: function(data) {
+            var files = data.slice(0, 1000);
+            var fileBrowser = $('#file-browser');
+            files.forEach(function(file) {
+              var fileElement = `
+                <div class="single-image-container" data-filename="${file.Filename}">
+                  <a href="{{preview_webserver}}${file.Path}" data-fancybox="gallery" data-caption="${file.Filename}">
+                    <div style="position:relative;width:100%;height:100px;overflow:hidden;"><img src="{{preview_webserver}}${file.Path}" alt="${file.Filename}" style="max-width:200px;width:100%;height:100%;object-fit:cover;"></div>
+                  </a>
+                    <button type="button" style="width:100%" class="btn btn-sm" onclick="selectImage('{{preview_webserver}}${file.Path}')">Select</button>
+                </div>`;
+              fileBrowser.append(fileElement);
+            });
+            $('[data-fancybox]').fancybox();
+          },
+          error: function() {
+            alert('Error loading files');
+          }
+        });
+
+        // Search functionality for images
+        $('#imageSearchBox').on('keyup', function() {
+          var searchText = $(this).val().toLowerCase();
+          $('#file-browser .single-image-container').each(function() {
+            var filename = $(this).data('filename').toLowerCase();
+            if (filename.includes(searchText)) {
+              $(this).show();
+            } else {
+              $(this).hide();
+            }
           });
+        });
       });
 
       function selectImage(url) {
-          // Send the selected URL back to CKEditor
-          window.opener.CKEDITOR.tools.callFunction(CKEditorFuncNum, url);
-          window.close();
+        // Send the selected URL back to CKEditor
+        window.opener.CKEDITOR.tools.callFunction(CKEditorFuncNum, url);
+        window.close();
       }
   </script>
   <style type="text/css">

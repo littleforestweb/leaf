@@ -36,9 +36,9 @@ def files_view_upload():
     archive = werkzeug.utils.escape(request.args.get("archive", type=str))
     return render_template("files_manager.html", userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], id=site_id, archive=archive, preview_webserver=Config.PREVIEW_SERVER.strip("/"), site_notice=Config.SITE_NOTICE)
 
-@files_manager.route("/files/browser", methods=['GET'])
+@files_manager.route("/files/browser_img", methods=['GET'])
 @login_required
-def files_browser():
+def files_browser_img():
     """
     Render the template for files view.
 
@@ -50,7 +50,24 @@ def files_browser():
     """
     site_id = werkzeug.utils.escape(request.args.get("siteId", type=str))
     archive = werkzeug.utils.escape(request.args.get("archive", type=str))
-    return render_template("browser.html", userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], id=site_id, archive=archive, preview_webserver=Config.PREVIEW_SERVER.strip("/"), site_notice=Config.SITE_NOTICE)
+    return render_template("browser_img.html", userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], id=site_id, archive=archive, preview_webserver=Config.PREVIEW_SERVER.strip("/"), site_notice=Config.SITE_NOTICE)
+
+@files_manager.route("/files/browser_all_files", methods=['GET'])
+@login_required
+def files_browser_all_files():
+    """
+    Render the template for files view.
+
+    This route renders the HTML template "browser.html" when accessed via
+    a GET request. The route requires the user to be logged in.
+
+    Returns:
+    - Response: The rendered template for the temporary file upload view.
+    """
+    site_id = werkzeug.utils.escape(request.args.get("siteId", type=str))
+    archive = werkzeug.utils.escape(request.args.get("archive", type=str))
+    return render_template("browser_all_files.html", userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], id=site_id, archive=archive, preview_webserver=Config.PREVIEW_SERVER.strip("/"), site_notice=Config.SITE_NOTICE)
+
 
 
 @files_manager.route("/files/fileupload_api", methods=["POST"])

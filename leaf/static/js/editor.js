@@ -653,9 +653,15 @@ window.addEventListener('DOMContentLoaded', async function main() {
     // Initialize CKEditor with the configuration
     CKEDITOR.replace("htmlCode", ckeditorConfig);
 
+    let site_id = await $.get("/api/get_site_id?page_id=" + page_id, function (site_id) {
+        return site_id;
+    });
+
     CKEDITOR.on('instanceReady', function (evt) {
         var editor = evt.editor;
-        editor.config.filebrowserBrowseUrl = '/files/browser?CKEditorFuncNum=' + editor._.filebrowserFn;
+        editor.config.filebrowserBrowseUrl = '/files/browser_img?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Images&site_id=' + site_id;
+        editor.config.filebrowserImageBrowseUrl = '/files/browser_img?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Images&site_id=' + site_id;
+        editor.config.filebrowserLinkBrowseUrl = '/files/browser_all_files?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Files&site_id=' + site_id;
     });
 
     // Remove loadingBg
