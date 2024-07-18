@@ -673,8 +673,11 @@ window.addEventListener('DOMContentLoaded', async function main() {
         editor.config.filebrowserImageBrowseUrl = '/files/browser_img?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Images&site_id=' + site_id;
         editor.config.filebrowserLinkBrowseUrl = '/files/browser_all_files?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Files&site_id=' + site_id;
 
-        editor.config.contentsCss = '/static/css/custom_ckeditor.css';
-        // editor.addContentsCss('/static/css/custom_ckeditor.css');
+        editor.document.appendStyleText(
+            'div > .cke_widget_wrapper.cke_widget_image {' +
+            '    width: 100%;' +
+            '}'
+        );
     });
 
     // Remove loadingBg

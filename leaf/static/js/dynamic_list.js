@@ -938,8 +938,11 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                         editor.config.filebrowserImageBrowseUrl = '/files/browser_img?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Images';
                                         editor.config.filebrowserLinkBrowseUrl = '/files/browser_all_files?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Files';
 
-                                        editor.config.contentsCss = '/static/css/custom_ckeditor.css';
-                                        // editor.addContentsCss('/static/css/custom_ckeditor.css');
+                                        editor.document.appendStyleText(
+                                            'div > .cke_widget_wrapper.cke_widget_image {' +
+                                            '    width: 100%;' +
+                                            '}'
+                                        );
                                     });
                                     
                                 } else if (allAccountSettings[f][6] && allAccountSettings[f][6] === "date") {
