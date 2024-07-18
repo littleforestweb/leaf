@@ -94,11 +94,14 @@ CKEDITOR.plugins.add('extendedImage2', {
     init: function(editor) {
         // Get predefined classes from the configuration
         const captionedClass = editor.config.image2_captionedClass;
-        const predefinedClasses = [captionedClass, 'cke_widget_element'];
         const alignmentClasses = editor.config.image2_alignClasses;
 
         // Helper function to get custom classes
-        function getCustomClasses(classList) {
+        function getCustomClasses(classList, type) {
+            let predefinedClasses = ['cke_widget_element'];
+            if (type === "figure") {
+                predefinedClasses = [captionedClass, 'cke_widget_element'];
+            }
             return classList.filter(cls => !predefinedClasses.includes(cls) && !alignmentClasses.includes(cls)).join(' ');
         }
 
@@ -108,8 +111,12 @@ CKEDITOR.plugins.add('extendedImage2', {
         }
 
         // Helper function to get all classes
-        function getAllClasses(customClasses, alignmentClass) {
-            return [captionedClass, alignmentClass, ...customClasses.split(' ')].filter(Boolean).join(' ');
+        function getAllClasses(customClasses, alignmentClass, type) {
+            if (type === "figure") {
+                return [captionedClass, alignmentClass, ...customClasses.split(' ')].filter(Boolean).join(' ');
+            } else {
+                return [alignmentClass, ...customClasses.split(' ')].filter(Boolean).join(' ');
+            }
         }
 
         // Capture and Commit Custom Data on Dialog Hide
@@ -146,11 +153,11 @@ CKEDITOR.plugins.add('extendedImage2', {
                     } else {
                         element.removeAttribute('id');
                     }
-
+                    var tagName = element.getName();
                     if (dialogData.advClasses || alignmentClass) {
-                        element.setAttribute('class', getAllClasses(dialogData.advClasses, alignmentClass));
+                        element.setAttribute('class', getAllClasses(dialogData.advClasses, alignmentClass, tagName));
                     } else {
-                        element.setAttribute('class', getAllClasses('', alignmentClass));
+                        element.setAttribute('class', getAllClasses('', alignmentClass, tagName));
                     }
 
                     if (dialogData.advLongDesc) {
@@ -245,7 +252,8 @@ CKEDITOR.plugins.add('extendedImage2', {
                                 label: 'Classes',
                                 setup: function(widget) {
                                     var classList = widget.element.getAttribute('class').split(' ');
-                                    this.setValue(getCustomClasses(classList));
+                                    var tagName = widget.element.getName();
+                                    this.setValue(getCustomClasses(classList, tagName));
                                 },
                                 commit: function(widget) {
                                     widget.setData('advClasses', this.getValue());
@@ -324,8 +332,9 @@ CKEDITOR.plugins.add('extendedImage2', {
                     if (editor.widgets.instances.hasOwnProperty(widgetId)) {
                         var widget = editor.widgets.instances[widgetId];
                         var currentClasses = widget.element.getAttribute('class').split(' ');
+                        var tagName = widget.element.getName();
                         widget.setData('advId', widget.element.getAttribute('id') || '');
-                        widget.setData('advClasses', getCustomClasses(currentClasses));
+                        widget.setData('advClasses', getCustomClasses(currentClasses, tagName));
                         widget.setData('advLongDesc', widget.element.getAttribute('longdesc') || '');
                         widget.setData('advStyles', widget.element.getAttribute('style') || '');
                         let link = widget.element.getParent();
@@ -345,8 +354,9 @@ CKEDITOR.plugins.add('extendedImage2', {
                             widget.setData('advId', widget.element.getAttribute('id'));
                         }
                         if (widget.element.getAttribute('class')) {
+                            var tagName = widget.element.getName();
                             var currentClasses = widget.element.getAttribute('class').split(' ');
-                            widget.setData('advClasses', getCustomClasses(currentClasses));
+                            widget.setData('advClasses', getCustomClasses(currentClasses, tagName));
                         }
                         if (widget.element.getAttribute('longdesc')) {
                             widget.setData('advLongDesc', widget.element.getAttribute('longdesc'));
@@ -882,6 +892,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                                 styleActiveLine: true,
                                                 keyMap: 'sublime'
                                             },
+                                            contentsCss: '/static/css/custom_ckeditor.css'
                                             filebrowserUploadUrl: "/api/upload?name=fileupload",
                                             embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}'
                                         });
@@ -917,6 +928,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                                 styleActiveLine: true,
                                                 keyMap: 'sublime'
                                             },
+                                            contentsCss: '/static/css/custom_ckeditor.css'
                                             filebrowserUploadUrl: "/api/upload?name=fileupload",
                                             embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}'
                                         });

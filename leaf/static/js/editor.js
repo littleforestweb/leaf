@@ -576,6 +576,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             styleActiveLine: true,
             keyMap: 'sublime'
         },
+        contentsCss: '/static/css/custom_ckeditor.css'
         codeSnippet_theme: 'prism',
         filebrowserUploadUrl: "/api/upload?name=fileupload",
         embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}',
