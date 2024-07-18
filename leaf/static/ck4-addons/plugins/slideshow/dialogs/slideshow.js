@@ -1133,8 +1133,8 @@ CKEDITOR.dialog.add( 'slideshowDialog', function( editor ) {
 		extraStyles.backgroundRepeat = 'no-repeat';
 		extraStyles.backgroundPosition = 'center';
 		extraStyles.display = 'block';
-		extraStyles.width = '64px';
-		extraStyles.height = '64px';
+		extraStyles.width = '100%';
+		extraStyles.height = '150px';
 		extraStyles.border = '1px solid black';
 		// Create a new Fake Image
 		var newFakeImage = editor.createFakeElement( slideshowDOM, 'cke_slideShow', 'slideShow', false );
