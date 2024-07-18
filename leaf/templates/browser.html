@@ -42,7 +42,7 @@
                   var fileBrowser = $('#file-browser');
                   files.forEach(function(file) {
                       var fileElement = `
-                          <div style="display:inline-block; margin:10px;">
+                          <div class="single-image-container">
                               <a href="{{preview_webserver}}${file.Path}" data-fancybox="gallery" data-caption="${file.Filename}">
                                   <div style="position:relative;width:100%;height:100px;overflow:hidden;"><img src="{{preview_webserver}}${file.Path}" alt="${file.Filename}" style="max-width:200px;width:100%;height:100%;object-fit:cover;"></div>
                               </a>
@@ -64,5 +64,10 @@
           window.close();
       }
   </script>
+  <style type="text/css">
+  	.single-image-container {
+  		display:inline-block; margin:1%; width: 12%
+  	}
+  </style>
 </body>
 </html>
