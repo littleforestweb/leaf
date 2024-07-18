@@ -97,7 +97,7 @@ span[lang] {
     font-style: italic;
 }
 
-figure {
+/*figure {
     text-align: center;
     outline: solid 1px #ccc;
     background: rgba(0, 0, 0, 0.05);
@@ -109,7 +109,7 @@ figure {
 figure > figcaption {
     text-align: center;
     display: block; /* For IE8 */
-}
+}*/
 
 a > img {
     padding: 1px;
