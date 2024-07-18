@@ -950,7 +950,9 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                         editor.document.appendStyleText(
                                             'div > span.cke_widget_wrapper.cke_widget_image {' +
                                             '    width: 100%;' +
-                                            '}'
+                                            '}' +
+                                            '.uos-component-image-right {float:right;}' +
+                                            '.uos-component-image-left {float:left;}'
                                         );
                                     });
                                     
