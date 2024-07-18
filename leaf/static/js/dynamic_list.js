@@ -93,6 +93,7 @@ CKEDITOR.plugins.add('extendedImage2', {
     requires: 'image2',
     init: function(editor) {
         // Get predefined classes from the configuration
+        const captionedImageClass = editor.config.image2_captionedClass;
         const captionedClass = editor.config.image2_captionedClass;
         const alignmentClasses = editor.config.image2_alignClasses;
 
@@ -100,7 +101,7 @@ CKEDITOR.plugins.add('extendedImage2', {
         function getCustomClasses(classList, type) {
             let predefinedClasses = ['cke_widget_element'];
             if (type === "figure") {
-                predefinedClasses = [captionedClass, 'cke_widget_element'];
+                predefinedClasses = [captionedImageClass, 'cke_widget_element'];
             }
             return classList.filter(cls => !predefinedClasses.includes(cls) && !alignmentClasses.includes(cls)).join(' ');
         }
@@ -113,7 +114,7 @@ CKEDITOR.plugins.add('extendedImage2', {
         // Helper function to get all classes
         function getAllClasses(customClasses, alignmentClass, type) {
             if (type === "figure") {
-                return [captionedClass, alignmentClass, ...customClasses.split(' ')].filter(Boolean).join(' ');
+                return [captionedImageClass, alignmentClass, ...customClasses.split(' ')].filter(Boolean).join(' ');
             } else {
                 return [alignmentClass, ...customClasses.split(' ')].filter(Boolean).join(' ');
             }
@@ -886,7 +887,8 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
 
                                             extraPlugins: "anchor,inserthtml4x,embed,codemirror,image2,extendedImage2,slideshow",
                                             removePlugins: 'image',
-                                            image2_captionedClass: 'uos-component-image',
+                                            image2_captionedImageClass: 'uos-component-image',
+                                            image2_captionedClass: 'uos-component-image-caption',
                                             image2_alignClasses: ['uos-component-image-left', 'uos-component-image-center', 'uos-component-image-right'],
                                             image2_disableResizer: true,
                                             codemirror: {
@@ -921,7 +923,8 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                             ],
                                             extraPlugins: "anchor,inserthtml4x,embed,codemirror,image2,extendedImage2,slideshow",
                                             removePlugins: 'image',
-                                            image2_captionedClass: 'uos-component-image',
+                                            image2_captionedImageClass: 'uos-component-image',
+                                            image2_captionedClass: 'uos-component-image-caption',
                                             image2_alignClasses: ['uos-component-image-left', 'uos-component-image-center', 'uos-component-image-right'],
                                             image2_disableResizer: true,
                                             codemirror: {
