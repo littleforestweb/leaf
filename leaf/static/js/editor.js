@@ -143,7 +143,7 @@ function adjustAnchorPosition(editor, itemPosition) {
                 anchor.setAttribute("class", anchor.getAttribute("class").replace(" leaf_ck_position_defined", ""));
                 anchor.setAttribute("style", anchor.getAttribute("style").replace(" position:relative!important;background:#fff", ""));
                 anchor.setHtml("&nbsp;");
-            } else if (anchor.getAttribute("class") && anchor.getAttribute("style")) {
+            } else { // if (anchor.getAttribute("class") && anchor.getAttribute("style"))
                 let originalPosition = anchor.getStyle("position");
                 anchor.setHtml("Area link. Click here to edit.")
                 anchor.setAttribute("style", (anchor.getAttribute("style") ? anchor.getAttribute("style") : "") + " position:relative!important;background:#fff");
