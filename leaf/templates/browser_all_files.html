@@ -53,6 +53,7 @@
         <table class="table" id="tablePages">
           <thead>
             <tr>
+              <th class="hidden"></th>
               <th>Screenshot</th>
               <th>Title</th>
               <th>URL</th>
@@ -62,6 +63,7 @@
           <tbody></tbody>
           <tfoot>
             <tr>
+              <th class="hidden"></th>
               <th>Screenshot</th>
               <th>Title</th>
               <th>URL</th>
@@ -79,6 +81,7 @@
         <table class="table" id="tableFiles">
           <thead>
             <tr>
+              <th class="hidden"></th>
               <th>File Path</th>
               <th>File Name</th>
               <th>Mime Type</th>
@@ -88,6 +91,7 @@
           <tbody></tbody>
           <tfoot>
             <tr>
+              <th class="hidden"></th>
               <th>File Path</th>
               <th>File Name</th>
               <th>Mime Type</th>
@@ -168,7 +172,7 @@
         // Setup - add a text input to each header cell
         $('#tablePages thead tr').clone(true).addClass("filters").addClass("filters_pages").appendTo('#tablePages thead');
 
-        let searchColumns = [1, 2];
+        let searchColumns = [2, 3];
 
         $("#tablePages").DataTable({
           dom: "Brtip",
@@ -183,21 +187,29 @@
           stateSave: true,
           aoColumnDefs: [
             {
-              aTargets: [0],
+                aTargets: [0],
+                sClass: "hidden",
+                mData: function (source, type, val) {
+                    return source["id"];
+                },
+                sortable: false
+            },
+            {
+              aTargets: [1],
               mData: function (source, type, val) {
                 return "<img class='max100px' src='" + "/get_screenshot?id=" + source["id"] + "' height='auto' alt='Page Screenshot Image'>"
               },
               sortable: false
             },
             {
-              aTargets: [1],
+              aTargets: [2],
               sClass: "truncate",
               mData: function (source, type, val) {
                 return "<span>" + unescape(source["Title"]) + "</span>";
               }
             },
             {
-              aTargets: [2],
+              aTargets: [3],
               //sClass: "truncate",
               mData: function (source, type, val) {
                 var imageURLClean = source["URL"].replace('{{preview_webserver}}', "/").replace(/\/+/g, "/");
@@ -206,7 +218,7 @@
               }
             },
             {
-              aTargets: [3],
+              aTargets: [4],
               mData: function (source, type, val) {
                 return '<button type="button" class="btn btn-sm" onclick="selectPage(\'' + source["URL"] + '\')">Select</button>';
               }
@@ -260,7 +272,7 @@
         // Setup - add a text input to each header cell
         $('#tableFiles thead tr').clone(true).addClass("filters").addClass("filters_files").appendTo('#tableFiles thead');
 
-        let searchColumns = [0, 1, 2];
+        let searchColumns = [1, 2, 3];
 
         $("#tableFiles").DataTable({
           dom: "Brtip",
@@ -274,27 +286,34 @@
           bAutoWidth: false,
           aoColumnDefs: [
             {
-              aTargets: [0],
+                aTargets: [0],
+                sClass: "hidden",
+                mData: function (source, type, val) {
+                    return source["id"];
+                }
+            },
+            {
+              aTargets: [1],
               sClass: "truncate",
               mData: function (source, type, val) {
                 return '<a class="green-link" target="_blank" href="' + unescape('{{preview_webserver}}' + source["Path"]) + '">' + unescape(source["Path"]) + '</a>';
               }
             },
             {
-              aTargets: [1],
+              aTargets: [2],
               sClass: "truncate",
               mData: function (source, type, val) {
                 return "<span>" + unescape(source["Filename"]) + "</span>";
               }
             },
             {
-              aTargets: [2],
+              aTargets: [3],
               mData: function (source, type, val) {
                 return "<span>" + source["Mime Type"] + "</span>";
               }
             },
             {
-              aTargets: [3],
+              aTargets: [4],
               mData: function (source, type, val) {
                 return '<button type="button" class="btn btn-sm" onclick="selectFile(\'' + source["Path"] + '\')">Select</button>';
               }
