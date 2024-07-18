@@ -880,7 +880,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                                 {name: "paragraph", items: ["NumberedList", "BulletedList", "-", "Outdent", "Indent", "-", "Blockquote", "CreateDiv", "-", "JustifyLeft", "JustifyCenter", "JustifyRight", "JustifyBlock"]},
                                                 {name: "links", items: ["Link", "Unlink", "anchorPluginButton"]},
                                                 {name: "insert", items: ["Image", "Embed", "Table", "HorizontalRule", "SpecialChar", "inserthtml4x", "Slideshow"]},
-                                                {name: "tools", items: ["ShowBlocks"]},
+                                                // {name: "tools", items: ["ShowBlocks"]},
                                                 {name: "styles", items: ["Styles", "Format"]},
                                                 {name: "document", items: ["Source"]}//, "-", "Preview"
                                             ],
@@ -917,7 +917,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                                 {name: "paragraph", items: ["NumberedList", "BulletedList", "-", "Outdent", "Indent", "-", "Blockquote", "CreateDiv", "-", "JustifyLeft", "JustifyCenter", "JustifyRight", "JustifyBlock"]},
                                                 {name: "links", items: ["Link", "Unlink", "anchorPluginButton"]},
                                                 {name: "insert", items: ["Image", "Embed", "Table", "HorizontalRule", "SpecialChar", "inserthtml4x", "Slideshow"]},
-                                                {name: "tools", items: ["ShowBlocks"]},
+                                                // {name: "tools", items: ["ShowBlocks"]},
                                                 {name: "styles", items: ["Styles", "Format"]},
                                                 {name: "document", items: ["Source"]}
                                             ],
