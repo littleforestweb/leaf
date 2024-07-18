@@ -20,6 +20,7 @@
     <link href="{{ url_for("static", filename="css/styles.css") }}" rel="stylesheet" type="text/css" />
 </head>
 <body style="padding: 0;">
+  <div class="loadingBg loadingBgImages show"></div>
   <input type="text" id="imageSearchBox" class="form-control form-control-sm" placeholder="Search for images...">
   <div id="file-browser">
       <!-- File thumbnails will be inserted here -->
@@ -53,6 +54,8 @@
               fileBrowser.append(fileElement);
             });
             $('[data-fancybox]').fancybox();
+
+            $(".loadingBgImages").removeClass("show");
           },
           error: function() {
             alert('Error loading files');

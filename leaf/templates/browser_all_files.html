@@ -41,6 +41,7 @@
   </ul>
 
   <div id="SiteImages" class="tab-content" style="display:none;">
+    <div class="loadingBg loadingBgImages show"></div>
     <input type="text" id="imageSearchBox" class="form-control form-control-sm" placeholder="Search for images...">
     <div id="images-file-browser">
       <!-- File thumbnails will be inserted here -->
@@ -48,6 +49,7 @@
   </div>
 
   <div id="SitePages" class="tab-content">
+    <div class="loadingBg loadingBgSites show"></div>
     <div id="TableDivPages" class="card mb-4">
       <div class="card-body">
         <table class="table" id="tablePages">
@@ -76,6 +78,7 @@
   </div>
 
   <div id="AllFiles" class="tab-content" style="display:none;">
+    <div class="loadingBg loadingBgFiles show"></div>
     <div id="TableDivFiles" class="card mb-4">
       <div class="card-body">
         <table class="table" id="tableFiles">
@@ -159,6 +162,8 @@
               fileBrowser.append(fileElement);
             });
             $('[data-fancybox]').fancybox();
+
+            $(".loadingBgImages").removeClass("show");
           },
           error: function() {
             alert('Error loading files');
@@ -262,6 +267,8 @@
                 }
               });
             }
+
+            $(".loadingBgSites").removeClass("show");
           }
         });
       }
@@ -357,6 +364,8 @@
                 }
               });
             }
+
+            $(".loadingBgFiles").removeClass("show");
           }
         });
       }
