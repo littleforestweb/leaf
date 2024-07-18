@@ -170,7 +170,7 @@
       }
 
       function renderFiles(files) {
-        var fileBrowser = $('#file-browser');
+        var fileBrowser = $('#images-file-browser');
         fileBrowser.empty(); // Clear existing images
         files.slice(0, 1000).forEach(function(file) { // Slice to handle client-side rendering issues
           var fileElement = `
