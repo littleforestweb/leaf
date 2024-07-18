@@ -66,7 +66,20 @@
   </script>
   <style type="text/css">
   	.single-image-container {
-  		display:inline-block; margin:1%; width: 12%
+  		display: inline-block;
+	    margin: 1%;
+	    width: 14.6%;
+	    float: left;
+  	}
+  	@media (max-width: 756px) {
+  		.single-image-container {
+  			width: 23%;
+  		}
+  	}
+  	@media (max-width: 400px) {
+  		.single-image-container {
+  			width: 48%;
+  		}
   	}
   </style>
 </body>
