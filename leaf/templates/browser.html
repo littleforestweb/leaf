@@ -38,13 +38,13 @@
               url: '/files/list_img_files',
               method: 'GET',
               success: function(data) {
-                  var files = data.slice(0, 500);
+                  var files = data.slice(0, 1000);
                   var fileBrowser = $('#file-browser');
                   files.forEach(function(file) {
                       var fileElement = `
                           <div style="display:inline-block; margin:10px;">
                               <a href="{{preview_webserver}}${file.Path}" data-fancybox="gallery" data-caption="${file.Filename}">
-                                  <img src="{{preview_webserver}}${file.Path}" alt="${file.Filename}" style="width:100px;">
+                                  <div style="position:relative;width:100%;heigth:100px"><img src="{{preview_webserver}}${file.Path}" alt="${file.Filename}" style="width:100px;"></div>
                               </a>
                               <br>
                               <button type="button" style="width:100%" class="btn btn-sm" onclick="selectImage('{{preview_webserver}}${file.Path}')">Select</button>
