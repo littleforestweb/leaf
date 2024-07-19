@@ -385,9 +385,12 @@ window.addEventListener('DOMContentLoaded', async function main() {
             },
             {
                 aTargets: [3],
-                sClass: "truncate",
+                //sClass: "truncate",
                 mData: function (source, type, val) {
-                    return "<a class='green-link' href='" + source["URL"] + "' target='_blank'>" + source["URL"].replace(preview_webserver, "/").replace(/\/+/g, "/") + "</a>";
+                    var imageURLClean = source["URL"].replace(preview_webserver, "/").replace(/\/+/g, "/");
+                    var linkHTML = "<a class='green-link' href='" + source["URL"] + "' target='_blank'>" + imageURLClean + "</a>";
+                    var copyIconHTML = "<span class='copy-icon' onclick='copyToClipboard(\"" + imageURLClean + "\")' style='cursor: pointer; margin-left: 5px;'>📋</span>";
+                    return linkHTML + copyIconHTML;
                 }
             },
             {
@@ -454,3 +457,16 @@ window.addEventListener('DOMContentLoaded', async function main() {
     // Set the value of the pubDate input field
     document.querySelector('#pubDate').value = new Date().toISOString().slice(0, 16);
 });
+
+// Add this JavaScript function to handle the clipboard copying
+function copyToClipboard(text) {
+    var tempInput = document.createElement("input");
+    tempInput.style.position = "absolute";
+    tempInput.style.left = "-9999px";
+    tempInput.value = text;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    document.execCommand("copy");
+    document.body.removeChild(tempInput);
+    alert("Copied to clipboard: " + text);
+}

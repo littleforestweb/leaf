@@ -716,10 +716,16 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
 .users-with-access-container,
 .rss-list-container {
     margin-top: 10px;
-    box-shadow: 0 0 1px #000;
+    box-shadow: 0 0 0 #000;
     font-size: 13px;
     height: 200px;
     overflow: auto;
+    border: 1px solid #8b8b8b;
+    border-radius: 5px;
+    -o-border-radius: 5px;
+    -ms-border-radius: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
 }
 
 .users-with-access-container.warning-not-completed,
@@ -1234,6 +1240,52 @@ th.sorting_disabled:before {
     display: none!important;
 }
 
+.form-control {
+    border: var(--bs-border-width) solid #8b8b8b;
+}
+
+.form-control#imageSearchBox {
+    margin: 10px 10px 0;
+    width: calc(100% - 20px);
+    padding: 10px;
+}
+
+.single-image-container {
+    display: inline-block;
+    margin: 1%;
+    width: 14.6%;
+    float: left;
+    position: relative;
+}
+.single-image-name {
+    font-size: 11px;
+    position: absolute;
+    width: 100%;
+    line-height: initial;
+    text-align: center;
+    bottom: 32px;
+    padding: 4px 5px;
+    background: #f4ecec;
+    height: auto;
+    min-height: 40px;
+    overflow: hidden;
+    overflow-wrap: break-word;
+    max-height: 100px;
+}
+.single-image-img-container {
+    position:relative;
+    width:100%;
+    height:150px;
+    overflow:hidden;
+    padding-bottom:40px;
+}
+.single-image-img-container img {
+    max-width:200px;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
 @media (min-width: 576px) {
     .modal-dialog {
         max-width: 1120px;
@@ -1250,14 +1302,22 @@ th.sorting_disabled:before {
         left: 6px;
     }
 }
-
+@media (max-width: 756px) {
+    .single-image-container {
+        width: 23%;
+    }
+}
 @media (max-width: 660px) {
     .card-body .card-content,
     .card-body .card-user {
         width: 100%;
     }
 }
-
+@media (max-width: 400px) {
+    .single-image-container {
+        width: 48%;
+    }
+}
 @media (max-width: 360px) {
     .login.container {
         min-width: 100%;

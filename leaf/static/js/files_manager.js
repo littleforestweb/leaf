@@ -444,17 +444,19 @@ window.addEventListener('DOMContentLoaded', async function main() {
         initComplete: function () {
             // For each column
             var api = this.api();
+            var state = api.state.loaded();
+
             api.columns().eq(0).each(function (colIdx) {
                 // Set the header cell to contain the input element
                 var cell = $(".filters th").eq($(api.column(colIdx).header()).index());
                 if (searchColumns.includes(colIdx)) {
-                    $(cell).html('<input type="text" oninput="stopPropagation(event)" onclick="stopPropagation(event);" class="form-control form-control-sm" placeholder="Search" />');
+                    $(cell).html('<input id="search_col_index_' + colIdx + '" type="text" oninput="stopPropagation(event)" onclick="stopPropagation(event);" class="form-control form-control-sm" placeholder="Search" />');
                 } else {
                     $(cell).html('<span></span>');
                 }
 
                 // On every keypress in this input
-                $("input", $('.filters th').eq($(api.column(colIdx).header()).index())).off("keyup change").on("keyup change", function (e) {
+                $('input:not([type="checkbox"])', $('.filters th').eq($(api.column(colIdx).header()).index())).on("keyup", function (e) {
                     e.stopPropagation();
                     // Get the search value
                     $(this).attr("title", $(this).val());
@@ -466,6 +468,16 @@ window.addEventListener('DOMContentLoaded', async function main() {
                     $(this).focus()[0].setSelectionRange(cursorPosition, cursorPosition);
                 });
             });
+
+            if (state) {
+                api.columns().eq(0).each(function (colIdx) {
+                    var colSearch = state.columns[colIdx].search;
+
+                    if (colSearch.search) {
+                        $('input', $('.filters th')[colIdx]).val(colSearch.search);
+                    }
+                });
+            }
 
             doMainButtons();
             $(".loadingBg").removeClass("show");
