@@ -716,10 +716,16 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
 .users-with-access-container,
 .rss-list-container {
     margin-top: 10px;
-    box-shadow: 0 0 1px #000;
+    box-shadow: 0 0 0 #000;
     font-size: 13px;
     height: 200px;
     overflow: auto;
+    border: 1px solid #8b8b8b;
+    border-radius: 5px;
+    -o-border-radius: 5px;
+    -ms-border-radius: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
 }
 
 .users-with-access-container.warning-not-completed,

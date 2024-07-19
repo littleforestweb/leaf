@@ -3111,6 +3111,9 @@ function createPublishTicket(accountId, reference, type, server, path, button) {
     var formattedDate = dueDate.toISOString().slice(0, 10);
 
     var entryId = $('.table_' + reference).find('input[type="checkbox"]:checked').val();
+    if (!entryId) {
+        entryId = $('#e-id').val();
+    }
 
     form_data = {
         accountId: accountId,
