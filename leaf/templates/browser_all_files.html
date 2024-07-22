@@ -172,7 +172,7 @@
       function renderFiles(files) {
         var fileBrowser = $('#images-file-browser');
         fileBrowser.empty(); // Clear existing images
-        files.slice(0, 1000).forEach(function(file) { // Slice to handle client-side rendering issues
+        files.slice(0, 100).forEach(function(file) { // Slice to handle client-side rendering issues
           var fileElement = `
             <div class="single-image-container" data-filename="${file.Filename}">
               <a href="{{preview_webserver}}${file.Path}" data-fancybox="gallery" data-caption="${file.Filename}">
