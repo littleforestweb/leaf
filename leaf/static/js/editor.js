@@ -141,7 +141,7 @@ function adjustAnchorPosition(editor, itemPosition) {
         if (anchor.getHtml().trim() === "&nbsp;" || anchor.getHtml().trim() === "" || anchor.getHtml().trim() === "Area link. Click here to edit.") {
             if (!itemPosition && anchor.getAttribute("class") && anchor.getAttribute("style")) {
                 anchor.setAttribute("class", anchor.getAttribute("class").replace(" leaf_ck_position_defined", ""));
-                anchor.setAttribute("style", anchor.getAttribute("style").replace(/ position:relative!important;background:#fff/g, ""));
+                anchor.setAttribute("style", anchor.getAttribute("style").replace(/ position:relative!important;background:#fff/g, "text-decoration:none;margin:-5px;"));
                 anchor.setHtml("&nbsp;");
             } else { // if (anchor.getAttribute("class") && anchor.getAttribute("style"))
                 let originalPosition = anchor.getStyle("position");
