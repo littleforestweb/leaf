@@ -72,7 +72,6 @@ def site_belongs_to_account(site_id):
         print(f"An error occurred: {str(e)}")
         return False
 
-
 def getSitesList():
     """
     Retrieve a list of sites for the current user's account.
@@ -294,6 +293,13 @@ def get_site_data(site_id):
     try:
         # Get a database connection using the 'db_connection' decorator
         mydb, mycursor = decorators.db_connection()
+
+        # Create html_modules if does not exist
+        accountId = session["accountId"]
+        html_modules_table_name = f"account_{accountId}_html_modules"
+        create_html_modules_query = f"CREATE TABLE IF NOT EXISTS {html_modules_table_name} (id INT AUTO_INCREMENT PRIMARY KEY UNIQUE, name VARCHAR(255) NOT NULL, html_content TEXT NOT NULL, modified_by INT(11) DEFAULT NULL, created DATETIME NULL DEFAULT CURRENT_TIMESTAMP, modified DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)"
+        mycursor.execute(create_html_modules_query)
+        mydb.commit()
 
         # Get User Access folders
         folder_paths = get_user_access_folder(mycursor)
@@ -783,3 +789,43 @@ def user_has_access_asset(asset_id):
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
         raise RuntimeError(f"An error occurred while checking for page access: {str(e)}")
+
+def get_all_modules():
+    modules = []
+    try:
+        # Get a database connection using the 'db_connection' decorator
+        mydb, mycursor = decorators.db_connection()
+
+        # Create html_modules if does not exist
+        accountId = session["accountId"]
+        html_modules_table_name = f"account_{accountId}_html_modules"
+
+        mycursor.execute(f"SELECT id, name FROM {html_modules_table_name}")
+        modules = mycursor.fetchall()
+
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        raise RuntimeError(f"An error occurred while retrieve modules: {str(e)}")
+    finally:
+        mydb.close()
+        return modules
+
+def get_single_modules(module_id):
+    module = []
+    try:
+        # Get a database connection using the 'db_connection' decorator
+        mydb, mycursor = decorators.db_connection()
+
+        # Create html_modules if does not exist
+        accountId = session["accountId"]
+        html_modules_table_name = f"account_{accountId}_html_modules"
+
+        mycursor.execute(f"SELECT * FROM {html_modules_table_name} WHERE id = %s", (module_id,))
+        module = mycursor.fetchone()
+
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        raise RuntimeError(f"An error occurred while retrieve modules: {str(e)}")
+    finally:
+        mydb.close()
+        return module

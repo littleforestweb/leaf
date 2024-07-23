@@ -234,6 +234,10 @@ window.addEventListener('DOMContentLoaded', async function main() {
     });
     data = data.data;
 
+    let site_id = await $.get("/api/get_site_id?page_id=" + page_id, function (site_id) {
+        return site_id;
+    });
+
     // Set html code to ckeditor textarea
     document.getElementById("htmlCode").value = data;
 
@@ -659,6 +663,70 @@ window.addEventListener('DOMContentLoaded', async function main() {
         }
     });
 
+    CKEDITOR.plugins.add('htmlmodule', {
+        icons: 'source',
+        init: function (editor) {
+            CKEDITOR.dialog.add('htmlModuleDialog', function (editor) {
+                return {
+                    title: 'Insert HTML Module',
+                    minWidth: 400,
+                    minHeight: 200,
+                    contents: [
+                        {
+                            id: 'tab1',
+                            label: 'Basic Settings',
+                            elements: [
+                                {
+                                    type: 'select',
+                                    id: 'htmlModules',
+                                    label: 'Choose a module',
+                                    items: [], // This will be populated dynamically
+                                }
+                            ]
+                        }
+                    ],
+                    onShow: function() {
+                        const dialog = this;
+                        const selectElement = dialog.getContentElement('tab1', 'htmlModules');
+                        fetch(`/api/modules?id=${site_id}`)
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Network response was not ok ' + response.statusText);
+                                }
+                                return response.json();
+                            })
+                            .then(modules => {
+                                selectElement.clear();
+                                modules.forEach(module => {
+                                    selectElement.add(module[1], module[0].toString());
+                                });
+                            })
+                            .catch(error => {
+                                console.error('Error fetching modules:', error);
+                            });
+                    },
+                    onOk: function() {
+                        const moduleId = this.getValueOf('tab1', 'htmlModules');
+                        fetch(`/api/modules/${moduleId}?id=${site_id}`)
+                            .then(response => response.json())
+                            .then(module => {
+                                editor.insertHtml(module[2]);
+                            });
+                    }
+                };
+            });
+
+            editor.addCommand('insertHtmlModule', new CKEDITOR.dialogCommand('htmlModuleDialog'));
+
+            editor.ui.addButton('HtmlModule', {
+                label: 'Insert HTML Module',
+                command: 'insertHtmlModule',
+                toolbar: 'insert',
+                icon: 'source'
+            });
+        }
+    });
+
     // Add Save Btn
     CKEDITOR.plugins.add("saveBtn", {
         init: function (editor) {
@@ -683,13 +751,13 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {name: "basicstyles", items: ["Bold", "Italic", "Underline", "Strike", 'Subscript', 'Superscript', "-", "RemoveFormat"]},
             {name: "paragraph", items: ["NumberedList", "BulletedList", "-", "Outdent", "Indent", "-", "Blockquote", "CreateDiv", "-", "JustifyLeft", "JustifyCenter", "JustifyRight", "JustifyBlock"]},
             {name: "links", items: ["Link", "Unlink", "anchorPluginButton"]},
-            {name: "insert", items: ["Image", "Embed", "Table", "HorizontalRule", "SpecialChar", "inserthtml4x", "Slideshow"]},
+            {name: "insert", items: ["Image", "Embed", "Table", "HorizontalRule", "SpecialChar", "inserthtml4x", "Slideshow", "HtmlModule"]},
             {name: "tools", items: ["ShowBlocks"]},
             {name: "styles", items: ["Styles", "Format"]},
             // {name: "colors", items: ["TextColor", "BGColor"]},
             {name: "actions", items: ["Preview", "SaveBtn", "PublishBtn"]}
         ],
-        extraPlugins: "anchor,inserthtml4x,embed,saveBtn,codemirror,image2,extendedImage2,slideshow", // ,pastefromword
+        extraPlugins: "anchor,inserthtml4x,embed,saveBtn,codemirror,image2,extendedImage2,slideshow,htmlmodule", // ,pastefromword
         removePlugins: 'image',
         image2_captionedImageClass: 'uos-component-image',
         image2_captionedClass: 'uos-component-image-caption',
@@ -792,10 +860,6 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
     // Initialize CKEditor with the configuration
     CKEDITOR.replace("htmlCode", ckeditorConfig);
-
-    let site_id = await $.get("/api/get_site_id?page_id=" + page_id, function (site_id) {
-        return site_id;
-    });
 
     CKEDITOR.on('instanceReady', function (evt) {
         var editor = evt.editor;

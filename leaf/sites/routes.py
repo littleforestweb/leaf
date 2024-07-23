@@ -525,6 +525,41 @@ def api_request_unlock():
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
 
+# Get all HTML modules
+@sites.route('/api/modules', methods=['GET'])
+@login_required
+def get_modules():
+    try:
+        # Retrieve the 'id' parameter from the request arguments
+        site_id = werkzeug.utils.escape(request.args.get("id", type=str))
+
+        # Check if the specified site belongs to the user's account
+        if not models.site_belongs_to_account(int(site_id)):
+            return jsonify({"error": "Forbidden"}), 403
+
+        return jsonify(models.get_all_modules())
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({"error": error_message}), 500
+
+# Get HTML module by ID
+@sites.route('/api/modules/<int:module_id>', methods=['GET'])
+@login_required
+def get_module(module_id):
+    try:
+        # Retrieve the 'id' parameter from the request arguments
+        site_id = werkzeug.utils.escape(request.args.get("id", type=str))
+
+        # Check if the specified site belongs to the user's account
+        if not models.site_belongs_to_account(int(site_id)):
+            return jsonify({"error": "Forbidden"}), 403
+
+        return jsonify(models.get_single_modules(int(module_id)))
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({"error": error_message}), 500
 
 @sites.route('/api/get_single_user_folder_access')
 @login_required
