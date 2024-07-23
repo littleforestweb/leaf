@@ -649,6 +649,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {name: "paragraph", items: ["NumberedList", "BulletedList", "-", "Outdent", "Indent", "-", "Blockquote", "CreateDiv", "-", "JustifyLeft", "JustifyCenter", "JustifyRight", "JustifyBlock"]},
             {name: "links", items: ["Link", "Unlink", "anchorPluginButton"]},
             {name: "insert", items: ["Image", "Embed", "Table", "HorizontalRule", "SpecialChar", "inserthtml4x", "Slideshow"]},
+            {name: "tools", items: ["ShowBlocks"]},
             {name: "styles", items: ["Styles", "Format"]},
             // {name: "colors", items: ["TextColor", "BGColor"]},
             {name: "actions", items: ["Preview", "SaveBtn", "PublishBtn"]}
