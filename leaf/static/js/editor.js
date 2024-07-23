@@ -135,18 +135,52 @@ async function check_if_page_is_locked(page_id) {
     });
 }
 
+function adjustDivEditable(editor, addPlaceholder) {
+    let editable = editor.editable();
+    editable.find('div').toArray().forEach(function(div) {
+        let hasDirectText = false;
+        div.$.childNodes.forEach(function(node) {
+            if (node.nodeType === Node.TEXT_NODE && node.nodeValue.trim() !== "") {
+                hasDirectText = true;
+            }
+        });
+
+        if (addPlaceholder) {
+            if (!hasDirectText) {
+                div.appendHtml('<p class="editor_placeholder" style="display:inline-block;width:100%;min-height:10px;height:auto;padding:0"> </p>');
+            }
+        } else {
+            div.$.childNodes.forEach(function(node) {
+                if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('editor_placeholder')) {
+                    let siblingContent = '';
+                    div.$.childNodes.forEach(function(siblingNode) {
+                        if (siblingNode !== node && siblingNode.nodeType === Node.TEXT_NODE) {
+                            siblingContent += siblingNode.nodeValue;
+                            siblingNode.remove();
+                        }
+                    });
+                    node.remove();
+                    if (siblingContent.trim() !== '') {
+                        div.appendHtml(siblingContent.trim());
+                    }
+                }
+            });
+        }
+    });
+}
+
 function adjustAnchorPosition(editor, itemPosition) {
     let editable = editor.editable();
     editable.find('a').toArray().forEach(function (anchor) {
         if (anchor.getHtml().trim() === "&nbsp;" || anchor.getHtml().trim() === "" || anchor.getHtml().trim() === "Area link. Click here to edit.") {
             if (!itemPosition && anchor.getAttribute("class") && anchor.getAttribute("style")) {
                 anchor.setAttribute("class", anchor.getAttribute("class").replace(" leaf_ck_position_defined", ""));
-                anchor.setAttribute("style", anchor.getAttribute("style").replace(/ position:relative!important;background:#fff/g, "text-decoration:none;margin:-5px;"));
+                anchor.setAttribute("style", anchor.getAttribute("style").replace(/ position:relative!important;background:#fff/g, "text-decoration:none;margin:0 0 0 -5px;"));
                 anchor.setHtml("&nbsp;");
             } else { // if (anchor.getAttribute("class") && anchor.getAttribute("style"))
                 let originalPosition = anchor.getStyle("position");
-                anchor.setHtml("Area link. Click here to edit.")
-                anchor.setAttribute("style", (anchor.getAttribute("style") ? anchor.getAttribute("style") : "") + " position:relative!important;background:#fff");
+                anchor.setHtml("Area link. Click here to edit.");
+                anchor.setAttribute("style", (anchor.getAttribute("style") ? anchor.getAttribute("style").replace(/text-decoration:none;margin:0 0 0 -5px;/g, "").replace(/text-decoration:none;margin:-5px;/g, "") : "") + " position:relative!important;background:#fff");
                 anchor.setAttribute("class", anchor.getAttribute("class") + " leaf_ck_position_defined");
                 if (originalPosition.trim() !== "") {
                     anchorPositions[anchor.getOuterHtml()] = originalPosition;
@@ -161,6 +195,7 @@ function adjustAnchorPosition(editor, itemPosition) {
 async function savePage() {
     // Adjust Anchor Position
     await adjustAnchorPosition(CKEDITOR.instances.htmlCode, false);
+    await adjustDivEditable(CKEDITOR.instances.htmlCode, false);
 
     // Get HTML Code
     let sourceCode = CKEDITOR.instances.htmlCode.getData();
@@ -685,9 +720,11 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
                 editor.on('focus', function () {
                     adjustAnchorPosition(editor, "relative!important");
+                    adjustDivEditable(editor, true);
                 });
                 editor.on('blur', function () {
                     adjustAnchorPosition(editor, false);
+                    adjustDivEditable(editor, false);
                 });
 
                 editor.on('beforeCommandExec', function () {
