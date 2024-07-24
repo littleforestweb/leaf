@@ -9,7 +9,10 @@ async function populateEditModuleModal() {
 
     let checked_items = $('input[type="checkbox"]:checked');
 
-    let item_data = await $.get(`/api/modules/${checked_items[0].value}?id=${site_id}`, function (result) {
+    // let item_data = await $.get(`/api/modules/${checked_items[0].value}?id=${site_id}`, function (result) {
+    //     return result;
+    // });
+    let item_data = await $.get('/api/modules/' + checked_items[0].value + '?id=' + site_id, function (result) {
         return result;
     });
     $('#editModuleModal form .mb-3 input#e-module_name').val(item_data[1]);
