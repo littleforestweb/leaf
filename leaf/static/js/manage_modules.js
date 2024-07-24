@@ -9,7 +9,7 @@ async function populateEditModuleModal() {
 
     let checked_items = $('input[type="checkbox"]:checked');
 
-    let item_data = await $.get(`/_api/modules/${checked_items[0].value}?id=${site_id}`, function (result) {
+    let item_data = await $.get(`/api/modules/${checked_items[0].value}?id=${site_id}`, function (result) {
         return result;
     });
     $('#editModuleModal form .mb-3 input#e-module_name').val(item_data[1]);
@@ -148,7 +148,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
     $('#table').DataTable({
         bProcessing: false,
         bServerSide: true,
-        sAjaxSource: "/_api/modules?id=" + site_id,
+        sAjaxSource: "/api/modules?id=" + site_id,
         aoColumns: [
             {
                 aTargets: [0],
