@@ -9,8 +9,7 @@ async function populateEditModuleModal() {
 
     let checked_items = $('input[type="checkbox"]:checked');
 
-    const baseUrl = `${window.location.protocol}//${window.location.host}`;
-    let item_data = await $.get(`${baseUrl}/api/modules/${checked_items[0].value}?id=${site_id}`, function (result) {
+    let item_data = await $.get(`/_api/modules/${checked_items[0].value}?id=${site_id}`, function (result) {
         return result;
     });
     $('#editModuleModal form .mb-3 input#e-module_name').val(item_data[1]);
@@ -18,7 +17,7 @@ async function populateEditModuleModal() {
 }
 
 async function addModule(action) {
-    const baseUrl = `${window.location.protocol}//${window.location.host}`;
+
     accountId = escapeHtml(accountId);
     action = escapeHtml(action);
 
@@ -27,7 +26,7 @@ async function addModule(action) {
 
         $.ajax({
             type: "POST",
-            url: baseUrl + "/set/module?id=" + site_id,
+            url: "/set/module?id=" + site_id,
             contentType: 'application/json',
             data: JSON.stringify(form_data),
             dataType: 'json',
@@ -58,7 +57,7 @@ async function addModule(action) {
 }
 
 async function editModule(action) {
-    const baseUrl = `${window.location.protocol}//${window.location.host}`;
+
     accountId = escapeHtml(accountId);
     action = escapeHtml(action);
 
@@ -67,7 +66,7 @@ async function editModule(action) {
 
         let checked_items = $('input[type="checkbox"]:checked');
 
-        fetch(`${baseUrl}/edit/module/${checked_items[0].value}?id=${site_id}`, {
+        fetch(`/edit/module/${checked_items[0].value}?id=${site_id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -97,7 +96,7 @@ async function editModule(action) {
 }
 
 async function deleteModule(accountId, action) {
-    const baseUrl = `${window.location.protocol}//${window.location.host}`;
+
     let checked_entries = [];
     let checked_entries_str = "";
 
@@ -109,7 +108,7 @@ async function deleteModule(accountId, action) {
 
     $.ajax({
         type: "DELETE",
-        url: baseUrl + "/delete/modules?id=" + site_id,
+        url: "/delete/modules?id=" + site_id,
         contentType: 'application/json',
         data: JSON.stringify({"module_to_delete": checked_entries_str}),
         dataType: 'json',
@@ -138,7 +137,7 @@ async function deleteModule(accountId, action) {
 
 
 window.addEventListener('DOMContentLoaded', async function main() {
-    const baseUrl = `${window.location.protocol}//${window.location.host}`;
+
     // Reset pagesTable
     $('#table').DataTable().clear().draw();
     $('#table').DataTable().destroy();
@@ -149,7 +148,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
     $('#table').DataTable({
         bProcessing: false,
         bServerSide: true,
-        sAjaxSource: baseUrl + "/api/modules?id=" + site_id,
+        sAjaxSource: "/_api/modules?id=" + site_id,
         aoColumns: [
             {
                 aTargets: [0],

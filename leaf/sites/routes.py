@@ -557,7 +557,7 @@ def api_request_unlock():
 # ---------------------------------------------------------------------------------------------------------- #
 
 # Get all HTML modules
-@sites.route('/api/modules/', methods=['GET'])
+@sites.route('/_api/modules/', methods=['GET'])
 @login_required
 def get_modules():
     # Retrieve the 'id' parameter from the request arguments
@@ -578,7 +578,7 @@ def get_modules():
 # ---------------------------------------------------------------------------------------------------------- #
 
 # Get HTML module by ID
-@sites.route('/api/modules/<int:module_id>', methods=['GET'])
+@sites.route('/_api/modules/<int:module_id>', methods=['GET'])
 @login_required
 def get_module(module_id):
     # Retrieve the 'id' parameter from the request arguments
