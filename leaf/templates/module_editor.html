@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Template Editor{% endblock %}
+
+{% block content %}
+
+    <form id="editModuleForm">
+        <label for="editModuleId">Module ID:</label>
+        <input type="number" id="editModuleId" name="id" required>
+        <br>
+        <label for="editModuleName">Name:</label>
+        <input type="text" id="editModuleName" name="name" required>
+        <br>
+        <label for="editModuleContent">HTML Content:</label>
+        <textarea id="editModuleContent" name="html_content" required></textarea>
+        <br>
+        <button type="submit">Edit Module</button>
+    </form>
+
+    <script>
+        
+
+        document.getElementById('editModuleForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const id = document.getElementById('editModuleId').value;
+            const name = document.getElementById('editModuleName').value;
+            const html_content = document.getElementById('editModuleContent').value;
+
+            fetch(`/api/modules/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, html_content })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Module updated successfully');
+                document.getElementById('editModuleForm').reset();
+            })
+            .catch(error => {
+                console.error('Error updating module:', error);
+            });
+        });
+    </script>
+{% endblock %}

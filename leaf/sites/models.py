@@ -790,25 +790,89 @@ def user_has_access_asset(asset_id):
         # Log the exception or handle it as appropriate for your application
         raise RuntimeError(f"An error occurred while checking for page access: {str(e)}")
 
-def get_all_modules():
-    modules = []
+def get_all_modules(request):
+    if request.args.get("sEcho", type=str):
+        jsonR = {'data': [], 'recordsTotal': 0, 'recordsFiltered': 0}
+    else:
+        jsonR = {'data': []}
     try:
         # Get a database connection using the 'db_connection' decorator
         mydb, mycursor = decorators.db_connection()
 
-        # Create html_modules if does not exist
+        limit = False
+        skip = False
+        direction = "-1"
+        sortingColumn = False
+        if request.args.get("iDisplayLength"):
+            limit = int(request.args.get("iDisplayLength"))
+        if request.args.get("iDisplayStart"):
+            skip = int(request.args.get("iDisplayStart"))
+        if request.args.get("sSortDir_0"):
+            direction = request.args.get("sSortDir_0").upper()
+        if request.args.get("iSortCol_0"):
+            sortingColumn = request.args.get("iSortCol_0")
+
+
         accountId = session["accountId"]
         html_modules_table_name = f"account_{accountId}_html_modules"
 
-        mycursor.execute(f"SELECT id, name FROM {html_modules_table_name}")
-        modules = mycursor.fetchall()
+        if sortingColumn:
+            searchColumnsFields = []
+            field_list = []
+
+            search_value_1 = request.args.get(f"sSearch_1")
+            search_value_2 = request.args.get(f"sSearch_2")
+            search_value_3 = request.args.get(f"sSearch_3")
+            if search_value_1:
+                searchColumnsFields.append({"field": "name", "value": search_value_1.replace("((((", "").replace("))))", "")})
+            if search_value_2:
+                searchColumnsFields.append({"field": "modified_by", "value": search_value_2.replace("((((", "").replace("))))", "")})
+            if search_value_3:
+                searchColumnsFields.append({"field": "modified", "value": search_value_3.replace("((((", "").replace("))))", "")})
+
+            for searchColumnsField in searchColumnsFields:
+                searchColumnsFieldValue = searchColumnsField['value'].replace('"', "'")
+                field_list.append(f"{searchColumnsField['field']} LIKE %s")
+
+            userUsernameEmail = 'CONCAT(user.id, ", ", user.username, ", ", user.email)'
+
+            where_clause = " AND ".join(field_list)
+
+            order_by = "name"
+            if int(sortingColumn) == 2:
+                order_by = "modified_by"
+            if int(sortingColumn) == 3:
+                order_by = "modified"
+
+            if field_list:
+                query_params = list(f"%{searchColumnsField['value']}%" for searchColumnsField in searchColumnsFields)
+                get_templates_query = f'SELECT {html_modules_table_name}.id, name, CONCAT(user.id, ", ", user.username, ", ", user.email), modified FROM {html_modules_table_name} INNER JOIN user ON {html_modules_table_name}.modified_by = user.id WHERE {where_clause} ORDER BY {order_by} {direction} LIMIT %s, %s'
+                mycursor.execute(get_templates_query, query_params + [skip, limit])
+            else:
+                get_templates_query = f'SELECT {html_modules_table_name}.id, name, CONCAT(user.id, ", ", user.username, ", ", user.email), modified FROM {html_modules_table_name} INNER JOIN user ON {html_modules_table_name}.modified_by = user.id ORDER BY {order_by} {direction} LIMIT %s, %s'
+                mycursor.execute(get_templates_query, (skip, limit))
+
+            modules = mycursor.fetchall()
+
+        else:
+
+            mycursor.execute(f"SELECT id, name, modified_by, modified FROM {html_modules_table_name}")
+            modules = mycursor.fetchall()
+
+        mycursor.execute(f"SELECT COUNT(*) FROM {html_modules_table_name}")
+        listCount = mycursor.fetchone()[0]
+
+        jsonR['data'] = modules
+        jsonR['recordsTotal'] = listCount
+        jsonR['recordsFiltered'] = len(modules)
 
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
+        print(e)
         raise RuntimeError(f"An error occurred while retrieve modules: {str(e)}")
     finally:
         mydb.close()
-        return modules
+        return jsonR
 
 def get_single_modules(module_id):
     module = []
@@ -816,7 +880,6 @@ def get_single_modules(module_id):
         # Get a database connection using the 'db_connection' decorator
         mydb, mycursor = decorators.db_connection()
 
-        # Create html_modules if does not exist
         accountId = session["accountId"]
         html_modules_table_name = f"account_{accountId}_html_modules"
 
@@ -829,3 +892,63 @@ def get_single_modules(module_id):
     finally:
         mydb.close()
         return module
+
+
+def add_module(name, html_content):
+    try:
+        # Get a database connection using the 'db_connection' decorator
+        mydb, mycursor = decorators.db_connection()
+
+        accountId = session["accountId"]
+        html_modules_table_name = f"account_{accountId}_html_modules"
+        session_user_id = session["id"]
+
+        mycursor.execute(f"INSERT INTO {html_modules_table_name} (name, html_content, modified_by) VALUES (%s, %s, %s)", (name, html_content, session_user_id))
+        mydb.commit()
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        raise RuntimeError(f"An error occurred while retrieve modules: {str(e)}")
+        return False
+    finally:
+        mydb.close()
+        return True
+
+def update_module(module_id, name, html_content):
+    try:
+        # Get a database connection using the 'db_connection' decorator
+        mydb, mycursor = decorators.db_connection()
+
+        accountId = session["accountId"]
+        html_modules_table_name = f"account_{accountId}_html_modules"
+        session_user_id = session["id"]
+
+        mycursor.execute(f"UPDATE {html_modules_table_name} SET name = %s, html_content = %s, modified_by = {session_user_id} WHERE id = %s", (name, html_content, module_id))
+        mydb.commit()
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        raise RuntimeError(f"An error occurred while retrieve modules: {str(e)}")
+        return False
+    finally:
+        mydb.close()
+        return True
+
+def delete_module(module_to_delete):
+    try:
+        # Get a database connection using the 'db_connection' decorator
+        mydb, mycursor = decorators.db_connection()
+
+        accountId = session["accountId"]
+        html_modules_table_name = f"account_{accountId}_html_modules"
+
+        module_to_delete = module_to_delete.split(",")
+
+        for module_id in module_to_delete:
+            mycursor.execute(f"DELETE FROM {html_modules_table_name} WHERE id = %s", (module_id,))
+            mydb.commit()
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        raise RuntimeError(f"An error occurred while retrieve modules: {str(e)}")
+        return False
+    finally:
+        mydb.close()
+        return True

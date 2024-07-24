@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Modules{% endblock %}
+
+{% block content %}
+    <script>
+        $("#nav-link-lists").addClass("active");
+    </script>
+
+    <!-- ADD MODULE MODAL -->
+    <div class="modal fade" id="addModuleModal" tabindex="-1" aria-labelledby="addModuleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addModuleLabel">Add Module</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" id="setModule">
+                        <div class="mb-3">
+                            <label for="s-module_name" class="col-form-label">Name:</label>
+                            <input type="text" class="form-control" name="s-module_name" id="s-module_name"/>
+                        </div>
+                        <div class="mb-3">
+                            <label for="s-html_content" class="col-form-label">HTML Content:</label>
+                            <textarea style="height:250px" type="text" class="form-control" name="s-html_content" id="s-html_content" value="" onkeyup="sanitizeInput(event)"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" id="add_module_btn" onclick="addModule('save')">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT MODULE MODAL -->
+    <div class="modal fade" id="editModuleModal" tabindex="-1" aria-labelledby="editModuleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModuleLabel">Edit Module</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" id="updateModule">
+                        <div class="mb-3">
+                            <label for="e-module_name" class="col-form-label">Name:</label>
+                            <input type="text" class="form-control" name="e-module_name" id="e-module_name"/>
+                        </div>
+                        <div class="mb-3">
+                            <label for="s-html_content" class="col-form-label">HTML Content:</label>
+                            <textarea style="height:250px" type="text" class="form-control" name="e-html_content" id="e-html_content" value="" onkeyup="sanitizeInput(event)"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" id="edit_module_btn" onclick="editModule('edit')">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE MODULE MODAL -->
+    <div class="modal fade" id="deleteModuleModal" tabindex="-1" aria-labelledby="deleteModuleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModuleLabel">Deleting Module</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <h4>Are you sure you want to delete the selected module?</h4>
+                            <h5>You cannot reverse this action!</h5>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                    <button type="button" class="btn btn-red" id="delete_module_btn" onclick="deleteModule('{{ accountId }}', 'delete')">Yes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ERROR MODAL -->
+    <div class="modal fade" id="errorModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Error adding new module</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>There was an error adding your module<br>Please try again.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteErrorModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Error deleting module/s</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>There was an error deleting your module/s<br>Please try again.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- NOTIFICATIONS -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <!-- Add Success -->
+        <div id="addModuleSuccessNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Module added successfully!
+            </div>
+        </div>
+
+        <div id="deleteModuleSuccessNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Modules deleted successfully!
+            </div>
+        </div>
+
+        <div id="editModuleSuccessNotification" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Module edited successfully!
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div id="TableDiv" class="card mb-4">
+        <div class="card-body">
+            <div class="header-1">
+                <h3 class="pull-left">Modules</h3>
+                <div class="pull-right header-btns">
+
+                    {% if is_admin %}
+                        <!-- Add Module Btn -->
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addModuleModal">Add Module</button>
+                        <button type="button" class="btn btn-blue editButton" data-bs-toggle="modal" data-bs-target="#editModuleModal" onclick="populateEditModuleModal();" disabled>Edit Module</button>
+                        {% if is_admin == 1 %}
+                            <button type="button" class="btn btn-red deleteButton" data-bs-toggle="modal" data-bs-target="#deleteModuleModal" disabled>Delete Modules</button>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            <table class="table" id="table">
+                <thead>
+                <tr>
+                    <th></th>
+                    <th>Module</th>
+                    <th>Modified By</th>
+                    <th>Modified</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot>
+                <tr>
+                    <th></th>
+                    <th>Module</th>
+                    <th>Modified By</th>
+                    <th>Modified</th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <!-- End Table -->
+{% endblock %}
+
+
+{% block script %}
+    <script type="text/javascript">var accountId = {{ accountId }};
+    var userId = {{ userId }};
+    var isAdmin = {{ is_admin }}
+  	var site_id = {{ id }}</script>
+    <script src="{{ url_for('static', filename='js/manage_modules.js') }}"></script>
+{% endblock %}
