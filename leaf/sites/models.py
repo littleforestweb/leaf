@@ -854,21 +854,23 @@ def get_all_modules(request):
 
             modules = mycursor.fetchall()
 
+            mycursor.execute(f"SELECT COUNT(*) FROM {html_modules_table_name}")
+            listCount = mycursor.fetchone()[0]
+
+            jsonR['data'] = modules
+            jsonR['recordsTotal'] = listCount
+            jsonR['recordsFiltered'] = len(modules)
+
         else:
 
             mycursor.execute(f"SELECT id, name, modified_by, modified FROM {html_modules_table_name}")
             modules = mycursor.fetchall()
 
-        mycursor.execute(f"SELECT COUNT(*) FROM {html_modules_table_name}")
-        listCount = mycursor.fetchone()[0]
-
-        jsonR['data'] = modules
-        jsonR['recordsTotal'] = listCount
-        jsonR['recordsFiltered'] = len(modules)
+            jsonR = modules
+        
 
     except Exception as e:
         # Log the exception or handle it as appropriate for your application
-        print(e)
         raise RuntimeError(f"An error occurred while retrieve modules: {str(e)}")
     finally:
         mydb.close()
