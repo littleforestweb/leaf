@@ -681,7 +681,9 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 }
                 buttons.push(CKEDITOR.dialog.okButton);
                 buttons.push(CKEDITOR.dialog.cancelButton);
-                
+
+                const baseUrl = `${window.location.protocol}//${window.location.host}`;
+
                 return {
                     title: 'Insert HTML Module',
                     minWidth: 400,
@@ -704,7 +706,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                     onShow: function() {
                         const dialog = this;
                         const selectElement = dialog.getContentElement('tab1', 'htmlModules');
-                        fetch(`/api/modules?id=${site_id}`)
+                        fetch(`${baseUrl}/api/modules?id=${site_id}`)
                             .then(response => {
                                 if (!response.ok) {
                                     throw new Error('Network response was not ok ' + response.statusText);
@@ -723,7 +725,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                     },
                     onOk: function() {
                         const moduleId = this.getValueOf('tab1', 'htmlModules');
-                        fetch(`/api/modules/${moduleId}?id=${site_id}`)
+                        fetch(`${baseUrl}/api/modules/${moduleId}?id=${site_id}`)
                             .then(response => response.json())
                             .then(module => {
                                 editor.insertHtml(module[2]);
