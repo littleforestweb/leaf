@@ -667,6 +667,21 @@ window.addEventListener('DOMContentLoaded', async function main() {
         icons: 'source',
         init: function (editor) {
             CKEDITOR.dialog.add('htmlModuleDialog', function (editor) {
+                // Dynamically create the buttons array
+                let buttons = [];
+                if (is_admin === 1) {
+                    buttons.push({
+                        id: 'manageModulesButton',
+                        type: 'button',
+                        label: 'Manage Modules',
+                        onClick: function() {
+                            window.open(`/manage_modules?id=${site_id}`, '_blank');
+                        }
+                    });
+                }
+                buttons.push(CKEDITOR.dialog.okButton);
+                buttons.push(CKEDITOR.dialog.cancelButton);
+                
                 return {
                     title: 'Insert HTML Module',
                     minWidth: 400,
@@ -685,6 +700,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                             ]
                         }
                     ],
+                    buttons: buttons,
                     onShow: function() {
                         const dialog = this;
                         const selectElement = dialog.getContentElement('tab1', 'htmlModules');
