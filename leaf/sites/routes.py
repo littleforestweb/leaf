@@ -8,6 +8,7 @@ from leaf.serverside import table_schemas
 from leaf.serverside.serverside_table import ServerSideTable
 from leaf.sites import models
 from leaf.workflow import models as workflow_models
+import html
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -47,6 +48,33 @@ def view_sites():
         # Log the exception or handle it as appropriate for your application
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
+
+
+@sites.route("/manage_modules")
+@login_required
+def view_manage_modules():
+    """
+    Renders the 'manage_modules.html' template with specific data.
+
+    Returns:
+        HTML template with specific data.
+    """
+    site_id = werkzeug.utils.escape(request.args.get('id', type=str))
+
+    return render_template('manage_modules.html', userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], id=site_id, site_notice=Config.SITE_NOTICE, page_extension=Config.PAGES_EXTENSION)
+
+@sites.route("/modules/<int:module_id>")
+@login_required
+def view_editor_module(module_id):
+    """
+    Renders the 'module_editor.html' template with specific data.
+
+    Returns:
+        HTML template with specific data.
+    """
+    site_id = werkzeug.utils.escape(request.args.get('id', type=str))
+
+    return render_template('module_editor.html', userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], id=site_id, site_notice=Config.SITE_NOTICE, page_extension=Config.PAGES_EXTENSION)
 
 
 @sites.route("/api/get_sites/")
@@ -525,6 +553,125 @@ def api_request_unlock():
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
 
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
+# Get all HTML modules
+@sites.route('/api/modules/', methods=['GET'])
+@login_required
+def get_modules():
+    # Retrieve the 'id' parameter from the request arguments
+    site_id = werkzeug.utils.escape(request.args.get("id", type=str))
+
+    # Check if the specified site belongs to the user's account
+    if not models.site_belongs_to_account(int(site_id)):
+        return jsonify({"error": "Forbidden"}), 403
+    try:
+        return jsonify(models.get_all_modules(request))
+        
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({"error": error_message}), 500
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
+# Get HTML module by ID
+@sites.route('/api/modules/<int:module_id>', methods=['GET'])
+@login_required
+def get_module(module_id):
+    # Retrieve the 'id' parameter from the request arguments
+    site_id = werkzeug.utils.escape(request.args.get("id", type=str))
+
+    # Check if the specified site belongs to the user's account
+    if not models.site_belongs_to_account(int(site_id)):
+        return jsonify({"error": "Forbidden"}), 403
+    try:
+        return jsonify(models.get_single_modules(int(module_id)))
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({"error": error_message}), 500
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
+# Add a new HTML module
+@sites.route('/set/module', methods=['POST'])
+def add_module():
+    # Retrieve the 'id' parameter from the request arguments
+    site_id = werkzeug.utils.escape(request.args.get("id", type=str))
+
+    # Check if the specified site belongs to the user's account
+    if not models.site_belongs_to_account(int(site_id)):
+        return jsonify({"error": "Forbidden"}), 403
+    try:
+        data = request.json
+        name = data.get('s-module_name')
+        html_content = html.unescape(data.get('s-html_content'))
+
+        response = models.add_module(name, html_content)
+
+        return jsonify({'message': response}), 201
+    except Exception as e:
+        # Log the exception or handle it as appropriate for your application
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({"error": error_message}), 500
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
+# Edit an existing HTML module
+@sites.route('/edit/module/<int:module_id>', methods=['PUT'])
+def edit_module(module_id):
+    # Retrieve the 'id' parameter from the request arguments
+    site_id = werkzeug.utils.escape(request.args.get("id", type=str))
+
+    # Check if the specified site belongs to the user's account
+    if not models.site_belongs_to_account(int(site_id)):
+        return jsonify({"error": "Forbidden"}), 403
+    try:
+        data = request.json
+        name = data.get('e-module_name')
+        html_content = html.unescape(data.get('e-html_content'))
+
+        models.update_module(module_id, name, html_content)
+
+        return jsonify({'message': 'Module updated successfully'})
+    except Exception as e:
+        print(e)
+        # Log the exception or handle it as appropriate for your application
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({"error": error_message}), 500
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
+
+# Delete an existing HTML module
+@sites.route('/delete/modules', methods=['DELETE'])
+def delete_module():
+    # Retrieve the 'id' parameter from the request arguments
+    site_id = werkzeug.utils.escape(request.args.get("id", type=str))
+
+    # Check if the specified site belongs to the user's account
+    if not models.site_belongs_to_account(int(site_id)):
+        return jsonify({"error": "Forbidden"}), 403
+    try:
+        data = request.json
+        module_to_delete = data.get('module_to_delete')
+
+        models.delete_module(module_to_delete)
+
+        return jsonify({'message': 'Module deleted successfully'})
+    except Exception as e:
+        print(e)
+        # Log the exception or handle it as appropriate for your application
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({"error": error_message}), 500
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
 
 @sites.route('/api/get_single_user_folder_access')
 @login_required
@@ -535,6 +682,9 @@ def api_get_single_user_folder_access():
         # Log the exception or handle it as appropriate for your application
         error_message = f"An error occurred: {str(e)}"
         return jsonify({"error": error_message}), 500  # Return a 500 Internal Server Error status code
+
+# ---------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------- #
 
 @sites.route('/api/get_single_user_folder_access_for_lists')
 @login_required
