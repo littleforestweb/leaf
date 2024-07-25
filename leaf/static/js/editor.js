@@ -743,6 +743,85 @@ window.addEventListener('DOMContentLoaded', async function main() {
         }
     });
 
+    CKEDITOR.plugins.add('headingcontextmenu', {
+        requires: 'contextmenu,dialog',
+        init: function (editor) {
+            editor.addMenuGroup('headingGroup', 10);
+
+            // Add a new context menu item
+            editor.addMenuItems({
+                h3Properties: {
+                    label: 'Heading Properties',
+                    command: 'headingDialog',
+                    group: 'headingGroup',
+                    order: 1
+                }
+            });
+
+            // Add a command that opens a dialog for the h3 element
+            editor.addCommand('headingDialog', new CKEDITOR.dialogCommand('headingDialog'));
+
+            // Define the dialog
+            CKEDITOR.dialog.add('headingDialog', function (editor) {
+                var selection = editor.getSelection();
+                var element = selection.getStartElement();
+                if (element && /^h[1-6]$/.test(element.getName())) {
+                    this.element = element;
+                    var attributes = element.getAttributes();
+                    var dialog = this;
+                    var contents = [];
+
+                    // Dynamically create dialog elements based on attributes
+                    for (var key in attributes) {
+                        if (attributes.hasOwnProperty(key)) {
+                            contents.push({
+                                type: 'text',
+                                id: key,
+                                label: key,
+                                'default': attributes[key]
+                            });
+                        }
+                    }
+                }
+
+                return {
+                    title: 'Heading Properties',
+                    minWidth: 400,
+                    minHeight: 200,
+                    contents: [
+                        {
+                            id: 'info',
+                            elements: contents
+                        }
+                    ],
+                    onOk: function () {
+                        var dialog = this;
+                        var selection = editor.getSelection();
+                        var element = selection.getStartElement();
+
+                        // Update element attributes with dialog values
+                        this.definition.contents[0].elements.forEach(function (el) {
+                            var value = dialog.getValueOf('info', el.id);
+                            if (value) {
+                                element.setAttribute(el.id, value);
+                            } else {
+                                element.removeAttribute(el.id);
+                            }
+                        });
+                    }
+                };
+            });
+
+            // Override the default context menu listener
+            editor.contextMenu.addListener(function (element) {
+                // Check if the clicked element is an h3 tag
+                if (/^h[1-6]$/.test(element.getName())) {
+                    return { h3Properties: CKEDITOR.TRISTATE_OFF };
+                }
+            });
+        }
+    });
+
     // Add Save Btn
     CKEDITOR.plugins.add("saveBtn", {
         init: function (editor) {
@@ -773,7 +852,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             // {name: "colors", items: ["TextColor", "BGColor"]},
             {name: "actions", items: ["Preview", "SaveBtn", "PublishBtn"]}
         ],
-        extraPlugins: "anchor,inserthtml4x,embed,saveBtn,codemirror,image2,extendedImage2,slideshow,htmlmodule", // ,pastefromword
+        extraPlugins: "anchor,inserthtml4x,embed,saveBtn,codemirror,image2,extendedImage2,slideshow,htmlmodule,contextmenu,headingcontextmenu,dialog", // ,pastefromword
         removePlugins: 'image',
         image2_captionedImageClass: 'uos-component-image',
         image2_captionedClass: 'uos-component-image-caption',
