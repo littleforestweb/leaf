@@ -15,7 +15,7 @@ def get_users_data():
 
     try:
         # Execute SQL query to fetch user data
-        mycursor.execute("SELECT user.id, user.username, user.email, user.is_admin, user.is_manager, user_image.first_name, user_image.last_name, user_image.display_name FROM user LEFT JOIN user_image ON user_id = user.id")
+        mycursor.execute("SELECT user.id, user.username, user.email, user.is_admin, user.is_manager, user_image.first_name, user_image.last_name, user_image.display_name FROM user LEFT JOIN user_image ON user_id = user.id WHERE user.account_id = " + str(session["accountId"]))
 
         # Extract user data and create a list of dictionaries
         users_list = [{"id": user[0], "username": user[1], "email": user[2], "is_admin": user[3], "is_manager": user[4], "first_name": user[5], "last_name": user[6], "display_name": user[7]} for user in mycursor.fetchall()]
