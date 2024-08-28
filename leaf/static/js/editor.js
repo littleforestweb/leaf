@@ -146,7 +146,7 @@ function adjustDivEditable(editor, addPlaceholder) {
         });
 
         if (addPlaceholder) {
-            if (!hasDirectText || hasDirectText) {
+            if (!hasDirectText) {
                 div.appendHtml('<p class="editor_placeholder" style="display:inline-block;width:100%;min-height:10px;height:auto;padding:0"> </p>');
             }
         } else {
