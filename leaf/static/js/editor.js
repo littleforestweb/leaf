@@ -139,8 +139,6 @@ function adjustDivEditable(editor, addPlaceholder) {
     let editable = editor.editable();
     editable.find('div').toArray().forEach(function(div) {
         let hasDirectText = false;
-
-        // Check if the div has direct text nodes
         div.$.childNodes.forEach(function(node) {
             if (node.nodeType === Node.TEXT_NODE && node.nodeValue.trim() !== "") {
                 hasDirectText = true;
@@ -148,14 +146,10 @@ function adjustDivEditable(editor, addPlaceholder) {
         });
 
         if (addPlaceholder) {
-            if (!hasDirectText) {
-                // Prepend the placeholder
-                div.insertAdjacentHTML('afterbegin', '<p class="editor_placeholder" style="display:inline-block;width:100%;min-height:10px;height:auto;padding:0"> </p>');
-                // Append the placeholder
-                div.insertAdjacentHTML('beforeend', '<p class="editor_placeholder" style="display:inline-block;width:100%;min-height:10px;height:auto;padding:0"> </p>');
+            if (!hasDirectText || hasDirectText) {
+                div.appendHtml('<p class="editor_placeholder" style="display:inline-block;width:100%;min-height:10px;height:auto;padding:0"> </p>');
             }
         } else {
-            // Remove placeholders and merge any text content around them
             div.$.childNodes.forEach(function(node) {
                 if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('editor_placeholder')) {
                     let siblingContent = '';
@@ -167,14 +161,13 @@ function adjustDivEditable(editor, addPlaceholder) {
                     });
                     node.remove();
                     if (siblingContent.trim() !== '') {
-                        div.insertAdjacentHTML('beforeend', siblingContent.trim());
+                        div.appendHtml(siblingContent.trim());
                     }
                 }
             });
         }
     });
 }
-
 
 function adjustAnchorPosition(editor, itemPosition) {
     let editable = editor.editable();
