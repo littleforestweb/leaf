@@ -314,9 +314,9 @@ function unlockPage(page_id, action, thisBtn) {
         success: function (response) {
             if (response["is_page_locked"] === false) {
                 var jqBtn = $(thisBtn); // Ensure jQuery object
-                var parentTd = jqBtn.closest('td').closest('tr'); // Find the closest TD ancestor
-                jqBtn.closest('td').html("Unlocked") // Remove the button
-                parentTd.find("a.disabled.unlock-btn").removeClass("disabled").removeAttr("disabled");
+                var parentTd = jqBtn.closest('td'); // Find the closest TD ancestor
+                parentTd.find("a.unlock-btn").remove();
+                parentTd.prepend('<a class="not_locked btn btn-sm" target="_blank" href="/editor?page_id=' + page_id + '">Edit</a>')
             }
         },
         error: function (response) {
@@ -402,7 +402,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [5],
                 mData: function (source, type, val) {
-                    return "<a class='" + (source["Locked"] === 0 ? "not_locked" : "unlock-btn") + " btn btn-sm' target='_blank' href='/editor?page_id=" + source["id"] + "'>" + (source["Locked"] === 0 ? "Edit" : "Unlock") + "</a><a class='btn btn-sm' style='margin-left:5px' href='/versions?file_type=page&file_id=" + source["id"] + "'>Versions</a>";
+                    return "<a" + (is_admin && source["Locked"] === 1 ? " onclick=\"unlockPage(\'" + source["id"] + "\', \'unlock\', this)\"" : "") + " class='" + (source["Locked"] === 0 ? "not_locked" : "unlock-btn") + " btn btn-sm' " + (is_admin && source["Locked"] === 1 ? "href='javascript:void(0);'" : "target='_blank' href='/editor?page_id=" + source["id"] + "'" ) + ">" + (source["Locked"] === 0 ? "Edit" : "Unlock") + "</a><a class='btn btn-sm' style='margin-left:5px' href='/versions?file_type=page&file_id=" + source["id"] + "'>Versions</a>";
                 }
             }
 

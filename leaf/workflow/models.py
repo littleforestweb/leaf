@@ -1092,7 +1092,7 @@ def proceed_action_workflow(request, not_real_request=None):
             perm_level = get_user_permission_level(session["id"], workflow_folder_path)
         else:
             perm_level = get_user_permission_level(werkzeug.utils.escape(request.form.get("user_id")), workflow_folder_path)
-        if perm_level != 4:
+        if perm_level != 4 and session["is_admin"] != 1:
             return {"error": "Forbidden"}
 
     if not listName and thisType == 1:
