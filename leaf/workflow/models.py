@@ -1941,9 +1941,10 @@ def parse_xml(file_path):
 
 def find_item_by_guid(root, new_guid):
     for item in root.findall('./channel/item'):
-        guid = item.find('guid').text
-        # print(guid + " : "+ new_guid)
-        if guid == new_guid:
+        if item and item.find('guid'):
+            guid = item.find('guid').text
+        
+        if guid and guid == new_guid:
             return item
     return None
 
@@ -1951,8 +1952,10 @@ def find_item_by_guid(root, new_guid):
 def find_and_delete_item_by_guid(root, new_guid):
     channel = root.find('./channel')
     for item in channel.findall('item'):
-        guid = item.find('guid').text
-        if guid == new_guid:
+        if item and item.find('guid'):
+            guid = item.find('guid').text
+        
+        if guid and guid == new_guid:
             channel.remove(item)
             return True
     return False
