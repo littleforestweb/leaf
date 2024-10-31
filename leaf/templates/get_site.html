@@ -78,6 +78,7 @@
                     <div class="container mb-3">
                         <label class="form-label" for="userFolderSelect">Select Folder</label>
                         <select class="form-select" id="userFolderSelect">
+                            <option value="" selected>Select folder</option>
                             {% for folder in user_access_folder %}
                                 <option value="{{ folder }}">{{ folder }}</option>
                             {% endfor %}
