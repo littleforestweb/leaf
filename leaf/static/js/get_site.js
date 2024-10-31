@@ -101,10 +101,12 @@ async function addNewDuplicatedPage() {
     let ogURL = escapeHtml($("#originalUrl").val());
     let newTitle = escapeHtml($("#newTitle").val());
     let newURL = escapeHtml($("#newURL").val());
+
+    // Check user inputs -> Send alert message
+    let alertMessageElem = document.getElementById("alertMessage");
+    
     if (newURL.trim() !== "") {
 
-        // Check user inputs -> Send alert message
-        let alertMessageElem = document.getElementById("alertMessage");
         if (newURL === "" || newTitle === "") {
             alertMessageElem.children[0].innerText = "New URL/Title is empty";
             alertMessageElem.hidden = false;
