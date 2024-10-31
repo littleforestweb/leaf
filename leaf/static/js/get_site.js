@@ -102,70 +102,78 @@ async function addNewDuplicatedPage() {
     let newTitle = escapeHtml($("#newTitle").val());
     let newURL = escapeHtml($("#newURL").val());
 
+    let userFolderSelect = escapeHtml($("#userFolderSelect").val());
     // Check user inputs -> Send alert message
     let alertMessageElem = document.getElementById("alertMessage");
-    if (newURL === "" || newTitle === "") {
-        alertMessageElem.children[0].innerText = "New URL/Title is empty";
-        alertMessageElem.hidden = false;
-        return;
-    }
-    if (ogURL === newURL || ogTitle === newTitle) {
-        alertMessageElem.children[0].innerText = "New URL/Title is equal to Original URL/Title";
-        alertMessageElem.hidden = false;
-        return;
-    }
+    
+    if (userFolderSelect.trim() !== "") {
 
-    // Check for valid extensions
-    const validWebpageExtensions = [".html", ".htm", ".php", ".asp", ".aspx", ".jsp", ".jspx", ".cfm", ".cgi", ".pl", ".py", ".rb", ".page"];
-    let isValidExtension = false;
-    for (let i = 0; i < validWebpageExtensions.length; i++) {
-        if (newURL.endsWith(validWebpageExtensions[i])) {
-            isValidExtension = true;
-            break;
+        if (newURL === "" || newTitle === "") {
+            alertMessageElem.children[0].innerText = "New URL/Title is empty";
+            alertMessageElem.hidden = false;
+            return;
         }
-    }
-    if (!isValidExtension) {
-        alertMessageElem.children[0].innerText = "New URL doesn't end with a valid extension (" + validWebpageExtensions.join(', ') + ")";
-        alertMessageElem.hidden = false;
-        return;
-    }
-
-    // Check for allowed chars
-    let regex = /^[a-zA-Z0-9_\/.\- ;=]+$/;
-    if (!regex.test(newURL)) {
-        alertMessageElem.children[0].innerText = "New URL has invalid characters. [a-zA-Z0-9_/-;=]";
-        alertMessageElem.hidden = false;
-        return;
-    }
-
-    // Check for allowed user folder
-    let startsWithFolder = user_access_folder.some(folder => newURL.startsWith(folder));
-    if (!startsWithFolder) {
-        alertMessageElem.children[0].innerText = "Permission Denied - New URL does not belong to any authorized folder";
-        alertMessageElem.hidden = false;
-        return;
-    }
-
-    alertMessageElem.hidden = true;
-    $.ajax({
-        type: "POST", url: "/api/duplicate_page", data: {
-            "site_id": site_id, "ogPageId": ogPageId, "ogTitle": ogTitle, "ogURL": ogURL, "newTitle": newTitle, "newURL": newURL
-        }, success: function (entry) {
-            if (entry["message"] === "file already exists") {
-                alertMessageElem.children[0].innerText = "File path already exists.";
-                alertMessageElem.hidden = false;
-            } else if (entry["message"] === "success") {
-                $('#renameModal').modal('hide');
-                window.location.reload();
-            }
-        }, error: function (xhr, textStatus, errorThrown) {
-            if (xhr.status === 403) {
-                alertMessageElem.children[0].innerText = "Permission Denied - New URL does not belong to any authorized folder";
-                alertMessageElem.hidden = false;
-            }
-            console.log(xhr, textStatus, errorThrown)
+        if (ogURL === newURL || ogTitle === newTitle) {
+            alertMessageElem.children[0].innerText = "New URL/Title is equal to Original URL/Title";
+            alertMessageElem.hidden = false;
+            return;
         }
-    });
+
+        // Check for valid extensions
+        const validWebpageExtensions = [".html", ".htm", ".php", ".asp", ".aspx", ".jsp", ".jspx", ".cfm", ".cgi", ".pl", ".py", ".rb", ".page"];
+        let isValidExtension = false;
+        for (let i = 0; i < validWebpageExtensions.length; i++) {
+            if (newURL.endsWith(validWebpageExtensions[i])) {
+                isValidExtension = true;
+                break;
+            }
+        }
+        if (!isValidExtension) {
+            alertMessageElem.children[0].innerText = "New URL doesn't end with a valid extension (" + validWebpageExtensions.join(', ') + ")";
+            alertMessageElem.hidden = false;
+            return;
+        }
+
+        // Check for allowed chars
+        let regex = /^[a-zA-Z0-9_\/.\- ;=]+$/;
+        if (!regex.test(newURL)) {
+            alertMessageElem.children[0].innerText = "New URL has invalid characters. [a-zA-Z0-9_/-;=]";
+            alertMessageElem.hidden = false;
+            return;
+        }
+
+        // Check for allowed user folder
+        let startsWithFolder = user_access_folder.some(folder => newURL.startsWith(folder));
+        if (!startsWithFolder) {
+            alertMessageElem.children[0].innerText = "Permission Denied - New URL does not belong to any authorized folder";
+            alertMessageElem.hidden = false;
+            return;
+        }
+
+        alertMessageElem.hidden = true;
+        $.ajax({
+            type: "POST", url: "/api/duplicate_page", data: {
+                "site_id": site_id, "ogPageId": ogPageId, "ogTitle": ogTitle, "ogURL": ogURL, "newTitle": newTitle, "newURL": newURL
+            }, success: function (entry) {
+                if (entry["message"] === "file already exists") {
+                    alertMessageElem.children[0].innerText = "File path already exists.";
+                    alertMessageElem.hidden = false;
+                } else if (entry["message"] === "success") {
+                    $('#renameModal').modal('hide');
+                    window.location.reload();
+                }
+            }, error: function (xhr, textStatus, errorThrown) {
+                if (xhr.status === 403) {
+                    alertMessageElem.children[0].innerText = "Permission Denied - New URL does not belong to any authorized folder";
+                    alertMessageElem.hidden = false;
+                }
+                console.log(xhr, textStatus, errorThrown)
+            }
+        });
+    } else {
+        alertMessageElem.children[0].innerText = "Please select a folder";
+        alertMessageElem.hidden = false;
+    }
 }
 
 document.getElementById("userFolderSelect").addEventListener("change", function () {
