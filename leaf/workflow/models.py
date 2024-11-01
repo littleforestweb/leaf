@@ -116,7 +116,7 @@ def extract_workflow_data(results):
     workflow_data = {
         "id": results[0],
         "startUser": results[1],
-        "title": results[2],
+        "title": results[2].replace('"', "'"),
         "assignEditor": results[3],
         "dueDate": results[4],
         "tags": results[5],
