@@ -204,7 +204,7 @@ def process_type_1_or_5(workflow_data, mycursor):
 
         site_title = result[0]
 
-        site_titles += site_title + ";"
+        site_titles += site_title.replace('"', "'") + ";"
         site_titles = site_titles[0:-1]
         workflow_data["siteTitles"] = unquote(site_titles)
         workflow_data["siteIds"] = workflow_data["siteIds"]
