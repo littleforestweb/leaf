@@ -1936,9 +1936,7 @@ def update_rss_feed(mycursor, account_id, list_name, file_path, new_item_data, t
     tree = False
     root = False
     if file_path:
-        # Clean up any existing duplicates before processing new entries
         tree, root = parse_xml(os.path.join(Config.WEBSERVER_FOLDER, file_path))
-
     create_or_update_item_element(tree, root, mycursor, account_id, list_name, new_item_data, file_path, thisType)
 
 
@@ -1997,6 +1995,8 @@ def clean_up_duplicates_in_rss(tree, root):
     return tree, root  # Return the modified tree and root for clarity
 
 def create_or_update_item_element(tree, root, mycursor, account_id, list_name, new_item_data, file_path, thisType):
+    # Clean up any existing duplicates before processing new entries
+    tree, root = clean_up_duplicates_in_rss(tree, root)
 
     template_query = f"SELECT template_location FROM account_%s_list_template WHERE in_lists=%s"
     params = (int(account_id), list_name,)
@@ -2097,8 +2097,6 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
                         create_or_update_item_element(tree, root, mycursor, account_id, list_name, item, file_path, thisType)
                         # Write the RSS Feed in Preview Server
 
-                    # Clean up any existing duplicates before processing new entries
-                    tree, root = clean_up_duplicates_in_rss(tree, root)
                     tree.write(os.path.join(Config.WEBSERVER_FOLDER, file_path), encoding='UTF-8', xml_declaration=True)
 
                     # Write the RSS Feed in Remote Server
@@ -2125,10 +2123,8 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
                         add_item_to_channel(tree, root, item, file_path, account_id, list_name, mycursor, srv)
                         print("New item added to RSS feed.")
                     else:
-                        tree, root = clean_up_duplicates_in_rss(tree, root)
                         print("No item to remove in RSS feed.")
             else:
-                tree, root = clean_up_duplicates_in_rss(tree, root)
                 if thisType == 8:
                     delete_item_from_disk(list_page_url)
 
