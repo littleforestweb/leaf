@@ -1938,7 +1938,6 @@ def update_rss_feed(mycursor, account_id, list_name, file_path, new_item_data, t
     if file_path:
         # Clean up any existing duplicates before processing new entries
         tree, root = parse_xml(os.path.join(Config.WEBSERVER_FOLDER, file_path))
-        tree, root = clean_up_duplicates_in_rss(tree, root)
 
     create_or_update_item_element(tree, root, mycursor, account_id, list_name, new_item_data, file_path, thisType)
 
@@ -2095,12 +2094,11 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
                                 existing_elem.text = elem.text
                             else:
                                 existing_item.append(elem)
-
-                        # Clean up any existing duplicates before processing new entries
-                        tree, root = clean_up_duplicates_in_rss(tree, root)
                         create_or_update_item_element(tree, root, mycursor, account_id, list_name, item, file_path, thisType)
                         # Write the RSS Feed in Preview Server
 
+                    # Clean up any existing duplicates before processing new entries
+                    tree, root = clean_up_duplicates_in_rss(tree, root)
                     tree.write(os.path.join(Config.WEBSERVER_FOLDER, file_path), encoding='UTF-8', xml_declaration=True)
 
                     # Write the RSS Feed in Remote Server
