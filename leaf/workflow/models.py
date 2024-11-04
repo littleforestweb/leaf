@@ -1987,14 +1987,14 @@ def clean_up_duplicates_in_rss(tree, root):
     for guid_value, items_list in guid_count.items():
         if len(items_list) > 1:
             for duplicate_item in items_list[1:]:
-                parent = duplicate_item.getparent() if hasattr(duplicate_item, 'getparent') else root.find('.//channel')
+                parent = root.find('.//channel')  # Adjust parent if needed
                 if parent is not None:
                     parent.remove(duplicate_item)
                     print(f"Duplicate item with GUID {guid_value} removed.")
+    
+    return tree, root  # Return the modified tree and root for clarity
 
 def create_or_update_item_element(tree, root, mycursor, account_id, list_name, new_item_data, file_path, thisType):
-    # Clean up any existing duplicates before processing new entries
-    clean_up_duplicates_in_rss(tree, root)
 
     template_query = f"SELECT template_location FROM account_%s_list_template WHERE in_lists=%s"
     params = (int(account_id), list_name,)
@@ -2092,6 +2092,9 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
                                 existing_elem.text = elem.text
                             else:
                                 existing_item.append(elem)
+
+                        # Clean up any existing duplicates before processing new entries
+                        tree, root = clean_up_duplicates_in_rss(tree, root)
                         create_or_update_item_element(tree, root, mycursor, account_id, list_name, item, file_path, thisType)
                         # Write the RSS Feed in Preview Server
 
