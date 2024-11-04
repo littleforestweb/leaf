@@ -1970,7 +1970,32 @@ def find_and_delete_item_by_guid(root, new_guid):
     return False
 
 
+def clean_up_duplicates_in_rss(tree, root):
+    # Create a dictionary to track GUID occurrences and their parent elements
+    guid_count = {}
+    for parent in root.findall('.//channel'):  # Assuming items are direct children of 'channel'
+        for existing_item in parent.findall('item'):
+            guid_elem = existing_item.find('guid')
+            if guid_elem is not None:
+                guid_value = guid_elem.text
+                if guid_value in guid_count:
+                    guid_count[guid_value].append(existing_item)
+                else:
+                    guid_count[guid_value] = [existing_item]
+
+    # Remove duplicate items based on GUID (keep only the first occurrence)
+    for guid_value, items_list in guid_count.items():
+        if len(items_list) > 1:
+            for duplicate_item in items_list[1:]:
+                parent = duplicate_item.getparent() if hasattr(duplicate_item, 'getparent') else root.find('.//channel')
+                if parent is not None:
+                    parent.remove(duplicate_item)
+                    print(f"Duplicate item with GUID {guid_value} removed.")
+
 def create_or_update_item_element(tree, root, mycursor, account_id, list_name, new_item_data, file_path, thisType):
+    # Clean up any existing duplicates before processing new entries
+    clean_up_duplicates_in_rss(tree, root)
+
     template_query = f"SELECT template_location FROM account_%s_list_template WHERE in_lists=%s"
     params = (int(account_id), list_name,)
     mycursor.execute(template_query, params)
@@ -1986,25 +2011,6 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
         publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
 
         item = ET.Element('item')
-
-        # Create a dictionary to track GUID occurrences and their parent elements
-        guid_count = {}
-        for parent in root.findall('.//channel'):  # Assuming items are direct children of 'channel'
-            for existing_item in parent.findall('item'):
-                guid_elem = existing_item.find('guid')
-                if guid_elem is not None:
-                    guid_value = guid_elem.text
-                    if guid_value in guid_count:
-                        guid_count[guid_value].append((existing_item, parent))
-                    else:
-                        guid_count[guid_value] = [(existing_item, parent)]
-
-        # Remove duplicate items based on GUID (keep only the first occurrence)
-        for guid_value, items_list in guid_count.items():
-            if len(items_list) > 1:
-                for duplicate_item, parent in items_list[1:]:
-                    parent.remove(duplicate_item)
-                    print(f"Duplicate item with GUID {guid_value} removed.")
 
         for srv in Config.DEPLOYMENTS_SERVERS:
             guid_found = False
