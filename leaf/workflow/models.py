@@ -1936,7 +1936,10 @@ def update_rss_feed(mycursor, account_id, list_name, file_path, new_item_data, t
     tree = False
     root = False
     if file_path:
+        # Clean up any existing duplicates before processing new entries
         tree, root = parse_xml(os.path.join(Config.WEBSERVER_FOLDER, file_path))
+        tree, root = clean_up_duplicates_in_rss(tree, root)
+
     create_or_update_item_element(tree, root, mycursor, account_id, list_name, new_item_data, file_path, thisType)
 
 
