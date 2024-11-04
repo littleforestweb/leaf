@@ -160,3 +160,4 @@ log_gunicorn_access.txt
 log_gunicorn_error.txt
 /temp_upload
 /leaf/static/uploads
+leaf-env

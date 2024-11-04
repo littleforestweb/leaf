@@ -870,7 +870,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
         codeSnippet_theme: 'prism',
         filebrowserUploadUrl: "/api/upload?name=fileupload",
         embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}',
-        protectedSource: new RegExp(`<script(?![^>]*src=["'][^"']*(${editor_allow_scripts_regex_patters})[^"']*["'])[^>]*>[\\s\\S]*?(<\\/script>|$)`, 'gi'),
+        protectedSource: new RegExp(`<script(?![^>]*src=["'][^"']*(${editor_allow_scripts_regex_patters})[^"']*["']|[^>]*class=["'][^"']*unprotected_script[^"']*["'])[^>]*>[\\s\\S]*?(<\\/script>|$)`, 'gi'),
         on: {
             setData: async function (event) {
                 // Regex to find any empty tags
