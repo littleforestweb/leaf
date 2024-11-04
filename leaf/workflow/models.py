@@ -2125,8 +2125,10 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
                         add_item_to_channel(tree, root, item, file_path, account_id, list_name, mycursor, srv)
                         print("New item added to RSS feed.")
                     else:
+                        tree, root = clean_up_duplicates_in_rss(tree, root)
                         print("No item to remove in RSS feed.")
             else:
+                tree, root = clean_up_duplicates_in_rss(tree, root)
                 if thisType == 8:
                     delete_item_from_disk(list_page_url)
 
