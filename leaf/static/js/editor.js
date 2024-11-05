@@ -838,43 +838,43 @@ window.addEventListener('DOMContentLoaded', async function main() {
         }
     });
 
-    CKEDITOR.on('dialogDefinition', function(ev) {
-        // Check if the dialog being opened is the 'div' dialog
-        var dialogName = ev.data.name;
-        var dialogDefinition = ev.data.definition;
+    // CKEDITOR.on('dialogDefinition', function(ev) {
+    //     // Check if the dialog being opened is the 'div' dialog
+    //     var dialogName = ev.data.name;
+    //     var dialogDefinition = ev.data.definition;
         
-        if (dialogName === 'editdiv') {
-            // Get the "General" tab of the dialog
-            var content = dialogDefinition.getContents('info'); // Change 'info' to 'general'
+    //     if (dialogName === 'editdiv') {
+    //         // Get the "General" tab of the dialog
+    //         var content = dialogDefinition.getContents('info'); // Change 'info' to 'general'
 
-            // Add a new button element to the "General" tab
-            content.elements.push({
-                type: 'button',
-                id: 'duplicateDivButton',
-                label: 'Duplicate Div',
-                onClick: function() {
-                    var dialog = CKEDITOR.dialog.getCurrent();
-                    var editor = dialog.getParentEditor();
+    //         // Add a new button element to the "General" tab
+    //         content.elements.push({
+    //             type: 'button',
+    //             id: 'duplicateDivButton',
+    //             label: 'Duplicate Div',
+    //             onClick: function() {
+    //                 var dialog = CKEDITOR.dialog.getCurrent();
+    //                 var editor = dialog.getParentEditor();
 
-                    // Get the element being edited
-                    var element = dialog._.element;
+    //                 // Get the element being edited
+    //                 var element = dialog._.element;
 
-                    if (element && element.is('div')) {
-                        var duplicateElement = element.clone(true);
+    //                 if (element && element.is('div')) {
+    //                     var duplicateElement = element.clone(true);
                         
-                        var range = editor.getSelection().getRanges()[0];
-                        // if ((range.endOffset - range.startOffset) > 0) {
-                        var newRange = range.clone();
-                        newRange.collapse(true);
-                        newRange.insertNode(duplicateElement);
+    //                     var range = editor.getSelection().getRanges()[0];
+    //                     // if ((range.endOffset - range.startOffset) > 0) {
+    //                     var newRange = range.clone();
+    //                     newRange.collapse(true);
+    //                     newRange.insertNode(duplicateElement);
 
-                    } else {
-                        alert('No <div> element was found.');
-                    }
-                }
-            });
-        }
-    });
+    //                 } else {
+    //                     alert('No <div> element was found.');
+    //                 }
+    //             }
+    //         });
+    //     }
+    // });
 
     // Init CKEditor
     let ckeditorConfig = {
