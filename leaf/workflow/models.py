@@ -2097,6 +2097,8 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
                         create_or_update_item_element(tree, root, mycursor, account_id, list_name, item, file_path, thisType)
                         # Write the RSS Feed in Preview Server
 
+                    # Clean up any existing duplicates before processing new entries
+                    tree, root = clean_up_duplicates_in_rss(tree, root)
                     tree.write(os.path.join(Config.WEBSERVER_FOLDER, file_path), encoding='UTF-8', xml_declaration=True)
 
                     # Write the RSS Feed in Remote Server
@@ -2132,6 +2134,10 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
 def add_item_to_channel(tree, root, new_item, file_path, account_id, list_name, mycursor, srv):
     channel = root.find('channel')
     channel.append(new_item)
+
+    # Clean up any existing duplicates before processing new entries
+    tree, root = clean_up_duplicates_in_rss(tree, root)
+    
     # Write the RSS Feed in Preview Server
     tree.write(os.path.join(Config.WEBSERVER_FOLDER, file_path), encoding='UTF-8', xml_declaration=True)
 
