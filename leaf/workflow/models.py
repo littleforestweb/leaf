@@ -7,6 +7,7 @@ import smtplib
 import subprocess
 import time
 import xml.etree.ElementTree as ET
+# from lxml import etree as ET
 from email.message import EmailMessage
 from urllib.parse import unquote, urljoin
 
@@ -116,7 +117,7 @@ def extract_workflow_data(results):
     workflow_data = {
         "id": results[0],
         "startUser": results[1],
-        "title": results[2],
+        "title": results[2].replace('"', "'"),
         "assignEditor": results[3],
         "dueDate": results[4],
         "tags": results[5],
@@ -204,7 +205,7 @@ def process_type_1_or_5(workflow_data, mycursor):
 
         site_title = result[0]
 
-        site_titles += site_title + ";"
+        site_titles += site_title.replace('"', "'") + ";"
         site_titles = site_titles[0:-1]
         workflow_data["siteTitles"] = unquote(site_titles)
         workflow_data["siteIds"] = workflow_data["siteIds"]
@@ -1697,17 +1698,20 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
             ET.SubElement(channel, "link").text = os.path.join(srv["webserver_url"], list_feed_path)
             ET.SubElement(channel, "description").text = "Latest news"
 
+            # Set to keep track of unique GUIDs to remove duplicates
+            unique_guids = set()
+
             # Add each news item to the channel
             for item in list_items:
-
                 if is_empty_item(item):
                     continue  # Skip this item entirely if it's empty or all fields are empty
 
                 item_elem = ET.SubElement(channel, "item")
                 guid_found = False
                 image_element = None  # Track the image element to attach captions
-                for key, value in item.items():
+                guid_value = None  # To store the GUID value for checking
 
+                for key, value in item.items():
                     if key.lower() == 'id':
                         query_list_item = f"SELECT * FROM account_{accountId}_list_{list_name} WHERE id=%s"
                         params_list_item = (value,)
@@ -1721,7 +1725,6 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
                         item_results = [dict(zip(headers, row)) for row in fields_to_link]
 
                         publication_date = False
-
                         list_page_url = list_template
 
                         for result in item_results:
@@ -1736,7 +1739,6 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
                                 if field == "year" or field == "month" or field == "day":
                                     single_field = extract_month_and_day(publication_date, field)
                                     single_field = str(single_field)
-
                                     list_page_url = list_page_url.replace("{" + field + "}", single_field)
 
                     if publication_date:
@@ -1755,6 +1757,13 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
                                 value = os.path.join(srv["webserver_url"], list_page_url)
                                 value = value + (Config.PAGES_EXTENSION if not value.endswith(Config.PAGES_EXTENSION) else "")
 
+                            guid_value = value  # Store GUID value for uniqueness check
+                            if guid_value in unique_guids:
+                                # Duplicate found, remove item and stop processing this item
+                                channel.remove(item_elem)
+                                break
+
+                            unique_guids.add(guid_value)  # Add to the set of seen GUIDs
                             guid_elem = ET.SubElement(item_elem, "guid")
                             guid_elem.text = value
                             guid_found = True
@@ -1773,11 +1782,9 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
                         if image_element and is_caption_key(key):
                             ET.SubElement(image_element, "title").text = value
 
-                # Ensure every item has a GUID, falling back to a default message if none is found
+                # Ensure the item has a GUID, if not, remove it
                 if not guid_found:
                     channel.remove(item_elem)
-                # if not guid_found:
-                # ET.SubElement(item_elem, "guid").text = "Unique identifier not found"
 
             # Write the complete RSS feed to a file
             tree = ET.ElementTree(rss)
@@ -1963,7 +1970,34 @@ def find_and_delete_item_by_guid(root, new_guid):
     return False
 
 
+def clean_up_duplicates_in_rss(tree, root):
+    # Create a dictionary to track GUID occurrences and their parent elements
+    guid_count = {}
+    for parent in root.findall('.//channel'):  # Assuming items are direct children of 'channel'
+        for existing_item in parent.findall('item'):
+            guid_elem = existing_item.find('guid')
+            if guid_elem is not None:
+                guid_value = guid_elem.text
+                if guid_value in guid_count:
+                    guid_count[guid_value].append(existing_item)
+                else:
+                    guid_count[guid_value] = [existing_item]
+
+    # Remove duplicate items based on GUID (keep only the first occurrence)
+    for guid_value, items_list in guid_count.items():
+        if len(items_list) > 1:
+            for duplicate_item in items_list[1:]:
+                parent = root.find('.//channel')  # Adjust parent if needed
+                if parent is not None:
+                    parent.remove(duplicate_item)
+                    print(f"Duplicate item with GUID {guid_value} removed.")
+    
+    return tree, root  # Return the modified tree and root for clarity
+
 def create_or_update_item_element(tree, root, mycursor, account_id, list_name, new_item_data, file_path, thisType):
+    # Clean up any existing duplicates before processing new entries
+    tree, root = clean_up_duplicates_in_rss(tree, root)
+
     template_query = f"SELECT template_location FROM account_%s_list_template WHERE in_lists=%s"
     params = (int(account_id), list_name,)
     mycursor.execute(template_query, params)
@@ -1974,8 +2008,6 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
 
         # Regular expression to find words within curly braces
         pattern = r'{(.*?)}'
-
-        # Using re.findall() to extract the contents within the braces
         items = re.findall(pattern, list_template)
 
         publication_names = ['pubdate', 'pub-date', 'pub_date', 'publication_date', 'publication-date', 'publicationdate']
@@ -1984,9 +2016,7 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
 
         for srv in Config.DEPLOYMENTS_SERVERS:
             guid_found = False
-            existing_item = False
             publication_date = False
-            publication_date_formated = False
             guid_key = False
             guid_key_value = False
             list_page_url = list_template
@@ -2008,17 +2038,16 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
 
                     if publication_date:
                         for field in items:
-                            if field == "year" or field == "month" or field == "day":
+                            if field in ["year", "month", "day"]:
                                 single_field = extract_month_and_day(publication_date, field)
                                 single_field = str(single_field)
-
                                 list_page_url = list_page_url.replace("{" + field + "}", single_field)
 
                         if isinstance(value, datetime.datetime):
                             value = value.strftime('%Y-%m-%d %H:%M:%S')
 
-                    if key.lower() == 'id' or key.lower() == 'modified_by' or key.lower() == 'created_by' or key.lower() == 'created' or key.lower() == 'modified' or key.lower() == 'leaf_selected_rss':
-                        continue  # Skip if it's the id key, modified_by key or created_by key
+                    if key.lower() in ['id', 'modified_by', 'created_by', 'created', 'modified', 'leaf_selected_rss']:
+                        continue  # Skip these keys
 
                     if is_empty_or_whitespace(value):
                         continue  # Skip creating element for empty or whitespace-only values
@@ -2068,6 +2097,8 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
                         create_or_update_item_element(tree, root, mycursor, account_id, list_name, item, file_path, thisType)
                         # Write the RSS Feed in Preview Server
 
+                    # Clean up any existing duplicates before processing new entries
+                    tree, root = clean_up_duplicates_in_rss(tree, root)
                     tree.write(os.path.join(Config.WEBSERVER_FOLDER, file_path), encoding='UTF-8', xml_declaration=True)
 
                     # Write the RSS Feed in Remote Server
@@ -2076,18 +2107,13 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
                     try:
                         if srv["pkey"] != "":
                             ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                            if srv["pw"] == "":
-                                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                            else:
-                                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+                            ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"])) if srv["pw"] == "" else ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
                         else:
                             ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
                         with ssh.open_sftp() as scp:
                             create_remote_folder(scp, os.path.dirname(os.path.join(srv["remote_path"], file_path)))
                             scp.put(os.path.join(Config.WEBSERVER_FOLDER, file_path), os.path.join(srv["remote_path"], file_path))
-
                     finally:
-                        # Ensure SSH connection is closed
                         ssh.close()
 
                     if thisType == 8:
@@ -2108,6 +2134,10 @@ def create_or_update_item_element(tree, root, mycursor, account_id, list_name, n
 def add_item_to_channel(tree, root, new_item, file_path, account_id, list_name, mycursor, srv):
     channel = root.find('channel')
     channel.append(new_item)
+
+    # Clean up any existing duplicates before processing new entries
+    tree, root = clean_up_duplicates_in_rss(tree, root)
+    
     # Write the RSS Feed in Preview Server
     tree.write(os.path.join(Config.WEBSERVER_FOLDER, file_path), encoding='UTF-8', xml_declaration=True)
 

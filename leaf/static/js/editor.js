@@ -838,6 +838,44 @@ window.addEventListener('DOMContentLoaded', async function main() {
         }
     });
 
+    // CKEDITOR.on('dialogDefinition', function(ev) {
+    //     // Check if the dialog being opened is the 'div' dialog
+    //     var dialogName = ev.data.name;
+    //     var dialogDefinition = ev.data.definition;
+        
+    //     if (dialogName === 'editdiv') {
+    //         // Get the "General" tab of the dialog
+    //         var content = dialogDefinition.getContents('info'); // Change 'info' to 'general'
+
+    //         // Add a new button element to the "General" tab
+    //         content.elements.push({
+    //             type: 'button',
+    //             id: 'duplicateDivButton',
+    //             label: 'Duplicate Div',
+    //             onClick: function() {
+    //                 var dialog = CKEDITOR.dialog.getCurrent();
+    //                 var editor = dialog.getParentEditor();
+
+    //                 // Get the element being edited
+    //                 var element = dialog._.element;
+
+    //                 if (element && element.is('div')) {
+    //                     var duplicateElement = element.clone(true);
+                        
+    //                     var range = editor.getSelection().getRanges()[0];
+    //                     // if ((range.endOffset - range.startOffset) > 0) {
+    //                     var newRange = range.clone();
+    //                     newRange.collapse(true);
+    //                     newRange.insertNode(duplicateElement);
+
+    //                 } else {
+    //                     alert('No <div> element was found.');
+    //                 }
+    //             }
+    //         });
+    //     }
+    // });
+
     // Init CKEditor
     let ckeditorConfig = {
         allowedContent: true,
@@ -850,7 +888,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {name: "tools", items: ["ShowBlocks"]},
             {name: "styles", items: ["Styles", "Format"]},
             // {name: "colors", items: ["TextColor", "BGColor"]},
-            {name: "actions", items: ["Preview", "SaveBtn", "PublishBtn"]}
+            {name: "actions", items: ["Preview", "SaveBtn", "PublishBtn"]},
         ],
         extraPlugins: "anchor,inserthtml4x,embed,saveBtn,codemirror,image2,extendedImage2,slideshow,htmlmodule,contextmenu,headingcontextmenu,dialog", // ,pastefromword
         removePlugins: 'image',
@@ -870,7 +908,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
         codeSnippet_theme: 'prism',
         filebrowserUploadUrl: "/api/upload?name=fileupload",
         embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}',
-        protectedSource: new RegExp(`<script(?![^>]*src=["'][^"']*(${editor_allow_scripts_regex_patters})[^"']*["'])[^>]*>[\\s\\S]*?(<\\/script>|$)`, 'gi'),
+        protectedSource: new RegExp(`<script(?![^>]*src=["'][^"']*(${editor_allow_scripts_regex_patters})[^"']*["']|[^>]*class=["'][^"']*unprotected_script[^"']*["'])[^>]*>[\\s\\S]*?(<\\/script>|$)`, 'gi'),
         on: {
             setData: async function (event) {
                 // Regex to find any empty tags
