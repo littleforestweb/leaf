@@ -1819,107 +1819,107 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
                 # Ensure SSH connection is closed
                 ssh.close()
 
-        # # Gen Local RSS Feed File
-        # rss = ET.Element("rss", version="2.0")
-        # rss.set("encoding", "UTF-8")
-        # channel = ET.SubElement(rss, "channel")
+        # Gen Local RSS Feed File
+        rss = ET.Element("rss", version="2.0")
+        rss.set("encoding", "UTF-8")
+        channel = ET.SubElement(rss, "channel")
 
-        # # Populate the channel with some metadata
-        # ET.SubElement(channel, "title").text = "News"
-        # ET.SubElement(channel, "generator").text = "Leaf"
-        # ET.SubElement(channel, "link").text = os.path.join(Config.PREVIEW_SERVER, list_feed_path)
-        # ET.SubElement(channel, "description").text = "Latest news"
+        # Populate the channel with some metadata
+        ET.SubElement(channel, "title").text = "News"
+        ET.SubElement(channel, "generator").text = "Leaf"
+        ET.SubElement(channel, "link").text = os.path.join(Config.PREVIEW_SERVER, list_feed_path)
+        ET.SubElement(channel, "description").text = "Latest news"
 
-        # # Add each news item to the channel
-        # for item in list_items:
+        # Add each news item to the channel
+        for item in list_items:
 
-        #     if is_empty_item(item):
-        #         continue  # Skip this item entirely if it's empty or all fields are empty
+            if is_empty_item(item):
+                continue  # Skip this item entirely if it's empty or all fields are empty
 
-        #     item_elem = ET.SubElement(channel, "item")
-        #     guid_found = False
-        #     image_element = None  # Track the image element to attach captions
-        #     for key, value in item.items():
+            item_elem = ET.SubElement(channel, "item")
+            guid_found = False
+            image_element = None  # Track the image element to attach captions
+            for key, value in item.items():
 
-        #         if key.lower() == 'id':
-        #             query_list_item = f"SELECT * FROM account_{accountId}_list_{list_name} WHERE id=%s"
-        #             params_list_item = (value,)
-        #             mycursor.execute(query_list_item, params_list_item)
-        #             fields_to_link = mycursor.fetchall()
+                if key.lower() == 'id':
+                    query_list_item = f"SELECT * FROM account_{accountId}_list_{list_name} WHERE id=%s"
+                    params_list_item = (value,)
+                    mycursor.execute(query_list_item, params_list_item)
+                    fields_to_link = mycursor.fetchall()
 
-        #             # Get column headers from the cursor description
-        #             headers = [description[0] for description in mycursor.description]
+                    # Get column headers from the cursor description
+                    headers = [description[0] for description in mycursor.description]
 
-        #             # Combine headers and data
-        #             item_results = [dict(zip(headers, row)) for row in fields_to_link]
+                    # Combine headers and data
+                    item_results = [dict(zip(headers, row)) for row in fields_to_link]
 
-        #             publication_date = False
+                    publication_date = False
 
-        #             list_page_url = list_template
+                    list_page_url = list_template
 
-        #             for result in item_results:
-        #                 for item_key, item_value in result.items():
-        #                     if item_key.lower() in publication_names:
-        #                         publication_date = item_value
-        #                     else:
-        #                         list_page_url = list_page_url.replace("{" + item_key + "}", str(item_value))
+                    for result in item_results:
+                        for item_key, item_value in result.items():
+                            if item_key.lower() in publication_names:
+                                publication_date = item_value
+                            else:
+                                list_page_url = list_page_url.replace("{" + item_key + "}", str(item_value))
 
-        #             if publication_date:
-        #                 for field in items:
-        #                     if field == "year" or field == "month" or field == "day":
-        #                         single_field = extract_month_and_day(publication_date, field)
-        #                         single_field = str(single_field)
+                    if publication_date:
+                        for field in items:
+                            if field == "year" or field == "month" or field == "day":
+                                single_field = extract_month_and_day(publication_date, field)
+                                single_field = str(single_field)
 
-        #                         list_page_url = list_page_url.replace("{" + field + "}", single_field)
+                                list_page_url = list_page_url.replace("{" + field + "}", single_field)
 
-        #         if publication_date:
-        #             if key.lower() == 'id' or key.lower() == 'modified_by' or key.lower() == 'created_by':
-        #                 continue  # Skip if it's the id key
+                if publication_date:
+                    if key.lower() == 'id' or key.lower() == 'modified_by' or key.lower() == 'created_by':
+                        continue  # Skip if it's the id key
 
-        #             if is_empty_or_whitespace(value):
-        #                 continue  # Skip creating element for empty or whitespace-only values
+                    if is_empty_or_whitespace(value):
+                        continue  # Skip creating element for empty or whitespace-only values
 
-        #             if isinstance(value, datetime.datetime):
-        #                 value = value.strftime('%Y-%m-%d %H:%M:%S')
+                    if isinstance(value, datetime.datetime):
+                        value = value.strftime('%Y-%m-%d %H:%M:%S')
 
-        #             # Check if this field can serve as a GUID
-        #             if is_guid_candidate(key):
-        #                 if isinstance(value, str) and not (value.startswith('http://') or value.startswith('https://')):
-        #                     value = os.path.join(Config.PREVIEW_SERVER, list_page_url)
-        #                     value = value + (Config.PAGES_EXTENSION if not value.endswith(Config.PAGES_EXTENSION) else "")
+                    # Check if this field can serve as a GUID
+                    if is_guid_candidate(key):
+                        if isinstance(value, str) and not (value.startswith('http://') or value.startswith('https://')):
+                            value = os.path.join(Config.PREVIEW_SERVER, list_page_url)
+                            value = value + (Config.PAGES_EXTENSION if not value.endswith(Config.PAGES_EXTENSION) else "")
 
-        #                 guid_elem = ET.SubElement(item_elem, "guid")
-        #                 guid_elem.text = value
-        #                 guid_found = True
+                        guid_elem = ET.SubElement(item_elem, "guid")
+                        guid_elem.text = value
+                        guid_found = True
 
-        #             # Normalize key names to camelCase
-        #             normalized_key = camel_case_convert(key)
-        #             sub_elem = ET.SubElement(item_elem, normalized_key)
-        #             sub_elem.text = value
+                    # Normalize key names to camelCase
+                    normalized_key = camel_case_convert(key)
+                    sub_elem = ET.SubElement(item_elem, normalized_key)
+                    sub_elem.text = value
 
-        #             # Check for image URLs and create a separate image element
-        #             if is_image_url(str(value)):
-        #                 image_element = ET.SubElement(sub_elem, "image")
-        #                 ET.SubElement(image_element, "url").text = value
+                    # Check for image URLs and create a separate image element
+                    if is_image_url(str(value)):
+                        image_element = ET.SubElement(sub_elem, "image")
+                        ET.SubElement(image_element, "url").text = value
 
-        #             # Attach captions directly to the image element
-        #             if image_element and is_caption_key(key):
-        #                 ET.SubElement(image_element, "title").text = value
+                    # Attach captions directly to the image element
+                    if image_element and is_caption_key(key):
+                        ET.SubElement(image_element, "title").text = value
 
-        #     # Ensure every item has a GUID, falling back to a default message if none is found
-        #     if not guid_found:
-        #         channel.remove(item_elem)
-        #     # if not guid_found:
-        #     # ET.SubElement(item_elem, "guid").text = "Unique identifier not found"
+            # Ensure every item has a GUID, falling back to a default message if none is found
+            if not guid_found:
+                channel.remove(item_elem)
+            # if not guid_found:
+            # ET.SubElement(item_elem, "guid").text = "Unique identifier not found"
 
-        # # Write the complete RSS feed to a file
-        # tree = ET.ElementTree(rss)
-        # sitemap_path = os.path.join(Config.WEBSERVER_FOLDER, list_feed_path)
-        # # Ensure the directory exists
-        # sitemap_directory = os.path.dirname(sitemap_path)
-        # if not os.path.exists(sitemap_directory):
-        #     os.makedirs(sitemap_directory)
-        # tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
+        # Write the complete RSS feed to a file
+        tree = ET.ElementTree(rss)
+        sitemap_path = os.path.join(Config.WEBSERVER_FOLDER, list_feed_path)
+        # Ensure the directory exists
+        sitemap_directory = os.path.dirname(sitemap_path)
+        if not os.path.exists(sitemap_directory):
+            os.makedirs(sitemap_directory)
+        tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
 
 
 def find_page_assets(original_content):
