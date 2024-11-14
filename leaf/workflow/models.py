@@ -1973,6 +1973,10 @@ def find_and_delete_item_by_guid(root, new_guid):
 def clean_up_duplicates_in_rss(tree, root):
     # Create a dictionary to track GUID occurrences and their parent elements
     guid_count = {}
+    if root is None or root is False:
+        print("Root is None. Pass..")
+        return tree, root
+
     for parent in root.findall('.//channel'):  # Assuming items are direct children of 'channel'
         for existing_item in parent.findall('item'):
             guid_elem = existing_item.find('guid')
