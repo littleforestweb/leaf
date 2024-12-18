@@ -838,47 +838,103 @@ window.addEventListener('DOMContentLoaded', async function main() {
         }
     });
 
-    // CKEDITOR.on('dialogDefinition', function(ev) {
-    //     // Check if the dialog being opened is the 'div' dialog
-    //     var dialogName = ev.data.name;
-    //     var dialogDefinition = ev.data.definition;
-        
-    //     if (dialogName === 'editdiv') {
-    //         // Get the "General" tab of the dialog
-    //         var content = dialogDefinition.getContents('info'); // Change 'info' to 'general'
+    CKEDITOR.plugins.add('duplicateElement', {
+        icons: 'duplicateElement',
+        init: function (editor) {
+            // List of target classes
+            const targetClasses = ['uos-grid']; // Replace with your list of classes
 
-    //         // Add a new button element to the "General" tab
-    //         content.elements.push({
-    //             type: 'button',
-    //             id: 'duplicateDivButton',
-    //             label: 'Duplicate Div',
-    //             onClick: function() {
-    //                 var dialog = CKEDITOR.dialog.getCurrent();
-    //                 var editor = dialog.getParentEditor();
+            // Add a context menu group
+            if (editor.contextMenu) {
+                editor.addMenuGroup('duplicateGroup');
+                editor.addMenuItem('duplicateLeft', {
+                    label: 'Duplicate Element to the Left',
+                    icon: this.path + 'icons/duplicateElement.png', // Optional icon path
+                    command: 'duplicateLeft',
+                    group: 'duplicateGroup',
+                    order: 1
+                });
 
-    //                 // Get the element being edited
-    //                 var element = dialog._.element;
+                editor.addMenuItem('duplicateRight', {
+                    label: 'Duplicate Element to the Right',
+                    icon: this.path + 'icons/duplicateElement.png', // Optional icon path
+                    command: 'duplicateRight',
+                    group: 'duplicateGroup',
+                    order: 2
+                });
 
-    //                 if (element && element.is('div')) {
-    //                     var duplicateElement = element.clone(true);
-                        
-    //                     var range = editor.getSelection().getRanges()[0];
-    //                     // if ((range.endOffset - range.startOffset) > 0) {
-    //                     var newRange = range.clone();
-    //                     newRange.collapse(true);
-    //                     newRange.insertNode(duplicateElement);
+                editor.contextMenu.addListener(function (element) {
+                    let targetElement = findTargetElement(element);
 
-    //                 } else {
-    //                     alert('No <div> element was found.');
-    //                 }
-    //             }
-    //         });
-    //     }
-    // });
+                    if (targetElement) {
+                        return {
+                            duplicateLeft: CKEDITOR.TRISTATE_OFF,
+                            duplicateRight: CKEDITOR.TRISTATE_OFF
+                        };
+                    }
+
+                    return null;
+                });
+            }
+
+            // Add commands to duplicate the element
+            editor.addCommand('duplicateLeft', {
+                exec: function (editor) {
+                    let element = findTargetElement(editor.getSelection().getStartElement());
+                    if (element) {
+                        duplicateElement(element, 'left');
+                    }
+                }
+            });
+
+            editor.addCommand('duplicateRight', {
+                exec: function (editor) {
+                    let element = findTargetElement(editor.getSelection().getStartElement());
+                    if (element) {
+                        duplicateElement(element, 'right');
+                    }
+                }
+            });
+
+            // Helper function to find the target element
+            function findTargetElement(element) {
+                while (element) {
+                    if (element.hasClass && targetClasses.some(cls => element.hasClass(cls))) {
+                        return element;
+                    }
+                    element = element.getParent();
+                }
+                return null;
+            }
+
+            // Helper function to duplicate the element
+            function duplicateElement(element, direction) {
+                // Clone the CKEditor element
+                let clonedElement = element.clone(true);
+
+                // Get the parent of the current element
+                let parentElement = element.getParent();
+
+                if (!parentElement) {
+                    console.error("Parent element not found. Cannot duplicate.");
+                    return;
+                }
+
+                // Insert the cloned element based on the direction
+                if (direction === 'left') {
+                    clonedElement.insertBefore(element); // Correctly insert before the current element
+                } else if (direction === 'right') {
+                    clonedElement.insertAfter(element); // Correctly insert after the current element
+                }
+            }
+        }
+    });
 
     // Init CKEditor
     let ckeditorConfig = {
         allowedContent: true,
+        extraAllowedContent: 'div(*)[*]{*}',
+        enterMode: CKEDITOR.ENTER_DIV,
         toolbar: [
             {name: "clipboard", items: ["Cut", "Copy", "Paste", "PasteText", "-", "Undo", "Redo"]}, // "PasteFromWord",
             {name: "basicstyles", items: ["Bold", "Italic", "Underline", "Strike", 'Subscript', 'Superscript', "-", "RemoveFormat"]},
@@ -890,7 +946,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             // {name: "colors", items: ["TextColor", "BGColor"]},
             {name: "actions", items: ["Preview", "SaveBtn", "PublishBtn"]},
         ],
-        extraPlugins: "anchor,inserthtml4x,embed,saveBtn,codemirror,image2,extendedImage2,slideshow,htmlmodule,contextmenu,headingcontextmenu,dialog", // ,pastefromword
+        extraPlugins: "anchor,inserthtml4x,embed,saveBtn,codemirror,image2,extendedImage2,slideshow,htmlmodule,contextmenu,headingcontextmenu,dialog,duplicateElement", // ,pastefromword
         removePlugins: 'image',
         image2_captionedImageClass: 'uos-component-image',
         image2_captionedClass: 'uos-component-image-caption',
