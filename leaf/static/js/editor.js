@@ -848,7 +848,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             if (editor.contextMenu) {
                 editor.addMenuGroup('duplicateGroup');
                 editor.addMenuItem('duplicateLeft', {
-                    label: 'Duplicate Element to the Left',
+                    label: 'Duplicate Item After',
                     icon: this.path + 'icons/duplicateElement.png', // Optional icon path
                     command: 'duplicateLeft',
                     group: 'duplicateGroup',
@@ -856,7 +856,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 });
 
                 editor.addMenuItem('duplicateRight', {
-                    label: 'Duplicate Element to the Right',
+                    label: 'Duplicate Item Before',
                     icon: this.path + 'icons/duplicateElement.png', // Optional icon path
                     command: 'duplicateRight',
                     group: 'duplicateGroup',
