@@ -843,6 +843,8 @@ window.addEventListener('DOMContentLoaded', async function main() {
         init: function (editor) {
             // List of target classes
             const targetClasses = ['uos-grid']; // Replace with your list of classes
+            //const targetClasses = editor_allow_scripts_regex_patters;
+            console.log(targetClasses);
 
             // Add a context menu group
             if (editor.contextMenu) {
