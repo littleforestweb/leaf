@@ -90,7 +90,7 @@
         width: 100%;
         z-index: 2;
         background: url(opa75.png);
-        color: rgb(250, 55, 94);
+        color: #231F20;
       }
       * html .ad-gallery .ad-image-wrapper .ad-image .ad-image-description {
         background: none;
