@@ -60,8 +60,14 @@ def get_htmlCode():
 
         # Get HTML path for the page
         html_path = get_page_details(int(page_id))
-        with open(html_path, 'r') as in_file:
-            content = in_file.read()
+
+        # Try opening with UTF-8 first, and fall back to windows-1252 if it fails
+        try:
+            with open(html_path, 'r', encoding="utf-8") as in_file:
+                content = in_file.read()
+        except UnicodeDecodeError:
+            with open(html_path, 'r', encoding="windows-1252") as in_file:
+                content = in_file.read()
 
         # Add base href to HTML
         content = add_base_href(content)
