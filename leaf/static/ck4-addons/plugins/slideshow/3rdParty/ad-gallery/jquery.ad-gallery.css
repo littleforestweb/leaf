@@ -98,6 +98,7 @@
       }
         .ad-gallery .ad-image-wrapper .ad-image .ad-image-description .ad-description-title {
           display: block;
+          font-weight: 400;
         }
   .ad-gallery .ad-controls {
     height: 20px;
