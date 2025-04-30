@@ -1121,6 +1121,7 @@ def proceed_action_workflow(request, not_real_request=None):
                     data = inFile.read()
                     original_content = data
                 data = data.replace(str(os.path.join(Config.LEAFCMS_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
+                data = data.replace(str(os.path.join(Config.PREVIEW_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
 
                 # Ensure we save with the correct canonical link
                 canonical_url = os.path.join(srv["webserver_url"], HTMLPath)
