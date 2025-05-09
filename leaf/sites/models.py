@@ -103,15 +103,39 @@ def getSitesList():
         raise RuntimeError(f"An error occurred while fetching sites: {str(e)}")
 
 
+# def get_user_access_folder(mycursor=None):
+#     """
+#     Retrieve the folder paths that a user has access to.
+
+#     Parameters:
+#     - mycursor: MySQL cursor object used to execute queries.
+
+#     Returns:
+#     - List of folder paths (strings) that the user has access to.
+#     """
+
+#     # Get a database connection using the 'db_connection' decorator
+#     if mycursor is None:
+#         mydb, mycursor = decorators.db_connection()
+
+#     # Get User Access folders
+#     if session["is_admin"] == 1:
+#         query = "SELECT ua.folder_path FROM leaf.user_access ua"
+#         mycursor.execute(query)
+#     else:
+#         query = "SELECT ua.folder_path FROM leaf.user_access ua JOIN leaf.user_groups ug ON ua.group_id = ug.group_id JOIN leaf.group_member gm ON ug.group_id = gm.group_id WHERE gm.user_id = %s"
+#         mycursor.execute(query, (session["id"],))
+#     return [folder_path[0] for folder_path in mycursor.fetchall()]
+
 def get_user_access_folder(mycursor=None):
     """
-    Retrieve the folder paths that a user has access to.
+    Retrieve the folder paths that a user has access to, removing duplicates and sorting alphabetically.
 
     Parameters:
     - mycursor: MySQL cursor object used to execute queries.
 
     Returns:
-    - List of folder paths (strings) that the user has access to.
+    - List of unique folder paths (strings) that the user has access to, sorted alphabetically.
     """
 
     # Get a database connection using the 'db_connection' decorator
@@ -120,11 +144,19 @@ def get_user_access_folder(mycursor=None):
 
     # Get User Access folders
     if session["is_admin"] == 1:
-        query = "SELECT ua.folder_path FROM leaf.user_access ua"
+        query = "SELECT DISTINCT ua.folder_path FROM leaf.user_access ua ORDER BY ua.folder_path ASC"
         mycursor.execute(query)
     else:
-        query = "SELECT ua.folder_path FROM leaf.user_access ua JOIN leaf.user_groups ug ON ua.group_id = ug.group_id JOIN leaf.group_member gm ON ug.group_id = gm.group_id WHERE gm.user_id = %s"
+        query = """
+            SELECT DISTINCT ua.folder_path
+            FROM leaf.user_access ua
+            JOIN leaf.user_groups ug ON ua.group_id = ug.group_id
+            JOIN leaf.group_member gm ON ug.group_id = gm.group_id
+            WHERE gm.user_id = %s
+            ORDER BY ua.folder_path ASC
+        """
         mycursor.execute(query, (session["id"],))
+
     return [folder_path[0] for folder_path in mycursor.fetchall()]
 
 

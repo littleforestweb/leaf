@@ -1121,6 +1121,9 @@ def proceed_action_workflow(request, not_real_request=None):
                     data = inFile.read()
                     original_content = data
                 data = data.replace(str(os.path.join(Config.LEAFCMS_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
+                data = data.replace(str(os.path.join(Config.PREVIEW_SERVER.rstrip("/"), Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/"))), str(os.path.join("/", Config.REMOTE_UPLOADS_FOLDER.lstrip("/"))))
+                data = data.replace(Config.PREVIEW_SERVER.rstrip("/"), srv["webserver_url"])
+                data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"])
 
                 # Ensure we save with the correct canonical link
                 canonical_url = os.path.join(srv["webserver_url"], HTMLPath)
@@ -2308,6 +2311,7 @@ def check_if_should_publish_pages(workflow):
                 data = inFile.read()
                 original_content = data
             data = data.replace(Config.LEAFCMS_SERVER, srv["webserver_url"] + Config.DYNAMIC_PATH)
+
             with open(local_path, "w") as outFile:
                 outFile.write(data)
 
