@@ -38,6 +38,7 @@ def checkConfig(loaded_json):
         "DB_USER": "",
         "DB_PASS": "",
         "DB_NAME": "",
+        "DB_SOCKET": "",
         "DEPLOYMENTS_SERVERS": [
             {
                 "name": "",
@@ -177,6 +178,7 @@ class Config:
     DB_USER = config["DB_USER"]
     DB_PASS = config["DB_PASS"]
     DB_NAME = config["DB_NAME"]
+    DB_SOCKET = config["DB_SOCKET"]
 
     # Deployments Servers
     DEPLOYMENTS_SERVERS = config["DEPLOYMENTS_SERVERS"]

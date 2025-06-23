@@ -509,6 +509,19 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 var dialogName = ev.data.name;
                 var dialogDefinition = ev.data.definition;
 
+                if (dialogName === 'link') {
+                    // Get the "Link Info" tab
+                    var infoTab = dialogDefinition.getContents('info');
+
+                    // Get the "protocol" field element
+                    var protocolField = infoTab.get('protocol');
+
+                    // Set default value to "https://"
+                    if (protocolField) {
+                        protocolField['default'] = 'https://';
+                    }
+                }
+
                 if (dialogName === 'image2') {
                     dialogDefinition.width = 600;
 

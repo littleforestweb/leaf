@@ -136,18 +136,21 @@ def db_connection():
     If an error occurs during the connection, an error message is returned as a string.
     """
     db_config = {
-        'host': Config.DB_HOST,
-        'port': Config.DB_PORT,
         'user': Config.DB_USER,
         'password': Config.DB_PASS,
-        'database': Config.DB_NAME
+        'database': Config.DB_NAME,
     }
 
-    try:
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor()
-    except mysql.connector.Error as ex:
-        return f"Error - {ex}"
+    if getattr(Config, 'DB_SOCKET', None):  # if socket is defined
+        print("Connection using socket!")
+        db_config['unix_socket'] = Config.DB_SOCKET
+    else:
+        print("Connection using TCP!")
+        db_config['host'] = Config.DB_HOST
+        db_config['port'] = Config.DB_PORT
+
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
 
     return connection, cursor
 
