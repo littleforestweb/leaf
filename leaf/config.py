@@ -84,6 +84,7 @@ def checkConfig(loaded_json):
         "SITE_NOTICE": "This is a site notice that you can control on your config.json file. Keep it empty to remove the notice!",
         "PAGES_EXTENSION": ".page",
         "EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS": [],
+        "EDITOR_REPLACE_WITH_MAP": {}
     }
 
     # Update the loaded JSON with the expected structure
@@ -261,3 +262,4 @@ class Config:
         if len(config["EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS"]) > 1
         else ""
     )
+    EDITOR_REPLACE_WITH_MAP = config["EDITOR_REPLACE_WITH_MAP"]

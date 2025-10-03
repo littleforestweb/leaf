@@ -135,6 +135,28 @@ async function check_if_page_is_locked(page_id) {
     });
 }
 
+// Helper to escape special characters for regex use
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function adjustCodeReplacement(editor) {
+    // Get the current HTML code from the editor
+    let html = editor.getData();
+
+    // Apply replacements based on the global map
+    if (typeof EDITOR_REPLACE_WITH_MAP === 'object') {
+        for (const [search, replacement] of Object.entries(EDITOR_REPLACE_WITH_MAP)) {
+            // Use global regex to replace all occurrences
+            const regex = new RegExp(escapeRegExp(search), 'g');
+            html = html.replace(regex, replacement);
+        }
+    }
+
+    // Set the updated HTML back into the editor
+    editor.setData(html);
+}
+
 function adjustDivEditable(editor, addPlaceholder) {
     let editable = editor.editable();
     editable.find('div').toArray().forEach(function(div) {
@@ -196,6 +218,7 @@ async function savePage() {
     // Adjust Anchor Position
     await adjustAnchorPosition(CKEDITOR.instances.htmlCode, false);
     await adjustDivEditable(CKEDITOR.instances.htmlCode, false);
+    await adjustCodeReplacement(CKEDITOR.instances.htmlCode);
 
     // Get HTML Code
     let sourceCode = CKEDITOR.instances.htmlCode.getData();
@@ -739,7 +762,20 @@ window.addEventListener('DOMContentLoaded', async function main() {
                         fetch(`/api/modules/${moduleId}?id=${site_id}`)
                             .then(response => response.json())
                             .then(module => {
+                                // Save current selection before refresh
+                                const selection = editor.getSelection();
+                                const bookmarks = selection.createBookmarks(true);
+
+                                // Insert your module
                                 editor.insertHtml(module[2]);
+
+                                // Refresh content
+                                const currentData = editor.getData();
+                                editor.setData(currentData, function() {
+                                    // Restore selection to original place
+                                    editor.getSelection().selectBookmarks(bookmarks);
+                                    editor.focus();
+                                });
                             });
                     }
                 };
@@ -892,6 +928,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
     // Init CKEditor
     let ckeditorConfig = {
         allowedContent: true,
+        autoParagraph: false,
         toolbar: [
             {name: "clipboard", items: ["Cut", "Copy", "Paste", "PasteText", "-", "Undo", "Redo"]}, // "PasteFromWord",
             {name: "basicstyles", items: ["Bold", "Italic", "Underline", "Strike", 'Subscript', 'Superscript', "-", "RemoveFormat"]},
@@ -993,6 +1030,16 @@ window.addEventListener('DOMContentLoaded', async function main() {
             }
         }
     };
+
+    // 🔑 Override DTD to allow <div> inside <p>
+    CKEDITOR.on('instanceReady', function() {
+        CKEDITOR.dtd.p.div = 1;
+        CKEDITOR.dtd.$block.div = 1;
+        // If you want to allow all block elements inside <p>, you could loop:
+        // for (let tag in CKEDITOR.dtd.$block) {
+        //     CKEDITOR.dtd.p[tag] = 1;
+        // }
+    });
 
     // Conditionally add "Source" button if is_source_editor is true
     if (is_source_editor === 1 || is_admin === 1) {
