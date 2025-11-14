@@ -914,7 +914,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             keyMap: 'sublime'
         },
         codeSnippet_theme: 'prism',
-        filebrowserUploadUrl: "/api/upload?name=fileupload",
+        filebrowserUploadUrl: `/api/upload?name=fileupload&page_id=${page_id}`,
         embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}',
         protectedSource: new RegExp(`<script(?![^>]*src=["'][^"']*(${editor_allow_scripts_regex_patters})[^"']*["']|[^>]*class=["'][^"']*unprotected_script[^"']*["'])[^>]*>[\\s\\S]*?(<\\/script>|$)`, 'gi'),
         on: {

@@ -385,7 +385,9 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 aTargets: [1],
                 sClass: "truncate",
                 mData: function (source, type, val) {
-                    return '<a class="green-link" target="_blank" href="' + unescape(preview_webserver + source["Path"]) + '">' + unescape(source["Path"]) + '</a>';
+                    let base = source["Path"].startsWith("/static/uploads/") ? leafcms_server : preview_webserver;
+                    let path = unescape(source["Path"]);
+                    return '<a class="green-link" target="_blank" href="' + unescape(base + path) + '">' + path + '</a>';
                 }
             },
             {

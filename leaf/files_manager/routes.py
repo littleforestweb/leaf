@@ -34,7 +34,7 @@ def files_view_upload():
     """
     site_id = werkzeug.utils.escape(request.args.get("siteId", type=str))
     archive = werkzeug.utils.escape(request.args.get("archive", type=str))
-    return render_template("files_manager.html", userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], id=site_id, archive=archive, preview_webserver=Config.PREVIEW_SERVER.strip("/"), site_notice=Config.SITE_NOTICE)
+    return render_template("files_manager.html", userId=session['id'], email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], id=site_id, archive=archive, preview_webserver=Config.PREVIEW_SERVER.strip("/"), site_notice=Config.SITE_NOTICE, leafcms_server=Config.LEAFCMS_SERVER)
 
 @files_manager.route("/files/browser_img", methods=['GET'])
 @login_required
