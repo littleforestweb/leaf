@@ -691,6 +691,47 @@ window.addEventListener('DOMContentLoaded', async function main() {
                     }
                 }
             });
+
+            editor.on('contentDom', function (evt) {
+              var editor = evt.editor;
+              var editable = editor.editable();
+
+              // Get the iframe window (where your HTML page + script lives)
+              var frame = editor.window.getFrame && editor.window.getFrame().$;
+              if (!frame || !frame.contentWindow) return;
+
+              var iframeWin = frame.contentWindow;
+
+              function triggerInternalResize() {
+                try {
+                  if (typeof iframeWin.Event === 'function') {
+                    // Modern browsers
+                    var ev = new iframeWin.Event('resize');
+                    iframeWin.dispatchEvent(ev);
+                  } else {
+                    // Older browsers
+                    var ev = iframeWin.document.createEvent('UIEvents');
+                    ev.initUIEvent('resize', true, false, iframeWin, 0);
+                    iframeWin.dispatchEvent(ev);
+                  }
+                } catch (e) {
+                  console.warn('Failed to dispatch resize inside editor:', e);
+                }
+              }
+
+              // Debounce so we don’t spam the script on every keystroke
+              var timer;
+              function scheduleResize() {
+                clearTimeout(timer);
+                timer = setTimeout(triggerInternalResize, 200);
+              }
+
+              // Run the script when user types or pastes
+              editable.attachListener(editable, 'keyup', scheduleResize);
+              editable.attachListener(editable, 'paste', function () {
+                setTimeout(scheduleResize, 0);
+              });
+            });
         }
     });
 
