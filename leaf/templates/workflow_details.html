@@ -4,6 +4,65 @@
 
 {% block content %}
 
+    <!-- Deletion Confirmation -->
+    <div class="modal fade" id="deletionConfirmationModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="deletionConfirmationModalLabel">This action will permanently delete the pages. Continue?</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {# MULTIPLE PAGE #}
+                    {% for site_id in data.siteIds %}
+                        {% set idx = loop.index0 %}
+
+                        <strong>Preview:</strong>
+                        <a target="_blank" href="{{ data.siteUrl[idx] }}">
+                            {{ data.siteTitles[idx] }}
+                        </a><br>
+
+                        <strong>Live:</strong>
+                        <a target="_blank" href="{{ data.liveUrl[idx] }}">
+                            {{ data.siteTitles[idx] }}
+                        </a>
+
+                        {% if not loop.last %}
+                            <br>
+                            <hr>
+                        {% endif %}
+                    {% endfor %}
+
+                </div>
+                <script>
+                    function handleApprove(button) {
+                        // Disable button to prevent double clicks
+                        button.disabled = true;
+
+                        // Show spinner & change text
+                        const spinner = button.querySelector('.spinner-border');
+                        const text = button.querySelector('.btn-text');
+
+                        spinner.classList.remove('d-none');
+                        text.textContent = 'Deploying...';
+
+                        // Call your existing function
+                        setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}", "{{ data.leaf_selected_rss_ids }}");
+                    }
+                </script>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" id="approveBtn" class="btn btn-success" onclick='handleApprove(this)'>
+                        <span class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true"></span>
+                        <span class="btn-text">Approve</span>
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- NOTIFICATIONS -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11">
         <!-- Add Success -->
@@ -229,9 +288,11 @@
                                     {% if data.status == "7" %}
                                         <span>No Action needed <br> Will be published on: <strong>{{ data.publication_date }}</strong></span>
                                     {% elif (data.status != "6" and data.status != "Approved") and data.status != "Rejected" %}
-                                        <script>console.log("YES")</script>
-                                        <script>console.log({{ data | tojson }})</script>
-                                        <button class='btn btn-success' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}", "{{ data.leaf_selected_rss_ids }}")' {% if data.user_permission_level != 4 and session.is_admin != 1 %} disabled {% endif %}>Approve</button>
+                                        {% if data.type == 5 %}
+                                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#deletionConfirmationModal">Approve</button>
+                                        {% else %}
+                                            <button class='btn btn-success' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}", "{{ data.leaf_selected_rss_ids }}")' {% if data.user_permission_level != 4 and session.is_admin != 1 %} disabled {% endif %}>Approve</button>
+                                        {% endif %}
                                         -
                                         <button class='btn btn-red' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}", "{{ data.leaf_selected_rss_ids }}")' {% if data.user_permission_level != 4 and session.is_admin != 1 %} disabled {% endif %}>Reject</button>
                                     {% elif data.status == "Rejected" %}
