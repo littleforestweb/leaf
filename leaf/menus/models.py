@@ -41,7 +41,7 @@ def get_menus_data(accountId: int, userId: str, isAdmin: str):
         menus = mycursor.fetchall()
 
         if session["is_admin"] == 0:
-            groups_names = [gname.split('/')[1] for gname in get_user_access_folder()]
+            groups_names = [gname.split('/')[1].replace("-", "") for gname in get_user_access_folder()]
             menusLst = [
                 {"id": singleMenu[0], "name": singleMenu[1], "reference": singleMenu[2], "created": singleMenu[3], "user_with_access": singleMenu[4]}
                 for singleMenu in menus
