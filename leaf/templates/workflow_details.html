@@ -4,6 +4,65 @@
 
 {% block content %}
 
+    <!-- Deletion Confirmation -->
+    <div class="modal fade" id="deletionConfirmationModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="deletionConfirmationModalLabel">This action will permanently delete the page(s). Continue?</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {# MULTIPLE PAGE #}
+                    {% for site_id in data.siteIds %}
+                        {% set idx = loop.index0 %}
+
+                        <strong>Preview:</strong>
+                        <a target="_blank" href="{{ data.siteUrl[idx] }}">
+                            {{ data.siteTitles[idx] }}
+                        </a><br>
+
+                        <strong>Live:</strong>
+                        <a target="_blank" href="{{ data.liveUrl[idx] }}">
+                            {{ data.siteTitles[idx] }}
+                        </a>
+
+                        {% if not loop.last %}
+                            <br>
+                            <hr>
+                        {% endif %}
+                    {% endfor %}
+
+                </div>
+                <script>
+                    function handleApprove(button) {
+                        // Disable button to prevent double clicks
+                        button.disabled = true;
+
+                        // Show spinner & change text
+                        const spinner = button.querySelector('.spinner-border');
+                        const text = button.querySelector('.btn-text');
+
+                        spinner.classList.remove('d-none');
+                        text.textContent = 'Deploying...';
+
+                        // Call your existing function
+                        setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}", "{{ data.leaf_selected_rss_ids }}");
+                    }
+                </script>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" id="approveBtn" class="btn btn-success" onclick='handleApprove(this)'>
+                        <span class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true"></span>
+                        <span class="btn-text">Approve</span>
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- NOTIFICATIONS -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11">
         <!-- Add Success -->
@@ -48,26 +107,7 @@
                             </div>
                         {% endif %}
                     </div>
-                    {% if data.siteTitles %}
-                        <div class="mb-2 col-sm-12">
-                            <div class="card">
-                                <h5 class="card-header">Page</h5>
-                                <div class="card-body">
-                                    <div class="row">
-                                        {% if data.listName and data.listName != "None" %}
-                                            {% for siteTitle in data.siteTitles %}
-                                                <div class="col-12">Preview: <span><a class="decoration_none" target="_blank" href="{{ data.siteUrl[loop.index0] }}">/{{ siteTitle }} <i class="fal fa-external-link small"></i></a></span></div>
-                                                <div class="col-12">Edit: <span><a class="decoration_none" target="_blank" href="/list/{{ data.listName }}?id={{ data.siteIds }}">/{{ siteTitle }} <i class="fal fa-external-link small"></i></a></span></div>
-                                            {% endfor %}
-                                        {% else %}
-                                            <div class="col-4"><img src="/get_screenshot?id={{ data.siteIds }}" width="100%" height="auto" alt="Page Screenshot Image"></div>
-                                            <div class="col-8">Preview: <span><a target="_blank" href="{{ data.siteUrl }}">{{ data.siteTitles }}</a></span><br>Live - <span><a target="_blank" href="{{ data.liveUrl }}">{{ data.siteTitles }}</a></span></div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endif %}
+
                     {% if data.files_details %}
                         <div class="mb-2 col-sm-12">
                             <div class="card">
@@ -186,6 +226,57 @@
                             </div>
                         </div>
                     {% endif %}
+
+                    {% if data.siteTitles %}
+                        <div class="mb-2 col-sm-12">
+                            <div class="card">
+                                <h5 class="card-header">Pages ({{ data.siteIds|length }})</h5>
+                                <div class="card-body">
+                                    <div class="row">
+                                        {% if data.listName and data.listName != "None" %}
+                                            {% for siteTitle in data.siteTitles %}
+                                                <div class="col-12">Preview: <span><a class="decoration_none" target="_blank" href="{{ data.siteUrl[loop.index0] }}">/{{ siteTitle }} <i class="fal fa-external-link small"></i></a></span></div>
+                                                <div class="col-12">Edit: <span><a class="decoration_none" target="_blank" href="/list/{{ data.listName }}?id={{ data.siteIds }}">/{{ siteTitle }} <i class="fal fa-external-link small"></i></a></span></div>
+                                            {% endfor %}
+                                        {% else %}
+
+                                            {% if data.siteIds|length == 1 %}
+                                                {# SINGLE PAGE #}
+                                                <div class="col-4">
+                                                    <img src="/get_screenshot?id={{ data.siteIds[0] }}" width="100%" height="auto">
+                                                </div>
+                                                <div class="col-8" style="font-size: large">
+                                                    <strong>Preview:</strong> <a target="_blank" href="{{ data.siteUrl[0] }}">{{ data.siteTitles[0] }}</a><br>
+                                                    <strong>Live:</strong> <a target="_blank" href="{{ data.liveUrl[0] }}">{{ data.siteTitles[0] }}</a>
+                                                </div>
+
+                                            {% else %}
+                                                {# MULTIPLE PAGE #}
+                                                {% for site_id in data.siteIds %}
+                                                    {% set idx = loop.index0 %}
+                                                    <div class="col-4">
+                                                        <img src="/get_screenshot?id={{ site_id }}" width="100%" height="auto">
+                                                    </div>
+                                                    <div class="col-8" style="font-size: large;">
+                                                        <strong>Preview:</strong>
+                                                        <a target="_blank" href="{{ data.siteUrl[idx] }}">
+                                                            {{ data.siteTitles[idx] }}
+                                                        </a><br>
+                                                        <strong>Live:</strong>
+                                                        <a target="_blank" href="{{ data.liveUrl[idx] }}">
+                                                            {{ data.siteTitles[idx] }}
+                                                        </a>
+                                                    </div>
+                                                    <hr class="my-lg-3">
+                                                {% endfor %}
+                                            {% endif %}
+
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
 
                 <div class="col-lg-4">
@@ -197,7 +288,11 @@
                                     {% if data.status == "7" %}
                                         <span>No Action needed <br> Will be published on: <strong>{{ data.publication_date }}</strong></span>
                                     {% elif (data.status != "6" and data.status != "Approved") and data.status != "Rejected" %}
-                                        <button class='btn btn-success' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}", "{{ data.leaf_selected_rss_ids }}")' {% if data.user_permission_level != 4 and session.is_admin != 1 %} disabled {% endif %}>Approve</button>
+                                        {% if data.type == 5 %}
+                                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#deletionConfirmationModal">Approve</button>
+                                        {% else %}
+                                            <button class='btn btn-success' href='#' onclick='setStatus("Approve", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}", "{{ data.leaf_selected_rss_ids }}")' {% if data.user_permission_level != 4 and session.is_admin != 1 %} disabled {% endif %}>Approve</button>
+                                        {% endif %}
                                         -
                                         <button class='btn btn-red' href='#' onclick='setStatus("Reject", "{{ data.id }}", "{{ data.type }}", "{{ data.listName }}", "{{ session.accountId }}", "{{ data.files_details }}", "{{ data.siteIds }}", "{{ data.siteTitles }}", "{{ data.list_feed_path }}", "{{ data.publication_date }}", "{{ data.leaf_selected_rss_ids }}")' {% if data.user_permission_level != 4 and session.is_admin != 1 %} disabled {% endif %}>Reject</button>
                                     {% elif data.status == "Rejected" %}

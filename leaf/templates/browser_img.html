@@ -62,15 +62,24 @@
       function renderFiles(files) {
         var fileBrowser = $('#file-browser');
         fileBrowser.empty(); // Clear existing images
-        files.slice(0, 100).forEach(function(file) { // Slice to handle client-side rendering issues
+        files.slice(0, 100).forEach(function(file) {
+
+          // Choose base URL depending on file.Path
+          var baseUrl = file.Path.startsWith("/static/upload")
+              ? "{{leafcms_server}}"
+              : "{{preview_webserver}}";
+
           var fileElement = `
             <div class="single-image-container" data-filename="${file.Filename}">
-              <a href="{{preview_webserver}}${file.Path}" data-fancybox="gallery" data-caption="${file.Filename}">
-                <div class="single-image-img-container"><img src="{{preview_webserver}}${file.Path}" alt="${file.Filename}"></div>
+              <a href="${baseUrl}${file.Path}" data-fancybox="gallery" data-caption="${file.Filename}">
+                <div class="single-image-img-container">
+                  <img src="${baseUrl}${file.Path}" alt="${file.Filename}">
+                </div>
               </a>
               <span class="single-image-name">${file.Filename}</span>
-              <button type="button" style="width:100%" class="btn btn-sm" onclick="selectImage('{{preview_webserver}}${file.Path}')">Select</button>
+              <button type="button" style="width:100%" class="btn btn-sm" onclick="selectImage('${baseUrl}${file.Path}')">Select</button>
             </div>`;
+
           fileBrowser.append(fileElement);
         });
         $('[data-fancybox]').fancybox();

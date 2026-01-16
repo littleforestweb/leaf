@@ -135,6 +135,28 @@ async function check_if_page_is_locked(page_id) {
     });
 }
 
+// Helper to escape special characters for regex use
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function adjustCodeReplacement(editor) {
+    // Get the current HTML code from the editor
+    let html = editor.getData();
+
+    // Apply replacements based on the global map
+    if (typeof EDITOR_REPLACE_WITH_MAP === 'object') {
+        for (const [search, replacement] of Object.entries(EDITOR_REPLACE_WITH_MAP)) {
+            // Use global regex to replace all occurrences
+            const regex = new RegExp(escapeRegExp(search), 'g');
+            html = html.replace(regex, replacement);
+        }
+    }
+
+    // Set the updated HTML back into the editor
+    editor.setData(html);
+}
+
 function adjustDivEditable(editor, addPlaceholder) {
     let editable = editor.editable();
     editable.find('div').toArray().forEach(function(div) {
@@ -196,6 +218,7 @@ async function savePage() {
     // Adjust Anchor Position
     await adjustAnchorPosition(CKEDITOR.instances.htmlCode, false);
     await adjustDivEditable(CKEDITOR.instances.htmlCode, false);
+    await adjustCodeReplacement(CKEDITOR.instances.htmlCode);
 
     // Get HTML Code
     let sourceCode = CKEDITOR.instances.htmlCode.getData();
@@ -228,18 +251,13 @@ async function savePage() {
 }
 
 window.addEventListener('DOMContentLoaded', async function main() {
+
+    const site_id = await fetch(`/api/get_site_id?page_id=${page_id}`).then(res => res.json());
+
     // Load page html code
-    let data = await $.get("/editor/getPageCode?page_id=" + page_id, function (htmlContent) {
-        return htmlContent;
-    });
-    data = data.data;
-
-    let site_id = await $.get("/api/get_site_id?page_id=" + page_id, function (site_id) {
-        return site_id;
-    });
-
+    const pageData = await fetch(`/editor/getPageCode?page_id=${page_id}`).then(res => res.json());
     // Set html code to ckeditor textarea
-    document.getElementById("htmlCode").value = data;
+    document.getElementById("htmlCode").value = pageData.data;
 
     // Add AnchorPlugin Btn
     CKEDITOR.plugins.add("anchor", {
@@ -673,6 +691,47 @@ window.addEventListener('DOMContentLoaded', async function main() {
                     }
                 }
             });
+
+            editor.on('contentDom', function (evt) {
+              var editor = evt.editor;
+              var editable = editor.editable();
+
+              // Get the iframe window (where your HTML page + script lives)
+              var frame = editor.window.getFrame && editor.window.getFrame().$;
+              if (!frame || !frame.contentWindow) return;
+
+              var iframeWin = frame.contentWindow;
+
+              function triggerInternalResize() {
+                try {
+                  if (typeof iframeWin.Event === 'function') {
+                    // Modern browsers
+                    var ev = new iframeWin.Event('resize');
+                    iframeWin.dispatchEvent(ev);
+                  } else {
+                    // Older browsers
+                    var ev = iframeWin.document.createEvent('UIEvents');
+                    ev.initUIEvent('resize', true, false, iframeWin, 0);
+                    iframeWin.dispatchEvent(ev);
+                  }
+                } catch (e) {
+                  console.warn('Failed to dispatch resize inside editor:', e);
+                }
+              }
+
+              // Debounce so we don’t spam the script on every keystroke
+              var timer;
+              function scheduleResize() {
+                clearTimeout(timer);
+                timer = setTimeout(triggerInternalResize, 200);
+              }
+
+              // Run the script when user types or pastes
+              editable.attachListener(editable, 'keyup', scheduleResize);
+              editable.attachListener(editable, 'paste', function () {
+                setTimeout(scheduleResize, 0);
+              });
+            });
         }
     });
 
@@ -739,7 +798,21 @@ window.addEventListener('DOMContentLoaded', async function main() {
                         fetch(`/api/modules/${moduleId}?id=${site_id}`)
                             .then(response => response.json())
                             .then(module => {
+                                // Save selection and scroll
+                                const selection = editor.getSelection();
+                                const bookmarks = selection.createBookmarks(true);
+                                const scrollContainer = document.querySelector('.cke_contents') || window;
+                                const scrollTop = scrollContainer.scrollTop;
+
+                                // Insert the HTML
                                 editor.insertHtml(module[2]);
+
+                                // Restore selection and scroll after DOM updates
+                                setTimeout(() => {
+                                    editor.getSelection().selectBookmarks(bookmarks);
+                                    editor.focus();
+                                    scrollContainer.scrollTop = scrollTop;
+                                }, 0);
                             });
                     }
                 };
@@ -851,115 +924,10 @@ window.addEventListener('DOMContentLoaded', async function main() {
         }
     });
 
-    CKEDITOR.plugins.add('duplicateElement', {
-        icons: 'duplicateElement',
-        init: function (editor) {
-            // List of target classes
-
-            if (editor_allow_copy_element && editor_allow_copy_element.length > 2 && editor_allow_copy_element != null && editor_allow_copy_element != '') {
-                // Decode the HTML entities to get the raw string
-                const tempElement = document.createElement('textarea');
-                tempElement.innerHTML = editor_allow_copy_element;
-                let decodedString = tempElement.value; // Result: ['uos-grid']
-
-                // Replace single quotes with double quotes to make it valid JSON
-                decodedString = decodedString.replace(/'/g, '"'); // Result: ["uos-grid"]
-
-                // Parse the valid JSON string into a JavaScript array
-                const targetClasses = JSON.parse(decodedString);
-
-                // Add a context menu group
-                if (editor.contextMenu) {
-                    editor.addMenuGroup('duplicateGroup');
-                    editor.addMenuItem('duplicateLeft', {
-                        label: 'Duplicate Item After',
-                        icon: this.path + 'icons/duplicateElement.png', // Optional icon path
-                        command: 'duplicateLeft',
-                        group: 'duplicateGroup',
-                        order: 1
-                    });
-
-                    editor.addMenuItem('duplicateRight', {
-                        label: 'Duplicate Item Before',
-                        icon: this.path + 'icons/duplicateElement.png', // Optional icon path
-                        command: 'duplicateRight',
-                        group: 'duplicateGroup',
-                        order: 2
-                    });
-
-                    editor.contextMenu.addListener(function (element) {
-                        let targetElement = findTargetElement(element);
-
-                        if (targetElement) {
-                            return {
-                                duplicateLeft: CKEDITOR.TRISTATE_OFF,
-                                duplicateRight: CKEDITOR.TRISTATE_OFF
-                            };
-                        }
-
-                        return null;
-                    });
-                }
-
-                // Add commands to duplicate the element
-                editor.addCommand('duplicateLeft', {
-                    exec: function (editor) {
-                        let element = findTargetElement(editor.getSelection().getStartElement());
-                        if (element) {
-                            duplicateElement(element, 'left');
-                        }
-                    }
-                });
-
-                editor.addCommand('duplicateRight', {
-                    exec: function (editor) {
-                        let element = findTargetElement(editor.getSelection().getStartElement());
-                        if (element) {
-                            duplicateElement(element, 'right');
-                        }
-                    }
-                });
-
-                // Helper function to find the target element
-                function findTargetElement(element) {
-                    while (element) {
-                        if (element.hasClass && targetClasses.some(cls => element.hasClass(cls))) {
-                            return element;
-                        }
-                        element = element.getParent();
-                    }
-                    return null;
-                }
-
-                // Helper function to duplicate the element
-                function duplicateElement(element, direction) {
-                    // Clone the CKEditor element
-                    let clonedElement = element.clone(true);
-
-                    // Get the parent of the current element
-                    let parentElement = element.getParent();
-
-                    if (!parentElement) {
-                        console.error("Parent element not found. Cannot duplicate.");
-                        return;
-                    }
-
-                    // Insert the cloned element based on the direction
-                    if (direction === 'left') {
-                        clonedElement.insertBefore(element); // Correctly insert before the current element
-                    } else if (direction === 'right') {
-                        clonedElement.insertAfter(element); // Correctly insert after the current element
-                    }
-                }
-            }
-        }
-    });
-
     // Init CKEditor
     let ckeditorConfig = {
         allowedContent: true,
-        extraAllowedContent: 'div(*)[*]{*}',
-        enterMode: CKEDITOR.ENTER_DIV,
+        autoParagraph: false,
         toolbar: [
             {name: "clipboard", items: ["Cut", "Copy", "Paste", "PasteText", "-", "Undo", "Redo"]}, // "PasteFromWord",
             {name: "basicstyles", items: ["Bold", "Italic", "Underline", "Strike", 'Subscript', 'Superscript', "-", "RemoveFormat"]},
@@ -971,7 +939,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             // {name: "colors", items: ["TextColor", "BGColor"]},
             {name: "actions", items: ["Preview", "SaveBtn", "PublishBtn"]},
         ],
-        extraPlugins: "anchor,inserthtml4x,embed,saveBtn,codemirror,image2,extendedImage2,slideshow,htmlmodule,contextmenu,headingcontextmenu,dialog,duplicateElement", // ,pastefromword
+        extraPlugins: "anchor,inserthtml4x,embed,saveBtn,codemirror,image2,extendedImage2,slideshow,htmlmodule,contextmenu,headingcontextmenu,dialog", // ,pastefromword
         removePlugins: 'image',
         image2_captionedImageClass: 'uos-component-image',
         image2_captionedClass: 'uos-component-image-caption',
@@ -987,7 +955,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             keyMap: 'sublime'
         },
         codeSnippet_theme: 'prism',
-        filebrowserUploadUrl: "/api/upload?name=fileupload",
+        filebrowserUploadUrl: `/api/upload?name=fileupload&page_id=${page_id}`,
         embed_provider: '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}',
         protectedSource: new RegExp(`<script(?![^>]*src=["'][^"']*(${editor_allow_scripts_regex_patters})[^"']*["']|[^>]*class=["'][^"']*unprotected_script[^"']*["'])[^>]*>[\\s\\S]*?(<\\/script>|$)`, 'gi'),
         on: {
@@ -996,10 +964,10 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 let emptyTagsRegex = /<(?!script)(\w+)([^>]*?)>\s*<\/\1>/gi;
                 event.data.dataValue = event.data.dataValue.replace(emptyTagsRegex, '<$1$2>&nbsp;</$1>');
             },
-            instanceReady: async function (evt) {
-                // Get the CKEditor instance
-                let editor = evt.editor;
+            instanceReady: function (evt) {
+                const editor = evt.editor;
 
+                // Sync setup (safe here)
                 editor.on('focus', function () {
                     adjustAnchorPosition(editor, "relative!important");
                     adjustDivEditable(editor, true);
@@ -1011,56 +979,64 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
                 editor.on('beforeCommandExec', function () {
                     if (editor.mode === 'wysiwyg') {
-                        // Trying to prevent the undo JUMP that breaks the tabs
+                        // Prevent undo jump
                     }
                 });
 
-                await check_if_page_is_locked(page_id);
+                // Defer async logic
+                setTimeout(async () => {
+                    let page_site_id = null;
 
-                // Usage with CKEditor change event
-                let is_locked = false;
-                editor.on('change', debounce(function () {
-                    if (is_locked !== true) {
-                        lockPage(page_id, "lock");
-                        is_locked = true;
+                    try {
+                        const res = await fetch(`/api/get_site_id?page_id=${page_id}`);
+                        if (res.ok) {
+                            page_site_id = await res.text();
+                        } else {
+                            console.error("Failed to fetch site_id:", res.status);
+                        }
+                    } catch (err) {
+                        console.error("Error fetching site_id:", err);
                     }
-                }, 250)); // Adjust debounce time as necessary
 
-                window.addEventListener('beforeunload', async function (event) {
-                    // Perform any necessary actions before showing the confirmation dialog
-                    console.log('User attempted to leave the page.');
+                    await check_if_page_is_locked(page_id);
 
-                    // Show a confirmation dialog
-                    event.preventDefault();
-                    event.returnValue = ''; // This triggers the default confirmation dialog in most browsers
+                    let is_locked = false;
+                    editor.on('change', debounce(function () {
+                        if (!is_locked) {
+                            lockPage(page_id, "lock");
+                            is_locked = true;
+                        }
+                    }, 250));
 
-                    if (page_is_locked_by_me) {
+                    window.addEventListener('beforeunload', function (event) {
+                        event.preventDefault();
+                        event.returnValue = '';
 
-                        let site_id = await $.get("/api/get_site_id?page_id=" + page_id, function (site_id) {
-                            return site_id;
-                        });
+                        if (page_is_locked_by_me) {
+                            const data = JSON.stringify({
+                                page_id: page_id,
+                                site_id: page_site_id,
+                                action: "unlock"
+                            });
 
-                        // Data to be sent to the server
-                        var data = JSON.stringify({
-                            page_id: page_id,
-                            site_id: site_id,
-                            action: "unlock"
-                        });
-
-                        fetch('/api/lock_unlock_page', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: data,
-                            keepalive: true // This is important to allow the request to complete
-                        });
-                        return null;
-                    }
-                });
+                            const blob = new Blob([data], { type: 'application/json' });
+                            navigator.sendBeacon('/api/lock_unlock_page', blob);
+                        }
+                    });
+                }, 0); // Allows CKEditor to stabilize before async logic
             }
         }
     };
+
+    // 🔑 Override DTD to allow <div> inside <p>
+    CKEDITOR.on('instanceReady', function() {
+        CKEDITOR.dtd.p.div = 1;
+        CKEDITOR.dtd.$block.div = 1;
+        // If you want to allow all block elements inside <p>, you could loop:
+        // for (let tag in CKEDITOR.dtd.$block) {
+        //     CKEDITOR.dtd.p[tag] = 1;
+        // }
+    });
 
     // Conditionally add "Source" button if is_source_editor is true
     if (is_source_editor === 1 || is_admin === 1) {

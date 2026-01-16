@@ -6,15 +6,17 @@ import re
 import smtplib
 import subprocess
 import time
+import traceback
 import xml.etree.ElementTree as ET
 # from lxml import etree as ET
 from email.message import EmailMessage
+from sys import excepthook
 from urllib.parse import unquote, urljoin
 
 import paramiko
 import werkzeug.utils
 from bs4 import BeautifulSoup
-from flask import session
+from flask import session, current_app
 from git import Actor
 from werkzeug.datastructures import MultiDict
 
@@ -87,12 +89,15 @@ def get_workflow_details(workflow_id):
             else:
                 query = "SELECT sm.path FROM site_assets sm WHERE sm.id=%s"
 
-            params = (workflow_data["siteIds"],)
-            mycursor.execute(query, params)
-            workflow_folder_path = f"/{mycursor.fetchone()[0].lstrip('/')}"
+            workflow_folder_paths = []
+            for site_id in workflow_data["siteIds"]:
+                # Convert to int in case the list contains strings
+                params = (int(site_id),)
+                mycursor.execute(query, params)
+                workflow_folder_paths.append(f"/{mycursor.fetchone()[0].lstrip('/')}")
 
             # Get user Permission Level for the workflow folder
-            user_permission_level = get_user_permission_level(session["id"], workflow_folder_path)
+            user_permission_level = get_user_permission_level(session["id"], workflow_folder_paths[0])
             workflow_data["user_permission_level"] = user_permission_level
         else:
             workflow_data["user_permission_level"] = 4
@@ -186,34 +191,38 @@ def process_specific_workflow_type(workflow_data, mycursor):
 
 
 def process_type_1_or_5(workflow_data, mycursor):
+    site_ids_raw = workflow_data.get("siteIds", [])
+
+    # Convert to list of integers
+    if isinstance(site_ids_raw, str):
+        site_ids = [int(x.strip()) for x in site_ids_raw.split(",") if x.strip()]
+    else:
+        site_ids = [int(x) for x in site_ids_raw]
+
+    # Prepare SQL placeholders
+    placeholders = ",".join(["%s"] * len(site_ids))
+    query = f"""
+        SELECT id, title, HTMLPath
+        FROM site_meta
+        WHERE id IN ({placeholders})
     """
-    Process workflow details for type 1 or 5.
 
-    Args:
-        workflow_data (dict): Workflow details.
-        mycursor (mysql.connector.cursor): MySQL cursor for executing queries.
-    """
-    if workflow_data["siteIds"]:
-        site_titles = ""
-        site_id = workflow_data["siteIds"].strip()
+    mycursor.execute(query, tuple(site_ids))
+    results = mycursor.fetchall()
 
-        query = "SELECT site_meta.title, site_meta.url, site_meta.HTMLPath FROM site_meta WHERE id=%s"
-        params = (site_id,)
+    # Build arrays
+    site_titles = []
+    site_urls = []
+    live_urls = []
+    for site_id, title, html_path in results:
+        site_titles.append(title.replace('"', "'"))
+        site_urls.append(urljoin(Config.PREVIEW_SERVER, html_path))
+        live_urls.append(urljoin(Config.DEPLOYMENTS_SERVERS[0]["webserver_url"], html_path))
 
-        mycursor.execute(query, params)
-        result = mycursor.fetchone()
-
-        site_title = result[0]
-
-        site_titles += site_title.replace('"', "'") + ";"
-        site_titles = site_titles[0:-1]
-        workflow_data["siteTitles"] = unquote(site_titles)
-        workflow_data["siteIds"] = workflow_data["siteIds"]
-        workflow_data["siteUrl"] = urljoin(Config.PREVIEW_SERVER, result[2])
-        workflow_data["liveUrl"] = urljoin(Config.DEPLOYMENTS_SERVERS[0]["webserver_url"], result[2])
-
-        workflow_data["siteInfo"] = dict(zip(workflow_data["siteIds"], workflow_data["siteTitles"]))
-
+    workflow_data["siteIds"] = site_ids
+    workflow_data["siteTitles"] = site_titles
+    workflow_data["siteUrl"] = site_urls
+    workflow_data["liveUrl"] = live_urls
 
 def process_type_6_or_7(workflow_data, mycursor):
     """
@@ -802,8 +811,13 @@ def add_workflow(thisRequest):
             title = title_dict.get(thisType, 'New Leaf dynamic workflow review')
 
         # Handle specific types
-        if thisType == 3 or thisType == 5 or thisType == 8:
+        if thisType == 3 or thisType == 8:
             siteIds = thisRequest.get("entryId")
+
+        # Handle specific types
+        if thisType == 5:
+            entry_ids = thisRequest.get("entryId", [])
+            siteIds = ",".join(str(i) for i in entry_ids)
 
         if thisType == 6 or thisType == 7:
             # For file types, save file IDs within siteId field
@@ -1511,45 +1525,65 @@ def proceed_action_workflow(request, not_real_request=None):
             print("Publication date in the future: " + str(target_date) + "; current date: " + str(current_date))
 
     if not listName and thisType == 5:
-        # Get local file path
-        query = "SELECT site_meta.id, site_meta.HTMLPath FROM site_meta JOIN workflow ON site_meta.id = workflow.siteIds WHERE workflow.id = %s"
+        # Get comma-separated IDs from workflow
+        query = """
+                SELECT site_meta.id, site_meta.HTMLPath
+                FROM site_meta
+                         JOIN workflow ON FIND_IN_SET(site_meta.id, workflow.siteIds)
+                WHERE workflow.id = %s \
+                """
         params = (workflow_id,)
         mycursor.execute(query, params)
-        res = mycursor.fetchone()
-        pageId, HTMLPath = str(res[0]).split(",")[0], res[1]
+        results = mycursor.fetchall()
 
-        # Update page to "deleted" on db
-        query = "UPDATE site_meta SET status = %s WHERE id = %s"
-        params = ("-1", pageId)
-        mycursor.execute(query, params)
-        mydb.commit()
+        if not results:
+            current_app.logger.warning(f"No site_meta found for workflow {workflow_id}")
+            return
 
-        # Remove from Deployment servers
-        for srv in Config.DEPLOYMENTS_SERVERS:
-            ssh = paramiko.SSHClient()
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            try:
-                if srv["pkey"] != "":
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                    if srv["pw"] == "":
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
+        # Process all site IDs
+        for page_id_raw, html_path in results:
+            current_app.logger.info(f"Page {page_id_raw} - {html_path}")
+            page_id = int(page_id_raw)
+
+            # Update page status to "deleted"
+            query = "UPDATE site_meta SET status = %s WHERE id = %s"
+            mycursor.execute(query, ("-1", page_id))
+            mydb.commit()
+
+            # Remove from deployment servers
+            for srv in Config.DEPLOYMENTS_SERVERS:
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                try:
+                    connect_kwargs = {}
+                    if srv.get("pkey"):
+                        pkey = paramiko.RSAKey(filename=srv["pkey"], password=srv.get("pw"))
+                        connect_kwargs["pkey"] = pkey
                     else:
-                        ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                else:
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-                with ssh.open_sftp() as scp:
-                    remote_path = os.path.join(srv["remote_path"], HTMLPath)
-                    scp.remove(remote_path)
-            
-            finally:
-                # Ensure SSH connection is closed
-                ssh.close()
+                        connect_kwargs["password"] = srv.get("pw")
 
-        # Regenerate Sitemap
-        query = "SELECT site_id FROM site_meta WHERE HTMLPath = %s"
-        mycursor.execute(query, [HTMLPath])
-        site_id = mycursor.fetchone()[0]
-        gen_sitemap(mycursor, site_id, thisType)
+                    ssh.connect(srv["ip"], port=srv["port"], username=srv["user"], **connect_kwargs)
+
+                    # Delete remote file
+                    with ssh.open_sftp() as sftp:
+                        remote_path = os.path.join(srv["remote_path"], html_path)
+                        try:
+                            sftp.remove(remote_path)
+                        except FileNotFoundError:
+                            current_app.logger.warning(f"File {remote_path} not found on server {srv['ip']}")
+
+                finally:
+                    ssh.close()
+
+            # Regenerate sitemap
+            query = "SELECT site_id FROM site_meta WHERE HTMLPath = %s"
+            mycursor.execute(query, (html_path,))
+            site_id_res = mycursor.fetchone()
+            if site_id_res:
+                site_id = site_id_res[0]
+                gen_sitemap(mycursor, site_id, thisType)
+            else:
+                current_app.logger.warning(f"No site_id found for HTMLPath {html_path}")
 
     if not listName and thisType == 7:
         # Get local file path

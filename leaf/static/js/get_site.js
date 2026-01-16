@@ -105,7 +105,7 @@ async function addNewDuplicatedPage() {
     let userFolderSelect = escapeHtml($("#userFolderSelect").val());
     // Check user inputs -> Send alert message
     let alertMessageElem = document.getElementById("alertMessage");
-    
+
     if (userFolderSelect.trim() !== "") {
 
         if (newURL === "" || newTitle === "") {
@@ -184,15 +184,21 @@ document.getElementById("userFolderSelect").addEventListener("change", function 
 async function deletePage(btn) {
     btn.disabled = true;
 
-    let checkedRow = $('#table').DataTable().rows(function (idx, data, node) {
-        return $(node).find('.dt-checkboxes:input[type="checkbox"]:checked').val();
-    }).data().toArray()[0];
+    // Get all selected rows
+    let checkedRows = $('#table')
+        .DataTable()
+        .rows(function (idx, data, node) {
+            return $(node).find('.dt-checkboxes:checked').length > 0;
+        })
+        .data()
+        .toArray();
+    let ids = checkedRows.map(r => r.id);
 
     $.ajax({
         type: "POST",
         url: "/workflow/add",
         contentType: 'application/json',
-        data: JSON.stringify({"startUser": userId, "entryId": checkedRow["id"], "type": 5, "priority": 2}),
+        data: JSON.stringify({"startUser": userId, "entryId": ids, "type": 5, "priority": 2}),
         dataType: 'json',
         cache: false,
         processData: false,
@@ -209,32 +215,22 @@ async function deletePage(btn) {
 }
 
 async function doMainButtons() {
-    $('#table').on('change', 'input[type="checkbox"]', function () {
-        var checkboxes = document.querySelectorAll("input[type='checkbox'].dt-checkboxes");
-        if (this.checked) {
-            for (var i = 0; i < checkboxes.length; i++) {
-                if (checkboxes[i] !== this) {
-                    checkboxes[i].checked = false;
-                }
-            }
-        }
 
-        $(".duplicateBtn").prop('disabled', true);
-        if ($('input[type="checkbox"]:checked').length === 1) {
-            $(".duplicateBtn").prop('disabled', false);
-        }
+    $('#table').on('change', 'input[type="checkbox"].dt-checkboxes', function () {
 
-        $(".publishBtn").prop('disabled', true);
-        if ($('input[type="checkbox"]:checked').length === 1) {
-            $(".publishBtn").prop('disabled', false);
-        }
+        let selectedCount = $('input.dt-checkboxes:checked').length;
 
-        $(".deleteBtn").prop('disabled', true);
-        if ($('input[type="checkbox"]:checked').length === 1) {
-            $(".deleteBtn").prop('disabled', false);
-        }
-    })
+        // Duplicate: only when exactly 1 selected
+        $(".duplicateBtn").prop('disabled', selectedCount !== 1);
+
+        // Publish: only when exactly 1 selected
+        $(".publishBtn").prop('disabled', selectedCount !== 1);
+
+        // Delete: only when 1 OR MORE selected
+        $(".deleteBtn").prop('disabled', selectedCount === 0);
+    });
 }
+
 
 async function populateUserList() {
     let listOfUsers = await $.get("/api/get_lfi_admin_users/" + accountId, function (result) {
@@ -410,7 +406,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             {
                 aTargets: [5],
                 mData: function (source, type, val) {
-                    return "<a" + (is_admin && source["Locked"] === 1 ? " onclick=\"unlockPage(\'" + source["id"] + "\', \'unlock\', this)\"" : "") + " class='" + (source["Locked"] === 0 ? "not_locked" : "unlock-btn") + " btn btn-sm' " + (is_admin && source["Locked"] === 1 ? "href='javascript:void(0);'" : "target='_blank' href='/editor?page_id=" + source["id"] + "'" ) + ">" + (source["Locked"] === 0 ? "Edit" : "Unlock") + "</a><a class='btn btn-sm' style='margin-left:5px' href='/versions?file_type=page&file_id=" + source["id"] + "'>Versions</a>";
+                    return "<a" + (is_admin && source["Locked"] === 1 ? " onclick=\"unlockPage(\'" + source["id"] + "\', \'unlock\', this)\"" : "") + " class='" + (source["Locked"] === 0 ? "not_locked" : "unlock-btn") + " btn btn-sm' " + (is_admin && source["Locked"] === 1 ? "href='javascript:void(0);'" : "target='_blank' href='/editor?page_id=" + source["id"] + "'") + ">" + (source["Locked"] === 0 ? "Edit" : "Unlock") + "</a><a class='btn btn-sm' style='margin-left:5px' href='/versions?file_type=page&file_id=" + source["id"] + "'>Versions</a>";
                 }
             }
 

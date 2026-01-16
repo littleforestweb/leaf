@@ -32,7 +32,7 @@ def view_editor():
         if not site_belongs_to_account(siteId) or not hasAccess:
             return jsonify({"error": "Forbidden"}), 403
 
-        return render_template('editor.html', email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], page_id=page_id, site_notice=Config.SITE_NOTICE, is_source_editor=session["is_source_editor"], editor_allow_scripts_regex_patters=Config.EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS, editor_allow_copy_element=Config.EDITOR_ALLOW_COPY_ELEMENT)
+        return render_template('editor.html', email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], page_id=page_id, site_notice=Config.SITE_NOTICE, is_source_editor=session["is_source_editor"], editor_allow_scripts_regex_patters=Config.EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS, editor_replace_with_map=Config.EDITOR_REPLACE_WITH_MAP)
     except Exception as e:
         current_app.logger.error(traceback.format_exc())
         # Handle exceptions and return an error response with status code 500
@@ -60,14 +60,8 @@ def get_htmlCode():
 
         # Get HTML path for the page
         html_path = get_page_details(int(page_id))
-
-        # Try opening with UTF-8 first, and fall back to windows-1252 if it fails
-        try:
-            with open(html_path, 'r', encoding="utf-8") as in_file:
-                content = in_file.read()
-        except UnicodeDecodeError:
-            with open(html_path, 'r', encoding="windows-1252") as in_file:
-                content = in_file.read()
+        with open(html_path, 'r') as in_file:
+            content = in_file.read()
 
         # Add base href to HTML
         content = add_base_href(content)

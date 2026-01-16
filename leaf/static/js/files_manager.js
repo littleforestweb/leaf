@@ -338,8 +338,10 @@ async function createTicket(accountId, type = 6) {
 
 window.addEventListener('DOMContentLoaded', async function main() {
 
+    populateFolderDropdown();
+
     document.getElementById("file").addEventListener("change", setFull_pathSpan);
-    document.getElementById("folder").addEventListener("keyup", setFull_pathSpan);
+    document.getElementById("folder").addEventListener("change", setFull_pathSpan);
 
     $('#files_table').DataTable().clear().draw();
     $('#files_table').DataTable().destroy();
@@ -383,7 +385,9 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 aTargets: [1],
                 sClass: "truncate",
                 mData: function (source, type, val) {
-                    return '<a class="green-link" target="_blank" href="' + unescape(preview_webserver + source["Path"]) + '">' + unescape(source["Path"]) + '</a>';
+                    let base = source["Path"].startsWith("/static/uploads/") ? leafcms_server : preview_webserver;
+                    let path = unescape(source["Path"]);
+                    return '<a class="green-link" target="_blank" href="' + unescape(base + path) + '">' + path + '</a>';
                 }
             },
             {
@@ -500,30 +504,37 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
         // Check if any file is selected or not
         if (fileInput.files.length > 0) {
-            const fullFileName = document.getElementById("file").value.split('\\').pop();
+            if (folder.value.length > 0) {
+                const fullFileName = document.getElementById("file").value.split('\\').pop();
 
-            // Get the file name and extension using the helper function
-            // const {name, extension} = getFileNameAndExtension(fullFileName);
-            // const final_extension = extension.trim().split(".")[1]
+                // Get the file name and extension using the helper function
+                // const {name, extension} = getFileNameAndExtension(fullFileName);
+                // const final_extension = extension.trim().split(".")[1]
 
-            // // Sanitize only the base name part, preserving the original extension
-            // const sanitizedFileName = sanitizeFilePath(name) + "." + final_extension;
-            const originalFile = fileInput.files[0];
+                // // Sanitize only the base name part, preserving the original extension
+                // const sanitizedFileName = sanitizeFilePath(name) + "." + final_extension;
+                const originalFile = fileInput.files[0];
 
-            // Create a new File object with the desired name
-            const newFile = new File([originalFile], fullFileName, {
-                type: originalFile.type,
-                lastModified: originalFile.lastModified
-            });
+                // Create a new File object with the desired name
+                const newFile = new File([originalFile], fullFileName, {
+                    type: originalFile.type,
+                    lastModified: originalFile.lastModified
+                });
 
-            formData.append('file', newFile);
-            formData.append('folder', folder.value);
-            if (site_id.trim() === "") {
-                formData.append('site_id', site_id);
+                formData.append('file', newFile);
+                formData.append('folder', folder.value);
+                if (site_id.trim() === "") {
+                    formData.append('site_id', site_id);
+                }
+                formData.append('account_id', accountId);
+
+                upload_file(formData);
+            } else {
+                document.getElementById('file_upload_result').classList.add("form-control");
+                document.getElementById('file_upload_result').classList.remove("is-valid");
+                document.getElementById('file_upload_result').classList.add("is-invalid");
+                document.getElementById('file_upload_result').textContent = 'Please select a folder to upload.';
             }
-            formData.append('account_id', accountId);
-
-            upload_file(formData);
 
         } else {
             document.getElementById('file_upload_result').classList.add("form-control");
@@ -534,3 +545,26 @@ window.addEventListener('DOMContentLoaded', async function main() {
     });
 });
 
+async function getUserFolderAccessByValue() {
+    const data = await $.get("/api/get_single_user_folder_access_for_lists");
+    return [...new Set(data)];  // Deduplicate if needed
+}
+
+async function populateFolderDropdown() {
+    let folderOptions = await getUserFolderAccessByValue();
+
+    // Filter out the root `/` folder
+    folderOptions = folderOptions.filter(item => item !== "/");
+
+    const $select = $('#folder');
+    $select.empty();  // Clear existing options
+
+    // Add the default option
+    $select.append('<option value="" disabled selected>Select a folder</option>');
+
+    // Populate with folder options
+    folderOptions.forEach(folder => {
+        const cleanFolder = folder.replace(/^\/|\/$/g, '');  // remove leading/trailing slashes
+        $select.append(`<option value="${cleanFolder}">${cleanFolder}</option>`);
+    });
+}
