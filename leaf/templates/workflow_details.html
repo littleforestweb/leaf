@@ -22,10 +22,10 @@
                             {{ data.siteTitles[idx] }}
                         </a><br>
 
-                        <strong>Live:</strong>
-                        <a target="_blank" href="{{ data.liveUrl[idx] }}">
-                            {{ data.siteTitles[idx] }}
-                        </a>
+                        {% if data.liveUrl %}
+                            <strong>Live:</strong>
+                            <a target="_blank" href="{{ data.liveUrl[idx] }}">{{ data.siteTitles[idx] }}</a>
+                        {% endif %}
 
                         {% if not loop.last %}
                             <br>
@@ -230,7 +230,13 @@
                     {% if data.siteTitles %}
                         <div class="mb-2 col-sm-12">
                             <div class="card">
-                                <h5 class="card-header">Pages ({{ data.siteIds|length }})</h5>
+                                {% if data.siteIds is string %}
+                                    {% set site_ids = data.siteIds.split(',') %}
+                                {% else %}
+                                    {% set site_ids = data.siteIds %}
+                                {% endif %}
+
+                                <h5 class="card-header">Pages ({{ site_ids|length }})</h5>
                                 <div class="card-body">
                                     <div class="row">
                                         {% if data.listName and data.listName != "None" %}

@@ -737,15 +737,17 @@ def api_upload():
         file_path = uniquify(os.path.join(Config.FILES_UPLOAD_FOLDER, uploaded_file_name.lower().replace(' ', '-')))
         url_to_return = Config.LEAFCMS_SERVER.rstrip("/") + "/" + Config.IMAGES_WEBPATH.lstrip('/leaf/').rstrip("/") + "/" + os.path.basename(file_path)
 
-        mimeType, _ = mimetypes.guess_type(file_path)
-        modified_by = session["id"]
-        status = "200"
-        site_id = getSiteFromPageId(int(request.args.get('page_id')))
-        mydb, mycursor = decorators.db_connection()
-        sql = "INSERT INTO site_assets (site_id, mimeType, path, filename, modified_by, status) VALUES (%s, %s, %s, %s, %s, %s)"
-        params = (site_id, mimeType, os.path.join("static/uploads", os.path.basename(file_path)), os.path.basename(file_path), modified_by, status)
-        mycursor.execute(sql, params)
-        mydb.commit()
+        if request.args.get('page_id'):
+            mimeType, _ = mimetypes.guess_type(file_path)
+            modified_by = session["id"]
+            status = "200"
+            site_id = getSiteFromPageId(int(request.args.get('page_id')))
+            mydb, mycursor = decorators.db_connection()
+            sql = "INSERT INTO site_assets (site_id, mimeType, path, filename, modified_by, status) VALUES (%s, %s, %s, %s, %s, %s)"
+            params = (site_id, mimeType, os.path.join("static/uploads", os.path.basename(file_path)), os.path.basename(file_path), modified_by, status)
+
+            mycursor.execute(sql, params)
+            mydb.commit()
 
     # Save the uploaded file
     uploaded_file.save(str(file_path))
