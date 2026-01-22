@@ -6,12 +6,10 @@ import re
 import smtplib
 import subprocess
 import time
-import traceback
 import xml.etree.ElementTree as ET
 # from lxml import etree as ET
 from email.message import EmailMessage
-from sys import excepthook
-from urllib.parse import unquote, urljoin
+from urllib.parse import urljoin
 
 import paramiko
 import werkzeug.utils
@@ -90,7 +88,11 @@ def get_workflow_details(workflow_id):
                 query = "SELECT sm.path FROM site_assets sm WHERE sm.id=%s"
 
             workflow_folder_paths = []
-            for site_id in workflow_data["siteIds"]:
+            siteIds = workflow_data["siteIds"]
+            if type(workflow_data["siteIds"]) == str:
+                siteIds = workflow_data["siteIds"].split(",")
+
+            for site_id in siteIds:
                 # Convert to int in case the list contains strings
                 params = (int(site_id),)
                 mycursor.execute(query, params)
@@ -223,6 +225,7 @@ def process_type_1_or_5(workflow_data, mycursor):
     workflow_data["siteTitles"] = site_titles
     workflow_data["siteUrl"] = site_urls
     workflow_data["liveUrl"] = live_urls
+
 
 def process_type_6_or_7(workflow_data, mycursor):
     """
@@ -1231,7 +1234,7 @@ def proceed_action_workflow(request, not_real_request=None):
             for srv in Config.DEPLOYMENTS_SERVERS:
                 ssh = paramiko.SSHClient()
                 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                
+
                 try:
                     ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
                     with ssh.open_sftp() as scp:
@@ -1322,12 +1325,12 @@ def proceed_action_workflow(request, not_real_request=None):
                             for singleItem in singleListItemToSearch:
                                 singleItem = singleItem.split(",")
                                 by_field_conditions = " OR ".join([f"FIND_IN_SET(%s, `{singleFieldToSaveBy}`)" for _ in singleItem])
-                                
+
                                 if fieldsToSaveByIncludes:
                                     by_field_query = f"SELECT {fieldsToSaveByIncludes} FROM {account_list} WHERE {by_field_conditions} AND ({date_conditions})"
                                 else:
                                     by_field_query = f"SELECT * FROM {account_list} WHERE {by_field_conditions} AND ({date_conditions})"
-                                
+
                                 by_field_params = tuple(singleItem) + (current_date_to_compare_in_db,) * len(existing_publication_names)
                                 if by_field_params is not None:
                                     mycursor.execute(by_field_query, by_field_params)
@@ -1615,7 +1618,7 @@ def proceed_action_workflow(request, not_real_request=None):
                 with ssh.open_sftp() as scp:
                     remote_path = os.path.join(srv["remote_path"], path)
                     scp.remove(remote_path)
-            
+
             finally:
                 # Ensure SSH connection is closed
                 ssh.close()
@@ -1989,7 +1992,7 @@ def find_item_by_guid(root, new_guid):
         guid = False
         if item and item.find('guid'):
             guid = item.find('guid').text
-        
+
         if guid and guid == new_guid:
             return item
     return None
@@ -2001,7 +2004,7 @@ def find_and_delete_item_by_guid(root, new_guid):
         guid = False
         if item and item.find('guid'):
             guid = item.find('guid').text
-        
+
         if guid and guid == new_guid:
             channel.remove(item)
             return True
@@ -2033,8 +2036,9 @@ def clean_up_duplicates_in_rss(tree, root):
                 if parent is not None:
                     parent.remove(duplicate_item)
                     print(f"Duplicate item with GUID {guid_value} removed.")
-    
+
     return tree, root  # Return the modified tree and root for clarity
+
 
 def create_or_update_item_element(tree, root, mycursor, account_id, list_name, new_item_data, file_path, thisType):
     # Clean up any existing duplicates before processing new entries
@@ -2179,7 +2183,7 @@ def add_item_to_channel(tree, root, new_item, file_path, account_id, list_name, 
 
     # Clean up any existing duplicates before processing new entries
     tree, root = clean_up_duplicates_in_rss(tree, root)
-    
+
     # Write the RSS Feed in Preview Server
     tree.write(os.path.join(Config.WEBSERVER_FOLDER, file_path), encoding='UTF-8', xml_declaration=True)
 
@@ -2337,7 +2341,7 @@ def check_if_should_publish_pages(workflow):
 
     HTMLPath = HTMLPath.strip("/")
     local_path = os.path.join(Config.WEBSERVER_FOLDER, HTMLPath)
-    
+
     if os.path.exists(local_path):
         for srv in Config.DEPLOYMENTS_SERVERS:
             # Replace Preview Reference with Live webserver references

@@ -22,10 +22,10 @@
                             {{ data.siteTitles[idx] }}
                         </a><br>
 
-                        <strong>Live:</strong>
-                        <a target="_blank" href="{{ data.liveUrl[idx] }}">
-                            {{ data.siteTitles[idx] }}
-                        </a>
+                        {% if data.liveUrl %}
+                            <strong>Live:</strong>
+                            <a target="_blank" href="{{ data.liveUrl[idx] }}">{{ data.siteTitles[idx] }}</a>
+                        {% endif %}
 
                         {% if not loop.last %}
                             <br>
