@@ -991,7 +991,11 @@ Subject: {subject}
         process.communicate(email_text.encode())
 
 
-def gen_sitemap(mycursor, site_id, thisType):
+def gen_sitemap(site_id, thisType):
+
+    # Get a database connection
+    _, mycursor = decorators.db_connection()
+    
     query = "SELECT HTMLPath FROM site_meta WHERE status <> -1 AND site_id = %s"
     mycursor.execute(query, [site_id])
     site_pages = [page[0] for page in mycursor.fetchall()]
@@ -1192,7 +1196,7 @@ def proceed_action_workflow(request, not_real_request=None):
             query = "SELECT id, site_id FROM site_meta WHERE HTMLPath = %s"
             mycursor.execute(query, [HTMLPath])
             page_id, site_id = mycursor.fetchone()
-            gen_sitemap(mycursor, site_id, thisType)
+            gen_sitemap(site_id, thisType)
 
             # Git operations
             query = "SELECT workflow.comments FROM workflow WHERE id = %s"
@@ -1584,7 +1588,7 @@ def proceed_action_workflow(request, not_real_request=None):
             site_id_res = mycursor.fetchone()
             if site_id_res:
                 site_id = site_id_res[0]
-                gen_sitemap(mycursor, site_id, thisType)
+                gen_sitemap(site_id, thisType)
             else:
                 current_app.logger.warning(f"No site_id found for HTMLPath {html_path}")
 
@@ -2396,7 +2400,7 @@ def check_if_should_publish_pages(workflow):
         query = "SELECT id, site_id FROM site_meta WHERE HTMLPath = %s"
         mycursor.execute(query, [HTMLPath])
         page_id, site_id = mycursor.fetchone()
-        gen_sitemap(mycursor, site_id, 1)
+        gen_sitemap(site_id, 1)
 
         # Get Assign User Info
         editorInfo = get_user_details(workflow["assignEditor"], mycursor)
