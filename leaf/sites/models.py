@@ -157,7 +157,7 @@ def get_user_access_folder(mycursor=None):
         """
         mycursor.execute(query, (session["id"],))
 
-    return [folder_path[0] for folder_path in mycursor.fetchall()]
+    return sorted([folder_path[0] for folder_path in mycursor.fetchall()])
 
 
 def get_user_access_folder_for_lists(mycursor=None):
@@ -190,7 +190,7 @@ def get_user_access_folder_for_lists(mycursor=None):
             mycursor.execute(query)
             folders_access = mycursor.fetchall()
 
-    return [folder_path[0] for folder_path in folders_access]
+    return sorted([folder_path[0] for folder_path in folders_access])
 
 
 def check_if_page_locked_by_me(page_id):
