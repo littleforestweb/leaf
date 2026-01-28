@@ -150,7 +150,7 @@ def db_connection():
         db_config['port'] = Config.DB_PORT
 
     connection = mysql.connector.connect(**db_config)
-    cursor = connection.cursor()
+    cursor = connection.cursor(buffered=True)
 
     return connection, cursor
 
