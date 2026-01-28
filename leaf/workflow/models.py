@@ -1193,17 +1193,19 @@ def proceed_action_workflow(request, not_real_request=None):
                     outFile.write(original_content)
 
             # Regenerate Sitemap
-            query = "SELECT id, site_id FROM site_meta WHERE HTMLPath = %s"
-            mycursor.execute(query, [HTMLPath])
-            page_id, site_id = mycursor.fetchone()
-            gen_sitemap(site_id, thisType)
+            query = "SELECT id, site_id FROM site_meta WHERE HTMLPath = %s LIMIT 1"
+            mycursor.execute(query, (HTMLPath,))
+            row = mycursor.fetchone()
+            if not row:
+                current_app.logger.warning(f"Page not found for HTMLPath")
+            else:
+                page_id, site_id = row
+                gen_sitemap(site_id, thisType)
 
             # Git operations
-            query = "SELECT workflow.comments FROM workflow WHERE id = %s"
-            current_app.logger.warning(f"Testing workflow_id: {workflow_id}")
-            current_app.logger.warning(f"Testing query: {query}")
-            mycursor.execute(query, [workflow_id])
-            workflow_comment = mycursor.fetchone()[0]
+            mycursor.execute("SELECT comments FROM workflow WHERE id = %s LIMIT 1", (workflow_id,))
+            row = mycursor.fetchone()
+            workflow_comment = (row[0] if row else "Publish")
             Config.GIT_REPO.index.add([os.path.join(Config.WEBSERVER_FOLDER, HTMLPath), os.path.join(Config.WEBSERVER_FOLDER, "sitemap.xml")])
             Config.GIT_REPO.index.commit(workflow_comment, author=Actor(session["username"], session["email"]))
 
