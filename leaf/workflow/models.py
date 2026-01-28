@@ -1200,10 +1200,9 @@ def proceed_action_workflow(request, not_real_request=None):
 
             # Git operations
             query = "SELECT workflow.comments FROM workflow WHERE id = %s"
-            print("Testing workflow_id:")
-            print(workflow_id)
-            params2 = (workflow_id,)
-            mycursor.execute(query, params2)
+            current_app.logger.info(f"Testing workflow_id: {workflow_id}")
+            current_app.logger.warning(f"Testing query: {query}")
+            mycursor.execute(query, [workflow_id])
             workflow_comment = mycursor.fetchone()[0]
             Config.GIT_REPO.index.add([os.path.join(Config.WEBSERVER_FOLDER, HTMLPath), os.path.join(Config.WEBSERVER_FOLDER, "sitemap.xml")])
             Config.GIT_REPO.index.commit(workflow_comment, author=Actor(session["username"], session["email"]))
