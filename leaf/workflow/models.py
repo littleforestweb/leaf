@@ -1200,7 +1200,7 @@ def proceed_action_workflow(request, not_real_request=None):
 
             # Git operations
             query = "SELECT workflow.comments FROM workflow WHERE id = %s"
-            current_app.logger.info(f"Testing workflow_id: {workflow_id}")
+            current_app.logger.warning(f"Testing workflow_id: {workflow_id}")
             current_app.logger.warning(f"Testing query: {query}")
             mycursor.execute(query, [workflow_id])
             workflow_comment = mycursor.fetchone()[0]
