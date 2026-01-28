@@ -992,70 +992,62 @@ Subject: {subject}
 
 
 def gen_sitemap(site_id, thisType):
+    mydb, mycursor = decorators.db_connection()
+    try:
+        query = "SELECT HTMLPath FROM site_meta WHERE status <> -1 AND site_id = %s"
+        mycursor.execute(query, (site_id,))
+        site_pages = [page[0] for page in mycursor.fetchall()]
 
-    # Get a database connection
-    _, mycursor = decorators.db_connection()
-    
-    query = "SELECT HTMLPath FROM site_meta WHERE status <> -1 AND site_id = %s"
-    mycursor.execute(query, [site_id])
-    site_pages = [page[0] for page in mycursor.fetchall()]
+        for srv in Config.DEPLOYMENTS_SERVERS:
+            urlset = ET.Element("urlset")
+            urlset.set("xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9")
+            urlset.set("xmlns:image", "http://www.google.com/schemas/sitemap-image/1.1")
 
-    for srv in Config.DEPLOYMENTS_SERVERS:
-        # Gen Remove Sitemap File
+            sitemap_path = os.path.join(Config.WEBSERVER_FOLDER, "sitemap.xml")
+            os.makedirs(os.path.dirname(sitemap_path), exist_ok=True)
+
+            for page in site_pages:
+                url_elem = ET.SubElement(urlset, "url")
+                loc_elem = ET.SubElement(url_elem, "loc")
+                loc_elem.text = urljoin(srv["webserver_url"], page)
+
+            ET.ElementTree(urlset).write(sitemap_path, encoding="utf-8", xml_declaration=True)
+
+            remote_path = os.path.join(srv["remote_path"], "sitemap.xml")
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            try:
+                if srv.get("pkey"):
+                    key = paramiko.RSAKey(filename=srv["pkey"], password=(srv.get("pw") or None))
+                    ssh.connect(srv["ip"], port=srv["port"], username=srv["user"], pkey=key)
+                else:
+                    ssh.connect(srv["ip"], port=srv["port"], username=srv["user"], password=srv.get("pw"))
+
+                with ssh.open_sftp() as scp:
+                    upload_file_with_retry(sitemap_path, remote_path, scp)
+            finally:
+                ssh.close()
+
+        # local sitemap for preview
         urlset = ET.Element("urlset")
         urlset.set("xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9")
         urlset.set("xmlns:image", "http://www.google.com/schemas/sitemap-image/1.1")
+
         sitemap_path = os.path.join(Config.WEBSERVER_FOLDER, "sitemap.xml")
-        # Ensure the directory exists
-        sitemap_directory = os.path.dirname(sitemap_path)
-        if not os.path.exists(sitemap_directory):
-            os.makedirs(sitemap_directory)
+        os.makedirs(os.path.dirname(sitemap_path), exist_ok=True)
+
         for page in site_pages:
             url_elem = ET.SubElement(urlset, "url")
             loc_elem = ET.SubElement(url_elem, "loc")
-            loc_elem.text = urljoin(srv["webserver_url"], page)
-        tree = ET.ElementTree(urlset)
-        tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
+            loc_elem.text = urljoin(Config.PREVIEW_SERVER, page)
 
-        # SCP Files
-        remote_path = os.path.join(srv["remote_path"], "sitemap.xml")
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ET.ElementTree(urlset).write(sitemap_path, encoding="utf-8", xml_declaration=True)
+
+    finally:
         try:
-            if srv["pkey"] != "":
-                ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"], password=srv["pw"]))
-                if srv["pw"] == "":
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-                else:
-                    ssh.connect(srv["ip"], srv["port"], srv["user"], pkey=paramiko.RSAKey(filename=srv["pkey"]))
-            else:
-                ssh.connect(srv["ip"], srv["port"], srv["user"], srv["pw"])
-            with ssh.open_sftp() as scp:
-                actionResult, lp, rp = upload_file_with_retry(sitemap_path, remote_path, scp)
-                if not actionResult:
-                    try:
-                        raise Exception("Failed to SCP - " + lp + " - " + rp)
-                    except Exception as e:
-                        pass
+            mycursor.close()
         finally:
-            # Ensure SSH connection is closed
-            ssh.close()
-
-    # Gen Local Sitemap File
-    urlset = ET.Element("urlset")
-    urlset.set("xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9")
-    urlset.set("xmlns:image", "http://www.google.com/schemas/sitemap-image/1.1")
-    sitemap_path = os.path.join(Config.WEBSERVER_FOLDER, "sitemap.xml")
-    for page in site_pages:
-        url_elem = ET.SubElement(urlset, "url")
-        loc_elem = ET.SubElement(url_elem, "loc")
-        loc_elem.text = urljoin(Config.PREVIEW_SERVER, page)
-    tree = ET.ElementTree(urlset)
-    # Ensure the directory exists
-    sitemap_directory = os.path.dirname(sitemap_path)
-    if not os.path.exists(sitemap_directory):
-        os.makedirs(sitemap_directory)
-    tree.write(sitemap_path, encoding="utf-8", xml_declaration=True)
+            mydb.close()
 
 
 def proceed_action_workflow(request, not_real_request=None):
