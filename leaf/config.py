@@ -84,7 +84,8 @@ def checkConfig(loaded_json):
         "SITE_NOTICE": "This is a site notice that you can control on your config.json file. Keep it empty to remove the notice!",
         "PAGES_EXTENSION": ".page",
         "EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS": [],
-        "EDITOR_REPLACE_WITH_MAP": {}
+        "EDITOR_REPLACE_WITH_MAP": {},
+        "EDITOR_ALLOW_COPY_ELEMENT": ["uos-grid"]
     }
 
     # Update the loaded JSON with the expected structure
@@ -263,3 +264,4 @@ class Config:
         else ""
     )
     EDITOR_REPLACE_WITH_MAP = config["EDITOR_REPLACE_WITH_MAP"]
+    EDITOR_ALLOW_COPY_ELEMENT = config["EDITOR_ALLOW_COPY_ELEMENT"]

@@ -251,13 +251,17 @@ async function savePage() {
 }
 
 window.addEventListener('DOMContentLoaded', async function main() {
-
-    const site_id = await fetch(`/api/get_site_id?page_id=${page_id}`).then(res => res.json());
-
     // Load page html code
-    const pageData = await fetch(`/editor/getPageCode?page_id=${page_id}`).then(res => res.json());
+    let data = await $.get("/editor/getPageCode?page_id=" + page_id, function (htmlContent) {
+        return htmlContent;
+    });
+    data = data.data;
+
+    let site_id = await $.get("/api/get_site_id?page_id=" + page_id, function (site_id) {
+        return site_id;
+    });
     // Set html code to ckeditor textarea
-    document.getElementById("htmlCode").value = pageData.data;
+    document.getElementById("htmlCode").value = data;
 
     // Add AnchorPlugin Btn
     CKEDITOR.plugins.add("anchor", {
@@ -924,10 +928,115 @@ window.addEventListener('DOMContentLoaded', async function main() {
         }
     });
 
+    CKEDITOR.plugins.add('duplicateElement', {
+        icons: 'duplicateElement',
+        init: function (editor) {
+            // List of target classes
+
+            if (editor_allow_copy_element && editor_allow_copy_element.length > 2 && editor_allow_copy_element != null && editor_allow_copy_element != '') {
+                // Decode the HTML entities to get the raw string
+                const tempElement = document.createElement('textarea');
+                tempElement.innerHTML = editor_allow_copy_element;
+                let decodedString = tempElement.value; // Result: ['uos-grid']
+
+                // Replace single quotes with double quotes to make it valid JSON
+                decodedString = decodedString.replace(/'/g, '"'); // Result: ["uos-grid"]
+
+                // Parse the valid JSON string into a JavaScript array
+                const targetClasses = JSON.parse(decodedString);
+
+                // Add a context menu group
+                if (editor.contextMenu) {
+                    editor.addMenuGroup('duplicateGroup');
+                    editor.addMenuItem('duplicateLeft', {
+                        label: 'Duplicate Item After',
+                        icon: this.path + 'icons/duplicateElement.png', // Optional icon path
+                        command: 'duplicateLeft',
+                        group: 'duplicateGroup',
+                        order: 1
+                    });
+
+                    editor.addMenuItem('duplicateRight', {
+                        label: 'Duplicate Item Before',
+                        icon: this.path + 'icons/duplicateElement.png', // Optional icon path
+                        command: 'duplicateRight',
+                        group: 'duplicateGroup',
+                        order: 2
+                    });
+
+                    editor.contextMenu.addListener(function (element) {
+                        let targetElement = findTargetElement(element);
+
+                        if (targetElement) {
+                            return {
+                                duplicateLeft: CKEDITOR.TRISTATE_OFF,
+                                duplicateRight: CKEDITOR.TRISTATE_OFF
+                            };
+                        }
+
+                        return null;
+                    });
+                }
+
+                // Add commands to duplicate the element
+                editor.addCommand('duplicateLeft', {
+                    exec: function (editor) {
+                        let element = findTargetElement(editor.getSelection().getStartElement());
+                        if (element) {
+                            duplicateElement(element, 'left');
+                        }
+                    }
+                });
+
+                editor.addCommand('duplicateRight', {
+                    exec: function (editor) {
+                        let element = findTargetElement(editor.getSelection().getStartElement());
+                        if (element) {
+                            duplicateElement(element, 'right');
+                        }
+                    }
+                });
+
+                // Helper function to find the target element
+                function findTargetElement(element) {
+                    while (element) {
+                        if (element.hasClass && targetClasses.some(cls => element.hasClass(cls))) {
+                            return element;
+                        }
+                        element = element.getParent();
+                    }
+                    return null;
+                }
+
+                // Helper function to duplicate the element
+                function duplicateElement(element, direction) {
+                    // Clone the CKEditor element
+                    let clonedElement = element.clone(true);
+
+                    // Get the parent of the current element
+                    let parentElement = element.getParent();
+
+                    if (!parentElement) {
+                        console.error("Parent element not found. Cannot duplicate.");
+                        return;
+                    }
+
+                    // Insert the cloned element based on the direction
+                    if (direction === 'left') {
+                        clonedElement.insertBefore(element); // Correctly insert before the current element
+                    } else if (direction === 'right') {
+                        clonedElement.insertAfter(element); // Correctly insert after the current element
+                    }
+                }
+            }
+        }
+    });
+
     // Init CKEditor
     let ckeditorConfig = {
         allowedContent: true,
-        autoParagraph: false,
+        extraAllowedContent: 'div(*)[*]{*}',
+        enterMode: CKEDITOR.ENTER_DIV,
         toolbar: [
             {name: "clipboard", items: ["Cut", "Copy", "Paste", "PasteText", "-", "Undo", "Redo"]}, // "PasteFromWord",
             {name: "basicstyles", items: ["Bold", "Italic", "Underline", "Strike", 'Subscript', 'Superscript', "-", "RemoveFormat"]},
@@ -939,7 +1048,7 @@ window.addEventListener('DOMContentLoaded', async function main() {
             // {name: "colors", items: ["TextColor", "BGColor"]},
             {name: "actions", items: ["Preview", "SaveBtn", "PublishBtn"]},
         ],
-        extraPlugins: "anchor,inserthtml4x,embed,saveBtn,codemirror,image2,extendedImage2,slideshow,htmlmodule,contextmenu,headingcontextmenu,dialog", // ,pastefromword
+        extraPlugins: "anchor,inserthtml4x,embed,saveBtn,codemirror,image2,extendedImage2,slideshow,htmlmodule,contextmenu,headingcontextmenu,dialog,duplicateElement", // ,pastefromword
         removePlugins: 'image',
         image2_captionedImageClass: 'uos-component-image',
         image2_captionedClass: 'uos-component-image-caption',
@@ -964,8 +1073,9 @@ window.addEventListener('DOMContentLoaded', async function main() {
                 let emptyTagsRegex = /<(?!script)(\w+)([^>]*?)>\s*<\/\1>/gi;
                 event.data.dataValue = event.data.dataValue.replace(emptyTagsRegex, '<$1$2>&nbsp;</$1>');
             },
-            instanceReady: function (evt) {
-                const editor = evt.editor;
+            instanceReady: async function (evt) {
+                // Get the CKEditor instance
+                let editor = evt.editor;
 
                 // Sync setup (safe here)
                 editor.on('focus', function () {
@@ -979,64 +1089,54 @@ window.addEventListener('DOMContentLoaded', async function main() {
 
                 editor.on('beforeCommandExec', function () {
                     if (editor.mode === 'wysiwyg') {
-                        // Prevent undo jump
+                        // Trying to prevent the undo JUMP that breaks the tabs
                     }
                 });
 
-                // Defer async logic
-                setTimeout(async () => {
-                    let page_site_id = null;
-
-                    try {
-                        const res = await fetch(`/api/get_site_id?page_id=${page_id}`);
-                        if (res.ok) {
-                            page_site_id = await res.text();
-                        } else {
-                            console.error("Failed to fetch site_id:", res.status);
-                        }
-                    } catch (err) {
-                        console.error("Error fetching site_id:", err);
+                await check_if_page_is_locked(page_id);
+                // Usage with CKEditor change event
+                let is_locked = false;
+                editor.on('change', debounce(function () {
+                    if (is_locked !== true) {
+                        lockPage(page_id, "lock");
+                        is_locked = true;
                     }
+                }, 250)); // Adjust debounce time as necessary
 
-                    await check_if_page_is_locked(page_id);
+                window.addEventListener('beforeunload', async function (event) {
+                    // Perform any necessary actions before showing the confirmation dialog
+                    console.log('User attempted to leave the page.');
 
-                    let is_locked = false;
-                    editor.on('change', debounce(function () {
-                        if (!is_locked) {
-                            lockPage(page_id, "lock");
-                            is_locked = true;
-                        }
-                    }, 250));
+                    // Show a confirmation dialog
+                    event.preventDefault();
+                    event.returnValue = ''; // This triggers the default confirmation dialog in most browsers
 
-                    window.addEventListener('beforeunload', function (event) {
-                        event.preventDefault();
-                        event.returnValue = '';
+                    if (page_is_locked_by_me) {
+                        let site_id = await $.get("/api/get_site_id?page_id=" + page_id, function (site_id) {
+                            return site_id;
+                        });
 
-                        if (page_is_locked_by_me) {
-                            const data = JSON.stringify({
-                                page_id: page_id,
-                                site_id: page_site_id,
-                                action: "unlock"
-                            });
+                        // Data to be sent to the server
+                        var data = JSON.stringify({
+                            page_id: page_id,
+                            site_id: site_id,
+                            action: "unlock"
+                        });
 
-                            const blob = new Blob([data], { type: 'application/json' });
-                            navigator.sendBeacon('/api/lock_unlock_page', blob);
-                        }
-                    });
-                }, 0); // Allows CKEditor to stabilize before async logic
+                        fetch('/api/lock_unlock_page', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: data,
+                            keepalive: true // This is important to allow the request to complete
+                        });
+                        return null;
+                    }
+                });
             }
         }
     };
-
-    // 🔑 Override DTD to allow <div> inside <p>
-    CKEDITOR.on('instanceReady', function() {
-        CKEDITOR.dtd.p.div = 1;
-        CKEDITOR.dtd.$block.div = 1;
-        // If you want to allow all block elements inside <p>, you could loop:
-        // for (let tag in CKEDITOR.dtd.$block) {
-        //     CKEDITOR.dtd.p[tag] = 1;
-        // }
-    });
 
     // Conditionally add "Source" button if is_source_editor is true
     if (is_source_editor === 1 || is_admin === 1) {
