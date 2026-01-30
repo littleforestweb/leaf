@@ -931,99 +931,102 @@ window.addEventListener('DOMContentLoaded', async function main() {
     CKEDITOR.plugins.add('duplicateElement', {
         icons: 'duplicateElement',
         init: function (editor) {
+            // List of target classes
 
-            // Decode the HTML entities to get the raw string
-            const tempElement = document.createElement('textarea');
-            tempElement.innerHTML = editor_allow_copy_element;
-            let decodedString = tempElement.value; // Result: ['uos-grid']
+            if (editor_allow_copy_element && editor_allow_copy_element.length > 2 && editor_allow_copy_element != null && editor_allow_copy_element != '') {
+                // Decode the HTML entities to get the raw string
+                const tempElement = document.createElement('textarea');
+                tempElement.innerHTML = editor_allow_copy_element;
+                let decodedString = tempElement.value; // Result: ['uos-grid']
 
-            // Replace single quotes with double quotes to make it valid JSON
-            decodedString = decodedString.replace(/'/g, '"'); // Result: ["uos-grid"]
+                // Replace single quotes with double quotes to make it valid JSON
+                decodedString = decodedString.replace(/'/g, '"'); // Result: ["uos-grid"]
 
-            // Parse the valid JSON string into a JavaScript array
-            const targetClasses = JSON.parse(decodedString);
+                // Parse the valid JSON string into a JavaScript array
+                const targetClasses = JSON.parse(decodedString);
 
-            // Add a context menu group
-            if (editor.contextMenu) {
-                editor.addMenuGroup('duplicateGroup');
-                editor.addMenuItem('duplicateLeft', {
-                    label: 'Duplicate Item After',
-                    icon: this.path + 'icons/duplicateElement.png', // Optional icon path
-                    command: 'duplicateLeft',
-                    group: 'duplicateGroup',
-                    order: 1
-                });
+                // Add a context menu group
+                if (editor.contextMenu) {
+                    editor.addMenuGroup('duplicateGroup');
+                    editor.addMenuItem('duplicateLeft', {
+                        label: 'Duplicate Item After',
+                        icon: this.path + 'icons/duplicateElement.png', // Optional icon path
+                        command: 'duplicateLeft',
+                        group: 'duplicateGroup',
+                        order: 1
+                    });
 
-                editor.addMenuItem('duplicateRight', {
-                    label: 'Duplicate Item Before',
-                    icon: this.path + 'icons/duplicateElement.png', // Optional icon path
-                    command: 'duplicateRight',
-                    group: 'duplicateGroup',
-                    order: 2
-                });
+                    editor.addMenuItem('duplicateRight', {
+                        label: 'Duplicate Item Before',
+                        icon: this.path + 'icons/duplicateElement.png', // Optional icon path
+                        command: 'duplicateRight',
+                        group: 'duplicateGroup',
+                        order: 2
+                    });
 
-                editor.contextMenu.addListener(function (element) {
-                    let targetElement = findTargetElement(element);
+                    editor.contextMenu.addListener(function (element) {
+                        let targetElement = findTargetElement(element);
 
-                    if (targetElement) {
-                        return {
-                            duplicateLeft: CKEDITOR.TRISTATE_OFF,
-                            duplicateRight: CKEDITOR.TRISTATE_OFF
-                        };
+                        if (targetElement) {
+                            return {
+                                duplicateLeft: CKEDITOR.TRISTATE_OFF,
+                                duplicateRight: CKEDITOR.TRISTATE_OFF
+                            };
+                        }
+
+                        return null;
+                    });
+                }
+
+                // Add commands to duplicate the element
+                editor.addCommand('duplicateLeft', {
+                    exec: function (editor) {
+                        let element = findTargetElement(editor.getSelection().getStartElement());
+                        if (element) {
+                            duplicateElement(element, 'left');
+                        }
                     }
+                });
 
+                editor.addCommand('duplicateRight', {
+                    exec: function (editor) {
+                        let element = findTargetElement(editor.getSelection().getStartElement());
+                        if (element) {
+                            duplicateElement(element, 'right');
+                        }
+                    }
+                });
+
+                // Helper function to find the target element
+                function findTargetElement(element) {
+                    while (element) {
+                        if (element.hasClass && targetClasses.some(cls => element.hasClass(cls))) {
+                            return element;
+                        }
+                        element = element.getParent();
+                    }
                     return null;
-                });
-            }
+                }
 
-            // Add commands to duplicate the element
-            editor.addCommand('duplicateLeft', {
-                exec: function (editor) {
-                    let element = findTargetElement(editor.getSelection().getStartElement());
-                    if (element) {
-                        duplicateElement(element, 'left');
+                // Helper function to duplicate the element
+                function duplicateElement(element, direction) {
+                    // Clone the CKEditor element
+                    let clonedElement = element.clone(true);
+
+                    // Get the parent of the current element
+                    let parentElement = element.getParent();
+
+                    if (!parentElement) {
+                        console.error("Parent element not found. Cannot duplicate.");
+                        return;
                     }
-                }
-            });
 
-            editor.addCommand('duplicateRight', {
-                exec: function (editor) {
-                    let element = findTargetElement(editor.getSelection().getStartElement());
-                    if (element) {
-                        duplicateElement(element, 'right');
+                    // Insert the cloned element based on the direction
+                    if (direction === 'left') {
+                        clonedElement.insertBefore(element); // Correctly insert before the current element
+                    } else if (direction === 'right') {
+                        clonedElement.insertAfter(element); // Correctly insert after the current element
                     }
-                }
-            });
-
-            // Helper function to find the target element
-            function findTargetElement(element) {
-                while (element) {
-                    if (element.hasClass && targetClasses.some(cls => element.hasClass(cls))) {
-                        return element;
-                    }
-                    element = element.getParent();
-                }
-                return null;
-            }
-
-            // Helper function to duplicate the element
-            function duplicateElement(element, direction) {
-                // Clone the CKEditor element
-                let clonedElement = element.clone(true);
-
-                // Get the parent of the current element
-                let parentElement = element.getParent();
-
-                if (!parentElement) {
-                    console.error("Parent element not found. Cannot duplicate.");
-                    return;
-                }
-
-                // Insert the cloned element based on the direction
-                if (direction === 'left') {
-                    clonedElement.insertBefore(element); // Correctly insert before the current element
-                } else if (direction === 'right') {
-                    clonedElement.insertAfter(element); // Correctly insert after the current element
                 }
             }
         }

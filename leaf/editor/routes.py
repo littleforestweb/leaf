@@ -32,7 +32,7 @@ def view_editor():
         if not site_belongs_to_account(siteId) or not hasAccess:
             return jsonify({"error": "Forbidden"}), 403
 
-        return render_template('editor.html', email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], page_id=page_id, site_notice=Config.SITE_NOTICE, is_source_editor=session["is_source_editor"], editor_allow_scripts_regex_patters=Config.EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS, editor_replace_with_map=Config.EDITOR_REPLACE_WITH_MAP)
+        return render_template('editor.html', email=session["email"], username=session["username"], first_name=session['first_name'], last_name=session['last_name'], display_name=session['display_name'], user_image=session['user_image'], accountId=session['accountId'], is_admin=session['is_admin'], is_manager=session['is_manager'], page_id=page_id, site_notice=Config.SITE_NOTICE, is_source_editor=session["is_source_editor"], editor_allow_scripts_regex_patters=Config.EDITOR_ALLOW_SCRIPTS_REGEX_PATTERNS, editor_replace_with_map=Config.EDITOR_REPLACE_WITH_MAP, editor_allow_copy_element=Config.EDITOR_ALLOW_COPY_ELEMENT)
     except Exception as e:
         current_app.logger.error(traceback.format_exc())
         # Handle exceptions and return an error response with status code 500
