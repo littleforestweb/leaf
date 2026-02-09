@@ -672,7 +672,7 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                     $('.pre_selected-items').remove();
 
                                     selectedOptions.forEach(function(option) {
-                                        let labelId = "selected_item_folder_" + option.replace("/", "_");
+                                        let labelId = "selected_item_folder_" + option.replaceAll("/", "_");
                                         if (!$('#' + labelId).length) {
                                             list_container.parent().find("label.col-form-label").append(`
                                                 <label id="${labelId}" class="form-control pre_selected-items">
