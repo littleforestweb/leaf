@@ -1426,8 +1426,7 @@ def proceed_action_workflow(request, not_real_request=None):
 
             # LOOP THROUGH list_item_url_path TO PUBLISH FILE IN MULTIPLE LOCATIONS
             if int(thisType) != 4:
-                list_items_url_path = [request.form.get("list_item_url_path[]")]
-                list_items_url_path = [x for x in list_items_url_path if x]
+                list_items_url_path = request.form.getlist("list_item_url_path[]")
                 # list_items_url_path = ast.literal_eval(list_items_url_path)
                 for list_item_url_path in list_items_url_path:
                     HTMLPath = werkzeug.utils.escape(list_item_url_path.strip("/"))
