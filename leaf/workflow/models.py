@@ -1426,7 +1426,7 @@ def proceed_action_workflow(request, not_real_request=None):
 
             # LOOP THROUGH list_item_url_path TO PUBLISH FILE IN MULTIPLE LOCATIONS
             if int(thisType) != 4:
-                list_items_url_path = [request.form.get("list_item_url_path[]")]
+                list_items_url_path = request.form.getlist("list_item_url_path[]")
                 # list_items_url_path = ast.literal_eval(list_items_url_path)
                 for list_item_url_path in list_items_url_path:
                     HTMLPath = werkzeug.utils.escape(list_item_url_path.strip("/"))
@@ -1753,6 +1753,8 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
                 guid_value = None  # To store the GUID value for checking
 
                 for key, value in item.items():
+                    publication_date = False
+
                     if key.lower() == 'id':
                         query_list_item = f"SELECT * FROM account_{accountId}_list_{list_name} WHERE id=%s"
                         params_list_item = (value,)
@@ -1775,7 +1777,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
                                 else:
                                     list_page_url = list_page_url.replace("{" + item_key + "}", str(item_value))
 
-                        if publication_date:
+                        if publication_date and bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}", publication_date)):
                             for field in items:
                                 if field == "year" or field == "month" or field == "day":
                                     single_field = extract_month_and_day(publication_date, field)
@@ -1801,7 +1803,11 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
                             guid_value = value  # Store GUID value for uniqueness check
                             if guid_value in unique_guids:
                                 # Duplicate found, remove item and stop processing this item
-                                channel.remove(item_elem)
+                                try:
+                                    channel.remove(item_elem)
+                                except Exception as e:
+                                    pass
+
                                 break
 
                             unique_guids.add(guid_value)  # Add to the set of seen GUIDs
@@ -1825,7 +1831,10 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
 
                 # Ensure the item has a GUID, if not, remove it
                 if not guid_found:
-                    channel.remove(item_elem)
+                    try:
+                        channel.remove(item_elem)
+                    except Exception as e:
+                        pass
 
             # Write the complete RSS feed to a file
             tree = ET.ElementTree(rss)
@@ -1905,7 +1914,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
                             else:
                                 list_page_url = list_page_url.replace("{" + item_key + "}", str(item_value))
 
-                    if publication_date:
+                    if publication_date and bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}", publication_date)):
                         for field in items:
                             if field == "year" or field == "month" or field == "day":
                                 single_field = extract_month_and_day(publication_date, field)
@@ -2456,7 +2465,24 @@ def check_if_should_publish_list(workflow):
 
             publication_date = False
 
-            list_page_url = list_template
+            list_page_url = []
+
+            passed_session = {"accountId": workflow['accountId']}
+
+            jsonConfig = get_list_configuration(workflow['accountId'], workflow['listName'], passed_session)
+
+            # Process the JSON response
+            jsonConfigSaveByFields = None
+            jsonConfigFieldsToSaveBy = None
+            jsonConfigFieldsToSaveByIncludes = None
+
+            if 'columns' in jsonConfig and len(jsonConfig['columns']) > 0:
+                if len(jsonConfig['columns'][0]) > 3:
+                    jsonConfigSaveByFields = jsonConfig['columns'][0][3]
+                if len(jsonConfig['columns'][0]) > 4:
+                    jsonConfigFieldsToSaveBy = jsonConfig['columns'][0][4]
+                if len(jsonConfig['columns'][0]) > 5:
+                    jsonConfigFieldsToSaveByIncludes = jsonConfig['columns'][0][5]
 
             if results and len(results) > 0:
                 for result in results:
@@ -2464,36 +2490,32 @@ def check_if_should_publish_list(workflow):
                         if key.lower() in publication_names:
                             publication_date = value
                         else:
-                            list_page_url = list_page_url.replace("{" + key + "}", str(value))
+                            if key == jsonConfigFieldsToSaveBy:
+                                split_value = value.split(',')
+                                for val in split_value:
+                                    list_page_url.append(list_template.replace("{" + key + "}", str(val)))
 
                         if key.lower() == "leaf_selected_rss" and value is not None:
                             rss_ids = value
 
+                for idx in range(len(list_page_url)):
+                    for result in results:
+                        for key, value in result.items():
+                            if key != jsonConfigFieldsToSaveBy:
+                                list_page_url[idx] = list_page_url[idx].replace("{" + key + "}", str(value))
+
+
+
                 if publication_date:
-                    for field in items:
-                        if publication_date and (field == "year" or field == "month" or field == "day"):
-                            single_field = extract_month_and_day(publication_date, field)
-                            single_field = str(single_field)
+                    for idx in range(len(list_page_url)):
+                        for field in items:
+                            if publication_date and (field == "year" or field == "month" or field == "day"):
+                                single_field = extract_month_and_day(publication_date, field)
+                                single_field = str(single_field)
 
-                            list_page_url = list_page_url.replace("{" + field + "}", single_field)
-                            list_page_url = f"{list_page_url}" + (Config.PAGES_EXTENSION if not list_page_url.endswith(Config.PAGES_EXTENSION) else "")
+                                list_page_url[idx] = list_page_url[idx].replace("{" + field + "}", str(single_field))
 
-                    passed_session = {"accountId": workflow['accountId']}
-
-                    jsonConfig = get_list_configuration(workflow['accountId'], workflow['listName'], passed_session)
-
-                    # Process the JSON response
-                    jsonConfigSaveByFields = None
-                    jsonConfigFieldsToSaveBy = None
-                    jsonConfigFieldsToSaveByIncludes = None
-
-                    if 'columns' in jsonConfig and len(jsonConfig['columns']) > 0:
-                        if len(jsonConfig['columns'][0]) > 3:
-                            jsonConfigSaveByFields = jsonConfig['columns'][0][3]
-                        if len(jsonConfig['columns'][0]) > 4:
-                            jsonConfigFieldsToSaveBy = jsonConfig['columns'][0][4]
-                        if len(jsonConfig['columns'][0]) > 5:
-                            jsonConfigFieldsToSaveByIncludes = jsonConfig['columns'][0][5]
+                                list_page_url[idx] = f"{list_page_url[idx]}" + (Config.PAGES_EXTENSION if not list_page_url[idx].endswith(Config.PAGES_EXTENSION) else "")
 
                     new_request_data = {
                         "id": workflow['id'],
@@ -2505,13 +2527,14 @@ def check_if_should_publish_list(workflow):
                         "fieldsToSaveByIncludes": jsonConfigFieldsToSaveByIncludes,
                         "files_details": "",
                         "site_ids": site_ids,
-                        "list_item_url_path": f'["{list_page_url}"]',
+                        "list_item_url_path[]": list_page_url,
                         "list_feed_path": list_feed,
                         "rss_ids": rss_ids,
                         "publication_date": publication_date,
                         "accountId": int(workflow['accountId']),
                         "user_id": workflow['assignEditor']
                     }
+                    print(new_request_data)
 
                     # Simulate a request object
                     class MockRequest:
