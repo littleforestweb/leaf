@@ -1037,6 +1037,9 @@ window.addEventListener('DOMContentLoaded', async function main() {
         allowedContent: true,
         extraAllowedContent: 'div(*)[*]{*}',
         enterMode: CKEDITOR.ENTER_DIV,
+        iframe_attributes: {
+            sandbox: 'allow-forms allow-scripts allow-same-origin allow-top-navigation'
+        },
         toolbar: [
             {name: "clipboard", items: ["Cut", "Copy", "Paste", "PasteText", "-", "Undo", "Redo"]}, // "PasteFromWord",
             {name: "basicstyles", items: ["Bold", "Italic", "Underline", "Strike", 'Subscript', 'Superscript', "-", "RemoveFormat"]},

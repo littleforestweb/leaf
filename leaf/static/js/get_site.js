@@ -181,24 +181,18 @@ document.getElementById("userFolderSelect").addEventListener("change", function 
     document.getElementById("newURL").value = document.getElementById("userFolderSelect").value;
 });
 
-let selectedIds = new Set();
-$('#table').on('change', '.dt-checkboxes', function () {
-    let id = String($(this).val());
-
-    if (this.checked) {
-        selectedIds.add(id);
-    } else {
-        selectedIds.delete(id);
-    }
-
-    console.log("Selected:", Array.from(selectedIds));
-});
-
-
 async function deletePage(btn) {
     btn.disabled = true;
 
-    let ids = Array.from(selectedIds);
+    // Get all selected rows
+    let checkedRows = $('#table')
+        .DataTable()
+        .rows(function (idx, data, node) {
+            return $(node).find('.dt-checkboxes:checked').length > 0;
+        })
+        .data()
+        .toArray();
+    let ids = checkedRows.map(r => r.id);
 
     $.ajax({
         type: "POST",
@@ -210,8 +204,6 @@ async function deletePage(btn) {
         processData: false,
         success: function (entry) {
             $("#viewWorkflow").attr("href", "/workflow_details?id=" + entry["workflow_id"]);
-            selectedIds.clear();
-            $('#table').DataTable().ajax.reload(null, false);
             $("#deleteModal").modal("hide");
             $("#viewWorkflowNotification").toast('show');
             btn.disabled = false;
@@ -221,7 +213,6 @@ async function deletePage(btn) {
         }
     });
 }
-
 
 async function doMainButtons() {
 
@@ -373,15 +364,6 @@ window.addEventListener('DOMContentLoaded', async function main() {
         order: [[0, "asc"]],
         autoWidth: true,
         stateSave: true,
-        drawCallback: function () {
-            $('.dt-checkboxes').each(function () {
-                let id = $(this).val();
-
-                if (selectedIds.has(id)) {
-                    this.checked = true;
-                }
-            });
-        },
         aoColumnDefs: [
             {
                 aTargets: [0],
