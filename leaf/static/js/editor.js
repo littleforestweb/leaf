@@ -929,107 +929,158 @@ window.addEventListener('DOMContentLoaded', async function main() {
     });
 
     CKEDITOR.plugins.add('duplicateElement', {
-        icons: 'duplicateElement',
-        init: function (editor) {
-            // List of target classes
+      icons: 'duplicateElement',
+      init: function (editor) {
+        if (!editor_allow_copy_element || editor_allow_copy_element.length <= 2) return;
 
-            if (editor_allow_copy_element && editor_allow_copy_element.length > 2 && editor_allow_copy_element != null && editor_allow_copy_element != '') {
-                // Decode the HTML entities to get the raw string
-                const tempElement = document.createElement('textarea');
-                tempElement.innerHTML = editor_allow_copy_element;
-                let decodedString = tempElement.value; // Result: ['uos-grid']
+        // Decode the HTML entities to get the raw string
+        const tempElement = document.createElement('textarea');
+        tempElement.innerHTML = editor_allow_copy_element;
+        let decodedString = tempElement.value;
 
-                // Replace single quotes with double quotes to make it valid JSON
-                decodedString = decodedString.replace(/'/g, '"'); // Result: ["uos-grid"]
+        // Replace single quotes with double quotes to make it valid JSON
+        decodedString = decodedString.replace(/'/g, '"');
+        const targetClasses = JSON.parse(decodedString);
 
-                // Parse the valid JSON string into a JavaScript array
-                const targetClasses = JSON.parse(decodedString);
+        // Context menu
+        if (editor.contextMenu) {
+          editor.addMenuGroup('duplicateGroup');
 
-                // Add a context menu group
-                if (editor.contextMenu) {
-                    editor.addMenuGroup('duplicateGroup');
-                    editor.addMenuItem('duplicateLeft', {
-                        label: 'Duplicate Item After',
-                        icon: this.path + 'icons/duplicateElement.png', // Optional icon path
-                        command: 'duplicateLeft',
-                        group: 'duplicateGroup',
-                        order: 1
-                    });
+          editor.addMenuItem('duplicateLeft', {
+            label: 'Duplicate Item After',
+            icon: this.path + 'icons/duplicateElement.png',
+            command: 'duplicateLeft',
+            group: 'duplicateGroup',
+            order: 1
+          });
 
-                    editor.addMenuItem('duplicateRight', {
-                        label: 'Duplicate Item Before',
-                        icon: this.path + 'icons/duplicateElement.png', // Optional icon path
-                        command: 'duplicateRight',
-                        group: 'duplicateGroup',
-                        order: 2
-                    });
+          editor.addMenuItem('duplicateRight', {
+            label: 'Duplicate Item Before',
+            icon: this.path + 'icons/duplicateElement.png',
+            command: 'duplicateRight',
+            group: 'duplicateGroup',
+            order: 2
+          });
 
-                    editor.contextMenu.addListener(function (element) {
-                        let targetElement = findTargetElement(element);
-
-                        if (targetElement) {
-                            return {
-                                duplicateLeft: CKEDITOR.TRISTATE_OFF,
-                                duplicateRight: CKEDITOR.TRISTATE_OFF
-                            };
-                        }
-
-                        return null;
-                    });
-                }
-
-                // Add commands to duplicate the element
-                editor.addCommand('duplicateLeft', {
-                    exec: function (editor) {
-                        let element = findTargetElement(editor.getSelection().getStartElement());
-                        if (element) {
-                            duplicateElement(element, 'left');
-                        }
-                    }
-                });
-
-                editor.addCommand('duplicateRight', {
-                    exec: function (editor) {
-                        let element = findTargetElement(editor.getSelection().getStartElement());
-                        if (element) {
-                            duplicateElement(element, 'right');
-                        }
-                    }
-                });
-
-                // Helper function to find the target element
-                function findTargetElement(element) {
-                    while (element) {
-                        if (element.hasClass && targetClasses.some(cls => element.hasClass(cls))) {
-                            return element;
-                        }
-                        element = element.getParent();
-                    }
-                    return null;
-                }
-
-                // Helper function to duplicate the element
-                function duplicateElement(element, direction) {
-                    // Clone the CKEditor element
-                    let clonedElement = element.clone(true);
-
-                    // Get the parent of the current element
-                    let parentElement = element.getParent();
-
-                    if (!parentElement) {
-                        console.error("Parent element not found. Cannot duplicate.");
-                        return;
-                    }
-
-                    // Insert the cloned element based on the direction
-                    if (direction === 'left') {
-                        clonedElement.insertBefore(element); // Correctly insert before the current element
-                    } else if (direction === 'right') {
-                        clonedElement.insertAfter(element); // Correctly insert after the current element
-                    }
-                }
+          editor.contextMenu.addListener(function (element) {
+            const targetElement = findTargetElement(element);
+            if (targetElement) {
+              return {
+                duplicateLeft: CKEDITOR.TRISTATE_OFF,
+                duplicateRight: CKEDITOR.TRISTATE_OFF
+              };
             }
+            return null;
+          });
         }
+
+        // Commands
+        editor.addCommand('duplicateLeft', {
+          exec: function () {
+            const el = findTargetElement(editor.getSelection().getStartElement());
+            if (el) duplicateElement(el, 'after');
+          }
+        });
+
+        editor.addCommand('duplicateRight', {
+          exec: function () {
+            const el = findTargetElement(editor.getSelection().getStartElement());
+            if (el) duplicateElement(el, 'before');
+          }
+        });
+
+        function findTargetElement(element) {
+          while (element) {
+            if (element.hasClass && targetClasses.some(cls => element.hasClass(cls))) return element;
+            element = element.getParent();
+          }
+          return null;
+        }
+
+        // Make DOM ids unique in the duplicated HTML (do NOT touch data-cke-widget-id)
+        function uniquifyDomIds(html, suffix) {
+          const container = document.createElement('div');
+          container.innerHTML = html;
+
+          const nodesWithId = container.querySelectorAll('[id]');
+          nodesWithId.forEach((n) => {
+            const oldId = n.getAttribute('id');
+            if (!oldId) return;
+            n.setAttribute('id', `${oldId}-copy-${suffix}`);
+          });
+
+          // Optional: fix label[for] to match updated ids
+          const labels = container.querySelectorAll('label[for]');
+          labels.forEach((l) => {
+            const f = l.getAttribute('for');
+            if (!f) return;
+            l.setAttribute('for', `${f}-copy-${suffix}`);
+          });
+
+          return container.innerHTML;
+        }
+
+        function addDupTokenToRoot(html, token) {
+          const container = document.createElement('div');
+          container.innerHTML = html;
+
+          // Root is the first element node in this HTML chunk
+          let root = container.firstElementChild;
+          if (!root) return html;
+
+          root.setAttribute('data-dup-token', token);
+          return container.innerHTML;
+        }
+
+        function duplicateElement(element, where) {
+          // snapshot for undo safety
+          editor.fire('saveSnapshot');
+
+          const token = String(Date.now()) + '-' + String(Math.floor(Math.random() * 100000));
+          const suffix = token.replace(/[^\d]/g, '').slice(-8) || String(Date.now()).slice(-8);
+
+          // Get original HTML
+          let html = element.getOuterHtml();
+
+          // Make DOM ids unique (keeps ids, but avoids duplicates)
+          html = uniquifyDomIds(html, suffix);
+
+          // Add temporary marker so we can find/select the newly inserted clone
+          html = addDupTokenToRoot(html, token);
+
+          // Insert via range so CKEditor rebuilds widgets correctly
+          const range = editor.createRange();
+          if (where === 'before') {
+            range.moveToPosition(element, CKEDITOR.POSITION_BEFORE_START);
+          } else {
+            range.moveToPosition(element, CKEDITOR.POSITION_AFTER_END);
+          }
+
+          editor.getSelection().selectRanges([range]);
+          editor.insertHtml(html);
+
+          // Force widgets to re-scan (this is what makes image2 get fresh widget ids)
+          if (editor.widgets) {
+            editor.widgets.checkWidgets();
+          }
+
+          // Select the newly inserted element, then remove the marker attribute
+          setTimeout(function () {
+            const doc = editor.document;
+            const inserted = doc && doc.findOne('[data-dup-token="' + token + '"]');
+
+            if (inserted) {
+              inserted.removeAttribute('data-dup-token');
+
+              editor.focus();
+              const sel = editor.getSelection();
+              if (sel) sel.selectElement(inserted);
+            }
+
+            editor.fire('saveSnapshot');
+          }, 0);
+        }
+      }
     });
 
     // Init CKEditor
