@@ -23,16 +23,34 @@ async function populateUserList() {
         }
         $(".users-with-access-container").prepend('<label for="thisUserId_' + thisUser["id"] + '" class="form-control users-with-access users-with-access_' + thisUser["id"] + '">' + userImage + '<span class="userName">' + thisUser["username"] + '</span><input type="checkbox" class="form-check-input pull-right this-user-id" name="thisUserId_' + thisUser["id"] + '" id="thisUserId_' + thisUser["id"] + '" ' + '/></span>');
     }
-
     // Disable Enter
-    $('#users-with-access-search').on('keypress', function (e) {
+    $('#users-with-access-search_publish').on('keypress', function (e) {
         if (e.keyCode === 13) {
             e.preventDefault(); // Prevent default behavior of return key
             return false; // Stop further execution
         }
     });
 
-    $('#users-with-access-search').on('input', function () {
+    $('#users-with-access-search_publish').on('input', function () {
+        let tagElems = $('.users-with-access');
+        $(tagElems).hide();
+        for (let i = 0; i < tagElems.length; i++) {
+            let tag = $(tagElems).eq(i);
+            if (($(tag).children('span.userName').text().toLowerCase()).indexOf($(this).val().toLowerCase()) !== -1) {
+                $(tag).show();
+            }
+        }
+    });
+
+    // Disable Enter
+    $('#users-with-access-search_delete').on('keypress', function (e) {
+        if (e.keyCode === 13) {
+            e.preventDefault(); // Prevent default behavior of return key
+            return false; // Stop further execution
+        }
+    });
+
+    $('#users-with-access-search_delete').on('input', function () {
         let tagElems = $('.users-with-access');
         $(tagElems).hide();
         for (let i = 0; i < tagElems.length; i++) {
