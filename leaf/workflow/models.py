@@ -1168,15 +1168,9 @@ def proceed_action_workflow(request, not_real_request=None):
                             assetRemotePath = os.path.join(srv["remote_path"], Config.REMOTE_UPLOADS_FOLDER, assetFilename)
                             actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
                             if not actionResultAsset:
-                                try:
-                                    raise Exception("Failed to SCP - " + lp + " - " + rp)
-                                except Exception as e:
-                                    pass
+                                current_app.logger.info("Failed to SCP - " + lp + " - " + rp)
                         if not actionResult:
-                            try:
-                                raise Exception("Failed to SCP - " + lp + " - " + rp)
-                            except Exception as e:
-                                pass
+                            current_app.logger.info("Failed to SCP - " + lp + " - " + rp)
                 finally:
                     # Ensure SSH connection is closed
                     ssh.close()
@@ -1369,10 +1363,7 @@ def proceed_action_workflow(request, not_real_request=None):
                                     with ssh.open_sftp() as scp:
                                         actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
                                     if not actionResult:
-                                        try:
-                                            raise Exception("Failed to SCP - " + lp + " - " + rp)
-                                        except Exception as e:
-                                            pass
+                                        current_app.logger.info("Failed to SCP - " + lp + " - " + rp)
                                 finally:
                                     # Ensure SSH connection is closed
                                     ssh.close()
@@ -1415,10 +1406,7 @@ def proceed_action_workflow(request, not_real_request=None):
                         with ssh.open_sftp() as scp:
                             actionResult, lp, rp = upload_file_with_retry(local_path, remote_path, scp)
                             if not actionResult:
-                                try:
-                                    raise Exception("Failed to SCP - " + lp + " - " + rp)
-                                except Exception as e:
-                                    pass
+                                current_app.logger.info("Failed to SCP - " + lp + " - " + rp)
 
                     finally:
                         # Ensure SSH connection is closed
@@ -1482,15 +1470,9 @@ def proceed_action_workflow(request, not_real_request=None):
                                             assetRemotePath = os.path.join(srv["remote_path"], Config.REMOTE_UPLOADS_FOLDER, assetFilename)
                                             actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
                                             if not actionResultAsset:
-                                                try:
-                                                    raise Exception("Failed to SCP - " + lp + " - " + rp)
-                                                except Exception as e:
-                                                    pass
+                                                current_app.logger.info("Failed to SCP - " + lp + " - " + rp)
                                         if not actionResult:
-                                            try:
-                                                raise Exception("Failed to SCP - " + lp + " - " + rp)
-                                            except Exception as e:
-                                                pass
+                                            current_app.logger.info("Failed to SCP - " + lp + " - " + rp)
 
                                 finally:
                                     # Ensure SSH connection is closed
@@ -1506,7 +1488,7 @@ def proceed_action_workflow(request, not_real_request=None):
                                 try:
                                     os.remove(local_path)
                                 except Exception as e:
-                                    raise Exception(f"Failed to delete local file: {local_path} - {e}")
+                                    current_app.logger.info(f"Failed to delete local file: {local_path} - {e}")
 
                         # Regenerate Feed
                         if not isMenu:
@@ -1661,7 +1643,7 @@ def delete_file_from_server(local_path, remote_path, srv):
             try:
                 scp.remove(remote_path)
             except Exception as e:
-                raise Exception(f"Failed to delete remote file: {remote_path} - {e}")
+                current_app.logger.info(f"Failed to delete remote file: {remote_path} - {e}")
 
     finally:
         # Ensure SSH connection is closed
@@ -1861,10 +1843,7 @@ def gen_feed(mycursor, account_list, list_feed_path, list_name, accountId):
                 with ssh.open_sftp() as scp:
                     actionResult, lp, rp = upload_file_with_retry(sitemap_path, remote_path, scp)
                     if not actionResult:
-                        try:
-                            raise Exception("Failed to SCP - " + lp + " - " + rp)
-                        except Exception as e:
-                            pass
+                        current_app.logger.info("Failed to SCP - " + lp + " - " + rp)
             finally:
                 # Ensure SSH connection is closed
                 ssh.close()
@@ -2385,15 +2364,9 @@ def check_if_should_publish_pages(workflow):
                         assetRemotePath = os.path.join(srv["remote_path"], Config.DYNAMIC_PATH.strip('/'), Config.IMAGES_WEBPATH.strip('/'), assetFilename)
                         actionResultAsset, alp, arp = upload_file_with_retry(assetLocalPath, assetRemotePath, scp)
                         if not actionResultAsset:
-                            try:
-                                raise Exception("Failed to SCP - " + lp + " - " + rp)
-                            except Exception as e:
-                                pass
+                            current_app.logger.info("Failed to SCP - " + lp + " - " + rp)
                     if not actionResult:
-                        try:
-                            raise Exception("Failed to SCP - " + lp + " - " + rp)
-                        except Exception as e:
-                            pass
+                        current_app.logger.info("Failed to SCP - " + lp + " - " + rp)
             finally:
                 # Ensure SSH connection is closed
                 ssh.close()
