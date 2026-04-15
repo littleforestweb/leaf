@@ -165,6 +165,11 @@ CKEDITOR.plugins.add('extendedImage2', {
                 if (this.data.src) {
                     imgElement.setAttribute('src', this.data.src);
                 }
+                if (this.data.alt) {
+                    imgElement.setAttribute('alt', this.data.alt);
+                } else {
+                    imgElement.setAttribute('alt', '');
+                }
                 if (this.data.caption) {
                     captionElement.setText(this.data.caption);
                 }
