@@ -493,9 +493,33 @@ window.addEventListener('DOMContentLoaded', async function main() {
                         }
 
                         if (dialogData.linkUrl) {
-                            let imgElement = element.getName() === 'img' ? element : element.findOne('img');
-                            if (imgElement) {
-                                let parentElement = imgElement.getParent();
+                            if (element.getName() !== 'img') {
+                                // Captioned image (<figure>): manipulate the <img> child
+                                let imgElement = element.findOne('img');
+                                if (imgElement) {
+                                    let parentElement = imgElement.getParent();
+                                    if (parentElement && parentElement.is('a')) {
+                                        parentElement.setAttribute('href', dialogData.linkUrl);
+                                        if (dialogData.linkTarget) {
+                                            parentElement.setAttribute('target', dialogData.linkTarget);
+                                        } else {
+                                            parentElement.removeAttribute('target');
+                                        }
+                                    } else {
+                                        let link = new CKEDITOR.dom.element('a');
+                                        link.setAttribute('href', dialogData.linkUrl);
+                                        if (dialogData.linkTarget) {
+                                            link.setAttribute('target', dialogData.linkTarget);
+                                        }
+                                        let newImgElement = imgElement.clone(true);
+                                        link.append(newImgElement);
+                                        imgElement.insertBeforeMe(link);
+                                        imgElement.remove();
+                                    }
+                                }
+                            } else {
+                                // Non-captioned image: element IS the widget <img> — wrap it in <a> without cloning
+                                let parentElement = element.getParent();
                                 if (parentElement && parentElement.is('a')) {
                                     parentElement.setAttribute('href', dialogData.linkUrl);
                                     if (dialogData.linkTarget) {
@@ -509,26 +533,34 @@ window.addEventListener('DOMContentLoaded', async function main() {
                                     if (dialogData.linkTarget) {
                                         link.setAttribute('target', dialogData.linkTarget);
                                     }
-                                    let newImgElement = imgElement.clone(true);
-                                    link.append(newImgElement);
-                                    imgElement.insertBeforeMe(link);
-                                    imgElement.remove();
+                                    // Insert link before element then move element inside — never clone or remove widget.element
+                                    link.insertBefore(element);
+                                    link.append(element);
                                 }
                             }
                         } else {
-                            let imgElement = element.getName() === 'img' ? element : element.findOne('img');
-                            if (imgElement) {
-                                let anchorElement = imgElement.getParent();
-                                if (anchorElement && anchorElement.is('a')) {
-                                    let grandParent = anchorElement.getParent();
-                                    let captionElement = grandParent ? grandParent.findOne('figcaption') : null;
-                                    if (captionElement) {
-                                        anchorElement.remove();
-                                        imgElement.insertBefore(captionElement);
-                                    } else {
-                                        imgElement.insertBefore(anchorElement);
-                                        anchorElement.remove();
+                            if (element.getName() !== 'img') {
+                                // Captioned image (<figure>): remove <a> wrapper from img child
+                                let imgElement = element.findOne('img');
+                                if (imgElement) {
+                                    let anchorElement = imgElement.getParent();
+                                    if (anchorElement && anchorElement.is('a')) {
+                                        let captionElement = element.findOne('figcaption');
+                                        if (captionElement) {
+                                            anchorElement.remove();
+                                            imgElement.insertBefore(captionElement);
+                                        } else {
+                                            imgElement.insertBefore(anchorElement);
+                                            anchorElement.remove();
+                                        }
                                     }
+                                }
+                            } else {
+                                // Non-captioned image: element IS the widget <img> — move it out of <a> without removing it
+                                let anchorElement = element.getParent();
+                                if (anchorElement && anchorElement.is('a')) {
+                                    element.insertBefore(anchorElement);
+                                    anchorElement.remove();
                                 }
                             }
                         }
@@ -622,8 +654,12 @@ window.addEventListener('DOMContentLoaded', async function main() {
                                     id: 'linkUrl',
                                     label: 'URL',
                                     setup: function(widget) {
-                                        let link = widget.element.findOne('a');
-                                        this.setValue(link && link.is('a') ? link.getAttribute('href') : '');
+                                        // For captioned images the <a> is inside the <figure>;
+                                        // for non-captioned images the <a> wraps the <img> widget element.
+                                        let link = widget.element.getName() !== 'img'
+                                            ? widget.element.findOne('a')
+                                            : (function() { let p = widget.element.getParent(); return p && p.is('a') ? p : null; }());
+                                        this.setValue(link ? link.getAttribute('href') : '');
                                     },
                                     commit: function(widget) {
                                         widget.setData('linkUrl', this.getValue());
@@ -641,8 +677,10 @@ window.addEventListener('DOMContentLoaded', async function main() {
                                         ['Topmost Window (_top)', '_top']
                                     ],
                                     setup: function(widget) {
-                                        let link = widget.element.findOne('a');
-                                        this.setValue(link && link.is('a') ? link.getAttribute('target') : '');
+                                        let link = widget.element.getName() !== 'img'
+                                            ? widget.element.findOne('a')
+                                            : (function() { let p = widget.element.getParent(); return p && p.is('a') ? p : null; }());
+                                        this.setValue(link ? (link.getAttribute('target') || '') : '');
                                     },
                                     commit: function(widget) {
                                         widget.setData('linkTarget', this.getValue());
