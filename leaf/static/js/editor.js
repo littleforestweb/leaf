@@ -492,8 +492,17 @@ window.addEventListener('DOMContentLoaded', async function main() {
                             }
                         }
 
+                        // In this version of image2, links live entirely in the live DOM.
+                        // For a linked non-captioned image, widget.element IS the <a>.
+                        // For an unlinked non-captioned image, widget.element IS the <img>.
+                        // Our custom widget always uses <figure> for captioned images.
+                        // Captioned images always have a <figure> element; non-captioned have <img> or <a>.
+                        // widget.name is always 'image' for both (image2 uses the same name), so we
+                        // detect by element tag instead.
+                        const isCustomWidget = element.getName() === 'figure';
+
                         if (dialogData.linkUrl) {
-                            if (element.getName() !== 'img') {
+                            if (isCustomWidget) {
                                 // Captioned image (<figure>): manipulate the <img> child
                                 let imgElement = element.findOne('img');
                                 if (imgElement) {
@@ -517,29 +526,43 @@ window.addEventListener('DOMContentLoaded', async function main() {
                                         imgElement.remove();
                                     }
                                 }
+                            } else if (element.getName() === 'a') {
+                                // Non-captioned image that already has a link (element IS the <a>)
+                                element.setAttribute('href', dialogData.linkUrl);
+                                element.setAttribute('data-cke-saved-href', dialogData.linkUrl);
+                                if (dialogData.linkTarget) {
+                                    element.setAttribute('target', dialogData.linkTarget);
+                                } else {
+                                    element.removeAttribute('target');
+                                }
                             } else {
-                                // Non-captioned image: element IS the widget <img> — wrap it in <a> without cloning
-                                let parentElement = element.getParent();
-                                if (parentElement && parentElement.is('a')) {
-                                    parentElement.setAttribute('href', dialogData.linkUrl);
+                                // Non-captioned image, currently unlinked (element is <img>).
+                                // Wrap the widget WRAPPER (not the widget element) in a new <a>.
+                                // This avoids touching widget.element so downcast never crashes.
+                                // On save, CKEditor serialises <a><img/></a> naturally.
+                                let wrapper = image2Widget.wrapper;
+                                let existingLink = wrapper.getParent();
+                                if (existingLink && existingLink.is('a')) {
+                                    existingLink.setAttribute('href', dialogData.linkUrl);
+                                    existingLink.setAttribute('data-cke-saved-href', dialogData.linkUrl);
                                     if (dialogData.linkTarget) {
-                                        parentElement.setAttribute('target', dialogData.linkTarget);
+                                        existingLink.setAttribute('target', dialogData.linkTarget);
                                     } else {
-                                        parentElement.removeAttribute('target');
+                                        existingLink.removeAttribute('target');
                                     }
                                 } else {
                                     let link = new CKEDITOR.dom.element('a');
                                     link.setAttribute('href', dialogData.linkUrl);
+                                    link.setAttribute('data-cke-saved-href', dialogData.linkUrl);
                                     if (dialogData.linkTarget) {
                                         link.setAttribute('target', dialogData.linkTarget);
                                     }
-                                    // Insert link before element then move element inside — never clone or remove widget.element
-                                    link.insertBefore(element);
-                                    link.append(element);
+                                    link.insertBefore(wrapper);
+                                    link.append(wrapper);
                                 }
                             }
                         } else {
-                            if (element.getName() !== 'img') {
+                            if (isCustomWidget) {
                                 // Captioned image (<figure>): remove <a> wrapper from img child
                                 let imgElement = element.findOne('img');
                                 if (imgElement) {
@@ -555,11 +578,20 @@ window.addEventListener('DOMContentLoaded', async function main() {
                                         }
                                     }
                                 }
+                            } else if (element.getName() === 'a') {
+                                // Non-captioned image whose element IS the <a> (loaded from saved page).
+                                // Move the <img> out and remove the <a>.
+                                let imgElement = element.findOne('img');
+                                if (imgElement) {
+                                    imgElement.insertBefore(element);
+                                    element.remove();
+                                }
                             } else {
-                                // Non-captioned image: element IS the widget <img> — move it out of <a> without removing it
-                                let anchorElement = element.getParent();
+                                // Non-captioned unlinked image — wrapper may be inside a session-level <a>.
+                                let wrapper = image2Widget.wrapper;
+                                let anchorElement = wrapper.getParent();
                                 if (anchorElement && anchorElement.is('a')) {
-                                    element.insertBefore(anchorElement);
+                                    wrapper.insertBefore(anchorElement);
                                     anchorElement.remove();
                                 }
                             }
@@ -654,12 +686,19 @@ window.addEventListener('DOMContentLoaded', async function main() {
                                     id: 'linkUrl',
                                     label: 'URL',
                                     setup: function(widget) {
-                                        // For captioned images the <a> is inside the <figure>;
-                                        // for non-captioned images the <a> wraps the <img> widget element.
-                                        let link = widget.element.getName() !== 'img'
-                                            ? widget.element.findOne('a')
-                                            : (function() { let p = widget.element.getParent(); return p && p.is('a') ? p : null; }());
-                                        this.setValue(link ? link.getAttribute('href') : '');
+                                        let anchorEl = null;
+                                        if (widget.element.getName() === 'figure') {
+                                            // Captioned image: <a> is inside the <figure>
+                                            anchorEl = widget.element.findOne('a');
+                                        } else if (widget.element.getName() === 'a') {
+                                            // Non-captioned, loaded from saved page: element IS the <a>
+                                            anchorEl = widget.element;
+                                        } else if (widget.wrapper) {
+                                            // Non-captioned, link added this session: wrapper is inside <a>
+                                            let p = widget.wrapper.getParent();
+                                            if (p && p.is('a')) anchorEl = p;
+                                        }
+                                        this.setValue(anchorEl ? (anchorEl.getAttribute('href') || '') : '');
                                     },
                                     commit: function(widget) {
                                         widget.setData('linkUrl', this.getValue());
@@ -677,10 +716,16 @@ window.addEventListener('DOMContentLoaded', async function main() {
                                         ['Topmost Window (_top)', '_top']
                                     ],
                                     setup: function(widget) {
-                                        let link = widget.element.getName() !== 'img'
-                                            ? widget.element.findOne('a')
-                                            : (function() { let p = widget.element.getParent(); return p && p.is('a') ? p : null; }());
-                                        this.setValue(link ? (link.getAttribute('target') || '') : '');
+                                        let anchorEl = null;
+                                        if (widget.element.getName() === 'figure') {
+                                            anchorEl = widget.element.findOne('a');
+                                        } else if (widget.element.getName() === 'a') {
+                                            anchorEl = widget.element;
+                                        } else if (widget.wrapper) {
+                                            let p = widget.wrapper.getParent();
+                                            if (p && p.is('a')) anchorEl = p;
+                                        }
+                                        this.setValue(anchorEl ? (anchorEl.getAttribute('target') || '') : '');
                                     },
                                     commit: function(widget) {
                                         widget.setData('linkTarget', this.getValue());
