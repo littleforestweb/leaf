@@ -115,10 +115,10 @@ CKEDITOR.plugins.add('extendedImage2', {
         const alignmentClasses = editor.config.image2_alignClasses || ['align-left', 'align-right', 'align-center'];
 
         function getCustomClasses(classList, type) {
-            let predefinedClasses = ['cke_widget_element'];
-            if (type === "figure") {
-                predefinedClasses = [captionedImageClass, 'cke_widget_element'];
-            }
+            // Always exclude captionedImageClass — it's a system class applied automatically
+            // to <figure> elements; it should never appear as a user-editable custom class,
+            // and must not bleed onto non-figure elements (img, a) via the Advanced tab.
+            const predefinedClasses = [captionedImageClass, 'cke_widget_element'];
             return classList.filter(cls => !predefinedClasses.includes(cls) && !alignmentClasses.includes(cls)).join(' ');
         }
 
@@ -175,7 +175,7 @@ CKEDITOR.plugins.add('extendedImage2', {
                 }
 
                 const element = this.element;
-                const currentClasses = element.getAttribute('class').split(' ');
+                const currentClasses = (element.getAttribute('class') || '').split(' ');
                 const alignmentClass = getAlignmentClass(currentClasses);
                 const tagName = element.getName();
 
@@ -261,7 +261,7 @@ CKEDITOR.plugins.add('extendedImage2', {
                     image2Widget.setData('linkTarget', dialogData.linkTarget);
 
                     const element = image2Widget.element;
-                    const currentClasses = element.getAttribute('class').split(' ');
+                    const currentClasses = (element.getAttribute('class') || '').split(' ');
                     const alignmentClass = getAlignmentClass(currentClasses);
 
                     if (dialogData.advId) {
@@ -394,6 +394,53 @@ CKEDITOR.plugins.add('extendedImage2', {
                                 anchorElement.remove();
                             }
                         }
+                    // Safety: captionedImageClass must only live on <figure> elements.
+                    // image2 stores ALL classes it finds on <img> in widget.data.classes and
+                    // re-applies them on every data() call, so purge from DOM and stored data.
+                    const currentElement = image2Widget.element;
+                    if (currentElement && currentElement.getName && currentElement.getName() !== 'figure') {
+                        currentElement.removeClass(captionedImageClass);
+                        if (image2Widget.data && image2Widget.data.classes) {
+                            delete image2Widget.data.classes[captionedImageClass];
+                        }
+                    }
+                }
+            }
+        });
+
+        // Core fix: intercept image2's data() call on every image widget instance.
+        // image2 stores ALL classes it finds on an element in widget.data.classes and
+        // re-applies them after every setData() call. By listening at priority 999
+        // (after image2's own handler), we strip captionedImageClass immediately after
+        // image2 adds it, and remove it from data.classes so it never comes back.
+        editor.widgets.on('instanceCreated', function(evt) {
+            var widget = evt.data;
+            if (widget.name === 'image') {
+                widget.on('data', function() {
+                    if (this.element && this.element.getName && this.element.getName() !== 'figure') {
+                        this.element.removeClass(captionedImageClass);
+                        // Direct mutation (not setData) to avoid re-triggering data()
+                        if (this.data && this.data.classes) {
+                            delete this.data.classes[captionedImageClass];
+                        }
+                    }
+                }, null, null, 999);
+            }
+        });
+
+        // Output filter: permanently strip captionedImageClass from <img> elements on save.
+        editor.dataProcessor.htmlFilter.addRules({
+            elements: {
+                img: function(el) {
+                    if (el.attributes && el.attributes['class']) {
+                        var cleaned = el.attributes['class'].split(' ')
+                            .filter(function(c) { return c !== captionedImageClass; })
+                            .join(' ');
+                        if (cleaned) {
+                            el.attributes['class'] = cleaned;
+                        } else {
+                            delete el.attributes['class'];
+                        }
                     }
                 }
             }
@@ -430,7 +477,7 @@ CKEDITOR.plugins.add('extendedImage2', {
                                 id: 'advClasses',
                                 label: 'Classes',
                                 setup: function(widget) {
-                                    var classList = widget.element.getAttribute('class').split(' ');
+                                    var classList = (widget.element.getAttribute('class') || '').split(' ');
                                     var tagName = widget.element.getName();
                                     this.setValue(getCustomClasses(classList, tagName));
                                 },
@@ -529,7 +576,7 @@ CKEDITOR.plugins.add('extendedImage2', {
                 for (var widgetId in editor.widgets.instances) {
                     if (editor.widgets.instances.hasOwnProperty(widgetId)) {
                         var widget = editor.widgets.instances[widgetId];
-                        var currentClasses = widget.element.getAttribute('class').split(' ');
+                        var currentClasses = (widget.element.getAttribute('class') || '').split(' ');
                         var tagName = widget.element.getName();
                         widget.setData('advId', widget.element.getAttribute('id') || '');
                         widget.setData('advClasses', getCustomClasses(currentClasses, tagName));
@@ -553,7 +600,7 @@ CKEDITOR.plugins.add('extendedImage2', {
                         }
                         if (widget.element.getAttribute('class')) {
                             var tagName = widget.element.getName();
-                            var currentClasses = widget.element.getAttribute('class').split(' ');
+                            var currentClasses = (widget.element.getAttribute('class') || '').split(' ');
                             widget.setData('advClasses', getCustomClasses(currentClasses, tagName));
                         }
                         if (widget.element.getAttribute('longdesc')) {
@@ -1137,6 +1184,13 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                         editor.config.filebrowserBrowseUrl = '/files/browser_img?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Images';
                                         editor.config.filebrowserImageBrowseUrl = '/files/browser_img?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Images';
                                         editor.config.filebrowserLinkBrowseUrl = '/files/browser_all_files?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Files';
+                                        // Prevent site-level max-width rules from shrinking images in the editor
+                                        editor.document.appendStyleText(
+                                            'img.uos-component-image,' +
+                                            'figure.uos-component-image img {' +
+                                            '    max-width: 100% !important;' +
+                                            '}'
+                                        );
                                     });
 
                                     CKEDITOR.config.contentsCss = '/static/css/ckeditor_custom_styles.css';
