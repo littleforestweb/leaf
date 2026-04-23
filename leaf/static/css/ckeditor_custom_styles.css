@@ -192,6 +192,13 @@ a > img {
     border: 1px solid #000 !important;
     border-radius: 2px;
 }
+/* Images in the editor should never be constrained by site-level CSS rules */
+.cke_editable img,
+.cke_editable figure img {
+    max-width: 100%;
+    height: auto;
+}
+
 .uos-component-image-center {
     text-align: center;
 }

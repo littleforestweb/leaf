@@ -115,10 +115,10 @@ CKEDITOR.plugins.add('extendedImage2', {
         const alignmentClasses = editor.config.image2_alignClasses || ['align-left', 'align-right', 'align-center'];
 
         function getCustomClasses(classList, type) {
-            let predefinedClasses = ['cke_widget_element'];
-            if (type === "figure") {
-                predefinedClasses = [captionedImageClass, 'cke_widget_element'];
-            }
+            // Always exclude captionedImageClass — it's a system class applied automatically
+            // to <figure> elements; it should never appear as a user-editable custom class,
+            // and must not bleed onto non-figure elements (img, a) via the Advanced tab.
+            const predefinedClasses = [captionedImageClass, 'cke_widget_element'];
             return classList.filter(cls => !predefinedClasses.includes(cls) && !alignmentClasses.includes(cls)).join(' ');
         }
 
@@ -165,12 +165,17 @@ CKEDITOR.plugins.add('extendedImage2', {
                 if (this.data.src) {
                     imgElement.setAttribute('src', this.data.src);
                 }
+                if (this.data.alt) {
+                    imgElement.setAttribute('alt', this.data.alt);
+                } else {
+                    imgElement.setAttribute('alt', '');
+                }
                 if (this.data.caption) {
                     captionElement.setText(this.data.caption);
                 }
 
                 const element = this.element;
-                const currentClasses = element.getAttribute('class').split(' ');
+                const currentClasses = (element.getAttribute('class') || '').split(' ');
                 const alignmentClass = getAlignmentClass(currentClasses);
                 const tagName = element.getName();
 
@@ -256,7 +261,7 @@ CKEDITOR.plugins.add('extendedImage2', {
                     image2Widget.setData('linkTarget', dialogData.linkTarget);
 
                     const element = image2Widget.element;
-                    const currentClasses = element.getAttribute('class').split(' ');
+                    const currentClasses = (element.getAttribute('class') || '').split(' ');
                     const alignmentClass = getAlignmentClass(currentClasses);
 
                     if (dialogData.advId) {
@@ -290,39 +295,151 @@ CKEDITOR.plugins.add('extendedImage2', {
                         }
                     }
 
+                    // In this version of image2, links live entirely in the live DOM.
+                    // For a linked non-captioned image, widget.element IS the <a>.
+                    // For an unlinked non-captioned image, widget.element IS the <img>.
+                    // Captioned images always have a <figure> element; non-captioned have <img> or <a>.
+                    // widget.name is always 'image' for both (image2 uses the same name), so we
+                    // detect by element tag instead.
+                    const isCustomWidget = element.getName() === 'figure';
+
                     if (dialogData.linkUrl) {
-                        let imgElement = element.findOne('img');
-                        if (imgElement) {
-                            let parentElement = imgElement.getParent();
-                            if (parentElement && parentElement.is('a')) {
-                                parentElement.setAttribute('href', dialogData.linkUrl);
-                                if (dialogData.linkTarget) {
-                                    parentElement.setAttribute('target', dialogData.linkTarget);
+                        if (isCustomWidget) {
+                            // Captioned image (<figure>): manipulate the <img> child
+                            let imgElement = element.findOne('img');
+                            if (imgElement) {
+                                let parentElement = imgElement.getParent();
+                                if (parentElement && parentElement.is('a')) {
+                                    parentElement.setAttribute('href', dialogData.linkUrl);
+                                    if (dialogData.linkTarget) {
+                                        parentElement.setAttribute('target', dialogData.linkTarget);
+                                    } else {
+                                        parentElement.removeAttribute('target');
+                                    }
                                 } else {
-                                    parentElement.removeAttribute('target');
+                                    let link = new CKEDITOR.dom.element('a');
+                                    link.setAttribute('href', dialogData.linkUrl);
+                                    if (dialogData.linkTarget) {
+                                        link.setAttribute('target', dialogData.linkTarget);
+                                    }
+                                    let newImgElement = imgElement.clone(true);
+                                    link.append(newImgElement);
+                                    imgElement.insertBeforeMe(link);
+                                    imgElement.remove();
+                                }
+                            }
+                        } else if (element.getName() === 'a') {
+                            // Non-captioned image that already has a link (element IS the <a>)
+                            element.setAttribute('href', dialogData.linkUrl);
+                            element.setAttribute('data-cke-saved-href', dialogData.linkUrl);
+                            if (dialogData.linkTarget) {
+                                element.setAttribute('target', dialogData.linkTarget);
+                            } else {
+                                element.removeAttribute('target');
+                            }
+                        } else {
+                            // Non-captioned image, currently unlinked (element is <img>).
+                            // Wrap the widget WRAPPER (not the widget element) in a new <a>.
+                            let wrapper = image2Widget.wrapper;
+                            let existingLink = wrapper.getParent();
+                            if (existingLink && existingLink.is('a')) {
+                                existingLink.setAttribute('href', dialogData.linkUrl);
+                                existingLink.setAttribute('data-cke-saved-href', dialogData.linkUrl);
+                                if (dialogData.linkTarget) {
+                                    existingLink.setAttribute('target', dialogData.linkTarget);
+                                } else {
+                                    existingLink.removeAttribute('target');
                                 }
                             } else {
                                 let link = new CKEDITOR.dom.element('a');
                                 link.setAttribute('href', dialogData.linkUrl);
+                                link.setAttribute('data-cke-saved-href', dialogData.linkUrl);
                                 if (dialogData.linkTarget) {
                                     link.setAttribute('target', dialogData.linkTarget);
                                 }
-                                let newImgElement = imgElement.clone(true);
-                                link.append(newImgElement);
-                                imgElement.insertBeforeMe(link);
-                                imgElement.remove();
+                                link.insertBefore(wrapper);
+                                link.append(wrapper);
                             }
                         }
                     } else {
-                        let imgElement = element.findOne('img');
-                        if (imgElement) {
-                            let anchorElement = imgElement.getParent();
-                            if (anchorElement && anchorElement.is('a')) {
-                                let grandParent = anchorElement.getParent();
-                                anchorElement.remove();
-                                let captionElement = grandParent.findOne('figcaption');
-                                imgElement.insertBefore(captionElement);
+                        if (isCustomWidget) {
+                            // Captioned image (<figure>): remove <a> wrapper from img child
+                            let imgElement = element.findOne('img');
+                            if (imgElement) {
+                                let anchorElement = imgElement.getParent();
+                                if (anchorElement && anchorElement.is('a')) {
+                                    let captionElement = element.findOne('figcaption');
+                                    if (captionElement) {
+                                        anchorElement.remove();
+                                        imgElement.insertBefore(captionElement);
+                                    } else {
+                                        imgElement.insertBefore(anchorElement);
+                                        anchorElement.remove();
+                                    }
+                                }
                             }
+                        } else if (element.getName() === 'a') {
+                            // Non-captioned image whose element IS the <a> (loaded from saved page).
+                            let imgElement = element.findOne('img');
+                            if (imgElement) {
+                                imgElement.insertBefore(element);
+                                element.remove();
+                            }
+                        } else {
+                            // Non-captioned unlinked image — wrapper may be inside a session-level <a>.
+                            let wrapper = image2Widget.wrapper;
+                            let anchorElement = wrapper.getParent();
+                            if (anchorElement && anchorElement.is('a')) {
+                                wrapper.insertBefore(anchorElement);
+                                anchorElement.remove();
+                            }
+                        }
+                    // Safety: captionedImageClass must only live on <figure> elements.
+                    // image2 stores ALL classes it finds on <img> in widget.data.classes and
+                    // re-applies them on every data() call, so purge from DOM and stored data.
+                    const currentElement = image2Widget.element;
+                    if (currentElement && currentElement.getName && currentElement.getName() !== 'figure') {
+                        currentElement.removeClass(captionedImageClass);
+                        if (image2Widget.data && image2Widget.data.classes) {
+                            delete image2Widget.data.classes[captionedImageClass];
+                        }
+                    }
+                }
+            }
+        });
+
+        // Core fix: intercept image2's data() call on every image widget instance.
+        // image2 stores ALL classes it finds on an element in widget.data.classes and
+        // re-applies them after every setData() call. By listening at priority 999
+        // (after image2's own handler), we strip captionedImageClass immediately after
+        // image2 adds it, and remove it from data.classes so it never comes back.
+        editor.widgets.on('instanceCreated', function(evt) {
+            var widget = evt.data;
+            if (widget.name === 'image') {
+                widget.on('data', function() {
+                    if (this.element && this.element.getName && this.element.getName() !== 'figure') {
+                        this.element.removeClass(captionedImageClass);
+                        // Direct mutation (not setData) to avoid re-triggering data()
+                        if (this.data && this.data.classes) {
+                            delete this.data.classes[captionedImageClass];
+                        }
+                    }
+                }, null, null, 999);
+            }
+        });
+
+        // Output filter: permanently strip captionedImageClass from <img> elements on save.
+        editor.dataProcessor.htmlFilter.addRules({
+            elements: {
+                img: function(el) {
+                    if (el.attributes && el.attributes['class']) {
+                        var cleaned = el.attributes['class'].split(' ')
+                            .filter(function(c) { return c !== captionedImageClass; })
+                            .join(' ');
+                        if (cleaned) {
+                            el.attributes['class'] = cleaned;
+                        } else {
+                            delete el.attributes['class'];
                         }
                     }
                 }
@@ -360,7 +477,7 @@ CKEDITOR.plugins.add('extendedImage2', {
                                 id: 'advClasses',
                                 label: 'Classes',
                                 setup: function(widget) {
-                                    var classList = widget.element.getAttribute('class').split(' ');
+                                    var classList = (widget.element.getAttribute('class') || '').split(' ');
                                     var tagName = widget.element.getName();
                                     this.setValue(getCustomClasses(classList, tagName));
                                 },
@@ -402,8 +519,19 @@ CKEDITOR.plugins.add('extendedImage2', {
                                 id: 'linkUrl',
                                 label: 'URL',
                                 setup: function(widget) {
-                                    let link = widget.element.findOne('a');
-                                    this.setValue(link && link.is('a') ? link.getAttribute('href') : '');
+                                    let anchorEl = null;
+                                    if (widget.element.getName() === 'figure') {
+                                        // Captioned image: <a> is inside the <figure>
+                                        anchorEl = widget.element.findOne('a');
+                                    } else if (widget.element.getName() === 'a') {
+                                        // Non-captioned, loaded from saved page: element IS the <a>
+                                        anchorEl = widget.element;
+                                    } else if (widget.wrapper) {
+                                        // Non-captioned, link added this session: wrapper is inside <a>
+                                        let p = widget.wrapper.getParent();
+                                        if (p && p.is('a')) anchorEl = p;
+                                    }
+                                    this.setValue(anchorEl ? (anchorEl.getAttribute('href') || '') : '');
                                 },
                                 commit: function(widget) {
                                     widget.setData('linkUrl', this.getValue());
@@ -421,8 +549,16 @@ CKEDITOR.plugins.add('extendedImage2', {
                                     ['Topmost Window (_top)', '_top']
                                 ],
                                 setup: function(widget) {
-                                    let link = widget.element.findOne('a');
-                                    this.setValue(link && link.is('a') ? link.getAttribute('target') : '');
+                                    let anchorEl = null;
+                                    if (widget.element.getName() === 'figure') {
+                                        anchorEl = widget.element.findOne('a');
+                                    } else if (widget.element.getName() === 'a') {
+                                        anchorEl = widget.element;
+                                    } else if (widget.wrapper) {
+                                        let p = widget.wrapper.getParent();
+                                        if (p && p.is('a')) anchorEl = p;
+                                    }
+                                    this.setValue(anchorEl ? (anchorEl.getAttribute('target') || '') : '');
                                 },
                                 commit: function(widget) {
                                     widget.setData('linkTarget', this.getValue());
@@ -440,7 +576,7 @@ CKEDITOR.plugins.add('extendedImage2', {
                 for (var widgetId in editor.widgets.instances) {
                     if (editor.widgets.instances.hasOwnProperty(widgetId)) {
                         var widget = editor.widgets.instances[widgetId];
-                        var currentClasses = widget.element.getAttribute('class').split(' ');
+                        var currentClasses = (widget.element.getAttribute('class') || '').split(' ');
                         var tagName = widget.element.getName();
                         widget.setData('advId', widget.element.getAttribute('id') || '');
                         widget.setData('advClasses', getCustomClasses(currentClasses, tagName));
@@ -464,7 +600,7 @@ CKEDITOR.plugins.add('extendedImage2', {
                         }
                         if (widget.element.getAttribute('class')) {
                             var tagName = widget.element.getName();
-                            var currentClasses = widget.element.getAttribute('class').split(' ');
+                            var currentClasses = (widget.element.getAttribute('class') || '').split(' ');
                             widget.setData('advClasses', getCustomClasses(currentClasses, tagName));
                         }
                         if (widget.element.getAttribute('longdesc')) {
@@ -1048,6 +1184,13 @@ async function populateEditDynamicListDialog(accountId, reference, type, itemToS
                                         editor.config.filebrowserBrowseUrl = '/files/browser_img?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Images';
                                         editor.config.filebrowserImageBrowseUrl = '/files/browser_img?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Images';
                                         editor.config.filebrowserLinkBrowseUrl = '/files/browser_all_files?CKEditorFuncNum=' + editor._.filebrowserFn + '&type=Files';
+                                        // Prevent site-level max-width rules from shrinking images in the editor
+                                        editor.document.appendStyleText(
+                                            'img.uos-component-image,' +
+                                            'figure.uos-component-image img {' +
+                                            '    max-width: 100% !important;' +
+                                            '}'
+                                        );
                                     });
 
                                     CKEDITOR.config.contentsCss = '/static/css/ckeditor_custom_styles.css';
