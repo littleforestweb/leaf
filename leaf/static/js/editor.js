@@ -596,17 +596,15 @@ window.addEventListener('DOMContentLoaded', async function main() {
                                 }
                             }
                         }
-                    }
 
-                    // Safety: captionedImageClass ('uos-component-image') must only live on
-                    // <figure> elements. image2 stores ALL classes it finds on <img> in
-                    // widget.data.classes and re-applies them on every data() call, so we
-                    // must purge it both from the DOM element and from the stored data.
-                    const currentElement = image2Widget.element;
-                    if (currentElement && currentElement.getName && currentElement.getName() !== 'figure') {
-                        currentElement.removeClass(captionedImageClass);
-                        if (image2Widget.data && image2Widget.data.classes) {
-                            delete image2Widget.data.classes[captionedImageClass];
+                        // Safety: captionedImageClass must only live on <figure> elements.
+                        // Runs after both link-URL and no-link-URL branches.
+                        const currentElement = image2Widget.element;
+                        if (currentElement && currentElement.getName && currentElement.getName() !== 'figure') {
+                            currentElement.removeClass(captionedImageClass);
+                            if (image2Widget.data && image2Widget.data.classes) {
+                                delete image2Widget.data.classes[captionedImageClass];
+                            }
                         }
                     }
                 }
