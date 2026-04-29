@@ -394,9 +394,10 @@ CKEDITOR.plugins.add('extendedImage2', {
                                 anchorElement.remove();
                             }
                         }
+                    }
+
                     // Safety: captionedImageClass must only live on <figure> elements.
-                    // image2 stores ALL classes it finds on <img> in widget.data.classes and
-                    // re-applies them on every data() call, so purge from DOM and stored data.
+                    // Runs after both link-URL and no-link-URL branches.
                     const currentElement = image2Widget.element;
                     if (currentElement && currentElement.getName && currentElement.getName() !== 'figure') {
                         currentElement.removeClass(captionedImageClass);
